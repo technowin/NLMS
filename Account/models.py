@@ -1,5 +1,5 @@
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 
@@ -20,7 +20,15 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
-class CustomUser(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractBaseUser):
+    USER_TYPES = (
+        ('admin', 'Admin'),
+        ('librarian', 'Librarian'),
+        ('account', 'Accounts'),
+        ('student', 'Student/Member'),
+        ('guest', 'Guest'),
+    )
+
     id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=255, null=True, blank=True)
     last_name = models.CharField(max_length=255, null=True, blank=True)
@@ -38,6 +46,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     phone_verified = models.BooleanField(default=False)
     last_activity = models.DateTimeField(auto_now=True)
     date_joined = models.DateTimeField(auto_now=True)
+
+    username = models.CharField(max_length=255, null=True, blank=True)
+    user_type = models.CharField(max_length=10, choices=USER_TYPES, default='guest')
+    address = models.TextField(blank=True)
+    govt_id = models.CharField(max_length=50, blank=True)
+    id_proof = models.FileField(upload_to='id_proofs/', blank=True)
+
     objects = CustomUserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['full_name', 'phone']  # Add any additional required fields
@@ -65,12 +80,9 @@ class roles(models.Model):
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
     created_by = models.TextField(null=True, blank=True)
     updated_by = models.TextField(null=True, blank=True)
-    workflow_view = models.IntegerField(default=0)
-    form_view = models.IntegerField(default=0)
-    report_view = models.IntegerField(default=0)
-    
     class Meta:
         db_table = 'roles'
+    
     
 class password_storage(models.Model):
     id = models.AutoField(primary_key=True)
