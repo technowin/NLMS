@@ -31,9 +31,9 @@ pip install django gunicorn
 
 sudo ufw allow 8000
 
-python3 manage.py runserver  172.26.2.74:8000     
+python3 manage.py runserver  172.26.12.47:8000     
 
-gunicorn --bind 172.26.2.74:8000 NLMS.wsgi   
+gunicorn --bind 172.26.12.47:8000 NLMS.wsgi   
 
 deactivate
 
@@ -81,7 +81,7 @@ Enter i and then paste below part then for save Enter Esc :wq
 
 server {
     listen 80;
-    server_name 172.26.2.74;
+    server_name 172.26.12.47;
 
     location = /favicon.ico { access_log off; log_not_found off; }
     location /static/ {
@@ -108,7 +108,7 @@ sudo rm default
 
 cd /etc/nginx/sites-enabled/
 
-sudo rm TDMS
+sudo rm default
 
 sudo gpasswd -a www-data ubuntu
 
