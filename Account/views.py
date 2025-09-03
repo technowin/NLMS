@@ -72,13 +72,12 @@ def Login(request):
                 request.session.set_expiry(1209600)  # 2 weeks
             else:
                 request.session.set_expiry(0)  # Browser close
-            return redirect(f'/menu_admin?entity=menu&type=i')
+            # return redirect(f'/menu_admin?entity=menu&type=i')
+            return redirect(f'LMS_Dashboard')
             # return render(request,'bootstrap/landing.html')
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
-
-
 
 def logoutView(request):
     logout(request)
@@ -241,7 +240,6 @@ def forgot_password(request):
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), request.user.id])
         messages.error(request, 'Oops...! Something went wrong!')
-
 
 def home(request):
     return render(request,'Account/home.html') 

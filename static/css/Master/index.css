@@ -1,0 +1,520 @@
+/* Reset and base styling */
+
+body {
+  font-family: 'Merriweather', serif;
+  letter-spacing: 0.5px;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Hero section */
+.hero {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.hero-title {
+  font-size: 90px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+.hero-subtitle {
+  font-size: 30px;
+  color: #555;
+  margin-bottom: 40px;
+}
+
+/* Buttons */
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 15px 30px;
+  font-size: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.btn-outline {
+  background-color: #e9f2ff;
+  color: #007bff;
+  border: 2px solid #007bff;
+}
+
+.btn-outline:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* -------- Responsive Rules -------- */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 60px;
+  }
+
+  .hero-subtitle {
+    font-size: 24px;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 42px;
+  }
+
+  .hero-subtitle {
+    font-size: 20px;
+  }
+
+  .hero {
+    padding: 20px 10px;
+  }
+}
+
+.container {
+  max-width: 600px;
+  width: 100%;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid #007aff;
+  padding-bottom: 8px;
+  margin-bottom: 25px;
+}
+
+.input-wrapper .search-icon {
+  position: absolute;
+  left: 8px;
+  font-size: 18px;
+  color: #007aff;
+}
+
+.input-wrapper input {
+  flex: 1;
+  padding: 10px 10px 10px 50px;
+  font-size: 16px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+}
+
+.input-wrapper button {
+  background-color: #ccc;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  margin-left: 10px;
+  cursor: not-allowed;
+}
+
+/* Dropdown css */
+
+.examples {
+  text-align: left;
+}
+
+.examples ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.examples li {
+  position: relative;
+  text-align: left;
+  font-size: 16px;
+  margin: 5px 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  overflow: hidden;
+}
+
+.examples li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.6s ease-in-out;
+}
+
+.examples li:hover::after {
+  left: 100%;
+}
+ 
+/* view template screen */
+
+.dashboardView {
+  display: flex;
+  flex-wrap: wrap; /* Wrap cards to next line if they overflow */
+  gap: 1rem; /* Adds spacing between cards */
+}
+
+.siteView-card {
+  position: relative;
+  width: 220px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  flex: 1 1 300px; /* Grow/shrink but take minimum 300px */
+  max-width: 300px;
+}
+
+.cardView-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selectView-btn {
+  background-color: #005eff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.cardView-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.cardView-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.siteView-title {
+  margin: 0;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.siteView-status {
+  margin: 0;
+  font-size: 12px;
+  color: #888;
+}
+
+.cardView-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 10px 10px 0 0;
+}
+
+.menuView-btn-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.menuView-btn {
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+/* Tooltip styles */
+.menuView-tooltip {
+  visibility: hidden;
+  background-color: #fff;
+  color: #212529;
+  text-align: center;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 12px;
+  position: absolute;
+  top: -25px;
+  right: 0;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 20;
+}
+
+.menuView-btn-wrapper:hover .menuView-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Dropdown Menu Base Styles */
+.dropdownView-menu {
+  position: absolute;
+  top: 60px;
+  left: 160px;
+  width: 200px;
+  background: #ffffff;
+  color: #212529;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  display: none;
+  z-index: 21;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.dropdownView-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+}
+
+.dropdownView-menu li {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.dropdownView-menu li:hover {
+  background-color: #f0f0f0;
+}
+
+.dropdownView-menu .highlightView {
+  font-weight: bold;
+  color: #005eff;
+}
+
+.dropdownView-menu a {
+  color: #212529;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.dropdownView-menu li a i {
+  margin-right: 8px;
+  width: 18px; /* ensures icons align nicely */
+  text-align: center;
+}
+
+/* 🌙 Dark Theme Overrides */
+html[data-bs-theme="dark"] .siteView-card {
+  background: #2c2f33;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+html[data-bs-theme="dark"] .dropdownView-menu {
+  background: #3A444E;
+  color: #f8f9fa;
+  border-color: #444;
+}
+
+html[data-bs-theme="dark"] .dropdownView-menu li:hover {
+  background-color: #49525c;
+}
+
+html[data-bs-theme="dark"] .dropdownView-menu a {
+  color: #f8f9fa;
+}
+
+html[data-bs-theme="dark"] .menuView-tooltip {
+  background-color: #343a40;
+  color: #f8f9fa;
+}
+
+html[data-bs-theme="dark"] .siteView-status {
+  color: #ccc;
+}
+
+@media (max-width: 480px) {
+  .dropdownView-menu {
+    position: absolute;
+    top: 60px;
+    left: 110px;
+    width: 200px;
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    display: none;
+    z-index: 21;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    text-align: left;
+  }
+}
+
+/* mySites */
+
+.create-site-btn {
+  background-color: #007bff; /* Bright blue */
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 999px; /* Full rounded pill shape */
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: background-color 0.2s ease;
+  float: right; /* Aligns the button to the right */
+  margin-right: 20%; /* Adds some space above the button */
+}
+
+.create-site-btn:hover {
+  background-color: #0069d9;
+}
+
+.plus-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* startEditing screen css */
+
+.accordion-button {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.accordion-button:not(.collapsed) {
+  color: #0d6efd;
+  background-color: #e7f1ff;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .125);
+}
+
+.section-item {
+  background-color: #f8f9fa;
+  transition: background-color 0.3s;
+  cursor: pointer;
+}
+
+.section-item:hover {
+  background-color: #e2e6ea;
+}
+
+.section-item i {
+  font-size: 1.1rem;
+}
+
+/* for index css */
+/* Make the table theme aware */
+body[data-bs-theme="dark"] .theme-table {
+  background-color: #000000;
+  color: #f8f9fa;
+}
+body[data-bs-theme="dark"] .theme-table thead {
+  background-color: #000000;
+  color: #ffffff;
+}
+body[data-bs-theme="dark"] .theme-table tbody tr {
+  border-color: #000000;
+}
+
+body[data-bs-theme="light"] .theme-table {
+  background-color: #ffffff;
+  color: #212529;
+}
+body[data-bs-theme="light"] .theme-table thead {
+  background-color: #9faab3;
+  color: #000;
+}
+body[data-bs-theme="dark"] .card.shadow-lg {
+  box-shadow: 0 0 0 rgb(0, 0, 0) !important;
+  background-color: #1e1e1e;
+}
+
+/* body[data-bs-theme="dark"] .no-shadow-dark {
+  box-shadow: none !important;
+  border: 1px solid #000000; 
+  background-color: #000000; 
+} */
+
+/* body[data-bs-theme="dark"] .no-shadow-dark {
+  box-shadow: none !important;
+  border: 1px solid #343a40; 
+  background-color: #1e1e1e;
+} */
+body[data-bs-theme="dark"] .card.no-shadow-dark {
+  box-shadow: none !important;
+  border: 1px solid #3a3a3a;
+  background-color: #1e1e1e;
+}
+
+.toggle-scale {
+  transform: scale(1.5);
+  transform-origin: left;
+}
+
+.toggle-label {
+  font-size: 1.25rem; /* Same as fs-5 */
+  font-weight: 600;   /* Same as fw-semibold */
+  margin-left: 0.5rem; /* Same as ms-2 */
+}
+
+
+.toggle-big .form-check-input {
+  width: 4.2rem;
+  height: 1.8rem;
+  border-radius: 2rem;
+  background-color: #6c757d;
+  position: relative;
+  transition: background-color 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.toggle-big .form-check-input:checked {
+  background-color: #198754; /* Bootstrap success green */
+  
+}
+
+.toggle-big .form-check-input:focus {
+  box-shadow: none;
+}
+.custom-label {
+  font-size: 1.2rem;
+  font-weight: bold;
+  
+  margin-left: 1ch;
+}
+
+
+
+
+

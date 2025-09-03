@@ -1,0 +1,553 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}ग्रंथ सूची तयार करा{% endblock title %}
+
+{% block extra_css %}
+
+    <!-- Keeping only SweetAlert and essential layout styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font: Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='ग्रंथ सूची' sub_title='ग्रंथ सूची तयार करा' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Language Dropdown -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">
+                        भाषा / Language <span class="text-danger">*</span>
+                    </label>
+                    <select name="language_id" id="language_id" class="form-control" style="padding-top: 0%;" required>
+                        <option value="">Select Language</option>
+                        {% for lang in languages %}
+                            <option value="{{ lang.encrypted_id }}">{{ lang.language_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small id="language-note" class="form-text text-muted"></small>
+                    <input type="hidden" name="language_id_hidden" id="language_id_hidden">
+                </div>
+            </div>
+
+            <!-- Row 1: Title & Subtitle -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">पुस्तकाचे नाव / Title</label>
+                    {% comment %} <input type="text" name="title" id="title" class="form-control transliterate" placeholder="e.g. Data Structures" readonly> {% endcomment %}
+                    <input type="text" name="title" id="title" class="form-control transliterate" placeholder="Main author" readonly >
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">उपशिर्षक / Subtitle</label>
+                    <input type="text" name="subtitle" id="subtitle" class="form-control transliterate" placeholder="Optional subtitle" readonly>
+                </div>
+            </div>
+
+            <!-- Row 2: Author & Other Authors -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">मुख्य लेखक / Author</label>
+                    <input type="text" name="author" id="author" class="form-control transliterate" placeholder="Main author" readonly data-original="">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">सह-लेखक / Other Authors</label>
+                    <input type="text" name="other_authors" id="other_authors" class="form-control transliterate" placeholder="Co-authors/editors" readonly>
+                </div>
+            </div>
+
+            <!-- Row 3: Publisher & Year of Publication -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशक / Publisher</label>
+                    <input type="text" name="publisher" id="publisher" class="form-control transliterate" placeholder="Publisher name" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
+                    <input type="number" name="year_of_publication" class="form-control" placeholder="e.g. 2024" readonly>
+                </div>
+            </div>
+
+            <!-- Row 4: Edition & ISBN -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">आवृत्ती / Edition</label>
+                    <input type="text" name="edition" class="form-control transliterate" placeholder="Edition info" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">ISBN</label>
+                    <input type="text" name="isbn" class="form-control" placeholder="ISBN number" readonly>
+                </div>
+            </div>
+
+            <!-- Row 5: Subject & Call Number -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">विषय / Subject</label>
+                    <select name="subject_id" id="subject_id" class="form-control" style="padding-top: 0%;" required disabled>
+                        <option value="">Select Subject</option>
+                        {% for sub in subjects %}
+                            <option value="{{ sub.encrypted_id }}" data-code="{{ sub.subjectCode }}">
+                                {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                    <input type="text" name="place_of_publication" id="place_of_publication" class="form-control transliterate" placeholder="Place of publication" readonly>
+                </div>
+                {% comment %} <div class="col-md-6">
+                    <label class="form-label">कॉल नंबर / Call Number</label>
+                    <input type="text" name="call_number" class="form-control transliterate" placeholder="Call number" readonly>
+                </div> {% endcomment %}
+            </div>
+
+            <!-- Row 6: Classification Number & Cutter Number -->
+            {% comment %} <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">वर्गीकरण क्रमांक / Classification Number</label>
+                    <input type="text" name="classification_number" class="form-control transliterate" placeholder="Classification Number" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">कट्टर नंबर / Cutter Number</label>
+                    <input type="text" name="cutter_number" class="form-control transliterate" placeholder="First 3 letters of author name" readonly>
+                </div>
+            </div> {% endcomment %}
+
+            <!-- Row 7: Material Type & Page Nos -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">साहित्य प्रकार / Material Type</label>
+                    <select name="material_id" id="material_id" class="form-control" style="padding-top: 0%;" required disabled>
+                        <option value="">Select Material Type</option>
+                        {% for mat in materials %}
+                            <option value="{{ mat.encrypted_id }}" data-code="{{ mat.materialCode }}">
+                                {{ mat.materialNameEnglish }} - {{ mat.materialNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">पृष्ठे / Page Nos</label>
+                    <input type="text" name="page_nos" class="form-control" placeholder="Number of pages" readonly>
+                </div>
+            </div>
+
+            <!-- Row 8: Keywords -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">कीवर्ड्स / Keywords</label>
+                    <input type="text" name="keywords" class="form-control transliterate" placeholder="Search tags/keywords" readonly>
+                </div>
+                {% comment %} <div class="col-md-6">
+                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                    <input type="text" name="place_of_publication" id="place_of_publication" class="form-control transliterate" placeholder="Place of publication" readonly>
+                </div> {% endcomment %}
+
+            </div>
+
+            <!-- Row 9: Remarks -->
+            <div class="mb-3">
+                <label class="form-label">टीप / Remarks</label>
+                <textarea name="remarks" class="form-control transliterate" rows="3" placeholder="Notes, e.g. Donated by XYZ" readonly></textarea>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+                </button>
+                <a href="{% url 'book_catalog_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                </a>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- Keeping only SweetAlert and optional message popup -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message.tags|title }}",
+                    text: "{{ message|escapejs }}",
+                    icon: "{{ message.tags }}",
+                    confirmButtonText: "OK",
+                    background: theme === 'dark' ? '#343a40' : '#ffffff',
+                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+            {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+            let languageSelected = false;
+            let transliterateEnabled = false;
+
+            function containsDevanagari(text) {
+                return /[\u0900-\u097F]/.test(text);
+            }
+
+            // Transliteration functions
+            function translateAllWords($field) {
+                if (!transliterateEnabled) return;
+
+                let value = $field.val().trim();
+                if (!value) return;
+
+                let words = value.split(/\s+/);
+                let translatedWords = [];
+                let pending = words.length;
+
+                words.forEach((word, index) => {
+                    if (containsDevanagari(word) || word.trim() === "") {
+                        translatedWords[index] = word;
+                        pending--;
+                        if (pending === 0) $field.val(translatedWords.join(" "));
+                    } else {
+                        $.ajax({
+                            url: '{% url "translate_word" %}',
+                            type: 'GET',
+                            data: { q: word },
+                            headers: { 'X-CSRFToken': csrfToken },
+                            success: function (data) {
+                                translatedWords[index] = data.translated || word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            },
+                            error: function () {
+                                translatedWords[index] = word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            }
+                        });
+                    }
+                });
+            }
+
+            function translateLastWord($field) {
+                if (!transliterateEnabled) return;
+
+                let words = $field.val().trim().split(/\s+/);
+                let lastWord = words[words.length - 1];
+                if (!lastWord || containsDevanagari(lastWord)) return;
+
+                $.ajax({
+                    url: '{% url "translate_word" %}',
+                    type: 'GET',
+                    data: { q: lastWord },
+                    headers: { 'X-CSRFToken': csrfToken },
+                    success: function (data) {
+                        if (data.translated) {
+                            words[words.length - 1] = data.translated;
+                            $field.val(words.join(" "));
+                        }
+                    }
+                });
+            }
+
+            // Enable fields only after language selection
+            $('#language_id').on('change', function () {
+                if (languageSelected) return;
+
+                let selectedText = $(this).find('option:selected').text();
+                if (!selectedText) return;
+
+                languageSelected = true;
+
+                $('#language_id_hidden').val($(this).val()); // Copy selected value
+                $(this).prop('disabled', true);
+                $('#language-note').text('Language locked after selection. Refresh to change.');
+
+                // Unlock all except classification, cutter, call number
+                $('.transliterate, input, textarea').not('input[name="classification_number"], input[name="cutter_number"], input[name="call_number"]').prop('readonly', false);
+
+                $('#subject_id').prop('disabled', false);
+                $('#material_id').prop('disabled', false);
+
+                transliterateEnabled = selectedText.toLowerCase().includes('marathi');
+            });
+
+            // Transliteration events
+            $(document).on('input', '.transliterate', function () {
+                const $field = $(this);
+                // Save original Latin text for Call/Cutter number
+                $field.data('original', $field.val());
+                if ($field.val().slice(-1) === " ") translateLastWord($field);
+
+                updateAutoFields();
+            });
+
+            $(document).on('blur', '.transliterate', function () {
+                translateAllWords($(this));
+                updateAutoFields();
+            });
+
+            $(document).on('keydown', '.transliterate', function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    translateAllWords($(this));
+                    updateAutoFields();
+                }
+            });
+
+            // Simplified Marathi -> English transliteration
+            function transliterateToEnglish(text) {
+                const map = {
+                    'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u',
+                    'ए':'e','ऐ':'ai','ओ':'o','औ':'au',
+                    'क':'k','ख':'kh','ग':'g','घ':'gh','च':'ch','ज':'j',
+                    'ट':'t','ड':'d','त':'t','द':'d','न':'n','प':'p','ब':'b','म':'m',
+                    'य':'y','र':'r','ल':'l','व':'v','स':'s','श':'sh','ह':'h',' ':' '
+                };
+                return text.split('').map(c => map[c] || c).join('').toLowerCase();
+            }
+
+            // Store English transliteration without affecting visible input
+            $('#author').on('input', function(e) {
+                const langSelected = $('#language_id').val(); // assume this is your language dropdown
+                let typedValue = $(this).val();
+
+                // Transliterate only if Marathi is selected
+                let authorEnglish = typedValue;
+                if(langSelected && langSelected.toLowerCase().includes('marathi')) {
+                    authorEnglish = transliterateToEnglish(typedValue);
+                }
+
+                // Store English version for Cutter / Call Number
+                $(this).data('original', authorEnglish);
+
+                // Don't change visible input (it stays Marathi)
+                updateAutoFields();
+            });
+
+            function updateAutoFields() {
+                const selectedOption = $('#subject_id').find('option:selected')[0];
+                const subjectCode = selectedOption ? $(selectedOption).data('code') : '';
+
+                const authorOriginal = $('#author').data('original') || '';
+                const authorCode = authorOriginal ? authorOriginal.substring(0, 3) : '';
+
+                const year = $('input[name="year_of_publication"]').val().trim();
+
+                $('input[name="classification_number"]').val(subjectCode || '');
+                $('input[name="cutter_number"]').val(authorCode || '');
+
+                if(subjectCode && authorCode && year) {
+                    $('input[name="call_number"]').val(`${subjectCode}.${authorCode}.${year}`);
+                } else {
+                    $('input[name="call_number"]').val('');
+                }
+            }
+
+            $('#subject_id, input[name="year_of_publication"]').on('input change', function() {
+                updateAutoFields();
+            });
+
+            $('input[name="call_number"]').on('click', function() {
+                const selectedOption = $('#subject_id').find('option:selected')[0];
+                const subjectCode = selectedOption ? $(selectedOption).data('code') : '';
+                const authorOriginal = $('#author').data('original') || '';
+                const year = $('input[name="year_of_publication"]').val().trim();
+
+                let missingFields = [];
+                if(!subjectCode) missingFields.push('Subject');
+                if(!authorOriginal) missingFields.push('Author Name');
+                if(!year) missingFields.push('Year of Publication');
+
+                if(missingFields.length > 0){
+                    Swal.fire({
+                        icon:'warning',
+                        title:'Missing Information',
+                        text:`Please enter: ${missingFields.join(', ')}`,
+                    });
+                } else {
+                    const authorCode = authorOriginal.substring(0, 3);
+                    $(this).val(`${subjectCode}.${authorCode}.${year}`);
+                }
+            });
+
+            // Prevent Enter from submitting form inside author field
+            $('#author').on('keydown', function(e){
+                if(e.key === "Enter") e.preventDefault();
+            });
+
+
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default submit
+
+                // Collect required fields
+                const requiredFields = [
+                    {id: 'language_id', name: 'Language'},
+                    {id: 'author', name: 'Author'},
+                    {id: 'subtitle', name: 'Subtitle'},
+                    {id: 'publisher', name: 'Publisher'},
+                    {id: 'year_of_publication', name: 'Year of Publication'},
+                    {id: 'edition', name: 'Edition'},
+                    {id: 'isbn', name: 'ISBN'},
+                    {id: 'subject_id', name: 'Subject'},
+                    /*{id: 'call_number', name: 'Call Number'},
+                    {id: 'classification_number', name: 'Classification Number'},
+                    {id: 'cutter_number', name: 'Cutter Number'},*/
+                    {id: 'material_id', name: 'Material Type'},
+                    {id: 'page_nos', name: 'Page Nos'},
+                    {id: 'keywords', name: 'Keywords'},
+                    {id: 'place_of_publication', name: 'Place of Publication'},
+                    {id: 'remarks', name: 'Remarks'}
+                ];
+
+                let missingFields = [];
+
+                requiredFields.forEach(field => {
+                    const el = document.getElementById(field.id);
+                    if (!el) return; // Skip if element not found
+
+                    // For selects, check value
+                    if (el.tagName === 'SELECT' && !el.value) {
+                        missingFields.push(field.name);
+                    } 
+                    // For input/textarea, check value
+                    else if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && !el.value.trim()) {
+                        missingFields.push(field.name);
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    alert("Please fill in all required fields:\n" + missingFields.join(", "));
+                    return false;
+                }
+
+                // If everything is filled, submit form
+                form.submit();
+            });
+        });
+    </script>
+
+{% endblock %}

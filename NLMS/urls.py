@@ -50,6 +50,9 @@ urlpatterns = [
     path("landing", view=TemplateView.as_view(template_name="bootstrap/landing.html"), name="landing"),
     # path("", view=TemplateView.as_view(template_name="bootstrap/landing.html"), name="landing"),
 
+    # translate in marathi
+    path('translate/word/', translate_word, name='translate_word'),
+
 
     # Account
     path("", Login,name='Account'),
@@ -66,6 +69,12 @@ urlpatterns = [
 
     # Masters
     path('masters/', masters, name='masters'),
+    path('Test_sample/', Test_sample, name='Test_sample'),
+    path('LMS_Dashboard/', LMS_Dashboard, name='LMS_Dashboard'),
+    path('book_catalog_index/', book_catalog_index, name='book_catalog_index'),
+    path('book_catalog_create/', book_catalog_create, name='book_catalog_create'),
+    path('book_accession_index/', book_accession_index, name='book_accession_index'),
+    path('book_accession_create/', book_accession_create, name='book_accession_create'),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

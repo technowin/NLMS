@@ -1,0 +1,80 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %} 
+
+{% block title %}Menu{% endblock title %}
+
+{% block extra_css %}
+<!-- Third-party CSS -->
+<link href="{% static 'css/vendor/dataTables.bootstrap5.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'css/vendor/responsive.bootstrap5.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'css/vendor/buttons.bootstrap5.min.css' %}" rel="stylesheet" type="text/css" />
+
+<!-- SweetAlert & FontAwesome -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<!-- Custom CSS -->
+<link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='Test Page' sub_title='' %}
+{% endblock %}
+
+{% block content %}
+<div>
+    <h3>This is a test sample page.</h3>
+</div>
+{% endblock %}
+
+{% block extra_javascript %}
+    <!-- jQuery -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <!-- DataTables -->
+    <script src="{% static 'js/vendor/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/vendor/dataTables.bootstrap5.min.js' %}"></script>
+    <script src="{% static 'js/vendor/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'js/vendor/responsive.bootstrap5.min.js' %}"></script>
+    <script src="{% static 'js/vendor/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'js/vendor/buttons.bootstrap5.min.js' %}"></script>
+
+    <!-- Initialize DataTable -->
+    <script>
+    $(document).ready(function() {
+        $('#datatable').DataTable({
+            "pagingType": "full_numbers",
+            "drawCallback": function () {
+                $('.dataTables_paginate > .pagination').addClass('pagination-rounded');
+            }
+        });
+    });
+    </script>
+
+    <!-- Display Django messages via SweetAlert -->
+    {% if messages %}
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+            Swal.fire({
+                title: "{{ message.tags|title }}",
+                text: "{{ message|escapejs }}",
+                icon: "{{ message.tags }}",
+                confirmButtonText: "OK",
+                background: theme === 'dark' ? '#343a40' : '#ffffff',
+                color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                confirmButtonColor: '#0d6efd',
+                customClass: {
+                    popup: 'rounded-4 shadow',
+                    confirmButton: 'btn btn-primary px-4 py-2'
+                }
+            });
+            {% endfor %}
+        });
+        </script>
+    {% endif %}
+
+{% endblock %}

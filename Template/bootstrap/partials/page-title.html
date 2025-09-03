@@ -4,12 +4,25 @@
         <div class="page-title-box">
             <div class="page-title-right">
                 <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">NLMS</a></li>
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">{{ sub_title }}</a></li>
-                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                    {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">NLMS</a></li> {% endcomment %}
+                     <li class="breadcrumb-item">
+                        <a href="{% url 'LMS_Dashboard' %}">NLMS</a>
+                    </li>
+                    {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">{{ page_title }}</a></li> {% endcomment %}
+                    <li class="breadcrumb-item"><a href="javascript:history.back()">{{ page_title }}</a></li>
+                    {% if sub_title %}
+                        <li class="breadcrumb-item active">{{ sub_title }}</li>
+                    {% endif %}
                 </ol>
             </div>
-            <h4 class="page-title">{{ page_title }}</h4>
+            <h4 class="page-title">
+                {% if sub_title %}
+                    {{ sub_title }}
+                {% else %}
+                    {{ page_title }}
+                {% endif %}
+            </h4>
+
         </div>
     </div>
 </div>

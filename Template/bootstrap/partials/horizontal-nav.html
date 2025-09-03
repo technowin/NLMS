@@ -1,6 +1,96 @@
+
 {% load static i18n %}
 <!-- ========== Horizontal Menu Start ========== -->
 <div class="topnav">
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg">
+            <div class="collapse navbar-collapse" id="topnav-menu-content">
+                <ul class="navbar-nav">
+                    {% for item in menu_items %}
+                        {% if not item.is_parent %}
+                            <!-- Single level menu item -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ item.action }}">
+                                    {% if item.menu_icon %}
+                                        <i class="{{ item.menu_icon }}"></i>
+                                    {% endif %}
+                                    {{ item.name }}
+                                    {% if item.badge %}
+                                        <span class="badge bg-success">{{ item.badge }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% else %}
+                            <!-- Parent menu item with children -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle arrow-none" href="#" 
+                                   id="topnav-{{ item.id }}" role="button" 
+                                   data-bs-toggle="dropdown" aria-haspopup="true" 
+                                   aria-expanded="false">
+                                    {% if item.menu_icon %}
+                                        <i class="{{ item.menu_icon }}"></i>
+                                    {% endif %}
+                                    {{ item.name }} <div class="arrow-down"></div>
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="topnav-{{ item.id }}">
+                                    {% for child in item.children %}
+                                        {% if not child.is_sub_menu %}
+                                            <!-- Second level simple item -->
+                                            <a href="{{ child.action }}" class="dropdown-item">
+                                                {{ child.name }}
+                                            </a>
+                                        {% else %}
+                                            <!-- Second level with submenu -->
+                                            <div class="dropdown">
+                                                <a class="dropdown-item dropdown-toggle arrow-none" 
+                                                   href="#" id="topnav-{{ child.id }}" 
+                                                   role="button" data-bs-toggle="dropdown" 
+                                                   aria-haspopup="true" aria-expanded="false">
+                                                    {{ child.name }} <div class="arrow-down"></div>
+                                                </a>
+                                                <div class="dropdown-menu" aria-labelledby="topnav-{{ child.id }}">
+                                                    {% for sub_child in child.children %}
+                                                        {% if not sub_child.is_sub_menu2 %}
+                                                            <!-- Third level simple item -->
+                                                            <a href="{{ sub_child.action }}" class="dropdown-item">
+                                                                {{ sub_child.name }}
+                                                            </a>
+                                                        {% else %}
+                                                            <!-- Third level with submenu -->
+                                                            <div class="dropdown">
+                                                                <a class="dropdown-item dropdown-toggle arrow-none" 
+                                                                   href="#" id="topnav-{{ sub_child.id }}" 
+                                                                   role="button" data-bs-toggle="dropdown" 
+                                                                   aria-haspopup="true" aria-expanded="false">
+                                                                    {{ sub_child.name }} <div class="arrow-down"></div>
+                                                                </a>
+                                                                <div class="dropdown-menu" aria-labelledby="topnav-{{ sub_child.id }}">
+                                                                    {% for sub_sub_child in sub_child.children %}
+                                                                        <a href="{{ sub_sub_child.action }}" class="dropdown-item">
+                                                                            {{ sub_sub_child.name }}
+                                                                        </a>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </nav>
+    </div>
+</div>
+<!-- ========== Horizontal Menu End ========== -->
+ 
+<!-- ========== Horizontal Menu Start ========== -->
+{% comment %} <div class="topnav">
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg">
             <div class="collapse navbar-collapse" id="topnav-menu-content">
@@ -263,5 +353,5 @@
             </div>
         </nav>
     </div>
-</div>
+</div> {% endcomment %}
 <!-- ========== Horizontal Menu End ========== -->

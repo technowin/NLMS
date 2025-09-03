@@ -1,0 +1,207 @@
+/* section2_form.css */
+
+/* Wrapper Styles */
+.est-info-wrapper {
+    padding: 3rem;
+    border-radius: 1rem;
+    background-color: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    font-family: 'Merriweather', serif;
+    margin-bottom: 5%;
+   
+}
+
+/* Header */
+.est-info-wrapper h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--bs-body-color);
+    /* color: #2c3e50; */
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* Labels */
+.est-info-wrapper .form-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    display: inline-block;
+    letter-spacing: 1px;
+}
+
+/* Inputs & Textareas */
+.est-info-wrapper .form-control {
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+    background-color: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+    transition: all 0.3s ease;
+}
+
+.est-info-wrapper .form-control:focus {
+    border-color: #0d6efd;
+    /* background-color: #f1f9ff; */
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+    outline: none;
+}
+
+/* Submit Button */
+.est-info-wrapper .btn-submit {
+    padding: 0.75rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.65rem;
+    background-color: #5865f2;
+    border: none;
+    color: white;
+    transition: 0.3s ease;
+}
+
+.est-info-wrapper .btn-submit:hover {
+    background-color: #4752d6;
+    transform: translateY(-1px);
+}
+
+/* Deliverables Table */
+#deliverablesTable th,
+#deliverablesTable td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+#deliverablesTable input,
+#deliverablesTable textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.4rem;
+    border: 1px solid #ced4da;
+    background-color: var(--bs-body-bg, #fff);
+}
+
+#deliverablesTable .btn-danger {
+    font-size: 1rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.4rem;
+}
+
+/* Add Row Button (styled to match est-info-wrapper aesthetics) */
+.btn-add-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0d6efd;
+    background-color: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    letter-spacing: 0.3px;
+}
+
+.btn-add-row:hover {
+    background-color: #d0e7ff;
+    border-color: #91c3fd;
+    color: #084298;
+    transform: translateY(-1px);
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .est-info-wrapper {
+        padding: 1.8rem;
+    }
+
+    .est-info-wrapper h2 {
+        font-size: 1.6rem;
+    }
+
+    .btn-submit, #addRow {
+        width: 100%;
+    }
+}
+
+.est-info-wrapper {
+    padding: 3rem;
+    border-radius: 1rem;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    font-family: 'Merriweather', serif;
+    margin-bottom: 5%;
+}
+
+/* Submit Button */
+.est-info-wrapper .btn-submit {
+    padding: 0.75rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.65rem;
+    background-color: #5865f2;
+    border: none;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    color: white;
+    letter-spacing: 0.3px;
+}
+
+.est-info-wrapper .btn-submit:hover {
+    background-color: #4752d6;
+    transform: translateY(-1px);
+    color: white;
+}
+
+.breadcrumb {
+    background-color: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    float: right;
+}
+
+.breadcrumb a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.btn-go-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    border: 2px solid #ced4da;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.btn-go-back:hover {
+    background-color: #495057;
+    color: #fff;
+    border-color: #495057;
+    transform: translateY(-1px);
+}
+
+a {
+    text-decoration: none !important;
+}
