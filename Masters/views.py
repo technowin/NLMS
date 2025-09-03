@@ -411,7 +411,7 @@ def book_accession_index(request):
                 'catalogue',  # 👈 pulls in BookCatalog
                 'supplier', 'currency', 'funding_source',
                 'condition_at_entry', 'location', 'status'
-            ).all()
+            ).all().order_by("-accession_id")
             
             for a in accessions:
                 a.encrypted_id = enc(str(a.accession_id))
