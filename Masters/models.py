@@ -216,7 +216,7 @@ class SubjectTypeMaster(models.Model):
     updated_by = models.TextField(blank=True, null=True)
     
     class Meta:
-        db_table = 'tbl_subjectTypeMaster'
+        db_table = 'tbl_subjecttypemaster'
         
     def __str__(self):
         return self.subjectNameMarathi or self.subjectNameEnglish or f"Subject {self.id}"
@@ -250,7 +250,7 @@ class BookCatalog(models.Model):
     updated_by = models.TextField(null=True, blank=True)
     
     class Meta:
-        db_table = 'tbl_bookCatalog'
+        db_table = 'tbl_bookcatalog'
         
     def __str__(self):
         return f"{self.cat_ref_num} - {self.title or 'Untitled'}"
@@ -278,7 +278,7 @@ class TestBookCatalog(models.Model):
     updated_by = models.TextField(null=True, blank=True)
     
     class Meta:
-        db_table = 'tbl_TestbookCatalog'
+        db_table = 'tbl_Testbookcatalog'
         
     def __str__(self):
         return f"{self.cat_ref_num} - {self.title or 'Untitled'}"
@@ -294,7 +294,7 @@ class LanguageMaster(models.Model):
     updated_by = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = 'tbl_languageMaster'
+        db_table = 'tbl_languagemaster'
         
 class MaterialTypeMaster(models.Model):
     id = models.AutoField(primary_key=True)
@@ -308,7 +308,7 @@ class MaterialTypeMaster(models.Model):
     updated_by = models.TextField(blank=True, null=True)
 
     class Meta:
-        db_table = 'tbl_MaterialTypeMaster'
+        db_table = 'tbl_materialtypemaster'
         
     def __str__(self):
         return self.materialNameMarathi or self.materialNameEnglish or f"Material {self.id}"
@@ -367,7 +367,7 @@ class SupplierMaster(models.Model):
     updated_by = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = "tbl_supplierMaster"
+        db_table = "tbl_suppliermaster"
         
 class FundingSourceMaster(models.Model):
     source_id = models.AutoField(primary_key=True)
@@ -380,7 +380,7 @@ class FundingSourceMaster(models.Model):
     updated_by = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = "tbl_fundingSourceMaster"
+        db_table = "tbl_fundingsourcemaster"
         
 class ConditionAtEntryMaster(models.Model):
     condition_id = models.AutoField(primary_key=True)
@@ -393,7 +393,7 @@ class ConditionAtEntryMaster(models.Model):
     updated_by = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = "tbl_conditionAtEntryMaster"
+        db_table = "tbl_conditionatentrymaster"
         
 class CurrencyMaster(models.Model):
     currency_id = models.AutoField(primary_key=True)
@@ -406,7 +406,7 @@ class CurrencyMaster(models.Model):
     updated_by = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = "tbl_currencyMaster"
+        db_table = "tbl_currencymaster"
        
 class ResourceLocationMaster(models.Model):
     location_id = models.AutoField(primary_key=True)
@@ -419,5 +419,5 @@ class ResourceLocationMaster(models.Model):
     updated_by = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = "tbl_resourceLocationMaster"
+        db_table = "tbl_resourcelocationmaster"
         
