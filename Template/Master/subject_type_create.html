@@ -1,0 +1,305 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Workflow{% endblock title %}
+
+{% block extra_css %}
+
+    <!-- Keeping only SweetAlert and essential layout styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font: Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='विषय प्रकार मास्टर' sub_title='विषय प्रकार तयार करा' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+      <!-- Row 1: Subject Code & Subject Name English -->
+<div class="mb-3 row">
+    <div class="col-md-6">
+        <label class="form-label">विषय कोड / Subject Code</label>
+        <input type="text" name="subjectCode" id="subjectCode" 
+               class="form-control" placeholder="Subject Code" required maxlength="3">
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label">विषयाचे नाव (इंग्रजी) / Subject Name English</label>
+        <input type="text" name="subjectNameEnglish" id="subjectNameEnglish" 
+               class="form-control" placeholder="Subject Name English" required>
+    </div>
+</div>
+
+<!-- Row 2: Subject Name Marathi & Description -->
+<div class="mb-3 row">
+    <div class="col-md-6">
+        <label class="form-label">विषयाचे नाव (मराठी) / Subject Name Marathi</label>
+        <input type="text" name="subjectNameMarathi" id="subjectNameMarathi" 
+               class="form-control transliterate" placeholder="Subject Name Marathi" required>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label">वर्णन / Description</label>
+        <textarea name="subjectDescription" id="subjectDescription" 
+                  class="form-control" rows="1" 
+                  placeholder="Enter Subject Description" required></textarea>
+    </div>
+</div>
+
+
+
+
+                <!-- BUTTONS -->
+                <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+                    </button>
+                    <a href="{% url 'subject_type_master_index' %}" class="btn-go-back">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                    </a>
+                </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- Keeping only SweetAlert and optional message popup -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message.tags|title }}",
+                    text: "{{ message|escapejs }}",
+                    icon: "{{ message.tags }}",
+                    confirmButtonText: "OK",
+                    background: theme === 'dark' ? '#343a40' : '#ffffff',
+                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+            {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+
+            function containsDevanagari(text) {
+                return /[\u0900-\u097F]/.test(text);
+            }
+
+            function translateWord(word, callback) {
+                if (!word || containsDevanagari(word)) {
+                    callback(word);
+                    return;
+                }
+                $.ajax({
+                    url: '{% url "translate_word" %}',
+                    type: 'GET',
+                    data: { q: word },
+                    success: function(data) {
+                        callback(data.translated || word);
+                    },
+                    error: function() {
+                        callback(word);
+                    }
+                });
+            }
+
+            function translateLastWord($field) {
+                let value = $field.val();
+                // split words, ignoring empty strings
+                let words = value.split(/\s+/).filter(w => w.length > 0);
+                if (!words.length) return;
+
+                let lastWordIndex = words.length - 1;
+                let lastWord = words[lastWordIndex];
+
+                translateWord(lastWord, function(translated) {
+                    words[lastWordIndex] = translated;
+                    $field.val(words.join(" ") + " "); // add space for next word
+                });
+            }
+
+            // Convert last word on space press
+            $(document).on('input', '.transliterate', function() {
+                let $field = $(this);
+                let value = $field.val();
+                if (value.endsWith(" ")) { // detect space robustly
+                    translateLastWord($field);
+                }
+            });
+
+            // Convert all words on blur or Enter
+            $(document).on('blur', '.transliterate', function () {
+                let $field = $(this);
+                let words = $field.val().trim().split(/\s+/);
+                if (!words.length) return;
+
+                let translatedWords = [];
+                let pending = words.length;
+
+                words.forEach((word, i) => {
+                    translateWord(word, function(translated) {
+                        translatedWords[i] = translated;
+                        pending--;
+                        if (pending === 0) {
+                            $field.val(translatedWords.join(" "));
+                        }
+                    });
+                });
+            });
+
+            $(document).on('keydown', '.transliterate', function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    $(this).blur(); // triggers blur logic
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const materialCodeInput = document.getElementById("materialCode");
+
+    materialCodeInput.addEventListener("input", function () {
+        let words = this.value.trim().split(/\s+/);
+        if (words.length > 3) {
+            this.value = words.slice(0, 3).join(" "); // keep only first 3 words
+        }
+    });
+});
+</script>
+
+
+{% comment %} <script src="https://www.google.com/jsapi"></script>
+<script>
+   document.getElementById("materialNameMarathi").addEventListener("blur", function() {
+    let input = this.value;
+    if(input.trim() !== ""){
+        fetch(`/transliterate/?text=${encodeURIComponent(input)}`)
+        .then(res => res.json())
+        .then(data => {
+            this.value = data.marathi; // Replace with Marathi text
+        });
+    }
+});
+</script> {% endcomment %}
+
+  
+{% endblock %}

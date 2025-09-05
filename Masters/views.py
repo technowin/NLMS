@@ -576,3 +576,706 @@ def transliterate_to_english(text):
     except Exception as e:
         print(f"Error in transliterate_to_english: {e}")
         return text or ""
+
+
+@login_required
+def material_type_master_index(request):
+    try:
+        user = request.user.id
+        role_id = request.user.role_id
+
+        if request.method == "GET":
+            materials = MaterialTypeMaster.objects.all()
+            for mat in materials:
+                mat.encrypted_id = enc(str(mat.id))   # 🔹 add encrypted ID
+
+            return render(request, "Master/material_type_master_index.html", {
+                "materials": materials
+            })
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log",[fun,str(e),user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        
+    
+@login_required
+def updatestatus(request):
+    if request.method == "POST":
+        import json
+        try:
+            data = json.loads(request.body)  # Expecting JSON
+            enc_id = data.get("id")  # 🔹 Encrypted ID
+            status = data.get("status")
+
+            # 🔹 Decrypt ID
+            mat_id = int(dec(enc_id))
+
+            # 🔹 Fetch and update material
+            material = MaterialTypeMaster.objects.get(id=mat_id)
+            material.is_active = bool(int(status))  # ensure 0/1 → True/False
+            material.save()
+
+            return JsonResponse({"success": True, "status": int(material.is_active)})
+
+        except MaterialTypeMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Material not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+        
+
+@login_required
+def material_type_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            material_code = request.POST.get("materialCode", "").strip()
+            name_eng = request.POST.get("materialNameEnglish", "").strip()
+            name_mar = request.POST.get("materialNameMarathi", "").strip()
+            is_active = request.POST.get("is_active", 1)  # Default active
+
+            # 🔹 Duplicate check (case-insensitive & trimmed)
+            if MaterialTypeMaster.objects.filter(materialCode__iexact=material_code).exists():
+                messages.error(request, f"Material code '{material_code}' already exists!")
+                return redirect("material_type_create")
+
+            # 🔹 Create new record
+            MaterialTypeMaster.objects.create(
+                materialCode=material_code,
+                materialNameEnglish=name_eng,
+                materialNameMarathi=name_mar,
+                is_active=bool(int(is_active)),  # make sure it's 0/1 → True/False
+                created_by=user,
+                created_at=timezone.now(),
+            )
+
+            messages.success(request, "Material type created successfully!")
+            return redirect("material_type_master_index")
+
+        # 🔹 GET method – load existing materials
+        materials = MaterialTypeMaster.objects.filter(is_active=True)
+        for mat in materials:
+            mat.encrypted_id = enc(str(mat.id))
+
+        context = {
+            "materials": materials,
+        }
+        return render(request, "Master/material_type_create.html", context)
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("material_type_create")
+
+@login_required
+def materialtype_list(request):
+    materials = MaterialTypeMaster.objects.all()
+    for mat in materials:
+        mat.encrypted_id = enc(str(mat.id))   # add encrypted_id attribute
+        print(f"Mat ID: {mat.id}, Encrypted: {mat.encrypted_id}")  # debug
+    return render(request, "Master/materialtype_list.html", {"materials": materials})
+
+
+
+@login_required
+def materialtype_view(request):
+    try:
+        if request.method == "POST":
+            # 🔹 ID comes from hidden field in POST
+            enc_id = request.POST.get("id")
+            mat_id = int(dec(enc_id))  # decrypt
+            material = MaterialTypeMaster.objects.get(id=mat_id)
+
+        else:  # GET request
+            # 🔹 ID comes from URL query param
+            enc_id = request.GET.get("id")
+            mat_id = int(dec(enc_id))  # decrypt
+            material = MaterialTypeMaster.objects.get(id=mat_id)
+
+        # always regenerate encrypted_id for reuse in template
+        material.encrypted_id = enc(str(material.id))
+
+        return render(
+            request,
+            "Master/materialtype_view.html",
+            {"material": material}
+        )
+
+    except MaterialTypeMaster.DoesNotExist:
+        messages.error(request, "Material not found!")
+        return redirect("material_type_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("material_type_master_index")
+
+
+
+@login_required
+def materialtype_edit(request):
+    try:
+        if request.method == "POST":
+            # 🔹 Get encrypted id from hidden field
+            enc_id = request.POST.get("id")
+            if not enc_id:
+                messages.error(request, "Missing ID in form!")
+                return redirect("material_type_master_index")
+
+            mat_id = int(dec(enc_id))  # decrypt
+            material = MaterialTypeMaster.objects.get(id=mat_id)
+
+            # 🔹 Update fields
+            material.materialNameEnglish = request.POST.get("materialNameEnglish")
+            material.materialNameMarathi = request.POST.get("materialNameMarathi")
+            material.save()
+
+            messages.success(request, "Material updated successfully!")
+            return redirect("material_type_master_index")
+
+        else:  # 🔹 GET request
+            enc_id = request.GET.get("id")
+            if not enc_id:
+                messages.error(request, "Missing ID in URL!")
+                return redirect("material_type_master_index")
+
+            mat_id = int(dec(enc_id))  # decrypt
+            material = MaterialTypeMaster.objects.get(id=mat_id)
+
+            # Re-attach encrypted id so template can send it back in hidden field
+            material.encrypted_id = enc(str(material.id))
+
+            return render(request, "Master/materialtype_edit.html", {"material": material})
+
+    except MaterialTypeMaster.DoesNotExist:
+        messages.error(request, "Material not found!")
+        return redirect("material_type_master_index")
+    except Exception as e:
+        print("❌ Edit Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("material_type_master_index")
+
+
+@login_required
+def materialtype_delete(request):
+    if request.method == "POST":
+        try:
+            enc_id = request.POST.get("id")   # Encrypted ID from form
+            if not enc_id:
+                return JsonResponse({"success": False, "error": "Missing ID"})
+            
+            mat_id = int(dec(enc_id))         # 🔹 Decrypt back to integer
+            material = MaterialTypeMaster.objects.get(id=mat_id)
+            material.delete()
+            
+            return JsonResponse({"success": True})
+        except MaterialTypeMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Material not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+
+
+@login_required
+def subject_type_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            subjects = SubjectTypeMaster.objects.all()
+
+            # 🔹 Encrypt the ID for each subject
+            for sub in subjects:
+                sub.encrypted_id = enc(str(sub.id))
+
+            return render(
+                request,
+                'Master/subject_type_master_index.html',
+                {"subjects": subjects}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+
+
+@login_required
+def subject_type_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            subject_code = request.POST.get('subjectCode')
+            name_eng = request.POST.get('subjectNameEnglish')
+            name_mar = request.POST.get('subjectNameMarathi')
+            description = request.POST.get('subjectDescription')
+            is_active = request.POST.get('is_active', 1)  # Default active
+
+            # ✅ Check for duplicate subject code
+            if SubjectTypeMaster.objects.filter(subjectCode=subject_code).exists():
+                messages.error(request, f"Subject code '{subject_code}' already exists!")
+                return redirect('subject_type_create')
+
+            # ✅ Check for duplicate subject name (English)
+            if SubjectTypeMaster.objects.filter(subjectNameEnglish=name_eng).exists():
+                messages.error(request, f"Subject '{name_eng}' already exists!")
+                return redirect('subject_type_create')
+
+            # ✅ Create new subject type with created_by and created_at
+            SubjectTypeMaster.objects.create(
+                subjectCode=subject_code,
+                subjectNameEnglish=name_eng,
+                subjectNameMarathi=name_mar,
+                subjectDescription=description,
+                is_active=1,
+                created_by=user,
+                created_at=timezone.now()
+            )
+            messages.success(request, "Subject type created successfully!")
+            return redirect('subject_type_master_index')
+
+        # GET method – show existing subjects
+        subjects = SubjectTypeMaster.objects.filter(is_active=True)
+        for sub in subjects:
+            sub.encrypted_id = enc(str(sub.id))
+
+        context = {
+            'subjects': subjects,
+        }
+        return render(request, 'Master/subject_type_create.html', context)
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect('subject_type_create')
+    
+    
+@login_required
+def subject_type_view(request):
+    try:
+        enc_id = request.GET.get("id")  # fetch encrypted id from URL
+        if not enc_id:
+            messages.error(request, "Missing ID!")
+            return redirect("subject_type_master_index")
+
+        # 🔹 Decrypt the ID
+        sub_id = int(dec(enc_id))
+
+        # 🔹 Fetch subject
+        subject = SubjectTypeMaster.objects.get(id=sub_id)
+
+        # 🔹 Add encrypted_id back (if you need for buttons in template)
+        subject.encrypted_id = enc(str(subject.id))
+
+        context = {
+            "subject": subject
+        }
+        return render(request, "Master/subject_type_view.html", context)
+
+    except SubjectTypeMaster.DoesNotExist:
+        messages.error(request, "Subject not found!")
+        return redirect("subject_type_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("subject_type_master_index")
+
+
+
+
+@login_required
+def subject_edit(request):
+    subject = None
+
+    if request.method == "POST":
+        try:
+            # 🔹 Decrypt ID from hidden field (if provided)
+            enc_id = request.POST.get("id")
+            if enc_id:
+                sub_id = int(dec(enc_id))  # decrypt
+                subject = SubjectTypeMaster.objects.get(id=sub_id)
+
+            user_id = request.user.id
+
+            # Get form data safely
+            subject_code = request.POST.get("subjectCode", "").strip()
+            name_eng = request.POST.get("subjectNameEnglish", "").strip()
+            name_mar = request.POST.get("subjectNameMarathi", "").strip()
+            is_active = request.POST.get("is_active", "1")  # default active
+
+            # Validate required fields
+            if not subject_code or not name_eng or not name_mar:
+                messages.error(request, "All fields are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check
+            duplicate = SubjectTypeMaster.objects.filter(subjectCode__iexact=subject_code)
+            if subject:
+                duplicate = duplicate.exclude(id=subject.id)
+            if duplicate.exists():
+                messages.error(request, f"Subject code '{subject_code}' already exists!")
+                return redirect("subject_type_master_index")
+
+            # 🔹 Update or Create
+            if subject:  # update
+                subject.subjectCode = subject_code
+                subject.subjectNameEnglish = name_eng
+                subject.subjectNameMarathi = name_mar
+                subject.is_active = bool(int(is_active))
+                subject.updated_by = user_id
+                subject.updated_at = timezone.now()
+                subject.save()
+                messages.success(request, "Subject updated successfully!")
+            else:  # create new
+                SubjectTypeMaster.objects.create(
+                    subjectCode=subject_code,
+                    subjectNameEnglish=name_eng,
+                    subjectNameMarathi=name_mar,
+                    is_active=bool(int(is_active)),
+                    created_by=user_id,
+                    created_at=timezone.now()
+                )
+                messages.success(request, "Subject created successfully!")
+
+            return redirect("subject_type_master_index")
+
+        except SubjectTypeMaster.DoesNotExist:
+            messages.error(request, "Subject not found!")
+            return redirect("subject_type_master_index")
+        except Exception as e:
+            print("❌ Edit Error:", e)
+            messages.error(request, "Invalid or corrupted ID!")
+            return redirect("subject_type_master_index")
+
+    else:  # GET request
+        try:
+            enc_id = request.GET.get("id")
+            if enc_id:
+                sub_id = int(dec(enc_id))  # 🔹 decrypt here
+                subject = SubjectTypeMaster.objects.get(id=sub_id)
+                # add encrypted_id for hidden field
+                subject.encrypted_id = enc(str(subject.id))
+
+        except Exception as e:
+            print("❌ GET Edit Error:", e)
+            messages.error(request, "Invalid or corrupted ID!")
+            return redirect("subject_type_master_index")
+
+        return render(request, "Master/subject_edit.html", {"subject": subject})
+
+
+
+@login_required
+def subject_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON from request
+            enc_id = data.get("id")  # encrypted id
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Subject ID is missing"})
+
+        try:
+            # 🔹 Decrypt the ID
+            sub_id = int(dec(enc_id))
+
+            # 🔹 Fetch and delete
+            subject = SubjectTypeMaster.objects.get(id=sub_id)
+            subject.delete()
+            return JsonResponse({"success": True})
+
+        except SubjectTypeMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Subject not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+def update_subject_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # Expecting JSON
+            sub_id = data.get("id")
+            status = data.get("status")
+
+            subject = SubjectTypeMaster.objects.get(id=sub_id)
+            subject.is_active = bool(status)
+            subject.save()
+            return JsonResponse({"success": True, "status": int(subject.is_active)})
+        except SubjectTypeMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Subject not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def language_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            languages = LanguageMaster.objects.all()
+
+            # 🔹 Encrypt the ID for each language
+            for lang in languages:
+                lang.encrypted_id = enc(str(lang.id))
+
+            return render(
+                request,
+                'Master/language_master_index.html',
+                {"languages": languages}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+
+
+@login_required
+def update_language_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # Expecting JSON
+            encrypted_id = data.get("id")    # Encrypted ID from frontend
+            is_active = data.get("is_active")  # Status sent from frontend
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # Decrypt the ID
+            lang_id = dec(encrypted_id)
+
+            language = LanguageMaster.objects.get(id=lang_id)
+            language.is_active = bool(is_active)
+            language.save()
+
+            return JsonResponse({"success": True, "status": int(language.is_active)})
+
+        except LanguageMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Language not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def language_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            language_code = request.POST.get('languageCode')
+            name_eng = request.POST.get('languageNameEnglish')
+            is_active = request.POST.get('is_active', 1)  # Default active
+
+            # ✅ Check for duplicate language code
+            if LanguageMaster.objects.filter(language_code=language_code).exists():
+                messages.error(request, f"Language code '{language_code}' already exists!")
+                return redirect('language_create')
+
+            # ✅ Check for duplicate language name (English)
+            if LanguageMaster.objects.filter(language_name=name_eng).exists():
+                messages.error(request, f"Language '{name_eng}' already exists!")
+                return redirect('language_create')
+
+            # ✅ Create new language with created_by and created_at
+            LanguageMaster.objects.create(
+                language_code=language_code,
+                language_name=name_eng,
+                is_active=1,
+                created_by=user,
+                created_at=timezone.now()
+            )
+            messages.success(request, "Language created successfully!")
+            return redirect('language_master_index')
+
+        # GET method – show existing languages
+        languages = LanguageMaster.objects.filter(is_active=True)
+        for lang in languages:
+            lang.encrypted_id = enc(str(lang.id))
+
+        context = {
+            'languages': languages,
+        }
+        return render(request, 'Master/language_create.html', context)
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect('language_create')
+
+@login_required
+def language_edit(request):
+    language = None
+
+    if request.method == "POST":
+        try:
+            # 🔹 Decrypt ID from hidden field
+            enc_id = request.POST.get("id")
+            if enc_id:
+                lang_id = int(dec(enc_id))  # decrypt
+                language = LanguageMaster.objects.get(id=lang_id)
+
+            user_id = request.user.id
+
+            # Get form data safely
+            language_code = request.POST.get("languageCode", "").strip()
+            name_eng = request.POST.get("languageNameEnglish", "").strip()
+            is_active = request.POST.get("is_active", "1")  # default active
+
+            # Validate required fields
+            if not language_code or not name_eng:
+                messages.error(request, "All fields are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check for language_code
+            duplicate = LanguageMaster.objects.filter(language_code__iexact=language_code)
+            if language:
+                duplicate = duplicate.exclude(id=language.id)
+            if duplicate.exists():
+                messages.error(request, f"Language code '{language_code}' already exists!")
+                return redirect("language_master_index")
+
+            # 🔹 Duplicate check for language_name
+            duplicate_name = LanguageMaster.objects.filter(language_name__iexact=name_eng)
+            if language:
+                duplicate_name = duplicate_name.exclude(id=language.id)
+            if duplicate_name.exists():
+                messages.error(request, f"Language '{name_eng}' already exists!")
+                return redirect("language_master_index")
+
+            # 🔹 Update or Create
+            if language:  # update
+                language.language_code = language_code
+                language.language_name = name_eng
+                language.is_active = bool(int(is_active))
+                language.updated_by = user_id
+                language.updated_at = timezone.now()
+                language.save()
+                messages.success(request, "Language updated successfully!")
+            else:  # create new
+                LanguageMaster.objects.create(
+                    language_code=language_code,
+                    language_name=name_eng,
+                    is_active=bool(int(is_active)),
+                    created_by=user_id,
+                    created_at=timezone.now()
+                )
+                messages.success(request, "Language created successfully!")
+
+            return redirect("language_master_index")
+
+        except LanguageMaster.DoesNotExist:
+            messages.error(request, "Language not found!")
+            return redirect("language_master_index")
+        except Exception as e:
+            print("❌ Edit Error:", e)
+            messages.error(request, "Invalid or corrupted ID!")
+            return redirect("language_master_index")
+
+    else:  # GET request
+        try:
+            enc_id = request.GET.get("id")
+            if enc_id:
+                lang_id = int(dec(enc_id))  # 🔹 decrypt
+                language = LanguageMaster.objects.get(id=lang_id)
+                # add encrypted_id for hidden field
+                language.encrypted_id = enc(str(language.id))
+
+        except Exception as e:
+            print("❌ GET Edit Error:", e)
+            messages.error(request, "Invalid or corrupted ID!")
+            return redirect("language_master_index")
+
+        return render(request, "Master/language_edit.html", {"language": language})
+
+@login_required
+def language_view(request):
+    try:
+        enc_id = request.GET.get("id")  # fetch encrypted id from URL
+        if not enc_id:
+            messages.error(request, "Missing ID!")
+            return redirect("language_master_index")
+
+        # 🔹 Decrypt the ID
+        lang_id = int(dec(enc_id))
+
+        # 🔹 Fetch language
+        language = LanguageMaster.objects.get(id=lang_id)
+
+        # 🔹 Add encrypted_id back (for buttons in template)
+        language.encrypted_id = enc(str(language.id))
+
+        context = {
+            "language": language
+        }
+        return render(request, "Master/language_view.html", context)
+
+    except LanguageMaster.DoesNotExist:
+        messages.error(request, "Language not found!")
+        return redirect("language_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("language_master_index")
+
+
+@login_required
+def language_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON from request
+            enc_id = data.get("id")  # encrypted id
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Language ID is missing"})
+
+        try:
+            # 🔹 Decrypt the ID
+            lang_id = int(dec(enc_id))
+
+            # 🔹 Fetch and delete
+            language = LanguageMaster.objects.get(id=lang_id)
+            language.delete()
+            return JsonResponse({"success": True})
+
+        except LanguageMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Language not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
