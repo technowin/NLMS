@@ -105,7 +105,9 @@
  <!-- Table -->
 <div class="card shadow-sm">
     <div class="card-body">
-        <table class="table table-bordered table-striped table-hover align-middle mb-0">
+        <table id="materialTable" 
+       class="table table-bordered table-striped table-hover align-middle mb-0">
+
             <thead class="table-dark text-center">
                 <tr>
                     <th>Code</th>
@@ -340,69 +342,24 @@
     });
 </script>
 
-    {% comment %} <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll(".toggle-status").forEach(function (btn) {
-                btn.addEventListener("click", function (e) {
-                    e.preventDefault();
-
-                    let button = this;
-                    let materialId = button.getAttribute("data-id");
-                    let currentStatus = button.getAttribute("data-status");
-                    let newStatus = currentStatus === "1" ? 0 : 1;
-
-                    // Confirm before action
-                    if (!confirm("Are you sure you want to change the status?")) {
-                        return; // Cancel → stop
-                    }
-
-                    // AJAX request (status passed in URL)
-                    fetch(`/update_status/${materialId}/${newStatus}/`, {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": getCookie("csrftoken"),
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Update button without reload
-                            if (data.status === 1) {
-                                button.textContent = "Active";
-                                button.classList.remove("btn-danger");
-                                button.classList.add("btn-success");
-                                button.setAttribute("data-status", "1");
-                            } else {
-                                button.textContent = "Inactive";
-                                button.classList.remove("btn-success");
-                                button.classList.add("btn-danger");
-                                button.setAttribute("data-status", "0");
-                            }
-                        } else {
-                            alert("Failed to update status: " + (data.error || "Unknown error"));
-                        }
-                    })
-                    .catch(error => console.error("Error:", error));
-                });
-            });
-
-            // Helper function to get CSRF token
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== "") {
-                    let cookies = document.cookie.split(";");
-                    for (let i = 0; i < cookies.length; i++) {
-                        let cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + "=")) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
-        });
-    </script> {% endcomment %}
+<script>
+$(document).ready(function () {
+    $('#materialTable').DataTable({
+        "pageLength": 5,                // default rows per page
+        "lengthMenu": [5, 10, 25, 50],  // dropdown options
+        "ordering": true,               // enable column sorting
+        "searching": true,              // enable search box
+        "info": true,                   // show "Showing 1 to 5 of X entries"
+        "language": {
+            "lengthMenu": "Show _MENU_ records per page",
+            "zeroRecords": "No matching records found",
+            "info": "Showing _START_ to _END_ of _TOTAL_ records",
+            "infoEmpty": "No records available",
+            "infoFiltered": "(filtered from _MAX_ total records)"
+        }
+    });
+});
+</script>
 
 
 

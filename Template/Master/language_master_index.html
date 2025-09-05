@@ -195,15 +195,23 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-    $(document).ready(function () {
-        $('#subjectTable').DataTable({
-            "pageLength": 5,  // default rows per page
-            "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
-            "ordering": true, // enable column sorting
-            "searching": true, // enable search box
-        });
+$(document).ready(function () {
+    $('#languageTable').DataTable({
+        "pageLength": 5,                // default rows per page
+        "lengthMenu": [5, 10, 25, 50],  // dropdown options
+        "ordering": true,               // enable sorting
+        "searching": true,              // enable search box
+        "info": true,                   // show "Showing 1 to X of Y entries"
+        "language": {
+            "lengthMenu": "Show _MENU_ records per page",
+            "zeroRecords": "No matching records found",
+            "info": "Showing _START_ to _END_ of _TOTAL_ records",
+            "infoEmpty": "No records available",
+            "infoFiltered": "(filtered from _MAX_ total records)"
+        }
     });
-    </script>
+});
+</script>
 
 
 
