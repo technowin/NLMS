@@ -1279,3 +1279,272 @@ def language_delete(request):
             return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+def supplier_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            # 🔹 Fetch all suppliers
+            suppliers = SupplierMaster.objects.all()
+
+            # 🔹 Encrypt the supplier_id for each supplier
+            for sup in suppliers:
+                sup.encrypted_id = enc(str(sup.supplier_id))
+
+            return render(
+                request,
+                'Master/supplier_master_index.html',
+                {"suppliers": suppliers}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+
+from django.db.models import Max
+
+@login_required
+def supplier_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            supplier_name = request.POST.get('supplierName')
+            supplier_mobile = request.POST.get('supplierMobile')
+            supplier_email = request.POST.get('supplierEmail')
+            supplier_address = request.POST.get('supplierAddress')
+            supplier_pincode = request.POST.get('supplierPincode')
+            is_active = request.POST.get('is_active', 1)
+
+            # ✅ Auto-generate Supplier Code
+            last_code = SupplierMaster.objects.aggregate(max_code=Max('supplier_code'))['max_code']
+            
+            if last_code:
+                # Extract number from "SUPxxx"
+                last_number = int(last_code.replace("SUP", ""))
+                new_number = last_number + 1
+            else:
+                new_number = 1  # First supplier
+
+            new_code = f"SUP{new_number:03d}"  # Format as SUP001, SUP002 ...
+
+            # ✅ Create supplier
+            SupplierMaster.objects.create(
+                supplier_code=new_code,
+                supplier_name=supplier_name,
+                supplier_mobile=supplier_mobile,
+                supplier_email=supplier_email,
+                supplier_address=supplier_address,
+                supplier_pincode=supplier_pincode,
+                is_active=is_active,
+                created_by=user,
+                created_at=timezone.now()
+            )
+            messages.success(request, f"Supplier '{supplier_name}' created successfully with code {new_code}!")
+            return redirect('supplier_master_index')
+
+        # GET method – show form
+        return render(request, "Master/supplier_create.html")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("supplier_master_index")
+
+
+@login_required
+def update_supplier_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            encrypted_id = data.get("id")      # from JS
+            is_active = data.get("status")     # from JS
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # 🔹 Decrypt and convert
+            supplier_id = int(dec(encrypted_id))
+
+            # 🔹 Fetch supplier using the correct PK
+            supplier = SupplierMaster.objects.get(supplier_id=supplier_id)
+
+            supplier.is_active = bool(is_active)
+            supplier.save()
+
+            return JsonResponse({"success": True, "status": int(supplier.is_active)})
+
+        except SupplierMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Supplier not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+@login_required
+def supplier_view(request):
+    try:
+        enc_id = request.GET.get("id")  # fetch encrypted id from URL
+        if not enc_id:
+            messages.error(request, "Missing ID!")
+            return redirect("supplier_master_index")  # 👈 your supplier list page
+
+        # 🔹 Decrypt the ID
+        supplier_id = int(dec(enc_id))
+
+        # 🔹 Fetch supplier
+        supplier = SupplierMaster.objects.get(supplier_id=supplier_id)  # 👈 use correct PK field
+
+        # 🔹 Add encrypted_id back (for buttons in template)
+        supplier.encrypted_id = enc(str(supplier.supplier_id))
+
+        context = {
+            "supplier": supplier
+        }
+        return render(request, "Master/supplier_view.html", context)
+
+    except SupplierMaster.DoesNotExist:
+        messages.error(request, "Supplier not found!")
+        return redirect("supplier_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("supplier_master_index")
+
+
+@login_required
+def supplier_edit(request):
+    supplier = None
+
+    if request.method == "POST":
+        try:
+            # 🔹 Decrypt ID from hidden field
+            enc_id = request.POST.get("id")
+            if enc_id:
+                supplier_id = int(dec(enc_id))  # decrypt
+                supplier = SupplierMaster.objects.get(supplier_id=supplier_id)
+
+            user_id = request.user.id
+
+            # ✅ Get form data safely
+            supplier_code = request.POST.get("supplierCode", "").strip()
+            supplier_name = request.POST.get("supplierName", "").strip()
+            supplier_email = request.POST.get("supplierEmail", "").strip()
+            supplier_mobile = request.POST.get("supplierMobile", "").strip()
+            supplier_address = request.POST.get("supplierAddress", "").strip()
+            supplier_pincode = request.POST.get("supplierPincode", "").strip()
+            is_active = request.POST.get("is_active", "1")
+
+            # ✅ Validate required fields
+            if not supplier_code or not supplier_name or not supplier_mobile:
+                messages.error(request, "Supplier Code, Name, and Mobile are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check for supplier_code
+            duplicate = SupplierMaster.objects.filter(supplier_code__iexact=supplier_code)
+            if supplier:
+                duplicate = duplicate.exclude(supplier_id=supplier.supplier_id)
+            if duplicate.exists():
+                messages.error(request, f"Supplier code '{supplier_code}' already exists!")
+                return redirect("supplier_master_index")
+
+            # 🔹 Duplicate check for supplier_name
+            duplicate_name = SupplierMaster.objects.filter(supplier_name__iexact=supplier_name)
+            if supplier:
+                duplicate_name = duplicate_name.exclude(supplier_id=supplier.supplier_id)
+            if duplicate_name.exists():
+                messages.error(request, f"Supplier '{supplier_name}' already exists!")
+                return redirect("supplier_master_index")
+
+            # 🔹 Update or Create
+            if supplier:  # update
+                supplier.supplier_code = supplier_code
+                supplier.supplier_name = supplier_name
+                supplier.supplier_email = supplier_email
+                supplier.supplier_mobile = supplier_mobile
+                supplier.supplier_address = supplier_address
+                supplier.supplier_pincode = supplier_pincode
+                supplier.is_active = bool(int(is_active))
+                supplier.updated_by = user_id
+                supplier.updated_at = timezone.now()
+                supplier.save()
+                messages.success(request, "Supplier updated successfully!")
+            else:  # create new
+                SupplierMaster.objects.create(
+                    supplier_code=supplier_code,
+                    supplier_name=supplier_name,
+                    supplier_email=supplier_email,
+                    supplier_mobile=supplier_mobile,
+                    supplier_address=supplier_address,
+                    supplier_pincode=supplier_pincode,
+                    is_active=bool(int(is_active)),
+                    created_by=user_id,
+                    created_at=timezone.now()
+                )
+                messages.success(request, "Supplier created successfully!")
+
+            return redirect("supplier_master_index")
+
+        except SupplierMaster.DoesNotExist:
+            messages.error(request, "Supplier not found!")
+            return redirect("supplier_master_index")
+        except Exception as e:
+            print("❌ Edit Error:", e)
+            messages.error(request, "Invalid or corrupted ID!")
+            return redirect("supplier_master_index")
+
+    else:  # GET request
+        try:
+            enc_id = request.GET.get("id")
+            if enc_id:
+                supplier_id = int(dec(enc_id))  # 🔹 decrypt
+                supplier = SupplierMaster.objects.get(supplier_id=supplier_id)
+                # add encrypted_id for hidden field
+                supplier.encrypted_id = enc(str(supplier.supplier_id))
+
+        except Exception as e:
+            print("❌ GET Edit Error:", e)
+            messages.error(request, "Invalid or corrupted ID!")
+            return redirect("supplier_master_index")
+
+        return render(request, "Master/supplier_edit.html", {"supplier": supplier})
+    
+
+@login_required
+def supplier_delete(request):
+    if request.method == "POST":
+        try:
+            enc_id = request.POST.get("id")  # Encrypted ID from form
+            if not enc_id:
+                messages.error(request, "Missing ID")
+                return redirect("supplier_master_index")
+            
+            supplier_id = int(dec(enc_id))  # 🔹 Decrypt back to integer
+            supplier = SupplierMaster.objects.get(supplier_id=supplier_id)
+            supplier.delete()
+            
+            messages.success(request, "Supplier deleted successfully")
+            return redirect("supplier_master_index")
+        
+        except SupplierMaster.DoesNotExist:
+            messages.error(request, "Supplier not found")
+            return redirect("supplier_master_index")
+        
+        except Exception as e:
+            messages.error(request, f"Error: {str(e)}")
+            return redirect("supplier_master_index")
+    
+    messages.error(request, "Invalid request")
+    return redirect("supplier_master_index")

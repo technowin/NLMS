@@ -1,0 +1,383 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}ग्रंथ सूची{% endblock title %}
+
+{% block extra_css %}
+
+  <!-- Keeping only SweetAlert and essential layout styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- For Font Awesome 6 -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<!-- OR for Font Awesome 4.x -->
+<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> -->
+
+  <!-- Google Font: Merriweather -->
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    
+  <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+  <style>
+    /* Style for action buttons */
+.view-btn {
+    font-size: 14px;
+    font-weight: bold;
+    color: #000000ff!important;
+    background-color: #ffc504ff!important;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Hover effect */
+.view-btn:hover {
+    color: #ffffffff!important;
+    font-weight: bold;
+    background-color: #5e34aaff!important; /* darker shade of Bootstrap info */
+    transform: scale(1.05);
+}
+
+/* Icon alignment */
+.view-btn i {
+    font-size: 14px;
+}
+
+.edit-btn {
+    background-color: #079cffff!important; /* Bootstrap warning color */
+    border: none;
+    color: #0a0a0aff!important;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+}
+
+.edit-btn:hover {
+    background-color: #e0a800!important;
+    color: #000000ff!important;
+    font-weight:bold;
+}
+
+/* Common style for all action buttons */
+    .action-btn {
+        width: 50px;           /* Same width */
+        height: 38px;          /* Same height */
+        display: inline-flex;  /* Flexbox for centering */
+        align-items: center;   /* Vertical center */
+        justify-content: center; /* Horizontal center */
+        border-radius: 6px;    /* Rounded corners */
+        padding: 0;            /* Remove extra padding */
+    }
+
+    /* Optional: make icons same size */
+    .action-btn i {
+        font-size: 16px; /* Adjust icon size */
+        align-items: center;   /* Vertical center */
+        justify-content: center; /* Horizontal center */
+    }
+
+  </style>
+
+{% endblock %}
+
+{% block page_title %}
+    {% include "bootstrap/partials/page-title.html" with page_title='साहित्य प्रकार मास्टर' sub_title='' %}
+{% endblock %}
+{% csrf_token %}
+
+{% block content %}
+
+  <div class="container mt-4">
+    <!-- Header Row -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2 class="fw-bold">पुरवठादार मास्टर</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'supplier_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> नवीन पुरवठादार तयार करा
+            </a>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table id="supplierTable" 
+                   class="table table-bordered table-striped table-hover align-middle mb-0">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Supplier Code</th>
+                        <th>Supplier Name</th>
+                        <th>Mobile</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Pincode</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sup in suppliers %}
+                    <tr>
+                        <td class="text-center">{{ sup.supplier_code }}</td>
+                        <td class="text-center">{{ sup.supplier_name }}</td>
+                        <td class="text-center">{{ sup.supplier_mobile }}</td>
+                        <td class="text-center">{{ sup.supplier_email }}</td>
+                        <td class="text-center">{{ sup.supplier_address }}</td>
+                        <td class="text-center">{{ sup.supplier_pincode }}</td>
+                        <td class="text-center">
+
+                           <div class="d-flex align-items-center gap-2">
+    <!-- Toggle Active / Inactive Button -->
+    {% if sup.is_active %}
+        <button class="btn btn-success action-btn toggle-status" 
+                data-id="{{ sup.encrypted_id }}" 
+                data-status="1"
+                title="Deactivate">
+            <i class="fa-solid fa-toggle-on"></i>
+        </button>
+    {% else %}
+        <button class="btn btn-danger action-btn toggle-status" 
+                data-id="{{ sup.encrypted_id }}" 
+                data-status="0"
+                title="Activate">
+            <i class="fa-solid fa-toggle-off"></i>
+        </button>
+    {% endif %}
+
+    <!-- View Button -->
+    <a href="{% url 'supplier_view' %}?id={{ sup.encrypted_id }}" 
+       class="btn btn-info action-btn view-btn" 
+       title="View">
+        <i class="fa-solid fa-eye"></i>
+    </a>
+
+     <!-- Edit Button -->
+    <a href="{% url 'supplier_edit' %}?id={{ sup.encrypted_id }}" 
+       class="btn btn-warning action-btn edit-btn" 
+       title="Edit">
+        <i class="fa-solid fa-pen-to-square"></i>
+    </a>
+
+     <!-- Delete Button -->
+   <form method="POST" action="{% url 'supplier_delete' %}" class="d-inline">
+    {% csrf_token %}
+    <input type="hidden" name="id" value="{{ sup.encrypted_id }}">
+    
+    <button type="submit" class="btn btn-danger action-btn delete-btn" title="Delete">
+        <i class="fa-solid fa-trash"></i>
+    </button>
+</form>
+
+</div>
+
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No records found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- Keeping only SweetAlert and optional message popup -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    {% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        {% for message in messages %}
+            Swal.fire({
+            title: "{{ message.tags|title }}",
+            text: "{{ message|escapejs }}",
+            icon: "{{ message.tags }}",
+            confirmButtonText: "OK",
+            background: theme === 'dark' ? '#343a40' : '#ffffff',
+            color: theme === 'dark' ? '#f8f9fa' : '#212529',
+            confirmButtonColor: '#0d6efd',
+            customClass: {
+                popup: 'rounded-4 shadow',
+                confirmButton: 'btn btn-primary px-4 py-2'
+            }
+            });
+        {% endfor %}
+        });
+    </script>
+    {% endif %}
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+       <script>
+$(document).ready(function () {
+    $('#supplierTable').DataTable({
+        "pageLength": 5,                // default rows per page
+        "lengthMenu": [5, 10, 25, 50],  // dropdown options
+        "ordering": true,               // enable sorting
+        "searching": true,              // enable search box
+        "info": true,                   // show "Showing 1 to X of Y entries"
+        "language": {
+            "lengthMenu": "Show _MENU_ records per page",
+            "zeroRecords": "No matching records found",
+            "info": "Showing _START_ to _END_ of _TOTAL_ records",
+            "infoEmpty": "No records available",
+            "infoFiltered": "(filtered from _MAX_ total records)"
+        }
+    });
+});
+</script>
+
+    <!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    $(document).ready(function() {
+        $(".toggle-status").on("click", function(e) {
+            e.preventDefault();
+
+            var button = $(this);
+            var materialId = button.data("id");
+            var currentStatus = button.data("status");
+            var newStatus = currentStatus == 1 ? 0 : 1;
+
+            // SweetAlert confirmation
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to change the status?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, change it!",
+                cancelButtonText: "Cancel"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Only run AJAX if confirmed
+                    $.ajax({
+                        url: "{% url 'update_supplier_status' %}",
+                        type: "POST",
+                        contentType: "application/json",
+                        headers: { "X-CSRFToken": '{{ csrf_token }}' },
+                        data: JSON.stringify({
+                            id: materialId,
+                            status: newStatus
+                        }),
+                        success: function(data) {
+                            console.log(data);
+                            if (data.success) {
+                               if (data.status == 1) {
+                            button.removeClass("btn-danger")
+                                .addClass("btn-success")
+                                .data("status", 1);
+                            Swal.fire("Updated!", "Status set to Active.", "success");
+                        } else {
+                            button.removeClass("btn-success")
+                                .addClass("btn-danger")
+                                .data("status", 0);
+                            Swal.fire("Updated!", "Status set to Inactive.", "success");
+                        }
+
+                            } else {
+                                Swal.fire("Error!", data.error || "Failed to update status.", "error");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error:", status, error);
+                            Swal.fire("Error!", "An error occurred while updating status.", "error");
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+$(document).ready(function () {
+    $(".delete-btn").on("click", function (e) {
+        e.preventDefault(); // prevent default form submit
+
+        var button = $(this);
+        var supplierId = button.siblings('input[name="id"]').val(); // get hidden input value
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "This action cannot be undone!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{% url 'supplier_delete' %}",  // Django URL for supplier delete
+                    type: "POST",
+                    headers: { "X-CSRFToken": '{{ csrf_token }}' },
+                    data: { id: supplierId },
+                    success: function (data) {
+                        if (data.success) {
+                            Swal.fire("Deleted!", "Supplier has been deleted.", "success");
+
+                            // Remove row using DataTables API to keep pagination intact
+                            var table = $('#supplierTable').DataTable();
+                            table.row(button.closest("tr")).remove().draw(false);
+                        } else {
+                            Swal.fire("Error!", data.error || "Failed to delete supplier.", "error");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        Swal.fire("Error!", "An error occurred while deleting.", "error");
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+
+
+<script>
+$(document).ready(function () {
+    $('#materialTable').DataTable({
+        "pageLength": 5,                // default rows per page
+        "lengthMenu": [5, 10, 25, 50],  // dropdown options
+        "ordering": true,               // enable column sorting
+        "searching": true,              // enable search box
+        "info": true,                   // show "Showing 1 to 5 of X entries"
+        "language": {
+            "lengthMenu": "Show _MENU_ records per page",
+            "zeroRecords": "No matching records found",
+            "info": "Showing _START_ to _END_ of _TOTAL_ records",
+            "infoEmpty": "No records available",
+            "infoFiltered": "(filtered from _MAX_ total records)"
+        }
+    });
+});
+</script>
+
+
+
+{% endblock %}
