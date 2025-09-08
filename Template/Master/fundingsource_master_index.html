@@ -81,7 +81,7 @@
 {% endblock %}
 
 {% block page_title %}
-    {% include "bootstrap/partials/page-title.html" with page_title='भाषा मास्टर' sub_title='' %}
+    {% include "bootstrap/partials/page-title.html" with page_title='निधी स्त्रोत मास्टर' sub_title='' %}
 {% endblock %}
 {% csrf_token %}
 
@@ -91,87 +91,87 @@
     <!-- Header Row -->
     <div class="row mb-3">
         <div class="col-md-6">
-            <h2 class="fw-bold">भाषा मास्टर</h2>
+            <h2 class="fw-bold">निधी स्त्रोत मास्टर</h2>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{% url 'language_create' %}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> भाषा तयार करा
+            <a href="{% url 'fundingsource_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> निधी स्त्रोत तयार करा
             </a>
         </div>
     </div>
 
-  <!-- Language Table -->
+   <!-- Funding Source Master Table -->
 <div class="card shadow-sm">
     <div class="card-body">
-       <table id="languageTable" class="table table-bordered table-striped table-hover align-middle mb-0">
+       <table id="fundingSourceTable" class="table table-bordered table-striped table-hover align-middle mb-0">
             <thead class="table-dark text-center">
                 <tr>
-                    <th>Language Code</th>
-                    <th>Language Name</th>
+                    <th>Source Code</th>
+                    <th>Funding Source Name</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for lang in languages %}
+                {% for fs in fundingsources %}
                 <tr>
-                    <td class="text-center">{{ lang.language_code }}</td>
-                    <td class="text-center">{{ lang.language_name }}</td>
+                    <td class="text-center">{{ fs.source_code }}</td>
+                    <td class="text-center">{{ fs.funding_source_name }}</td>
                     <td class="text-center">
-                        <div class="mb-2 d-flex gap-2">
-                          <!-- Toggle Active / Inactive -->
-{% if lang.is_active %}
-    <button class="btn btn-success action-btn toggle-status" 
-            data-id="{{ lang.encrypted_id }}" 
-            data-status="1"
-            title="Deactivate">
-        <i class="fa-solid fa-toggle-on"></i>
-    </button>
-{% else %}
-    <button class="btn btn-danger action-btn toggle-status" 
-            data-id="{{ lang.encrypted_id }}" 
-            data-status="0"
-            title="Activate">
-        <i class="fa-solid fa-toggle-off"></i>
-    </button>
-{% endif %}
+                        <div class="mb-2 d-flex gap-2 justify-content-center">
+                            <!-- Toggle Active / Inactive -->
+                            {% if fs.is_active %}
+                                <button class="btn btn-success action-btn toggle-status" 
+                                        data-id="{{ fs.encrypted_id }}" 
+                                        data-status="1"
+                                        title="Deactivate">
+                                    <i class="fa-solid fa-toggle-on"></i>
+                                </button>
+                            {% else %}
+                                <button class="btn btn-danger action-btn toggle-status" 
+                                        data-id="{{ fs.encrypted_id }}" 
+                                        data-status="0"
+                                        title="Activate">
+                                    <i class="fa-solid fa-toggle-off"></i>
+                                </button>
+                            {% endif %}
 
-                            <!-- View Button (Bright Yellow) -->
-                            <a href="{% url 'language_view' %}?id={{ lang.encrypted_id }}" 
+                            <!-- View Button -->
+                            <a href="{% url 'fundingsource_view' %}?source_id={{ fs.encrypted_id }}" 
                                class="action-btn"
                                style="background-color:#FFD700; color:black;"
                                title="View">
                                 <i class="fa-solid fa-eye"></i>
                             </a> 
 
-                            <!-- Edit Button (Bright Blue) -->
-                            <a href="{% url 'language_edit' %}?id={{ lang.encrypted_id }}" 
-                               class="action-btn"
-                               style="background-color:#007BFF; color:white;"
-                               title="Edit">
+                            <!-- Edit Button -->
+                            <a href="{% url 'fundingsource_edit' %}?source_id={{ fs.encrypted_id }}" 
+                            class="action-btn"
+                            style="background-color:#007BFF; color:white;"
+                            title="Edit">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
 
-                            <button type="button" 
-                                class="action-btn"
-                                style="background-color:#FF4136; color:white;"
-                                onclick="deleteLanguage('{{ lang.encrypted_id }}')" 
-                                title="Delete">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
 
-                        </div>
+                             <!-- Delete Button -->
+                            <button type="button" 
+                                    class="action-btn"
+                                    style="background-color:#FF4136; color:white;"
+                                    onclick="fundingsource_delete('{{ fs.encrypted_id }}')" 
+                                    title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button> 
+                        </div> 
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted">No records found</td>
+                    <td colspan="4" class="text-center text-muted">No funding sources found</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-
 
     </div>
 </div>
@@ -195,23 +195,15 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-$(document).ready(function () {
-    $('#languageTable').DataTable({
-        "pageLength": 5,                // default rows per page
-        "lengthMenu": [5, 10, 25, 50],  // dropdown options
-        "ordering": true,               // enable sorting
-        "searching": true,              // enable search box
-        "info": true,                   // show "Showing 1 to X of Y entries"
-        "language": {
-            "lengthMenu": "Show _MENU_ records per page",
-            "zeroRecords": "No matching records found",
-            "info": "Showing _START_ to _END_ of _TOTAL_ records",
-            "infoEmpty": "No records available",
-            "infoFiltered": "(filtered from _MAX_ total records)"
-        }
+    $(document).ready(function () {
+        $('#fundingSourceTable').DataTable({
+            "pageLength": 5,  // default rows per page
+            "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
+            "ordering": true, // enable column sorting
+            "searching": true, // enable search box
+        });
     });
-});
-</script>
+    </script>
 
 
 
@@ -257,99 +249,77 @@ $(document).ready(function () {
     <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const toggleButtons = document.querySelectorAll('.toggle-status');
+    $(document).ready(function() {
+        $(".toggle-status").on("click", function(e) {
+            e.preventDefault();
 
-    toggleButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const encryptedId = this.dataset.id;
-            let status = this.dataset.status === "1" ? 1 : 0;
-            const btn = this;
+            var button = $(this);
+            var materialId = button.data("id");
+            var currentStatus = button.data("status");
+            var newStatus = currentStatus == 1 ? 0 : 1;
 
             // SweetAlert confirmation
             Swal.fire({
-                title: 'Are you sure?',
+                title: "Are you sure?",
                 text: "Do you want to change the status?",
-                icon: 'warning',
+                icon: "warning",
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, change it!',
-                cancelButtonText: 'Cancel'
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, change it!",
+                cancelButtonText: "Cancel"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Only change if user confirmed
-                    const newStatus = status === 1 ? 0 : 1;
-
-                    fetch("{% url 'update_language_status' %}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": "{{ csrf_token }}"
-                        },
-                        body: JSON.stringify({
-                            id: encryptedId,
-                            is_active: newStatus
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Update button dynamically
-                            if (data.status === 1) {
-                                btn.classList.remove('btn-danger');
-                                btn.classList.add('btn-success');
-                                btn.title = "Deactivate";
-                                btn.dataset.status = "1";
-                                btn.innerHTML = '<i class="fa-solid fa-toggle-on"></i>';
-                            } else {
-                                btn.classList.remove('btn-success');
-                                btn.classList.add('btn-danger');
-                                btn.title = "Activate";
-                                btn.dataset.status = "0";
-                                btn.innerHTML = '<i class="fa-solid fa-toggle-off"></i>';
-                            }
-
-                            Swal.fire(
-                                'Updated!',
-                                'Status has been changed.',
-                                'success'
-                            );
+                    // Only run AJAX if confirmed
+                    $.ajax({
+                        url: "{% url 'update_fundingsource_status' %}",
+                        type: "POST",
+                        contentType: "application/json",
+                        headers: { "X-CSRFToken": '{{ csrf_token }}' },
+                        data: JSON.stringify({
+                            id: materialId,
+                            status: newStatus
+                        }),
+                        success: function(data) {
+                            console.log(data);
+                            if (data.success) {
+                                  if (data.status == 1) {
+                            button.removeClass("btn-danger")
+                                .addClass("btn-success")
+                                .data("status", 1);
+                            Swal.fire("Updated!", "Status set to Active.", "success");
                         } else {
-                            Swal.fire(
-                                'Error!',
-                                data.error || 'Something went wrong!',
-                                'error'
-                            );
+                            button.removeClass("btn-success")
+                                .addClass("btn-danger")
+                                .data("status", 0);
+                            Swal.fire("Updated!", "Status set to Inactive.", "success");
                         }
-                    })
-                    .catch(error => {
-                        console.error("Error:", error);
-                        Swal.fire(
-                            'Error!',
-                            'Failed to update status.',
-                            'error'
-                        );
+                            } else {
+                                Swal.fire("Error!", data.error || "Failed to update status.", "error");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error:", status, error);
+                            Swal.fire("Error!", "An error occurred while updating status.", "error");
+                        }
                     });
                 }
             });
         });
     });
-});
 </script>
+
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function deleteLanguage(encId) {
+function fundingsource_delete(encId) {
     Swal.fire({
         title: 'Are you sure?',
-        text: "This language record will be permanently deleted!",
+        text: "You won't be able to revert this!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -358,23 +328,24 @@ function deleteLanguage(encId) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch("{% url 'language_delete' %}", {
+            fetch("{% url 'fundingsource_delete' %}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": "{{ csrf_token }}"
                 },
-                body: JSON.stringify({ id: encId }) // send encrypted id dynamically
+                body: JSON.stringify({ id: encId }) // send encrypted id
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     Swal.fire(
                         'Deleted!',
-                        'Language has been deleted successfully.',
+                        'Funding Source has been deleted.',
                         'success'
                     ).then(() => {
-                        window.location.href = "{% url 'language_master_index' %}";
+                        // Reload page or remove row dynamically
+                        window.location.reload();
                     });
                 } else {
                     Swal.fire('Error!', data.error, 'error');
@@ -382,7 +353,7 @@ function deleteLanguage(encId) {
             })
             .catch(error => {
                 console.error("Error:", error);
-                Swal.fire('Error!', 'An error occurred!', 'error');
+                Swal.fire('Error!', 'An unexpected error occurred!', 'error');
             });
         }
     });

@@ -102,6 +102,12 @@ urlpatterns = [
     path('supplier_view/', supplier_view, name='supplier_view'),
     path('supplier_edit/', supplier_edit, name='supplier_edit'),
     path('supplier_delete/', supplier_delete, name='supplier_delete'),
+    path('fundingsource_master_index/', fundingsource_master_index, name='fundingsource_master_index'),
+    path('update_fundingsource_status/', update_fundingsource_status, name='update_fundingsource_status'),
+    path('fundingsource_create/', fundingsource_create, name='fundingsource_create'),
+    path('fundingsource_edit/', fundingsource_edit, name='fundingsource_edit'),
+    path('fundingsource_view/', fundingsource_view, name='fundingsource_view'),
+    path('fundingsource_delete/', fundingsource_delete, name='fundingsource_delete'),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

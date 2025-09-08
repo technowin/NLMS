@@ -76,7 +76,7 @@
 {% endblock %}
 
 {% block page_title %}
-  {% include "bootstrap/partials/page-title.html" with page_title='पुरवठादार मास्टर' sub_title='पुरवठादार मास्टरसंपादित करा' %}
+  {% include "bootstrap/partials/page-title.html" with page_title='भाषा मास्टर' sub_title='भाषा संपादित करा' %}
 {% endblock %}
 
 {% block content %}
@@ -85,74 +85,35 @@
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-<input type="hidden" name="id" value="{{ supplier.encrypted_id }}">
-<div class="card shadow-sm p-4">
-    <h5 class="mb-3">🏢 Supplier Details</h5>
 
-    <!-- Row 1: Supplier Code & Supplier Name -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label fw-bold">पुरवठादार कोड / Supplier Code</label>
-            <input type="text" name="supplierCode" id="supplierCode"
-                   class="form-control"
-                   value="{{ supplier.supplier_code }}"
-                   placeholder="Supplier Code" maxlength="10" readonly>
-        </div>
+            <!-- Hidden field for encrypted ID -->
+            <input type="hidden" name="source_id" value="{{ funding.encrypted_id }}">
 
-        <div class="col-md-6">
-            <label class="form-label fw-bold">पुरवठादाराचे नाव / Supplier Name</label>
-            <input type="text" name="supplierName" id="supplierName"
-                   class="form-control"
-                   value="{{ supplier.supplier_name }}"
-                   placeholder="Supplier Name" required>
-        </div>
-    </div>
+            <!-- Row: Funding Source Code & Funding Source Name -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">Funding Source Code</label>
+                    <input type="text" name="sourcePrefix" id="fundingSourceCode" 
+                        class="form-control" 
+                        placeholder="Funding Source Code" required 
+                        value="{{ funding.source_code }}" maxlength="10" readonly>
+                </div>
 
-    <!-- Row 2: Email & Mobile -->
-    <div class="mb-3 row">
-       <div class="col-md-6">
-    <label class="form-label fw-bold">ई-मेल / Email</label>
-    <input type="email" name="supplierEmail" id="supplierEmail"
-           class="form-control"
-           value="{{ supplier.supplier_email }}"
-           placeholder="example@email.com" 
-           required>
-    <small id="emailError" class="text-danger d-none">❌ Invalid email format.</small>
-</div>
-
-        <div class="col-md-6">
-            <label class="form-label fw-bold">मोबाईल नंबर / Mobile</label>
-            <input type="text" name="supplierMobile" id="supplierMobile"
-                   class="form-control"
-                   value="{{ supplier.supplier_mobile }}"
-                   placeholder="XXXXXXXXXX" maxlength="10" required>
-        </div>
-    </div>
-
-    <!-- Row 3: Address & Pincode -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label fw-bold">📍 पत्ता / Address</label>
-            <textarea name="supplierAddress" id="supplierAddress"
-                      class="form-control" rows="3"
-                      placeholder="Enter Address" required>{{ supplier.supplier_address }}</textarea>
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label fw-bold">📮 पिन कोड / Pincode</label>
-            <input type="text" name="supplierPincode" id="supplierPincode"
-                   class="form-control"
-                   value="{{ supplier.supplier_pincode }}"
-                   placeholder="Pincode" maxlength="6" required>
-        </div>
-    </div>
+                <div class="col-md-6">
+                    <label class="form-label">Funding Source Name</label>
+                    <input type="text" name="funding_source_name" id="fundingSourceName" 
+                        class="form-control" 
+                        placeholder="Funding Source Name" required 
+                        value="{{ funding.funding_source_name }}">
+                </div>
+            </div>
 
             <!-- BUTTONS -->
             <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
                 <button type="submit" class="btn btn-submit">
                     <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
                 </button>
-                <a href="{% url 'supplier_master_index' %}" class="btn-go-back">
+                <a href="{% url 'language_master_index' %}" class="btn-go-back">
                     <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
                 </a>
             </div>
@@ -394,37 +355,20 @@
     </script>
 
     <script>
-// Function to auto-translate (dummy example with fetch)
-document.getElementById("materialNameEnglish").addEventListener("blur", function () {
-    let englishText = this.value;
-    if (englishText.trim() === "") return;
+        // Function to auto-translate (dummy example with fetch)
+        document.getElementById("materialNameEnglish").addEventListener("blur", function () {
+            let englishText = this.value;
+            if (englishText.trim() === "") return;
 
-    // Example: call backend translation API
-    fetch(`/translate-to-marathi/?text=${encodeURIComponent(englishText)}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("materialNameMarathi").value = data.translated_text;
-        })
-        .catch(err => console.error("Translation Error:", err));
-});
-</script>
+            // Example: call backend translation API
+            fetch(`/translate-to-marathi/?text=${encodeURIComponent(englishText)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("materialNameMarathi").value = data.translated_text;
+                })
+                .catch(err => console.error("Translation Error:", err));
+        });
+    </script>
 
-<script>
-document.getElementById("supplierEmail").addEventListener("input", function() {
-    const emailField = this.value.trim();
-    const emailError = document.getElementById("emailError");
-
-    // Regex: only letters, digits, allowed specials (._-), and only 1 @
-    const emailRegex = /^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-
-    if (emailRegex.test(emailField)) {
-        emailError.classList.add("d-none"); // Hide error
-        this.setCustomValidity("");
-    } else {
-        emailError.classList.remove("d-none"); // Show error
-        this.setCustomValidity("Invalid email format");
-    }
-});
-</script>  
-
+  
 {% endblock %}

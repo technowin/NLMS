@@ -76,7 +76,7 @@
 {% endblock %}
 
 {% block page_title %}
-  {% include "bootstrap/partials/page-title.html" with page_title='पुरवठादार मास्टर' sub_title='पुरवठादार मास्टर तयार करा' %}
+  {% include "bootstrap/partials/page-title.html" with page_title='भाषा मास्टर' sub_title='भाषा तयार करा' %}
 {% endblock %}
 
 {% block content %}
@@ -85,57 +85,22 @@
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-       <input type="hidden" name="id" value="{{ supplier.encrypted_id }}">
+           <input type="hidden" name="id" value="{{ fundingsource.encrypted_id }}">
 
-<!-- Row 1: Supplier Code & Supplier Name -->
+<!-- Row 1: Funding Source Name & Funding Source Code -->
 <div class="mb-3 row">
-    <div class="col-md-6">
-    <label class="form-label">पुरवठादार कोड / Supplier Code</label>
-    <input type="text" name="supplierCode" id="supplierCode"
-           class="form-control" value="{{ new_supplier_code }}" readonly>
+
+   <div class="col-md-6">
+    <label class="form-label">निधी स्त्रोताचे नाव / Funding Source Name</label>
+    <input type="text" name="funding_source_name" id="funding_source_name"
+           class="form-control" placeholder="Funding Source Name" required>
 </div>
 
-    <div class="col-md-6">
-        <label class="form-label">पुरवठादाराचे नाव / Supplier Name</label>
-        <input type="text" name="supplierName" id="supplierName"
-               class="form-control" placeholder="Supplier Name" required>
-    </div>
+<div class="col-md-6">
+    <label class="form-label">निधी स्त्रोत कोड / Funding Source Code</label>
+    <input type="text" name="sourcePrefix" id="sourcePrefix"
+           class="form-control" placeholder="Funding Source Code" readonly required maxlength="3">
 </div>
-
-<!-- Row 2: Mobile & Email -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-    <label class="form-label">मोबाईल नंबर / Mobile</label>
-    <input type="text" name="supplierMobile" id="supplierMobile"
-           class="form-control" placeholder="XXXXXXXXXX" maxlength="10" required>
-    <div id="mobileError" class="text-danger mt-1" style="font-size: 14px;"></div>
-</div>
-
-    <div class="col-md-6">
-    <label class="form-label">ई-मेल / Email</label>
-    <input type="text" 
-           name="supplierEmail" 
-           id="supplierEmail"
-           class="form-control" 
-           placeholder="example@email.com"
-           required>
-    <div id="emailError" class="text-danger mt-1" style="font-size: 14px;"></div>
-</div>
-</div>
-
-<!-- Row 3: Address & Pincode -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <label class="form-label">पत्ता / Address</label>
-        <textarea name="supplierAddress" id="supplierAddress" class="form-control"
-                  placeholder="Supplier Address" rows="2" required></textarea>
-    </div>
-
-    <div class="col-md-6">
-        <label class="form-label">पिनकोड / Pincode</label>
-        <input type="text" name="supplierPincode" id="supplierPincode"
-               class="form-control" placeholder="6-digit Pincode" maxlength="6" required>
-    </div>
 </div>
 
 
@@ -144,7 +109,7 @@
                     <button type="submit" class="btn btn-submit">
                         <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
                     </button>
-                    <a href="{% url 'supplier_master_index' %}" class="btn-go-back">
+                    <a href="{% url 'fundingsource_master_index' %}" class="btn-go-back">
                         <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
                     </a>
                 </div>
@@ -322,49 +287,21 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-document.getElementById("supplierEmail").addEventListener("input", function () {
-    let email = this.value;
-    let errorDiv = document.getElementById("emailError");
+document.addEventListener("DOMContentLoaded", function () {
+    const nameInput = document.getElementById("funding_source_name");
+    const codeInput = document.getElementById("sourcePrefix");
 
-    // ✅ Allowed characters: letters, digits, @ . _ -
-    let validPattern = /^[a-zA-Z0-9@._-]*$/;
-
-    // Count number of @
-    let atCount = (email.match(/@/g) || []).length;
-
-    if (!validPattern.test(email)) {
-        errorDiv.textContent = "Only letters, numbers, and @ . _ - are allowed.";
-        this.classList.add("is-invalid");
-    } else if (atCount > 1) {
-        errorDiv.textContent = "Only one '@' is allowed in the email.";
-        this.classList.add("is-invalid");
-    } else {
-        errorDiv.textContent = "";
-        this.classList.remove("is-invalid");
-    }
+    nameInput.addEventListener("input", function () {
+        let name = nameInput.value.trim().toUpperCase();
+        
+        if (name.length >= 3) {
+            codeInput.value = name.substring(0, 3);  // First 3 letters
+        } else {
+            codeInput.value = name; // If less than 3 letters typed
+        }
+    });
 });
 </script>
 
-<script>
-document.getElementById("supplierMobile").addEventListener("input", function () {
-    let mobile = this.value;
-    let errorDiv = document.getElementById("mobileError");
-
-    // ✅ Allow only digits
-    if (!/^[0-9]*$/.test(mobile)) {
-        errorDiv.textContent = "Only numbers are allowed.";
-        this.classList.add("is-invalid");
-    } 
-    // ✅ Check length
-    else if (mobile.length > 0 && mobile.length !== 10) {
-        errorDiv.textContent = "Mobile number must be exactly 10 digits.";
-        this.classList.add("is-invalid");
-    } 
-    else {
-        errorDiv.textContent = "";
-        this.classList.remove("is-invalid");
-    }
-});
-</script>
   
 {% endblock %}

@@ -1548,3 +1548,267 @@ def supplier_delete(request):
     
     messages.error(request, "Invalid request")
     return redirect("supplier_master_index")
+
+
+@login_required
+def fundingsource_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            # 🔹 Fetch all funding sources
+            fundingsources = FundingSourceMaster.objects.all()
+
+            # 🔹 Encrypt the source_id for each funding source
+            for fs in fundingsources:
+                fs.encrypted_id = enc(str(fs.source_id))
+
+            return render(
+                request,
+                'Master/fundingsource_master_index.html',
+                {"fundingsources": fundingsources}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+    
+@login_required
+def update_fundingsource_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            encrypted_id = data.get("id")      # from JS
+            is_active = data.get("status")     # from JS
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # 🔹 Decrypt and convert
+            source_id = int(dec(encrypted_id))
+
+            # 🔹 Fetch funding source using the correct PK
+            fundingsource = FundingSourceMaster.objects.get(source_id=source_id)
+
+            fundingsource.is_active = bool(int(is_active))
+            fundingsource.save()
+
+            return JsonResponse({"success": True, "status": int(fundingsource.is_active)})
+
+        except FundingSourceMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Funding Source not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def fundingsource_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            enc_id = request.POST.get("id")   # 🔹 Hidden encrypted ID (if editing)
+            funding_source_name = request.POST.get('funding_source_name')
+            source_prefix = request.POST.get('sourcePrefix')
+            is_active = request.POST.get('is_active', 1)
+
+            if not source_prefix:
+                messages.error(request, "Prefix is required!")
+                return redirect("fundingsource_create")
+
+            # 🔹 If enc_id exists → decrypt & update
+            if enc_id:
+                try:
+                    fund_id = int(dec(enc_id))  # ✅ decrypt
+                    funding = FundingSourceMaster.objects.get(fund_id=fund_id)
+
+                    funding.funding_source_name = funding_source_name
+                    funding.source_code = source_prefix   # ✅ update prefix also
+                    funding.is_active = is_active
+                    funding.updated_by = user
+                    funding.updated_at = timezone.now()
+                    funding.save()
+
+                    messages.success(request, f"Funding Source '{funding_source_name}' updated successfully!")
+                    return redirect("fundingsource_master_index")
+
+                except FundingSourceMaster.DoesNotExist:
+                    messages.error(request, "Funding Source not found.")
+                    return redirect("fundingsource_master_index")
+
+            # 🔹 Create new funding source with only prefix
+            FundingSourceMaster.objects.create(
+                source_code=source_prefix,      # ✅ only prefix, no numbers
+                funding_source_name=funding_source_name,
+                is_active=is_active,
+                created_by=user,
+                created_at=timezone.now()
+            )
+
+            messages.success(request, f"Funding Source '{funding_source_name}' created successfully with code {source_prefix}!")
+            return redirect('fundingsource_master_index')
+
+        # GET → Show form
+        return render(request, "Master/fundingsource_create.html")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("fundingsource_master_index")
+
+
+@login_required
+def fundingsource_edit(request):
+    funding = None
+
+    try:
+        if request.method == "POST":
+            # 🔹 Get encrypted ID from hidden form field
+            enc_id = request.POST.get("source_id")
+            if not enc_id:
+                messages.error(request, "Missing Funding Source ID!")
+                return redirect("fundingsource_master_index")
+
+            # 🔹 Decrypt the ID
+            try:
+                source_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("fundingsource_master_index")
+
+            # 🔹 Fetch the funding source
+            try:
+                funding = FundingSourceMaster.objects.get(source_id=source_id)
+            except FundingSourceMaster.DoesNotExist:
+                messages.error(request, "Funding Source not found!")
+                return redirect("fundingsource_master_index")
+
+            user_id = request.user.id
+
+            # ✅ Get form data
+            source_code = request.POST.get("sourcePrefix", "").strip()
+            funding_source_name = request.POST.get("funding_source_name", "").strip()
+            is_active = request.POST.get("is_active", "1")
+
+            # ✅ Validate required fields
+            if not source_code or not funding_source_name:
+                messages.error(request, "Funding Source Code and Name are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check for funding source name only
+            duplicate_name = FundingSourceMaster.objects.filter(
+                funding_source_name__iexact=funding_source_name
+            ).exclude(source_id=funding.source_id)
+            if duplicate_name.exists():
+                messages.error(request, f"Funding Source '{funding_source_name}' already exists!")
+                return redirect("fundingsource_master_index")
+
+            # 🔹 Update the record
+            funding.source_code = source_code
+            funding.funding_source_name = funding_source_name
+            funding.is_active = bool(int(is_active))
+            funding.updated_by = user_id
+            funding.updated_at = timezone.now()
+            funding.save()
+
+            messages.success(request, "Funding Source updated successfully!")
+            return redirect("fundingsource_master_index")
+
+        else:  # GET request
+            enc_id = request.GET.get("source_id")
+            if not enc_id:
+                messages.error(request, "Missing Funding Source ID!")
+                return redirect("fundingsource_master_index")
+
+            # 🔹 Decrypt ID
+            try:
+                source_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("fundingsource_master_index")
+
+            # 🔹 Fetch record to pre-fill the form
+            try:
+                funding = FundingSourceMaster.objects.get(source_id=source_id)
+                funding.encrypted_id = enc(str(funding.source_id))  # for hidden input
+            except FundingSourceMaster.DoesNotExist:
+                messages.error(request, "Funding Source not found!")
+                return redirect("fundingsource_master_index")
+
+    except Exception as e:
+        print("❌ Unexpected Error:", e)
+        messages.error(request, "An unexpected error occurred!")
+        return redirect("fundingsource_master_index")
+
+    # 🔹 Render edit form
+    return render(request, "Master/fundingsource_edit.html", {"funding": funding})
+
+@login_required
+def fundingsource_view(request):
+    try:
+        enc_id = request.GET.get("source_id")
+        if not enc_id:
+            messages.error(request, "Missing Funding Source ID!")
+            return redirect("fundingsource_master_index")
+
+        # 🔹 Decrypt ID
+        source_id = int(dec(enc_id))
+
+        # 🔹 Fetch funding source
+        funding = FundingSourceMaster.objects.get(source_id=source_id)
+
+        # 🔹 Add encrypted_id for buttons/links
+        funding.encrypted_id = enc(str(funding.source_id))
+
+        context = {"funding": funding}
+        return render(request, "Master/fundingsource_view.html", context)
+
+    except FundingSourceMaster.DoesNotExist:
+        messages.error(request, "Funding Source not found!")
+        return redirect("fundingsource_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("fundingsource_master_index")
+    
+@login_required
+def fundingsource_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON
+            enc_id = data.get("id")  # encrypted ID
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Funding Source ID is missing"})
+
+        try:
+            # 🔹 Decrypt the ID
+            source_id = int(dec(enc_id))
+
+            # 🔹 Fetch and delete using the correct field name
+            funding_source = FundingSourceMaster.objects.get(source_id=source_id)
+            funding_source.delete()
+            return JsonResponse({"success": True})
+
+        except FundingSourceMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Funding Source not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
