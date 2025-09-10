@@ -81,7 +81,7 @@
 {% endblock %}
 
 {% block page_title %}
-    {% include "bootstrap/partials/page-title.html" with page_title='प्रवेशावेळी अट नोंदवही मास्टर' sub_title='' %}
+    {% include "bootstrap/partials/page-title.html" with page_title='वॉर्ड मास्टर' sub_title='' %}
 {% endblock %}
 {% csrf_token %}
 
@@ -91,71 +91,77 @@
     <!-- Header Row -->
     <div class="row mb-3">
         <div class="col-md-6">
-            <h2 class="fw-bold">प्रवेशावेळी अट नोंदवही मास्टर</h2>
+            <h2 class="fw-bold">वॉर्ड मास्टर</h2>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{% url 'conditionatentry_create' %}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> प्रवेशावेळी अटींची नोंदवही
+            <a href="{% url 'ward_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> वॉर्ड मास्टर तयार करा
             </a>
         </div>
     </div>
 
-  <!-- Condition at Entry Master Table -->
+<!-- Ward Master Table -->
 <div class="card shadow-sm">
     <div class="card-body">
-       <table id="conditionAtEntryTable" class="table table-bordered table-striped table-hover align-middle mb-0">
+       <table id="wardMasterTable" class="table table-bordered table-striped table-hover align-middle mb-0">
             <thead class="table-dark text-center">
                 <tr>
-                    <th>Condition Code</th>
-                    <th>Condition at Entry</th>
+                    {% comment %} <th>Ward Code</th> {% endcomment %}
+                    <th>Ward Name</th>
+                    <th>Ward Address</th>
+                    <th>Pincode</th>
+                    <th>Accounting Code</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for cond in conditions %}
+                {% for ward in wards %}
                 <tr>
-                    <td class="text-center">{{ cond.condition_code }}</td>
-                    <td class="text-center">{{ cond.condition_at_entry }}</td>
+                    {% comment %} <td class="text-center">{{ ward.ward_id }}</td> {% endcomment %}
+                    <td class="text-center">{{ ward.ward_name }}</td>
+                    <td class="text-center">{{ ward.ward_address }}</td>
+                    <td class="text-center">{{ ward.pincode }}</td>
+                    <td class="text-center">{{ ward.accounting_code }}</td>
                     <td class="text-center">
                         <div class="mb-2 d-flex gap-2 justify-content-center">
                             <!-- Toggle Active / Inactive -->
-                            {% if cond.is_active %}
+                            {% if ward.is_active %}
                                 <button class="btn btn-success action-btn toggle-status" 
-                                        data-id="{{ cond.encrypted_id }}" 
+                                        data-id="{{ ward.encrypted_id }}" 
                                         data-status="1"
                                         title="Deactivate">
                                     <i class="fa-solid fa-toggle-on"></i>
                                 </button>
                             {% else %}
                                 <button class="btn btn-danger action-btn toggle-status" 
-                                        data-id="{{ cond.encrypted_id }}" 
+                                        data-id="{{ ward.encrypted_id }}" 
                                         data-status="0"
                                         title="Activate">
                                     <i class="fa-solid fa-toggle-off"></i>
                                 </button>
                             {% endif %}
 
-                             <!-- View Button -->
-                            <a href="{% url 'conditionatentry_view' %}?condition_id={{ cond.encrypted_id }}" 
+                            <!-- View Button -->
+                            <a href="{% url 'ward_master_view' %}?ward_id={{ ward.encrypted_id }}" 
                                class="action-btn"
                                style="background-color:#FFD700; color:black;"
                                title="View">
                                 <i class="fa-solid fa-eye"></i>
-                            </a> 
+                            </a>  
 
                              <!-- Edit Button -->
-                            <a href="{% url 'conditionatentry_edit' %}?condition_id={{ cond.encrypted_id }}" 
+                            <a href="{% url 'ward_master_edit' %}?ward_id={{ ward.encrypted_id }}" 
                                 class="action-btn"
                                 style="background-color:#007BFF; color:white;"
                                 title="Edit">
                                 <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
+                            </a> 
 
-                            <!-- Delete Button -->
+                             <!-- Delete Button -->
                             <button type="button" 
                                     class="action-btn"
                                     style="background-color:#FF4136; color:white;"
-                                    onclick="conditionatentry_delete('{{ cond.encrypted_id }}')" 
+                                    onclick="ward_master_delete('{{ ward.encrypted_id }}')" 
                                     title="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button> 
@@ -164,13 +170,15 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" class="text-center text-muted">No condition entries found</td>
+                    <td colspan="6" class="text-center text-muted">No wards found</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+
 
 
     </div>
@@ -273,7 +281,7 @@
                 if (result.isConfirmed) {
                     // Only run AJAX if confirmed
                     $.ajax({
-                        url: "{% url 'update_conditionatentry_status' %}",
+                        url: "{% url 'update_ward_status' %}",
                         type: "POST",
                         contentType: "application/json",
                         headers: { "X-CSRFToken": '{{ csrf_token }}' },
@@ -316,7 +324,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function conditionatentry_delete(encId) {
+function ward_master_delete(encId) {
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -328,7 +336,7 @@ function conditionatentry_delete(encId) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch("{% url 'conditionatentry_delete' %}", {
+            fetch("{% url 'ward_master_delete' %}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

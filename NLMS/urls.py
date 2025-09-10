@@ -110,6 +110,16 @@ urlpatterns = [
     path('fundingsource_delete/', fundingsource_delete, name='fundingsource_delete'),
     path('conditionatentry_master_index/', conditionatentry_master_index, name='conditionatentry_master_index'),
     path('update_conditionatentry_status/', update_conditionatentry_status, name='update_conditionatentry_status'),
+    path('conditionatentry_edit/', conditionatentry_edit, name='conditionatentry_edit'),
+    path('conditionatentry_create/', conditionatentry_create, name='conditionatentry_create'),
+    path('conditionatentry_view/', conditionatentry_view, name='conditionatentry_view'),
+    path('conditionatentry_delete/', conditionatentry_delete, name='conditionatentry_delete'),
+    path('ward_master_index/', ward_master_index, name='ward_master_index'),
+    path('update_ward_status/', update_ward_status, name='update_ward_status'),
+    path('ward_create/', ward_create, name='ward_create'),
+    path('ward_master_edit/', ward_master_edit, name='ward_master_edit'),
+    path('ward_master_view/', ward_master_view, name='ward_master_view'),
+    path('ward_master_delete/', ward_master_delete, name='ward_master_delete'),
     
     
 
