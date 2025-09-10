@@ -149,7 +149,8 @@ LOCAL_APPS = [
     'Account',
     'MenuManager',
     'Masters',
-    'Reports'
+    'Reports',
+    'administration',
   
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

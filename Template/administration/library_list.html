@@ -1,0 +1,106 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+{% block content %}
+
+    {% comment %} Slider {% endcomment %}
+
+    <section class="hero-section" style="background-image: url('{% static 'images/administrative/slider.jpg' %}');">
+        <div class="hero-overlay">
+            <div class="hero-text">
+                <h1>Welcome to NMMC Library</h1>
+                <p>Explore our libraries and discover knowledge.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="libraries-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Find Out Libraries in NMMC</h2>
+
+                <!-- View Toggle (Desktop Only) -->
+                <div class="view-toggle">
+                    <button id="grid-view-btn" title="Grid View" class="active">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button id="list-view-btn" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-grid">
+                <!-- Library 1 -->
+                <div class="library-card">
+                    <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="Central Library" class="library-img">
+                    <div class="library-content">
+                        <h3>Central Library - Nerul</h3>
+                        <h4>Established: 1995</h4>
+                        <p>The Central Library in Nerul is one of the largest public libraries in NMMC, 
+                        featuring thousands of books across literature, science, and history. 
+                        It also provides digital archives, computer access, and dedicated study rooms for students and researchers.</p>
+                        <a href="#" target="_blank" class="card-btn">View More</a>
+                    </div>
+                </div>
+
+                <!-- Library 2 -->
+                <div class="library-card">
+                    <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="Palm Beach Library" class="library-img">
+                    <div class="library-content">
+                        <h3>Palm Beach Library - Vashi</h3>
+                        <h4>Established: 2002</h4>
+                        <p>This modern facility offers a wide range of research journals, 
+                        reading halls, and access to e-resources. It frequently hosts 
+                        workshops, author meet-ups, and book launches for the local community.</p>
+                        <a href="#" target="_blank" class="card-btn">View More</a>
+                    </div>
+                </div>
+
+                <!-- Library 3 -->
+                <div class="library-card">
+                    <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="Seawoods Library" class="library-img">
+                    <div class="library-content">
+                        <h3>Seawoods Library - Seawoods</h3>
+                        <h4>Established: 2010</h4>
+                        <p>A vibrant library focusing on children and young adults, 
+                        with interactive storytelling sessions, activity-based learning, 
+                        and a well-curated collection of books to encourage early reading habits.</p>
+                        <a href="#" target="_blank" class="card-btn">View More</a>
+                    </div>
+                </div>
+
+                <!-- Library 4 -->
+                <div class="library-card">
+                    <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="Belapur Knowledge Center" class="library-img">
+                    <div class="library-content">
+                        <h3>Belapur Knowledge Center - Belapur</h3>
+                        <h4>Established: 2005</h4>
+                        <p>This knowledge hub combines traditional books with digital learning platforms. 
+                        It has e-book stations, conference halls, and is often used as a venue for 
+                        seminars, community discussions, and cultural programs.</p>
+                        <a href="#" target="_blank" class="card-btn">View More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+<script>
+    document.getElementById("grid-view-btn").addEventListener("click", function () {
+        document.querySelector(".card-grid").classList.add("grid-view");
+        document.querySelector(".card-grid").classList.remove("list-view");
+        this.classList.add("active");
+        document.getElementById("list-view-btn").classList.remove("active");
+    });
+
+    document.getElementById("list-view-btn").addEventListener("click", function () {
+        document.querySelector(".card-grid").classList.add("list-view");
+        document.querySelector(".card-grid").classList.remove("grid-view");
+        this.classList.add("active");
+        document.getElementById("grid-view-btn").classList.remove("active");
+    });
+</script>
+
+
+{% endblock %}

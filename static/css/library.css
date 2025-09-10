@@ -1,0 +1,696 @@
+
+/* ========================= Global Variables ========================= */
+:root {
+    --primary-color: #015296;
+    --secondary-color: #002147;
+    --font-family: "Merriweather", serif;
+    --text-color: #ffffff;
+    --hover-color: #013d70;
+    /* --header-bg: #fdf9f6; */
+    --header-bg: #EDEDF4;
+    --font-size-xl: 1.8rem;
+    --font-size-lg: 1.5rem;
+    --font-size-md: 1.2rem;
+    --font-size-sm: 1rem;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+}
+
+/* ========================= Reset + Base ========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+/* ========================= Header Top Bar ========================= */
+.brand-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ========================= Navbar ========================= */
+.navbar {
+    background-color: var(--primary-color);
+    overflow: visible; /* important for dropdowns */
+}
+
+.navbar ul li {
+    position: relative;
+}
+
+.navbar a {
+    display: block;
+    padding: 12px 18px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: var(--font-weight-bold);
+    position: relative;
+}
+
+.navbar a:hover::after {
+    width: 100%;
+}
+
+/* ========================= Dropdown menu ========================= */
+.navbar .dropdown {
+    position: relative;
+}
+
+.navbar .dropdown-menu {
+    display: none; /* hidden by default */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--header-bg);
+    min-width: 300px;
+    flex-direction: column;
+    border-radius: 6px;
+    padding: 5px 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.dropdown-menu li a {
+    padding: 10px 20px;
+    color: var(--primary-color);
+}
+
+.dropdown-menu li a:hover {
+    background-color: #f0f0f0;
+}
+
+/* ========================= Desktop: show dropdown on hover ========================= */
+@media screen and (min-width: 1001px) {
+
+    .navbar .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+
+    .navbar ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .navbar a::after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 3px;
+        background-color: #d0ad37;
+        left: 0;
+        bottom: 0;
+        transition: width 0.3s ease;
+    }
+
+    .brand-left .logo,
+    .right-logo {
+        height: 100px;
+        width: auto;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 40px;
+        background-color: var(--header-bg);
+        color: var(--primary-color);
+    }
+
+    .navbar ul li.icon {
+        display: none;
+    }
+
+    .govLink {
+        font-family: "Merriweather", serif;
+        font-size: var(--font-size-sm, 1rem);
+        font-weight: 600;
+        color: var(--primary-color);
+        letter-spacing: 0.5px;
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        text-decoration: none;
+        left: 15%;
+    }
+}
+
+/* ========================= Mobile styles ========================= */
+@media screen and (max-width: 1000px) {
+
+    .navbar ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .navbar ul li:not(.icon) {
+        display: none;
+    }
+
+    .navbar ul li.icon {
+        display: block;
+        float: right;
+    }
+
+    .navbar.responsive ul {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .navbar.responsive ul li {
+        display: block;
+        text-align: left;
+    }
+
+    .navbar.responsive .dropdown-menu {
+        position: relative;
+        box-shadow: none;
+        border-radius: 18px;
+        width: 90%;
+        display: none;
+        margin: 2%;
+    }
+
+    .dropdown-menu.show {
+        display: block !important;
+    }
+
+    .right-logo {
+        display: none;
+    }
+
+    .header-title {
+        font-size: 1.5rem;
+    }
+
+    .brand-left .logo,
+    .right-logo {
+        height: 70px;
+        width: auto;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 10px;
+        background-color: var(--header-bg);
+        color: var(--primary-color);
+    }
+}
+
+/* ========================= Header Utility Row ========================= */
+.headerUtilityRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* background-color: #f1f1f1; */
+    background-color: var(--header-bg);
+}
+
+.govLink .underlineHover {
+    position: absolute;
+    height: 2px;
+    width: 0;
+    background: #d4af37;
+    bottom: 0;
+    left: 0;
+    transition: width 0.3s ease;
+}
+
+.govLink:hover .underlineHover {
+    width: 100%;
+}
+
+.fontControlContainer {
+    padding: 10px;
+    font-family: "Merriweather", serif;
+    text-align: right;
+    margin-right: 15px;
+}
+
+.fontControlBtn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 6px 12px;
+    margin-left: 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    font-size: var(--font-size-sm, 1rem);
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+}
+
+/* ========================= Mobile/Tablet adjustments ========================= */
+@media all and (max-width: 1000px) {
+
+    .govLink {
+        font-size: var(--font-size-sm, 1rem);
+        margin-top: 1%;
+        padding: 18px;
+        font-family: "Merriweather", serif;
+        font-weight: 600;
+        color: var(--primary-color);
+        letter-spacing: 0.5px;
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .fontControlBtn {
+        padding: 5px 10px;
+        font-size: 13px;
+    }
+
+    .fontControlContainer {
+        display: none;
+    }
+
+    .headerUtilityRow {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* ========================= Hamburger Icon Styling ========================= */
+.navbar ul li.icon a {
+    display: block;
+    color: var(--text-color);
+    font-size: 1.8rem;
+    padding: 12px 18px;
+    cursor: pointer;
+}
+
+/* ========================= Dropdown Menu ========================= */
+.dropdown-menu {
+    display: none;
+}
+
+.dropdown-menu.show {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ========================= Footer ========================= */
+footer {
+    background-color: #131313;
+    color: #ffffff;
+    padding: 15px 40px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+}
+
+footer .footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+footer .footer-left {
+    text-align: left;
+    flex: 1;
+}
+
+footer .footer-right {
+    text-align: right;
+    flex: 1;
+}
+
+footer a {
+    color: #d0ad37;
+    text-decoration: none;
+    font-weight: var(--font-weight-bold);
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* ========================= Mobile Footer ========================= */
+@media screen and (max-width: 1000px) {
+    footer .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    footer .footer-left,
+    footer .footer-right {
+        text-align: center;
+        flex: unset;
+    }
+}
+
+/* ========================= Hero Section ========================= */
+
+.hero-section {
+    background-size: cover;
+    background-position: center;
+    height: 700px;
+    position: relative;
+}
+
+/* Overlay */
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: flex-start;   /* start at top */
+    justify-content: center;
+    text-align: center;
+    padding-top: 450px; /* push text down on large screens */
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.hero-text {
+    color: var(--text-color);
+    max-width: 800px; /* prevent text from stretching too wide */
+}
+
+.hero-text h1 {
+    font-size: 2.5rem;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 1.5px;
+}
+
+.hero-text p {
+    font-size: 1.2rem;
+    margin-top: 10px;
+    letter-spacing: 1.5px;
+}
+
+/* Tablet and Mobile adjustments */
+@media screen and (max-width: 1000px) {
+    .hero-section {
+        height: 400px;
+    }
+
+    .hero-overlay {
+        padding-top: 200px; /* reduce push on smaller screens */
+    }
+
+    .hero-text h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero-text p {
+        font-size: 1rem;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .hero-section {
+        height: 300px;
+    }
+
+    .hero-overlay {
+        padding-top: 150px; /* even smaller push */
+    }
+
+    .hero-text h1 {
+        font-size: 1.5rem;
+    }
+
+    .hero-text p {
+        font-size: 0.9rem;
+    }
+}
+
+/* =====================
+   Library Section
+===================== */
+/* Section */
+#libraries-section {
+    background-color: var(--header-bg);
+    padding: 50px 0;
+    font-family: var(--font-family);
+}
+
+/* Heading */
+.section-header {
+    display: flex;
+    flex-direction: column; /* stack vertically */
+    align-items: center;    /* center horizontally */
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.section-title {
+  font-size: var(--font-size-xl);
+  color: var(--primary-color);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  position: relative;
+  padding-bottom: 6px;
+}
+
+/* keep underline with flex layout */
+.section-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: #d4af37;
+  border-radius: 2px;
+}
+
+/* 📱 Mobile responsiveness */
+@media screen and (max-width: 768px) {
+    .section-title {
+        font-size: var(--font-size-lg); /* smaller heading */
+        padding-bottom: 6px;
+    }
+
+    .section-title::after {
+        height: 2px; /* thinner underline */
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .section-title {
+        font-size: var(--font-size-md);
+    }
+}
+
+
+
+
+/* Card Grid */
+
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 25px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Library Card */
+.library-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: space-between;
+}
+
+.library-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Content */
+.library-content h3 {
+    margin-top: 2%;
+    font-size: var(--font-size-lg);
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+    font-weight: var(--font-weight-bold);
+}
+
+.library-content h4 {
+    font-size: var(--font-size-sm);
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: var(--font-weight-normal);
+}
+
+.library-content p {
+    font-size: var(--font-size-sm);
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Button */
+.card-btn {
+    display: inline-block;
+    padding: 10px 18px;
+    background-color: #d4af37;
+    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.card-btn:hover {
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    background-color: transparent;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
+}
+
+.library-img {
+    width: 100%;
+    height: 200px;  /* fixed height */
+    object-fit: cover; /* makes image look neat, cropped properly */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* =====================
+   Back To Top Button   
+===================== */
+
+#myBtn {
+    display: none;
+    position: fixed;
+    bottom: 60px;
+    right: 30px;
+    z-index: 99;
+    font-size: 18px;
+    border: none;
+    outline: none;
+    background-color: #D4AF37;
+    color: #fff;
+    cursor: pointer;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+#myBtn:hover {
+    background-color: #fff;
+    color: #d4af37;
+    border: 3px solid #d4af37;
+}
+
+
+/* Toggle button styles */
+.view-toggle {
+    margin-top: 15px; /* spacing below the heading */
+    display: flex;
+    gap: 15px;         /* space between buttons */
+}
+
+.view-toggle button {
+    background-color: #d4af37;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-size: 18px;
+    transition: background 0.3s;
+}
+
+.view-toggle button:hover {
+    background-color: #b8932e;
+}
+
+.view-toggle button.active {
+    background-color: #b8932e;
+}
+
+
+/* Default grid view */
+.card-grid.grid-view {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+/* List view */
+.card-grid.list-view {
+    display: block;
+}
+
+.card-grid.list-view .library-card {
+    display: flex;
+    flex-direction: row; /* image left, content right */
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.card-grid.list-view .library-img {
+    width: 250px;
+    height: auto;
+    border-radius: 10px 0 0 10px;
+}
+
+.card-grid.list-view .library-content {
+    flex: 1;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Prevent button stretching in list view */
+.card-grid.list-view .card-btn {
+    align-self: flex-end;   /* sticks to right side */
+    margin-top: 10px;
+}
+
+@media screen and (max-width: 768px) {
+    .view-toggle {
+        display: none;
+    }
+}

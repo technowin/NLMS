@@ -421,3 +421,38 @@ class ResourceLocationMaster(models.Model):
     class Meta:
         db_table = "tbl_resourcelocationmaster"
         
+class WardMaster(models.Model):
+    ward_id = models.AutoField(primary_key=True)
+    ward_name = models.TextField(null=True, blank=True)              # Ward name
+    ward_address = models.TextField(null=True, blank=True)           # Address of the ward
+    pincode = models.TextField(null=True, blank=True)                # comma-separated pincodes
+    accounting_code = models.TextField(null=True, blank=True)        # accounting code
+    is_active = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_wardmaster"
+
+    def __str__(self):
+        return f"Ward {self.ward_no} - {self.ward_name}"
+    
+class LibraryLocationMaster(models.Model):
+    location_id = models.AutoField(primary_key=True)
+    location_name = models.TextField(null=True, blank=True)                # Library name
+    address = models.TextField(null=True, blank=True)                      # Address of library
+    pincode = models.TextField(null=True, blank=True)                      # Pincode
+    ward = models.ForeignKey(WardMaster,on_delete=models.CASCADE,related_name="libraries",   db_column="ward_id",null=True,blank=True)
+    is_active = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_librarylocationmaster"
+
+    def __str__(self):
+        return f"{self.location_name} ({self.location_code})"

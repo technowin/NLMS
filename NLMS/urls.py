@@ -24,6 +24,7 @@ from Account.views import *
 from Masters.views import *
 from Reports.views import *
 from MenuManager.views import *
+from administration.views import *
 
 # from ChatBot.views import *
 urlpatterns = [
@@ -55,7 +56,8 @@ urlpatterns = [
 
 
     # Account
-    path("", Login,name='Account'),
+    path("", library_list,name='library_list'),
+    # path("", Login,name='Account'),
     path("Login", Login,name='Account'),
     path("Login", Login,name='Login'),
     path("home", home,name='home'),
@@ -79,8 +81,6 @@ urlpatterns = [
     path("updatestatus", updatestatus, name="updatestatus"),
     path('materialtype_list/', materialtype_list, name='materialtype_list'),
     path('material_type_create/', material_type_create, name='material_type_create'),
-    # path('translate_word_material/', translate_word_material, name='translate_word_material'),
-    # path("transliterate/", transliterate_marathi, name="transliterate"),
     path('materialtype_view/', materialtype_view, name='materialtype_view'),
     path('materialtype_edit/', materialtype_edit, name='materialtype_edit'),
     path('materialtype_delete/', materialtype_delete, name='materialtype_delete'),
@@ -142,6 +142,9 @@ urlpatterns = [
     path("blank",blank,name='blank'),
     path("charts",charts,name='charts'),  
     path("tables",tables,name='tables'),
+    
+    # library list
+    path("library_list",library_list,name='library_list'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

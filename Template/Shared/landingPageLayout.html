@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navi Mumbai Municipal Corporation</title>
+    
+    <!-- CSS -->
+    <link href="{% static 'css/library.css' %}" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+</head>
+<body>
+    
+
+    <header>
+            
+            <div class="headerUtilityRow">
+                <div class="govLinkContainer">
+                    <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
+                    aria-label="Welcome to NMMC Library official website">
+                    Navi Mumbai Municipal Corporation
+                    {% comment %} &nbsp; Welcome to NMMC Library {% endcomment %}
+                    <span class="underlineHover"></span>
+                    </a>
+                </div>
+                <div class="fontControlContainer">
+                    <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
+                    <button onclick="decreaseFont()" class="fontControlBtn" title="Decrease Font Size">A-</button>
+                    <button onclick="resetFont()" class="fontControlBtn" title="Reset Font Size">A</button>
+                </div>
+            </div>
+            
+            <div class="top-bar">
+                <!-- Left: logo + title -->
+                <div class="brand-left">
+                    <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="NMMC Logo" class="logo">
+                    <h1 class="header-title">Navi Mumbai Municipal Corporation</h1>
+                </div>
+
+                <!-- Right logo -->
+                <img src="{% static 'images/administrative/layout_img.png' %}" alt="NMMC Logo" class="logo right-logo">
+            </div>
+
+            <!-- Navbar -->
+            <nav class="navbar" id="myTopnav">
+                <ul>
+                    <li class="nav-item"><a href="#">Home</a></li>
+
+                    <li class="nav-item dropdown">
+                        <a href="javascript:void(0);" class="dropbtn">About Us ▾</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">About NMMC</a></li>
+                            <li><a href="#">Vision and Mission</a></li>
+                            <li><a href="#">Infrastructure</a></li>
+                            <li><a href="#">Awards and Recognitions</a></li>
+                            <li><a href="#">Achievements</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="javascript:void(0);" class="dropbtn">Services ▾</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">Library Services</a></li>
+                            <li><a href="#">Online Services</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="icon">
+                        <a href="javascript:void(0);" onclick="toggleNavbar()">☰</a>
+                    </li>
+
+
+                </ul>
+            </nav>
+
+    </header>
+
+     <!-- Page Content -->
+    {% block content %}
+    {% endblock %}
+
+    <footer>
+        <div class="footer-content">
+            <p class="footer-left">&copy; 2024 Navi Mumbai Municipal Corporation. All rights reserved.</p>
+            <p class="footer-right">
+                Designed and Developed by 
+                <a href="https://technowinitinfra.com/" target="_blank">Technowin IT Infra Pvt Ltd, NMMC</a>
+            </p>
+        </div>
+    </footer>
+    
+    <button onclick="topFunction()" id="myBtn" title="Go to top">
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </button>
+
+</body>
+
+    <script>
+        function toggleNavbar() {
+            const navbar = document.getElementById("myTopnav");
+            navbar.classList.toggle("responsive");
+        }
+
+        // Toggle dropdowns in mobile view
+        document.querySelectorAll('.dropbtn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (window.innerWidth <= 1000) { // mobile/tablet only
+                const dropdown = this.nextElementSibling;
+                dropdown.classList.toggle('show');
+                }
+            });
+        });
+    </script>
+
+    <!-- Script -->
+    <script>
+        // Show button only when user scrolls down
+        window.onscroll = function() {
+            let myBtn = document.getElementById("myBtn");
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                myBtn.style.display = "block";
+            } else {
+                myBtn.style.display = "none";
+            }
+        };
+
+        // Scroll to top function
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+    </script>
+
+
+
+</html>
