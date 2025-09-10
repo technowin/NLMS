@@ -108,6 +108,10 @@ urlpatterns = [
     path('fundingsource_edit/', fundingsource_edit, name='fundingsource_edit'),
     path('fundingsource_view/', fundingsource_view, name='fundingsource_view'),
     path('fundingsource_delete/', fundingsource_delete, name='fundingsource_delete'),
+    path('conditionatentry_master_index/', conditionatentry_master_index, name='conditionatentry_master_index'),
+    path('update_conditionatentry_status/', update_conditionatentry_status, name='update_conditionatentry_status'),
+    
+    
 
     #Reports 
     path('common_html', common_html, name='common_html'),

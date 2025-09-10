@@ -1812,3 +1812,62 @@ def fundingsource_delete(request):
             return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+@login_required
+def conditionatentry_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            # 🔹 Fetch all condition at entry records
+            conditions = ConditionAtEntryMaster.objects.all()
+
+            # 🔹 Encrypt the condition_id for each record
+            for cond in conditions:
+                cond.encrypted_id = enc(str(cond.condition_id))
+
+            return render(
+                request,
+                'Master/conditionatentry_master_index.html',
+                {"conditions": conditions}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+
+@login_required
+def update_conditionatentry_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            encrypted_id = data.get("id")      # from JS
+            is_active = data.get("status")     # from JS
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # 🔹 Decrypt and convert
+            condition_id = int(dec(encrypted_id))
+
+            # 🔹 Fetch condition entry using the correct PK
+            condition = ConditionAtEntryMaster.objects.get(condition_id=condition_id)
+
+            condition.is_active = bool(int(is_active))
+            condition.save()
+
+            return JsonResponse({"success": True, "status": int(condition.is_active)})
+
+        except ConditionAtEntryMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Condition Entry not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
