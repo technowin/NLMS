@@ -81,7 +81,7 @@
 {% endblock %}
 
 {% block page_title %}
-    {% include "bootstrap/partials/page-title.html" with page_title='निधी स्त्रोत मास्टर' sub_title='' %}
+    {% include "bootstrap/partials/page-title.html" with page_title='प्रवेशावेळी अट नोंदवही मास्टर' sub_title='' %}
 {% endblock %}
 {% csrf_token %}
 
@@ -91,10 +91,10 @@
     <!-- Header Row -->
     <div class="row mb-3">
         <div class="col-md-6">
-            <h2 class="fw-bold">प्रवेशावेळी अट नोंदवही</h2>
+            <h2 class="fw-bold"></h2>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{% url 'fundingsource_create' %}" class="btn btn-success">
+            <a href="{% url 'conditionatentry_create' %}" class="btn btn-success">
                 <i class="bi bi-plus-circle"></i> प्रवेशावेळी अटींची नोंदवही
             </a>
         </div>
@@ -135,30 +135,30 @@
                                 </button>
                             {% endif %}
 
-                            {% comment %} <!-- View Button -->
+                             <!-- View Button -->
                             <a href="{% url 'conditionatentry_view' %}?condition_id={{ cond.encrypted_id }}" 
                                class="action-btn"
                                style="background-color:#FFD700; color:black;"
                                title="View">
                                 <i class="fa-solid fa-eye"></i>
-                            </a>  {% endcomment %}
+                            </a> 
 
-                            {% comment %} <!-- Edit Button -->
+                             <!-- Edit Button -->
                             <a href="{% url 'conditionatentry_edit' %}?condition_id={{ cond.encrypted_id }}" 
-                               class="action-btn"
-                               style="background-color:#007BFF; color:white;"
-                               title="Edit">
+                                class="action-btn"
+                                style="background-color:#007BFF; color:white;"
+                                title="Edit">
                                 <i class="fa-solid fa-pen-to-square"></i>
-                            </a> {% endcomment %}
+                                </a>
 
-                            {% comment %} <!-- Delete Button -->
+                            <!-- Delete Button -->
                             <button type="button" 
                                     class="action-btn"
                                     style="background-color:#FF4136; color:white;"
                                     onclick="conditionatentry_delete('{{ cond.encrypted_id }}')" 
                                     title="Delete">
                                 <i class="fa-solid fa-trash"></i>
-                            </button>  {% endcomment %}
+                            </button> 
                         </div> 
                     </td>
                 </tr>
@@ -195,14 +195,14 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-    $(document).ready(function () {
-        $('#conditionAtEntryTable').DataTable({
-            "pageLength": 5,  // default rows per page
-            "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
-            "ordering": true, // enable column sorting
-            "searching": true, // enable search box
+        $(document).ready(function () {
+            $('#conditionAtEntryTable').DataTable({
+                "pageLength": 5,  // default rows per page
+                "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
+                "ordering": true, //enable column sorting
+                "searching": true, // enable search box
+            });
         });
-    });
     </script>
 
 
@@ -316,7 +316,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function fundingsource_delete(encId) {
+function conditionatentry_delete(encId) {
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -328,7 +328,7 @@ function fundingsource_delete(encId) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch("{% url 'fundingsource_delete' %}", {
+            fetch("{% url 'conditionatentry_delete' %}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

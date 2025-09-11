@@ -81,7 +81,7 @@
 {% endblock %}
 
 {% block page_title %}
-    {% include "bootstrap/partials/page-title.html" with page_title='विषय प्रकार मास्टर' sub_title='' %}
+    {% include "bootstrap/partials/page-title.html" with page_title='वॉर्ड मास्टर' sub_title='' %}
 {% endblock %}
 {% csrf_token %}
 
@@ -94,102 +94,92 @@
             <h2 class="fw-bold"></h2>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{% url 'subject_type_create' %}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> विषय प्रकार तयार करा
+            <a href="{% url 'ward_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> वॉर्ड मास्टर तयार करा
             </a>
         </div>
     </div>
 
-    <!-- Table -->
+<!-- Ward Master Table -->
 <div class="card shadow-sm">
     <div class="card-body">
-       <table id="subjectTable" class="table table-bordered table-striped table-hover align-middle mb-0">
+       <table id="wardMasterTable" class="table table-bordered table-striped table-hover align-middle mb-0">
             <thead class="table-dark text-center">
                 <tr>
-                    {% comment %} <th>ID</th> {% endcomment %}
-                    <th>Subject Code</th>
-                    <th>Name (English)</th>
-                    <th>Name (Marathi)</th>
-                    <th>Description</th>
+                    {% comment %} <th>Ward Code</th> {% endcomment %}
+                    <th>Ward Name</th>
+                    <th>Ward Address</th>
+                    <th>Pincode</th>
+                    <th>Accounting Code</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for sub in subjects %}
+                {% for ward in wards %}
                 <tr>
-                    {% comment %} <td class="text-center">{{ sub.id }}</td> {% endcomment %}
-                      <td class="text-center">{{ sub.subjectCode }}</td>
-                    <td class="text-center">{{ sub.subjectNameEnglish }}</td>
-                    <td class="text-center">{{ sub.subjectNameMarathi }}</td>
-                    <td class="text-center">{{ sub.subjectDescription }}</td>
+                    {% comment %} <td class="text-center">{{ ward.ward_id }}</td> {% endcomment %}
+                    <td class="text-center">{{ ward.ward_name }}</td>
+                    <td class="text-center">{{ ward.ward_address }}</td>
+                    <td class="text-center">{{ ward.pincode }}</td>
+                    <td class="text-center">{{ ward.accounting_code }}</td>
                     <td class="text-center">
-                  <div class="mb-2 d-flex gap-2">
-    <!-- Toggle Active / Inactive -->
-    {% if sub.is_active %}
-        <button class="btn btn-success action-btn toggle-status" 
-                data-id="{{ sub.id }}" 
-                data-status="1"
-                title="Deactivate">
-            <i class="fa-solid fa-toggle-on"></i>
-        </button>
-    {% else %}
-        <button class="btn btn-danger action-btn toggle-status" 
-                data-id="{{ sub.id }}" 
-                data-status="0"
-                title="Activate">
-            <i class="fa-solid fa-toggle-off"></i>
-        </button>
-    {% endif %}
+                        <div class="mb-2 d-flex gap-2 justify-content-center">
+                            <!-- Toggle Active / Inactive -->
+                            {% if ward.is_active %}
+                                <button class="btn btn-success action-btn toggle-status" 
+                                        data-id="{{ ward.encrypted_id }}" 
+                                        data-status="1"
+                                        title="Deactivate">
+                                    <i class="fa-solid fa-toggle-on"></i>
+                                </button>
+                            {% else %}
+                                <button class="btn btn-danger action-btn toggle-status" 
+                                        data-id="{{ ward.encrypted_id }}" 
+                                        data-status="0"
+                                        title="Activate">
+                                    <i class="fa-solid fa-toggle-off"></i>
+                                </button>
+                            {% endif %}
 
-    <!-- View Button (Bright Yellow) -->
-<a href="{% url 'subject_type_view' %}?id={{ sub.encrypted_id }}" 
-   class="action-btn"
-   style="background-color:#FFD700; color:black;"
-   title="View">
-    <i class="fa-solid fa-eye"></i>
-</a>
+                            <!-- View Button -->
+                            <a href="{% url 'ward_master_view' %}?ward_id={{ ward.encrypted_id }}" 
+                               class="action-btn"
+                               style="background-color:#FFD700; color:black;"
+                               title="View">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>  
 
+                             <!-- Edit Button -->
+                            <a href="{% url 'ward_master_edit' %}?ward_id={{ ward.encrypted_id }}" 
+                                class="action-btn"
+                                style="background-color:#007BFF; color:white;"
+                                title="Edit">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a> 
 
-    <!-- Edit Button (Bright Blue) -->
-    <a href="{% url 'subject_edit' %}?id={{ sub.encrypted_id }}" 
-       class="action-btn"
-       style="background-color:#007BFF; color:white;"
-       title="Edit">
-        <i class="fa-solid fa-pen-to-square"></i>
-    </a>
-
-<!-- Delete Button (Red) -->
-<button type="button" 
-        class="action-btn"
-        style="background-color:#FF4136; color:white;"
-        onclick="deleteSubject('{{ sub.encrypted_id }}')" 
-        title="Delete">
-    <i class="fa-solid fa-trash"></i>
-</button>
-
-</div>
-
-
-
-
-
-                        {% comment %} <!-- Delete -->
-                        <a href="javascript:void(0);"
-                           class="btn btn-sm btn-danger d-inline-flex align-items-center delete-btn"
-                           data-id="{{ sub.id }}">
-                           <i class="fa-solid fa-trash me-2"></i> Delete
-                        </a>   {% endcomment %}
+                             <!-- Delete Button -->
+                            <button type="button" 
+                                    class="action-btn"
+                                    style="background-color:#FF4136; color:white;"
+                                    onclick="ward_master_delete('{{ ward.encrypted_id }}')" 
+                                    title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button> 
+                        </div> 
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted">No records found</td>
+                    <td colspan="6" class="text-center text-muted">No wards found</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+
+
 
     </div>
 </div>
@@ -213,14 +203,14 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-    $(document).ready(function () {
-        $('#subjectTable').DataTable({
-            "pageLength": 5,  // default rows per page
-            "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
-            "ordering": true, // enable column sorting
-            "searching": true, // enable search box
+        $(document).ready(function () {
+            $('#conditionAtEntryTable').DataTable({
+                "pageLength": 5,  // default rows per page
+                "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
+                "ordering": true, //enable column sorting
+                "searching": true, // enable search box
+            });
         });
-    });
     </script>
 
 
@@ -291,7 +281,7 @@
                 if (result.isConfirmed) {
                     // Only run AJAX if confirmed
                     $.ajax({
-                        url: "{% url 'update_subject_status' %}",
+                        url: "{% url 'update_ward_status' %}",
                         type: "POST",
                         contentType: "application/json",
                         headers: { "X-CSRFToken": '{{ csrf_token }}' },
@@ -334,7 +324,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function deleteSubject(encId) {
+function ward_master_delete(encId) {
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -346,23 +336,24 @@ function deleteSubject(encId) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch("{% url 'subject_delete' %}", {
+            fetch("{% url 'ward_master_delete' %}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": "{{ csrf_token }}"
                 },
-                body: JSON.stringify({ id: encId }) // send encrypted id dynamically
+                body: JSON.stringify({ id: encId }) // send encrypted id
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     Swal.fire(
                         'Deleted!',
-                        'Subject has been deleted.',
+                        'Funding Source has been deleted.',
                         'success'
                     ).then(() => {
-                        window.location.href = "{% url 'subject_type_master_index' %}";
+                        // Reload page or remove row dynamically
+                        window.location.reload();
                     });
                 } else {
                     Swal.fire('Error!', data.error, 'error');
@@ -370,12 +361,13 @@ function deleteSubject(encId) {
             })
             .catch(error => {
                 console.error("Error:", error);
-                Swal.fire('Error!', 'An error occurred!', 'error');
+                Swal.fire('Error!', 'An unexpected error occurred!', 'error');
             });
         }
     });
 }
 </script>
+
 
 
 

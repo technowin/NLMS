@@ -1822,13 +1822,14 @@ def conditionatentry_master_index(request):
             role_id = request.user.role_id 
 
         if request.method == "GET":
-            # 🔹 Fetch all condition at entry records
-            conditions = ConditionAtEntryMaster.objects.all()
+            # 🔹 Fetch all condition at entry records (ascending by condition_id)
+            conditions = ConditionAtEntryMaster.objects.all().order_by('condition_id')
 
             # 🔹 Encrypt the condition_id for each record
             for cond in conditions:
                 cond.encrypted_id = enc(str(cond.condition_id))
 
+            # 🔹 Render the page
             return render(
                 request,
                 'Master/conditionatentry_master_index.html',
@@ -1841,6 +1842,8 @@ def conditionatentry_master_index(request):
         callproc("stp_error_log", [fun, str(e), user])  
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
+
+
 
 @login_required
 def update_conditionatentry_status(request):
@@ -1871,3 +1874,756 @@ def update_conditionatentry_status(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def conditionatentry_edit(request):
+    condition = None
+
+    try:
+        if request.method == "POST":
+            # 🔹 Get encrypted ID from hidden form field
+            enc_id = request.POST.get("condition_id")
+            if not enc_id:
+                messages.error(request, "Missing Condition ID!")
+                return redirect("conditionatentry_master_index")
+
+            # 🔹 Decrypt the ID
+            try:
+                condition_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("conditionatentry_master_index")
+
+            # 🔹 Fetch the condition record
+            condition = ConditionAtEntryMaster.objects.get(condition_id=condition_id)
+
+            user_id = request.user.id
+
+            # ✅ Get form data
+            condition_code = request.POST.get("condition_code", "").strip()
+            condition_at_entry = request.POST.get("condition_at_entry", "").strip()
+            is_active = request.POST.get("is_active", "1")
+
+            # ✅ Validate required fields
+            if not condition_code or not condition_at_entry:
+                messages.error(request, "Condition Code and Name are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check for condition_at_entry
+            duplicate_name = ConditionAtEntryMaster.objects.filter(
+                condition_at_entry__iexact=condition_at_entry
+            ).exclude(condition_id=condition.condition_id)
+            if duplicate_name.exists():
+                messages.error(request, f"Condition '{condition_at_entry}' already exists!")
+                return redirect("conditionatentry_master_index")
+
+            # 🔹 Update the record
+            condition.condition_code = condition_code
+            condition.condition_at_entry = condition_at_entry
+            condition.is_active = bool(int(is_active))
+            condition.updated_by = user_id
+            condition.updated_at = timezone.now()
+            condition.save()
+
+            messages.success(request, "Condition updated successfully!")
+            return redirect("conditionatentry_master_index")
+
+        else:  # GET request
+            enc_id = request.GET.get("condition_id")
+            if not enc_id:
+                messages.error(request, "Missing Condition ID!")
+                return redirect("conditionatentry_master_index")
+
+            # 🔹 Decrypt ID
+            try:
+                condition_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("conditionatentry_master_index")
+
+            # 🔹 Fetch record directly
+            condition = ConditionAtEntryMaster.objects.get(condition_id=condition_id)
+            condition.encrypted_id = enc(str(condition.condition_id))  # for hidden input
+
+    except Exception as e:
+        print("❌ Unexpected Error:", e)
+        messages.error(request, "An unexpected error occurred!")
+        return redirect("conditionatentry_master_index")
+
+    # 🔹 Render edit form
+    return render(request, "Master/conditionatentry_edit.html", {"condition": condition})
+
+
+@login_required
+def conditionatentry_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            enc_id = request.POST.get("id")   # 🔹 Hidden encrypted ID (if editing)
+            condition_at_entry = request.POST.get("condition_at_entry", "").strip()
+            condition_code = request.POST.get("condition_code", "").strip()
+            is_active = request.POST.get("is_active", 1)
+
+            if not condition_code:
+                messages.error(request, "Condition Code is required!")
+                return redirect("conditionatentry_create")
+
+            # 🔹 If enc_id exists → decrypt & update
+            if enc_id:
+                try:
+                    condition_id = int(dec(enc_id))  # ✅ decrypt
+                    condition = ConditionAtEntryMaster.objects.get(condition_id=condition_id)
+
+                    condition.condition_at_entry = condition_at_entry
+                    condition.condition_code = condition_code
+                    condition.is_active = is_active
+                    condition.updated_by = user
+                    condition.updated_at = timezone.now()
+                    condition.save()
+
+                    messages.success(request, f"Condition '{condition_at_entry}' updated successfully!")
+                    return redirect("conditionatentry_master_index")
+
+                except ConditionAtEntryMaster.DoesNotExist:
+                    messages.error(request, "Condition not found.")
+                    return redirect("conditionatentry_master_index")
+
+            # 🔹 Create new condition at entry
+            ConditionAtEntryMaster.objects.create(
+                condition_code=condition_code,
+                condition_at_entry=condition_at_entry,
+                is_active=is_active,
+                created_by=user,
+                created_at=timezone.now()
+            )
+
+            messages.success(request, f"Condition '{condition_at_entry}' created successfully with code {condition_code}!")
+            return redirect("conditionatentry_master_index")
+
+        # GET → Show form
+        return render(request, "Master/conditionatentry_create.html")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("conditionatentry_master_index")
+
+
+@login_required
+def conditionatentry_view(request):
+    try:
+        enc_id = request.GET.get("condition_id")
+        if not enc_id:
+            messages.error(request, "Missing Condition ID!")
+            return redirect("conditionatentry_master_index")
+
+        # 🔹 Decrypt ID
+        condition_id = int(dec(enc_id))
+
+        # 🔹 Fetch condition record
+        condition = ConditionAtEntryMaster.objects.get(condition_id=condition_id)
+
+        # 🔹 Add encrypted_id for buttons/links
+        condition.encrypted_id = enc(str(condition.condition_id))
+
+        context = {"condition": condition}
+        return render(request, "Master/conditionatentry_view.html", context)
+
+    except ConditionAtEntryMaster.DoesNotExist:
+        messages.error(request, "Condition record not found!")
+        return redirect("conditionatentry_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("conditionatentry_master_index")
+
+
+@login_required
+def conditionatentry_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON
+            enc_id = data.get("id")  # encrypted ID
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Condition At Entry ID is missing"})
+
+        try:
+            # 🔹 Decrypt the ID
+            condition_id = int(dec(enc_id))
+
+            # 🔹 Fetch and delete using the correct field name
+            condition = ConditionAtEntryMaster.objects.get(condition_id=condition_id)
+            condition.delete()
+            return JsonResponse({"success": True})
+
+        except ConditionAtEntryMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Condition At Entry not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+def ward_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            # 🔹 Fetch all ward records
+            wards = WardMaster.objects.all()
+
+            # 🔹 Encrypt the ward_id for each record
+            for ward in wards:
+                ward.encrypted_id = enc(str(ward.ward_id))
+
+            return render(
+                request,
+                'Master/ward_master_index.html',
+                {"wards": wards}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+
+@login_required
+def update_ward_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            encrypted_id = data.get("id")      # from JS
+            is_active = data.get("status")     # from JS
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # 🔹 Decrypt and convert
+            ward_id = int(dec(encrypted_id))
+
+            # 🔹 Fetch ward using the correct PK
+            ward = WardMaster.objects.get(ward_id=ward_id)
+
+            ward.is_active = bool(int(is_active))
+            ward.save()
+
+            return JsonResponse({"success": True, "status": int(ward.is_active)})
+
+        except WardMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Ward not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+@login_required
+def ward_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            enc_id = request.POST.get("id")   # 🔹 Hidden encrypted ID (if editing)
+            ward_name = request.POST.get("ward_name", "").strip()
+            pincode = request.POST.get("pincode", "").strip()
+            ward_address = request.POST.get("ward_address", "").strip()
+            accounting_code = request.POST.get("accounting_code", "").strip()
+            is_active = request.POST.get("is_active", 1)
+
+            if not ward_address:
+                messages.error(request, "Ward Code is required!")
+                return redirect("ward_create")
+
+            # 🔹 If enc_id exists → decrypt & update
+            if enc_id:
+                try:
+                    ward_id = int(dec(enc_id))  # ✅ decrypt
+                    ward = WardMaster.objects.get(ward_id=ward_id)
+
+                    ward.ward_name = ward_name
+                    ward.ward_address = ward_address
+                    ward.pincode = pincode
+                    ward.accounting_code = accounting_code
+                    ward.is_active = is_active
+                    ward.updated_by = user
+                    ward.updated_at = timezone.now()
+                    ward.save()
+
+                    messages.success(request, f"Ward '{ward_name}' updated successfully!")
+                    return redirect("ward_master_index")
+
+                except WardMaster.DoesNotExist:
+                    messages.error(request, "Ward not found.")
+                    return redirect("ward_master_index")
+
+            # 🔹 Create new ward
+            WardMaster.objects.create(
+                ward_name=ward_name,
+                ward_address=ward_address,
+                pincode=pincode,
+                accounting_code=accounting_code,
+                is_active=is_active,
+                created_by=user,
+                created_at=timezone.now()
+            )
+
+            messages.success(request, f"Ward '{ward_name}' created successfully with code {ward_address}!")
+            return redirect("ward_master_index")
+
+        # GET → Show form
+        return render(request, "Master/ward_create.html")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("ward_master_index")
+    
+    
+@login_required
+def ward_master_edit(request):
+    ward = None
+
+    try:
+        if request.method == "POST":
+            # 🔹 Get encrypted ID from hidden form field
+            enc_id = request.POST.get("id")
+            if not enc_id:
+                messages.error(request, "Missing Ward ID!")
+                return redirect("ward_master_index")
+
+            # 🔹 Decrypt the ID
+            try:
+                ward_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("ward_master_index")
+
+            # 🔹 Fetch the ward record
+            ward = WardMaster.objects.get(ward_id=ward_id)
+            user_id = request.user.id
+
+            # ✅ Get form data
+            ward_name = request.POST.get("ward_name", "").strip()
+            pincode = request.POST.get("pincode", "").strip()
+            ward_address = request.POST.get("ward_address", "").strip()
+            accounting_code = request.POST.get("accounting_code", "").strip()
+            is_active = request.POST.get("is_active", "1")
+
+            # ✅ Validate required fields
+            if not ward_name or not ward_address or not pincode or not accounting_code:
+                messages.error(request, "All fields are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check for ward_name
+            duplicate_name = WardMaster.objects.filter(
+                ward_name__iexact=ward_name
+            ).exclude(ward_id=ward.ward_id)
+            if duplicate_name.exists():
+                messages.error(request, f"Ward '{ward_name}' already exists!")
+                return redirect("ward_master_index")
+
+            # 🔹 Update the record
+            ward.ward_name = ward_name
+            ward.ward_address = ward_address
+            ward.pincode = pincode
+            ward.accounting_code = accounting_code
+            ward.is_active = bool(int(is_active))
+            ward.updated_by = user_id
+            ward.updated_at = timezone.now()
+            ward.save()
+
+            messages.success(request, "Ward updated successfully!")
+            return redirect("ward_master_index")
+
+        else:  # GET request
+            enc_id = request.GET.get("ward_id")
+            if not enc_id:
+                messages.error(request, "Missing Ward ID!")
+                return redirect("ward_master_index")
+
+            # 🔹 Decrypt ID
+            try:
+                ward_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("ward_master_index")
+
+            # 🔹 Fetch record directly
+            ward = WardMaster.objects.get(ward_id=ward_id)
+            ward.encrypted_id = enc(str(ward.ward_id))  # for hidden input
+
+    except Exception as e:
+        print("❌ Unexpected Error:", e)
+        messages.error(request, "An unexpected error occurred!")
+        return redirect("ward_master_index")
+
+    # 🔹 Render edit form
+    return render(request, "Master/ward_master_edit.html", {"ward": ward})
+
+
+@login_required
+def ward_master_view(request):
+    try:
+        enc_id = request.GET.get("ward_id")
+        if not enc_id:
+            messages.error(request, "Missing Ward ID!")
+            return redirect("ward_master_index")
+
+        # 🔹 Decrypt ID
+        ward_id = int(dec(enc_id))
+
+        # 🔹 Fetch ward record
+        ward = WardMaster.objects.get(ward_id=ward_id)
+
+        # 🔹 Add encrypted_id for buttons/links
+        ward.encrypted_id = enc(str(ward.ward_id))
+
+        context = {"ward": ward}
+        return render(request, "Master/ward_master_view.html", context)
+
+    except WardMaster.DoesNotExist:
+        messages.error(request, "Ward not found!")
+        return redirect("ward_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("ward_master_index")
+    
+@login_required
+def ward_master_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON
+            enc_id = data.get("id")  # encrypted ID
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Ward ID is missing"})
+
+        try:
+            # 🔹 Decrypt the ID
+            ward_id = int(dec(enc_id))
+
+            # 🔹 Fetch and delete record
+            ward = WardMaster.objects.get(ward_id=ward_id)
+            ward.delete()
+            return JsonResponse({"success": True})
+
+        except WardMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Ward not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+@login_required
+def location_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            global user, role_id
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            # 🔹 Fetch all location records with related ward
+            locations = LibraryLocationMaster.objects.all()
+
+            # 🔹 Attach encrypted_id & ward_name for each record
+            for location in locations:
+                location.encrypted_id = enc(str(location.location_id))
+
+                try:
+                    ward = WardMaster.objects.get(ward_id=location.ward_id)
+                    location.ward_name = ward.ward_name
+                except WardMaster.DoesNotExist:
+                    location.ward_name = "N/A"
+
+            return render(
+                request,
+                'Master/location_master_index.html',
+                {"locations": locations}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")  # fallback redirect
+
+    
+@login_required
+def update_location_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            encrypted_id = data.get("id")      # from JS
+            is_active = data.get("status")     # from JS
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # 🔹 Decrypt and convert
+            location_id = int(dec(encrypted_id))
+
+            # 🔹 Fetch location using the correct PK
+            location = LibraryLocationMaster.objects.get(location_id=location_id)
+
+            location.is_active = bool(int(is_active))
+            location.save()
+
+            return JsonResponse({"success": True, "status": int(location.is_active)})
+
+        except LibraryLocationMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Location not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def location_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            enc_id = request.POST.get("id")   # Hidden encrypted ID (if editing)
+            location_name = request.POST.get("location_name", "").strip()
+            address = request.POST.get("address", "").strip()
+            pincode = request.POST.get("pincode", "").strip()
+            ward_id = request.POST.get("ward_id", "").strip()
+            is_active = request.POST.get("is_active", 1)
+
+            if not location_name:
+                messages.error(request, "Location Name is required!")
+                return redirect("location_create")
+
+            # 🔹 If enc_id exists → Update
+            if enc_id:
+                try:
+                    location_id = int(dec(enc_id))
+                    location = LibraryLocationMaster.objects.get(location_id=location_id)
+
+                    location.location_name = location_name
+                    location.address = address
+                    location.pincode = pincode
+                    location.ward_id = ward_id if ward_id else None
+                    location.is_active = is_active
+                    location.updated_by = user
+                    location.updated_at = timezone.now()
+                    location.save()
+
+                    messages.success(request, f"Location '{location_name}' updated successfully!")
+                    return redirect("location_master_index")
+
+                except LibraryLocationMaster.DoesNotExist:
+                    messages.error(request, "Location not found.")
+                    return redirect("location_master_index")
+
+            # 🔹 Create new
+            LibraryLocationMaster.objects.create(
+                location_name=location_name,
+                address=address,
+                pincode=pincode,
+                ward_id=ward_id if ward_id else None,
+                is_active=is_active,
+                created_by=user,
+                created_at=timezone.now()
+            )
+
+            messages.success(request, f"Location '{location_name}' created successfully!")
+            return redirect("location_master_index")
+
+        # GET → Show form
+        wards = WardMaster.objects.filter(is_active=True)  # 🔹 Fetch active wards
+        return render(request, "Master/location_create.html", {"wards": wards})
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("location_master_index")
+
+@login_required
+def location_master_edit(request):
+    location = None
+
+    try:
+        if request.method == "POST":
+            # 🔹 Get encrypted ID from hidden form field
+            enc_id = request.POST.get("id")
+            if not enc_id:
+                messages.error(request, "Missing Location ID!")
+                return redirect("location_master_index")
+
+            # 🔹 Decrypt the ID
+            try:
+                location_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("location_master_index")
+
+            # 🔹 Fetch the location record
+            location = LibraryLocationMaster.objects.get(location_id=location_id)
+            user_id = request.user.id
+
+            # ✅ Get form data
+            location_name = request.POST.get("location_name", "").strip()
+            address = request.POST.get("address", "").strip()
+            pincode = request.POST.get("pincode", "").strip()
+            ward_id = request.POST.get("ward_id", "").strip()
+            is_active = request.POST.get("is_active", "1")
+
+            # ✅ Validate required fields
+            if not location_name or not address or not pincode or not ward_id:
+                messages.error(request, "All fields are required!")
+                return redirect(request.path)
+
+            # 🔹 Duplicate check for location_name
+            duplicate_name = LibraryLocationMaster.objects.filter(
+                location_name__iexact=location_name
+            ).exclude(location_id=location.location_id)
+            if duplicate_name.exists():
+                messages.error(request, f"Location '{location_name}' already exists!")
+                return redirect("location_master_index")
+
+            # 🔹 Update the record
+            location.location_name = location_name
+            location.address = address
+            location.pincode = pincode
+            location.ward_id = ward_id if ward_id else None
+            location.is_active = bool(int(is_active))
+            location.updated_by = user_id
+            location.updated_at = timezone.now()
+            location.save()
+
+            messages.success(request, "Location updated successfully!")
+            return redirect("location_master_index")
+
+        else:  # GET request
+            enc_id = request.GET.get("location_id")
+            if not enc_id:
+                messages.error(request, "Missing Location ID!")
+                return redirect("location_master_index")
+
+            # 🔹 Decrypt ID
+            try:
+                location_id = int(dec(enc_id))
+            except Exception as e:
+                print("❌ Decryption error:", e)
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("location_master_index")
+
+            # 🔹 Fetch record directly
+            location = LibraryLocationMaster.objects.get(location_id=location_id)
+            location.encrypted_id = enc(str(location.location_id))  # for hidden input
+
+    except Exception as e:
+        print("❌ Unexpected Error:", e)
+        messages.error(request, "An unexpected error occurred!")
+        return redirect("location_master_index")
+
+    # 🔹 Fetch active wards for dropdown
+    wards = WardMaster.objects.filter(is_active=True)
+
+    # 🔹 Render edit form
+    return render(request, "Master/location_master_edit.html", {
+        "location": location,
+        "wards": wards
+    })
+
+
+@login_required
+def location_master_view(request):
+    try:
+        enc_id = request.GET.get("location_id")
+        if not enc_id:
+            messages.error(request, "Missing Location ID!")
+            return redirect("location_master_index")
+
+        # 🔹 Decrypt Location ID
+        location_id = int(dec(enc_id))
+
+        # 🔹 Fetch location record
+        location = LibraryLocationMaster.objects.get(location_id=location_id)
+
+        # 🔹 Add encrypted_id for buttons/links
+        location.encrypted_id = enc(str(location.location_id))
+
+        # 🔹 If ward_id exists → decrypt & fetch ward details
+        ward = None
+        if location.ward_id:
+            try:
+                ward = WardMaster.objects.get(ward_id=location.ward_id)
+                ward.encrypted_id = enc(str(ward.ward_id))
+            except WardMaster.DoesNotExist:
+                ward = None
+
+        context = {
+            "location": location,
+            "ward": ward  # ⚡ full ward object (with decrypted/encrypted ID)
+        }
+        return render(request, "Master/location_master_view.html", context)
+
+    except LibraryLocationMaster.DoesNotExist:
+        messages.error(request, "Location not found!")
+        return redirect("location_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("location_master_index")
+
+@login_required
+def location_master_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON
+            enc_id = data.get("id")  # encrypted ID
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Location ID is missing"})
+
+        try:
+            # 🔹 Decrypt the ID
+            location_id = int(dec(enc_id))
+
+            # 🔹 Fetch and delete record
+            location = LibraryLocationMaster.objects.get(location_id=location_id)
+            location.delete()
+            return JsonResponse({"success": True})
+
+        except LibraryLocationMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Location not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
