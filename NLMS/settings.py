@@ -35,6 +35,7 @@ SITE_URL = "http://3.111.76.175"  # for production development
 
 import mimetypes
 mimetypes.add_type("application/javascript", ".mjs")
+DATABASE_ROUTERS = ['administration.routers.ServiceRouter']  # Add your router here
 
 DATABASES = {
     'default': {
@@ -51,7 +52,27 @@ DATABASES = {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
     },
+    'L01': {
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'L01_db',
+        'USER': 'root',
+        'PASSWORD': 'Mysql_MH-047319',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
+    'L02': {
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'L02_db',
+        'USER': 'root',
+        'PASSWORD': 'Mysql_MH-047319',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    },
 }
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"  # safest default
+SESSION_COOKIE_SECURE = False  # True only if HTTPS
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -81,7 +102,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # SESSION_COOKIE_AGE = 3600  # 1-hour session timeout
 
 SESSION_COOKIE_AGE = 1209600    # 1-hour session timeout
@@ -151,6 +171,8 @@ LOCAL_APPS = [
     'Masters',
     'Reports',
     'administration',
+    'L01',
+    'L02',
   
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -162,16 +184,17 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # MUST be first
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Your DB middleware should be **AFTER auth and messages**
+    'administration.middleware.LibraryDatabaseMiddleware',
+    # Optional:
     'django_auto_logout.middleware.auto_logout',
-    'corsheaders.middleware.CorsMiddleware',
     'axes.middleware.AxesMiddleware',
-    # 'NLMS.middleware.AutoLogoutMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://15.207.169.98',

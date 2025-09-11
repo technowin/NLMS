@@ -1,0 +1,125 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block content %}
+
+    <div class="oz-card-grid">
+        {% for library in libraries %}
+            <div class="oz-library-card">
+                <!-- Image -->
+                <div class="oz-library-img-wrapper">
+                        <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="oz-library-img">
+                </div>
+
+                <!-- Content -->
+                <div class="oz-library-content">
+                    <h3>{{ library.library_name }}</h3>
+                    {% if library.establishedYear %}
+                        <h4>Since {{ library.establishedYear }}</h4>
+                    {% endif %}
+
+                    <p class="library-description">{{ library.about_library }}</p>
+
+                    {% if library.librarian_name %}
+                        <p><strong>Librarian:</strong> {{ library.librarian_name }}</p>
+                    {% endif %}
+
+                    {% if library.opening_hours %}
+                        <p><strong>Opening Hours:</strong> {{ library.opening_hours }}</p>
+                    {% endif %}
+
+                    <!-- Library & Membership Rules Icons -->
+                    <div class="library-rules-icons">
+                        {% if library.library_rules %}
+                            <button class="rule-btn" data-modal="#libraryRulesModal{{ library.id }}">
+                                <i class="fa fa-book"></i> Library Rules
+                            </button>
+                        {% endif %}
+                        {% if library.membership_rules %}
+                            <button class="rule-btn" data-modal="#membershipRulesModal{{ library.id }}">
+                                <i class="fa fa-id-card"></i> Membership Rules
+                            </button>
+                        {% endif %}
+                    </div>
+
+                    <!-- Library Rules Modal -->
+                    {% if library.library_rules %}
+                    <div id="libraryRulesModal{{ library.id }}" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Library Rules</h3>
+                        <div class="rules-content">{{ library.library_rules|safe }}</div>
+                    </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Membership Rules Modal -->
+                    {% if library.membership_rules %}
+                    <div id="membershipRulesModal{{ library.id }}" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Membership Rules</h3>
+                        <div class="rules-content">{{ library.membership_rules|safe }}</div>
+                    </div>
+                    </div>
+                    {% endif %}
+
+
+                    <!-- Social Icons -->
+                    <div class="library-social-icons">
+                        {% if library.facebook_url %}
+                            <a href="{{ library.facebook_url }}" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                        {% endif %}
+                        {% if library.instagram_url %}
+                            <a href="{{ library.instagram_url }}" target="_blank"><i class="fab fa-instagram"></i></a>
+                        {% endif %}
+                        {% if library.twitter_url %}
+                            <a href="{{ library.twitter_url }}" target="_blank"><i class="fab fa-twitter"></i></a>
+                        {% endif %}
+                        {% if library.youtube_url %}
+                            <a href="{{ library.youtube_url }}" target="_blank"><i class="fab fa-youtube"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // Open modal
+        document.querySelectorAll('.rule-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-modal');
+                document.querySelector(modalId).style.display = 'block';
+            });
+        });
+
+        // Close modal
+        document.querySelectorAll('.modal .close').forEach(span => {
+            span.addEventListener('click', () => {
+                span.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // Close modal on outside click
+        window.addEventListener('click', (e) => {
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (e.target == modal) modal.style.display = 'none';
+            });
+        });
+    </script>
+
+
+{% endblock %}
+
+
+
+{% comment %} <h1>L01 Libraries</h1>
+
+<ul>
+    {% for library in libraries %}
+        <li>{{ library.library_name }}</li>
+    {% empty %}
+        <li>No libraries found.</li>
+    {% endfor %}
+</ul> {% endcomment %}

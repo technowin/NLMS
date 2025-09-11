@@ -6,15 +6,19 @@
     --font-family: "Merriweather", serif;
     --text-color: #ffffff;
     --hover-color: #013d70;
-    /* --header-bg: #fdf9f6; */
     --header-bg: #EDEDF4;
     --font-size-xl: 1.8rem;
     --font-size-lg: 1.5rem;
     --font-size-md: 1.2rem;
     --font-size-sm: 1rem;
+    --font-size-lgg: 1.8rem;  /* increased */
+    --font-size-mdd: 1.3rem;  /* slightly bigger */
+    --font-size-smm: 1.1rem;  /* slightly bigger */
     --font-weight-normal: 400;
     --font-weight-bold: 700;
 }
+
+
 
 /* ========================= Reset + Base ========================= */
 * {
@@ -40,6 +44,7 @@ body {
     font-size: 1.8rem;
     font-weight: 700;
     margin: 0;
+    color: var(--primary-color);
 }
 
 /* ========================= Navbar ========================= */
@@ -132,7 +137,6 @@ body {
         justify-content: space-between;
         padding: 20px 40px;
         background-color: var(--header-bg);
-        color: var(--primary-color);
     }
 
     .navbar ul li.icon {
@@ -572,6 +576,7 @@ footer a:hover {
     border-radius: 8px;
     text-decoration: none;
     transition: background 0.3s;
+    border: none;
 }
 
 .card-btn:hover {
@@ -693,4 +698,256 @@ footer a:hover {
     .view-toggle {
         display: none;
     }
+}
+
+/* ========================= Library Card Grid ========================= */
+.oz-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(700px, 1fr)); /* auto columns, min 700px */
+    justify-content: center; /* center cards horizontally */
+    gap: 30px;
+    padding: 5% 10%; /* reduce side padding */
+}
+
+/* Library Card */
+.oz-library-card {
+    display: flex;
+    flex-direction: row;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oz-library-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+/* Image */
+.oz-library-img-wrapper {
+    flex: 3 1 400px; /* bigger image */
+    /* max-width: 450px; */
+    /* padding: 3%; */
+    padding: 5% 2%;
+}
+
+.oz-library-img {
+    width: 100%;
+    /*height: 450px;  bigger height */
+    height: 500px; /* bigger height */
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* Library Description Styling */
+.library-description {
+    line-height: 1.8; /* better line spacing */
+    letter-spacing: 0.6px; /* slight letter spacing */
+    margin-bottom: 20px;
+    font-size: var(--font-size-md);
+}
+
+/* Content */
+.oz-library-content {
+    flex: 2 1 500px; /* more space for text */
+    padding: 30px;
+    font-family: var(--font-family);
+    margin-top:2%;
+}
+
+.oz-library-content h3 {
+    margin: 0 0 12px;
+    font-size: var(--font-size-xl);
+    color: var(--primary-color);
+}
+
+.oz-library-content h4 {
+    margin: 0 0 15px;
+    font-size: var(--font-size-md);
+    color: #555;
+}
+
+.oz-library-content p {
+    margin-bottom: 15px;
+    font-size: var(--font-size-sm);
+    color: #333;
+}
+
+/* Library & Membership Rules Icons */
+.library-rules-icons {
+    margin-top: 20px;
+}
+
+.rule-btn {
+    background-color: #d9b340;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    margin-right: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: var(--font-weight-bold);
+    transition: background-color 0.3s ease;
+}
+
+.rule-btn i {
+    margin-right: 6px;
+}
+
+.rule-btn:hover {
+    background-color: #c49b30;
+}
+
+/* Social Icons */
+.library-social-icons {
+    margin-top: 15px;
+}
+
+.library-social-icons a {
+    display: inline-block;
+    margin-right: 12px;
+    color: var(--primary-color);
+    font-size: 1.5rem; /* slightly bigger */
+    transition: color 0.3s;
+}
+
+.library-social-icons a:hover {
+    color: #d9b340;
+}
+
+/* ========================= Full-Screen Modal ========================= */
+.modal {
+    display: none; /* hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.9); /* darker overlay */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 0;
+    padding: 40px;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: var(--font-size-xl);
+}
+
+.modal-content .rules-content ul {
+    padding-left: 25px;
+}
+
+.modal-content .rules-content li {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.modal .close {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: #333;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal .close:hover {
+    color: #d9b340;
+}
+
+/* ========================= Responsive ========================= */
+@media screen and (max-width: 1100px) {
+    .oz-card-grid {
+        grid-template-columns: 1fr; /* single column on smaller screens */
+        padding: 5% 5%;
+    }
+    .oz-library-card {
+        flex-direction: column;
+        padding: 5%;
+    }
+    .oz-library-img-wrapper,
+    .oz-library-content {
+        flex: unset;
+    }
+    .oz-library-img {
+        height: 300px;
+    }
+    .oz-library-content {
+        padding: 20px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .oz-library-img {
+        height: 250px;
+    }
+    .rule-btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    .library-social-icons a {
+        font-size: 1.3rem;
+    }
+    .modal-content {
+        padding: 20px;
+    }
+    .modal-content h3 {
+        font-size: 1.5rem;
+    }
+    .modal-content .rules-content li {
+        font-size: 1rem;
+    }
+}
+
+.library-contact p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.library-contact i {
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+.library-contact a {
+    text-decoration: none;
+    color: var(--primary-color);
+    transition: color 0.3s ease;
+}
+
+.library-contact a:hover {
+    color: #d9b340;
+}
+
+.library-contact {
+    margin-top: 15px;
+    line-height: 1.6;      /* Line spacing */
+    letter-spacing: 0.5px; /* Letter spacing */
+    font-size: 1rem;
+    color: #333;
+}
+
+.library-contact p {
+    margin-bottom: 10px;   /* space between lines */
+}
+
+.library-contact i {
+    margin-right: 8px;     /* space between icon and text */
+    color: var(--primary-color);
 }

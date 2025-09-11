@@ -25,6 +25,7 @@ from Masters.views import *
 from Reports.views import *
 from MenuManager.views import *
 from administration.views import *
+from administration.routers import ServiceRouter
 
 # from ChatBot.views import *
 urlpatterns = [
@@ -149,6 +150,9 @@ urlpatterns = [
     
     # library list
     path("library_list",library_list,name='library_list'),
+    path('service_redirect', service_redirect, name='service_redirect'),
+    path('L01/', include(('L01.urls', 'L01'), namespace='L01')),
+    path('L02/', include(('L02.urls', 'L02'), namespace='L02')),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

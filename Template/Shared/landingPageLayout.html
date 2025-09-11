@@ -2,19 +2,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navi Mumbai Municipal Corporation</title>
-    
-    <!-- CSS -->
-    <link href="{% static 'css/library.css' %}" rel="stylesheet">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
+    {% block head %}
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Navi Mumbai Municipal Corporation</title>
+        <link href="{% static 'css/library.css' %}" rel="stylesheet">
+        
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% endblock %}
 </head>
+
 <body>
     
 
@@ -23,10 +23,10 @@
             <div class="headerUtilityRow">
                 <div class="govLinkContainer">
                     <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
-                    aria-label="Welcome to NMMC Library official website">
-                    Navi Mumbai Municipal Corporation
-                    {% comment %} &nbsp; Welcome to NMMC Library {% endcomment %}
-                    <span class="underlineHover"></span>
+                        aria-label="Welcome to NMMC Library official website">
+                        Navi Mumbai Municipal Corporation
+                        {% comment %} &nbsp; Welcome to NMMC Library {% endcomment %}
+                        <span class="underlineHover"></span>
                     </a>
                 </div>
                 <div class="fontControlContainer">
@@ -50,7 +50,7 @@
             <!-- Navbar -->
             <nav class="navbar" id="myTopnav">
                 <ul>
-                    <li class="nav-item"><a href="#">Home</a></li>
+                    <li class="nav-item"><a href="{% url 'library_list' %}">Home</a></li>
 
                     <li class="nav-item dropdown">
                         <a href="javascript:void(0);" class="dropbtn">About Us ▾</a>

@@ -1,5 +1,50 @@
-from django.shortcuts import render
+import traceback
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import Db
+from administration.models import *
+from NLMS.encryption import *
+from django.http import JsonResponse
+from django.http import HttpResponse
+from django.contrib.sessions.models import Session
+from .thread_local import set_current_service
 
-# Create your views here.
 def library_list(request):
-    return render(request, 'administration/library_list.html')   
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    
+    try:
+        library_details = LibraryMaster.objects.using('default').filter(is_active=1)
+        for lilo in library_details:
+            encrypted_library_code = enc(lilo.library_code)
+            lilo.libraries = encrypted_library_code
+        
+        return render(request, 'administration/library_list.html', {'library_details': library_details})
+    
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("Meta_Index")
+    
+def service_redirect(request):
+    # Get the library code from POST
+    service_code = request.POST.get('library_code')
+
+    # Save to session
+    request.session['library_db'] = service_code
+    request.session.modified = True  # mark session as changed
+
+    # Update thread-local storage for database routing
+    set_current_service(service_code)
+
+    # Redirect based on service code
+    if service_code == "L01":
+        return redirect("L01:index")
+    elif service_code == "L02":
+        return redirect("L02:index")
+    else:
+        return redirect("default:library_list")
