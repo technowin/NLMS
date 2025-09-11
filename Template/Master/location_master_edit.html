@@ -1,0 +1,394 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Workflow{% endblock title %}
+
+{% block extra_css %}
+
+    <!-- Keeping only SweetAlert and essential layout styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font: Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='प्रवेशावेळी अट नोंदवही मास्टर' sub_title='प्रवेशावेळी अट नोंदवही संपादित करा' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+<!-- Hidden field with encrypted ID -->
+   <input type="hidden" name="id" value="{{ location.encrypted_id }}">
+
+    <!-- Row 1: Location Name & Address -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">स्थानाचे नाव / Location Name</label>
+            <input type="text" name="location_name" id="location_name"
+                   class="form-control" placeholder="Location Name"
+                   value="{{ location.location_name }}" required>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">पत्ता / Address</label>
+            <input type="text" name="address" id="address"
+                   class="form-control" placeholder="Address"
+                   value="{{ location.address }}" required>
+        </div>
+    </div>
+
+    <!-- Row 2: Pincode & Ward -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">पिनकोड / Pincode</label>
+            <input type="text" name="pincode" id="pincode"
+                   class="form-control" placeholder="Pincode"
+                   value="{{ location.pincode }}" required>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">वॉर्ड / Ward</label>
+            <select name="ward_id" id="ward_id" class="form-control" required>
+                <option value="">-- Select Ward --</option>
+                {% for ward in wards %}
+                    <option value="{{ ward.ward_id }}"
+                        {% if location.ward_id == ward.ward_id %}selected{% endif %}>
+                        {{ ward.ward_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+                </button>
+                <a href="{% url 'location_master_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                </a>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- Keeping only SweetAlert and optional message popup -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message.tags|title }}",
+                    text: "{{ message|escapejs }}",
+                    icon: "{{ message.tags }}",
+                    confirmButtonText: "OK",
+                    background: theme === 'dark' ? '#343a40' : '#ffffff',
+                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+            {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+            let languageSelected = false;
+            let transliterateEnabled = false;
+
+            function containsDevanagari(text) {
+                return /[\u0900-\u097F]/.test(text);
+            }
+
+            // Transliteration functions
+            function translateAllWords($field) {
+                if (!transliterateEnabled) return;
+
+                let value = $field.val().trim();
+                if (!value) return;
+
+                let words = value.split(/\s+/);
+                let translatedWords = [];
+                let pending = words.length;
+
+                words.forEach((word, index) => {
+                    if (containsDevanagari(word) || word.trim() === "") {
+                        translatedWords[index] = word;
+                        pending--;
+                        if (pending === 0) $field.val(translatedWords.join(" "));
+                    } else {
+                        $.ajax({
+                            url: '{% url "translate_word" %}',
+                            type: 'GET',
+                            data: { q: word },
+                            headers: { 'X-CSRFToken': csrfToken },
+                            success: function (data) {
+                                translatedWords[index] = data.translated || word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            },
+                            error: function () {
+                                translatedWords[index] = word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            }
+                        });
+                    }
+                });
+            }
+
+            function translateLastWord($field) {
+                if (!transliterateEnabled) return;
+
+                let words = $field.val().trim().split(/\s+/);
+                let lastWord = words[words.length - 1];
+                if (!lastWord || containsDevanagari(lastWord)) return;
+
+                $.ajax({
+                    url: '{% url "translate_word" %}',
+                    type: 'GET',
+                    data: { q: lastWord },
+                    headers: { 'X-CSRFToken': csrfToken },
+                    success: function (data) {
+                        if (data.translated) {
+                            words[words.length - 1] = data.translated;
+                            $field.val(words.join(" "));
+                        }
+                    }
+                });
+            }
+
+            // Enable fields only after language selection
+            $('#language_id').on('change', function () {
+                if (languageSelected) return;
+
+                let selectedText = $(this).find('option:selected').text();
+                if (!selectedText) return;
+
+                languageSelected = true;
+
+                $(this).prop('disabled', true);
+                $('#language-note').text('Language locked after selection. Refresh to change.');
+
+                // Unlock all except classification, cutter, call number
+                $('.transliterate, input, textarea').not('input[name="classification_number"], input[name="cutter_number"], input[name="call_number"]').prop('readonly', false);
+
+                $('#subject_id').prop('disabled', false);
+                $('#material_id').prop('disabled', false);
+
+                transliterateEnabled = selectedText.toLowerCase().includes('marathi');
+            });
+
+            // Transliteration events
+            $(document).on('input', '.transliterate', function () {
+                const $field = $(this);
+                // Save original Latin text for Call/Cutter number
+                $field.data('original', $field.val());
+                if ($field.val().slice(-1) === " ") translateLastWord($field);
+
+                updateAutoFields();
+            });
+
+            $(document).on('blur', '.transliterate', function () {
+                translateAllWords($(this));
+                updateAutoFields();
+            });
+
+            $(document).on('keydown', '.transliterate', function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    translateAllWords($(this));
+                    updateAutoFields();
+                }
+            });
+
+            $('#subject_id, #author, input[name="year_of_publication"]').on('input change', function () {
+                updateAutoFields();
+            });
+
+            function updateAutoFields() {
+                const selectedOption = $('#subject_id').find('option:selected')[0];
+                const subjectCode = selectedOption ? $(selectedOption).data('code') : '';
+                const authorOriginal = $('#author').data('original') || '';
+                const authorCode = authorOriginal ? authorOriginal.substring(0, 3) : '';
+                const year = $('input[name="year_of_publication"]').val().trim();
+
+                // Classification & Cutter
+                $('input[name="classification_number"]').val(subjectCode || '');
+                $('input[name="cutter_number"]').val(authorCode || '');
+
+                // Call Number
+                if (subjectCode && authorCode && year) {
+                    $('input[name="call_number"]').val(`${subjectCode}.${authorCode}.${year}`);
+                } else {
+                    $('input[name="call_number"]').val('');
+                }
+            }
+
+            // Add this inside your $(document).ready()
+            $('input[name="call_number"]').on('click', function () {
+                const selectedOption = $('#subject_id').find('option:selected')[0];
+                const subjectCode = selectedOption ? $(selectedOption).data('code') : '';
+                const authorOriginal = $('#author').data('original') || '';
+                const year = $('input[name="year_of_publication"]').val().trim();
+
+                let missingFields = [];
+                if (!subjectCode) missingFields.push('Subject');
+                if (!authorOriginal) missingFields.push('Author Name');
+                if (!year) missingFields.push('Year of Publication');
+
+                if (missingFields.length > 0) {
+                    const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: `Please enter: ${missingFields.join(', ')}`,
+                        confirmButtonText: 'OK',
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                } else {
+                    // If all fields are present, update call number
+                    const authorCode = authorOriginal.substring(0, 3);
+                    $(this).val(`${subjectCode}.${authorCode}.${year}`);
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+// Function to auto-translate (dummy example with fetch)
+document.getElementById("materialNameEnglish").addEventListener("blur", function () {
+    let englishText = this.value;
+    if (englishText.trim() === "") return;
+
+    // Example: call backend translation API
+    fetch(`/translate-to-marathi/?text=${encodeURIComponent(englishText)}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("materialNameMarathi").value = data.translated_text;
+        })
+        .catch(err => console.error("Translation Error:", err));
+});
+</script>
+
+  
+{% endblock %}

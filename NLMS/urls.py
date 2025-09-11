@@ -120,7 +120,14 @@ urlpatterns = [
     path('ward_master_edit/', ward_master_edit, name='ward_master_edit'),
     path('ward_master_view/', ward_master_view, name='ward_master_view'),
     path('ward_master_delete/', ward_master_delete, name='ward_master_delete'),
-    
+    path('location_master_index/', location_master_index, name='location_master_index'),
+    path('update_location_status/', update_location_status, name='update_location_status'),
+    path('location_create/', location_create, name='location_create'),
+    path('location_master_edit/', location_master_edit, name='location_master_edit'), 
+    path('location_master_view/', location_master_view, name='location_master_view'), 
+    path('location_master_delete/', location_master_delete, name='location_master_delete'),  
+     
+     
     
 
     #Reports 
