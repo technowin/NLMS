@@ -127,8 +127,9 @@ urlpatterns = [
     path('location_master_edit/', location_master_edit, name='location_master_edit'), 
     path('location_master_view/', location_master_view, name='location_master_view'), 
     path('location_master_delete/', location_master_delete, name='location_master_delete'),  
-     
-     
+    path('library_master_index/', library_master_index, name='library_master_index'), 
+    path('update_library_status/', update_library_status, name='update_library_status'), 
+    path('library_create/', library_create, name='library_create'),
     
 
     #Reports 

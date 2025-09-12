@@ -121,12 +121,13 @@
         <option value="">-- Select Ward --</option>
         {% for ward in wards %}
             <option value="{{ ward.ward_id }}" 
-                    {% if location.ward_id == ward.ward_id %}selected{% endif %}>
+                    {% if location.parent_ward_id == ward.id %}selected{% endif %}>
                 {{ ward.ward_name }}
             </option>
         {% endfor %}
     </select>
 </div>
+
 
 
                 <!-- BUTTONS -->

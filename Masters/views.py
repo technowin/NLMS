@@ -10,6 +10,7 @@ from Account.models import *
 from Masters.models import *
 import Db 
 import bcrypt
+from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
 from NLMS.encryption import *
 from django.http import HttpResponse
@@ -52,7 +53,7 @@ from django.db import transaction
 import re
 from indic_transliteration.sanscript import transliterate, DEVANAGARI, HK
 logger = logging.getLogger(__name__)
-
+from administration.models import *
 
 @login_required
 def masters(request):
@@ -2143,11 +2144,11 @@ def ward_create(request):
             ward_name = request.POST.get("ward_name", "").strip()
             pincode = request.POST.get("pincode", "").strip()
             ward_address = request.POST.get("ward_address", "").strip()
-            accounting_code = request.POST.get("accounting_code", "").strip()
-            is_active = request.POST.get("is_active", 1)
+            accounting_code_id = request.POST.get("accounting_code")  # ForeignKey
+            is_active = int(request.POST.get("is_active", 1))
 
-            if not ward_address:
-                messages.error(request, "Ward Code is required!")
+            if not ward_name:
+                messages.error(request, "Ward Name is required!")
                 return redirect("ward_create")
 
             # 🔹 If enc_id exists → decrypt & update
@@ -2159,7 +2160,12 @@ def ward_create(request):
                     ward.ward_name = ward_name
                     ward.ward_address = ward_address
                     ward.pincode = pincode
-                    ward.accounting_code = accounting_code
+
+                    if accounting_code_id:
+                        ward.accounting_code_id = int(accounting_code_id)  # assign FK id
+                    else:
+                        ward.accounting_code = None
+
                     ward.is_active = is_active
                     ward.updated_by = user
                     ward.updated_at = timezone.now()
@@ -2177,31 +2183,39 @@ def ward_create(request):
                 ward_name=ward_name,
                 ward_address=ward_address,
                 pincode=pincode,
-                accounting_code=accounting_code,
+                accounting_code_id=int(accounting_code_id) if accounting_code_id else None,
                 is_active=is_active,
                 created_by=user,
                 created_at=timezone.now()
             )
 
-            messages.success(request, f"Ward '{ward_name}' created successfully with code {ward_address}!")
+            messages.success(request, f"Ward '{ward_name}' created successfully!")
             return redirect("ward_master_index")
 
         # GET → Show form
-        return render(request, "Master/ward_create.html")
+        # ✅ Pass only active accounting codes if you need a dropdown
+        active_accounting_codes = WardMaster.objects.filter(is_active=1)
+        return render(
+            request, 
+            "Master/ward_create.html", 
+            {"accounting_codes": active_accounting_codes}
+        )
 
     except Exception as e:
+        import traceback
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("ward_master_index")
+
     
     
 @login_required
 def ward_master_edit(request):
-    ward = None
-
     try:
+        user_id = request.user.id
+
         if request.method == "POST":
             # 🔹 Get encrypted ID from hidden form field
             enc_id = request.POST.get("id")
@@ -2219,18 +2233,17 @@ def ward_master_edit(request):
 
             # 🔹 Fetch the ward record
             ward = WardMaster.objects.get(ward_id=ward_id)
-            user_id = request.user.id
 
             # ✅ Get form data
             ward_name = request.POST.get("ward_name", "").strip()
             pincode = request.POST.get("pincode", "").strip()
             ward_address = request.POST.get("ward_address", "").strip()
-            accounting_code = request.POST.get("accounting_code", "").strip()
-            is_active = request.POST.get("is_active", "1")
+            accounting_code_id = request.POST.get("accounting_code")  # ForeignKey
+            is_active = int(request.POST.get("is_active", "1"))
 
             # ✅ Validate required fields
-            if not ward_name or not ward_address or not pincode or not accounting_code:
-                messages.error(request, "All fields are required!")
+            if not ward_name or not ward_address or not pincode:
+                messages.error(request, "Ward Name, Address, and Pincode are required!")
                 return redirect(request.path)
 
             # 🔹 Duplicate check for ward_name
@@ -2245,8 +2258,8 @@ def ward_master_edit(request):
             ward.ward_name = ward_name
             ward.ward_address = ward_address
             ward.pincode = pincode
-            ward.accounting_code = accounting_code
-            ward.is_active = bool(int(is_active))
+            ward.accounting_code_id = int(accounting_code_id) if accounting_code_id else None
+            ward.is_active = is_active
             ward.updated_by = user_id
             ward.updated_at = timezone.now()
             ward.save()
@@ -2272,13 +2285,23 @@ def ward_master_edit(request):
             ward = WardMaster.objects.get(ward_id=ward_id)
             ward.encrypted_id = enc(str(ward.ward_id))  # for hidden input
 
+        # 🔹 Pass only active accounting codes for dropdown
+        active_accounting_codes = WardMaster.objects.filter(is_active=1)
+
+        return render(
+            request,
+            "Master/ward_master_edit.html",
+            {"ward": ward, "accounting_codes": active_accounting_codes}
+        )
+
     except Exception as e:
-        print("❌ Unexpected Error:", e)
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user_id])
         messages.error(request, "An unexpected error occurred!")
         return redirect("ward_master_index")
 
-    # 🔹 Render edit form
-    return render(request, "Master/ward_master_edit.html", {"ward": ward})
 
 
 @login_required
@@ -2627,3 +2650,270 @@ def location_master_delete(request):
             return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+def library_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            user = request.user.id    
+            role_id = request.user.role_id 
+
+        if request.method == "GET":
+            # 🔹 Fetch all library records
+            libraries = LibraryMaster.objects.all()
+
+            # 🔹 Attach encrypted_id, ward_name, accounting_code_name, location_name
+            for library in libraries:
+                library.encrypted_id = enc(str(library.id))
+
+                # ✅ Fetch parent ward name safely
+                if library.parent_ward:
+                    library.parent_ward_name = library.parent_ward.ward_name
+                else:
+                    library.parent_ward_name = "N/A"
+
+                # ✅ Fetch library accounting code (ward) name safely
+                if library.library_accounting_code:
+                    library.accounting_code_name = library.library_accounting_code.accounting_code
+                else:
+                    library.accounting_code_name = "N/A"
+
+                # ✅ Fetch location name safely
+                if library.location:
+                    library.location_name = library.location.location_name
+                else:
+                    library.location_name = "N/A"
+
+            return render(
+                request,
+                'Master/library_master_index.html',
+                {"libraries": libraries}
+            )
+
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("dashboard")
+
+
+@login_required
+def update_library_status(request):
+    if request.method == "POST":
+        try:
+            import json
+            data = json.loads(request.body)
+            encrypted_id = data.get("id")      # from JS
+            is_active = data.get("status")     # from JS
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            # 🔹 Decrypt and convert
+            library_id = int(dec(encrypted_id))
+
+            # 🔹 Fetch library using the correct PK
+            library = LibraryMaster.objects.get(id=library_id)
+
+            library.is_active = bool(int(is_active))
+            library.save()
+
+            return JsonResponse({"success": True, "status": int(library.is_active)})
+
+        except LibraryMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Library not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+
+@login_required
+def library_create(request):
+    try:
+        user = request.user.id
+
+        if request.method == "POST":
+            enc_id = request.POST.get("id")  # Hidden encrypted ID (if editing)
+
+            # 🔹 Form fields
+            library_code = request.POST.get("library_code", "").strip()
+            library_name = request.POST.get("library_name", "").strip()
+            location_id = request.POST.get("location_id", "").strip()
+            accounting_code_id = request.POST.get("accounting_code_id", "").strip()
+            parent_ward_id = request.POST.get("parent_ward_id", "").strip()
+            librarian_name = request.POST.get("librarian_name", "").strip()
+            contact_email = request.POST.get("contact_email", "").strip()
+            contact_phone = request.POST.get("contact_phone", "").strip()
+            landing_page_link = request.POST.get("landing_page_link", "").strip()
+            about_library = request.POST.get("about_library", "").strip()
+            library_rules = request.POST.get("library_rules", "").strip()
+            membership_rules = request.POST.get("membership_rules", "").strip()
+            membership_page_link = request.POST.get("membership_page_link", "").strip()
+            opening_hours = request.POST.get("opening_hours", "").strip()
+            est_year = request.POST.get("est_year", "").strip()  # 🆕 Establishment Year
+            location_url = request.POST.get("location_url", "").strip()
+            facebook_url = request.POST.get("facebook_url", "").strip()
+            twitter_url = request.POST.get("twitter_url", "").strip()
+            instagram_url = request.POST.get("instagram_url", "").strip()
+            youtube_url = request.POST.get("youtube_url", "").strip()
+            capacity = request.POST.get("capacity", "").strip()
+
+            # Safe conversion for is_active
+            try:
+                is_active = int(request.POST.get("is_active", 1))
+            except ValueError:
+                is_active = 1
+
+            # 🔹 Uploaded file
+            library_image = request.FILES.get("library_image")
+
+            # 🔹 Validation
+            if not library_name:
+                messages.error(request, "Library Name is required!")
+                return redirect("library_create")
+
+            # ========================================================
+            # 📂 Save in Documents: MEDIA_ROOT / <library_code>/library_images/
+            # ========================================================
+            library_folder = os.path.join(settings.MEDIA_ROOT, library_code, "library_images")
+            os.makedirs(library_folder, exist_ok=True)
+
+            # Save uploaded image
+            image_url = ""
+            if library_image:
+                image_path = os.path.join(library_folder, library_image.name)
+                with open(image_path, "wb+") as f:
+                    for chunk in library_image.chunks():
+                        f.write(chunk)
+
+                # Relative path (for DB)
+                image_url = f"/{library_code}/library_images/{library_image.name}"
+
+            # 🔹 Update existing library
+            if enc_id:
+                library_id = int(dec(enc_id))
+                library = LibraryMaster.objects.get(id=library_id)
+
+                library.library_code = library_code
+                library.library_name = library_name
+                library.location_id = int(location_id) if location_id and location_id.isdigit() else None
+                library.parent_ward_id = int(parent_ward_id) if parent_ward_id and parent_ward_id.isdigit() else None
+                library.library_accounting_code_id = int(accounting_code_id) if accounting_code_id and accounting_code_id.isdigit() else None
+                library.librarian_name = librarian_name
+                library.contact_email = contact_email
+                library.contact_phone = contact_phone
+                library.landing_page_link = landing_page_link
+                library.about_library = about_library
+                library.library_rules = library_rules
+                library.membership_rules = membership_rules
+                library.membership_page_link = membership_page_link
+                library.opening_hours = opening_hours
+                library.est_year = int(est_year) if est_year.isdigit() else None   # 🆕
+                library.location_url = location_url
+                library.facebook_url = facebook_url
+                library.twitter_url = twitter_url
+                library.instagram_url = instagram_url
+                library.youtube_url = youtube_url
+                library.capacity = capacity
+                library.is_active = is_active
+                library.updated_by = user
+                library.updated_at = timezone.now()
+                if image_url:
+                    library.image_url = image_url
+                library.save()
+
+                messages.success(request, f"Library '{library_name}' updated successfully!")
+                return redirect("library_master_index")
+
+            # 🔹 Create new library
+            LibraryMaster.objects.create(
+                library_code=library_code,
+                library_name=library_name,
+                location_id=int(location_id) if location_id and location_id.isdigit() else None,
+                parent_ward_id=int(parent_ward_id) if parent_ward_id and parent_ward_id.isdigit() else None,
+                library_accounting_code_id=int(accounting_code_id) if accounting_code_id and accounting_code_id.isdigit() else None,
+                librarian_name=librarian_name,
+                contact_email=contact_email,
+                contact_phone=contact_phone,
+                landing_page_link=landing_page_link,
+                about_library=about_library,
+                library_rules=library_rules,
+                membership_rules=membership_rules,
+                membership_page_link=membership_page_link,
+                opening_hours=opening_hours,
+                est_year=int(est_year) if est_year.isdigit() else None,  # 🆕
+                location_url=location_url,
+                image_url=image_url,
+                facebook_url=facebook_url,
+                twitter_url=twitter_url,
+                instagram_url=instagram_url,
+                youtube_url=youtube_url,
+                capacity=capacity,
+                is_active=is_active,
+                created_by=user,
+                created_at=timezone.now()
+            )
+            messages.success(request, f"Library '{library_name}' created successfully!")
+            return redirect("library_master_index")
+
+        # ---------- GET request (form) ----------
+        last_code = LibraryMaster.objects.aggregate(max_code=Max("library_code"))["max_code"]
+        if last_code:
+            try:
+                last_number = int(last_code.replace("L", ""))
+            except:
+                last_number = 0
+            next_number = last_number + 1
+        else:
+            next_number = 1
+        new_library_code = f"L{next_number:02d}"
+
+        active_wards = WardMaster.objects.filter(is_active=1)
+        active_locations = LibraryLocationMaster.objects.filter(is_active=1)
+        # ✅ Accounting codes also from WardMaster
+        active_accounting_codes = WardMaster.objects.filter(is_active=1)
+
+        return render(
+            request,
+            "Master/library_create.html",
+            {
+                "wards": active_wards,
+                "locations": active_locations,
+                "accounting_codes": active_accounting_codes,
+                "new_library_code": new_library_code,
+            }
+        )
+
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        print("❌ Library Create Error:", e)
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("library_master_index")
+
+
+
+        data = json.loads(request.body)
+        text = data.get("text", "")
+
+        try:
+            # Call LibreTranslate API (no key required)
+            response = requests.post("https://libretranslate.de/translate", data={
+                "q": text,
+                "source": "en",
+                "target": "mr",
+                "format": "text"
+            })
+            translated = response.json().get("translatedText", text)
+        except Exception:
+            translated = text
+
+        return JsonResponse({"translated_text": translated})
