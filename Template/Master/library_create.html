@@ -71,6 +71,30 @@
         body.dark-mode .back-to-top:hover {
             background-color: #5a52d6;
         }
+
+         .fancy-label {
+        display: inline-block;
+        background: linear-gradient(90deg, #2c3e50, #3498db);
+        color: #fff;
+        font-weight: bold;
+        font-size: 16px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        letter-spacing: 0.5px;
+    }
+
+    .form-control {
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        transition: 0.3s;
+    }
+
+    .form-control:focus {
+        border-color: #2c3e50;
+        box-shadow: 0 0 6px rgba(52,152,219,0.6);
+    }
     </style>
 
 {% endblock %}
@@ -179,11 +203,14 @@
     </div>
 
 <div class="col-md-6">
-        <label class="form-label">ईमेल / Contact Email</label>
-        <input type="email" name="contact_email" id="contact_email" class="form-control"
-               value="{% if library %}{{ library.contact_email }}{% endif %}">
+    <label class="form-label">ईमेल / Contact Email</label>
+    <input type="email" name="contact_email" id="contact_email" class="form-control"
+           value="{% if library %}{{ library.contact_email }}{% endif %}"
+           placeholder="example@domain.com" required>
+    <div id="emailError" style="color:red; font-size: 14px; display:none; margin-top:4px;">
+        कृपया योग्य ईमेल पत्ता टाका (Please enter a valid email address).
     </div>
-
+</div>
    
     
 </div>
@@ -191,10 +218,14 @@
 <!-- Row 5: About Library & Membership Page -->
 <div class="mb-3 row">
 
-     <div class="col-md-6">
-        <label class="form-label">फोन / Contact Phone</label>
-        <input type="text" name="contact_phone" id="contact_phone" class="form-control"
-               value="{% if library %}{{ library.contact_phone }}{% endif %}">
+    <div class="col-md-6">
+    <label class="form-label">फोन / Contact Phone</label>
+    <input type="text" name="contact_phone" id="contact_phone" class="form-control"
+           value="{% if library %}{{ library.contact_phone }}{% endif %}"
+           placeholder="Enter 10-digit mobile number" required maxlength="10">
+        <div id="phoneError" style="color:red; font-size: 14px; display:none; margin-top:4px;">
+        कृपया योग्य 10 अंकी मोबाईल क्रमांक टाका (Please enter a valid 10-digit mobile number).
+        </div>
     </div>
 
     <div class="col-md-6">
@@ -227,19 +258,16 @@
 
 <!-- Row 7: Facebook & Twitter -->
 <div class="mb-3 row">
-    <div class="col-md-6">
-        <label class="form-label">लायब्ररी नियम / Library Rules</label>
-        <textarea name="library_rules" class="form-control">{% if library %}{{ library.library_rules }}{% endif %}</textarea>
-    </div>
+<div class="col-md-6">
+    <label class="fancy-label">📘 लायब्ररी नियम / Library Rules</label>
+    <textarea name="library_rules" rows="6" class="form-control">{% if library %}{{ library.library_rules }}{% endif %}</textarea>
+</div>
 
 <div class="col-md-6">
-        <label class="form-label">मेंबरशिप नियम / Membership Rules</label>
-        <textarea name="membership_rules" class="form-control">{% if library %}{{ library.membership_rules }}{% endif %}</textarea>
-    </div>
+    <label class="fancy-label">📝 मेंबरशिप नियम / Membership Rules</label>
+    <textarea name="membership_rules" rows="6" class="form-control">{% if library %}{{ library.membership_rules }}{% endif %}</textarea>
+</div>
 
-   
-
-    
 </div>
 
 <!-- Row 8: Instagram & YouTube -->
@@ -284,22 +312,21 @@
 <div class="col-md-6">
     <label class="form-label">लायब्ररी इमेज / Library Image</label>
 
-    <!-- Existing image (if already saved in DB) -->
-    {% if library and library.image_url %}
-        <div class="mb-2">
-            <img id="previewImage" src="{{ library.image_url }}" alt="Library Image"
-                 style="height:180px; border:1px solid #ddd; padding:5px; border-radius:6px;">
-        </div>
-    {% else %}
-        <div class="mb-2">
-            <img id="previewImage" src="" alt="Preview"
-                 style="display:none; height:180px; border:1px solid #ddd; padding:5px; border-radius:6px;">
-        </div>
-    {% endif %}
+    <!-- Preview -->
+    <div class="mb-2">
+        <img id="previewImage" 
+             src="{% if library and library.image_url %}{{ library.image_url }}{% endif %}" 
+             alt="Library Image"
+             style="{% if library and library.image_url %}{% else %}display:none;{% endif %} height:180px; border:1px solid #ddd; padding:5px; border-radius:6px;">
+    </div>
 
     <!-- Upload input -->
     <input type="file" name="library_image" id="library_image" class="form-control" accept="image/*">
+
+    <!-- Error message -->
+    <small id="fileError" style="color:red; display:none;"></small>
 </div>
+
 
      <div class="col-md-6">
         <label class="form-label">क्षमता / Capacity</label>
@@ -332,11 +359,13 @@
 
 <div class="col-md-6">
     <label class="form-label">स्थापनेचे वर्ष / Establishment Year</label>
-    <input type="number" name="est_year" class="form-control"
+    <input type="number" name="est_year" id="est_year" class="form-control"
            placeholder="YYYY"
+           min="1800" max="{{ now|date:'Y' }}"
+           oninput="validateYear(this)"
            value="{% if library %}{{ library.est_year }}{% endif %}">
+    <div id="yearError" style="color:red; font-size: 0.9em; display:none;"></div>
 </div>
-
 
 </div>
 
@@ -577,5 +606,94 @@ document.getElementById("library_name").addEventListener("input", function() {
 </script>
 
 
+<script>
+function validateYear(input) {
+    let year = input.value;
+    let errorDiv = document.getElementById("yearError");
+    let currentYear = new Date().getFullYear();
+
+    if (year.length > 4) {
+        input.value = year.slice(0, 4); // restrict to 4 digits
+    }
+
+    if (year && (!/^\d{4}$/.test(year) || year < 1800 || year > currentYear)) {
+        errorDiv.innerText = "Please enter a valid 4-digit year between 1800 and " + currentYear;
+        errorDiv.style.display = "block";
+        input.setCustomValidity("Invalid year");
+    } else {
+        errorDiv.style.display = "none";
+        input.setCustomValidity("");
+    }
+}
+</script>
+
+<script>
+document.getElementById("library_image").addEventListener("change", function(event) {
+    let file = event.target.files[0];
+    let errorDiv = document.getElementById("fileError");
+    let preview = document.getElementById("previewImage");
+
+    if (file) {
+        let validTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
+        
+        if (!validTypes.includes(file.type)) {
+            // ❌ Invalid file type
+            errorDiv.innerText = "❌ Only image files (JPG, PNG, GIF, WEBP) are allowed!";
+            errorDiv.style.display = "block";
+            event.target.value = "";  // Reset file input
+            preview.style.display = "none";
+            return;
+        } else {
+            // ✅ Valid image
+            errorDiv.style.display = "none";
+
+            // Show preview
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+});
+</script>
+
+<script>
+document.getElementById("contact_email").addEventListener("input", function () {
+    let email = this.value.trim();
+    let errorDiv = document.getElementById("emailError");
+
+    // Email Regex (RFC 5322 simplified)
+    let regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (email === "" || regex.test(email)) {
+        this.style.borderColor = "#ced4da"; // normal border
+        errorDiv.style.display = "none";
+    } else {
+        this.style.borderColor = "red";
+        errorDiv.style.display = "block";
+    }
+});
+</script>
   
+<script>
+document.getElementById("contact_phone").addEventListener("input", function () {
+    let phone = this.value.trim();
+    let errorDiv = document.getElementById("phoneError");
+
+    // Allow only digits
+    this.value = phone.replace(/\D/g, "");
+
+    // Validate 10 digits
+    if (/^[6-9]\d{9}$/.test(this.value)) {
+        this.style.borderColor = "#ced4da"; // normal border
+        errorDiv.style.display = "none";
+    } else {
+        this.style.borderColor = "red";
+        errorDiv.style.display = "block";
+    }
+});
+</script>
+
 {% endblock %}
