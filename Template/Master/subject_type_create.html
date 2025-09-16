@@ -94,20 +94,20 @@
                class="form-control" placeholder="Subject Code" required maxlength="3">
     </div>
 
-    <div class="col-md-6">
-        <label class="form-label">विषयाचे नाव (इंग्रजी) / Subject Name English</label>
-        <input type="text" name="subjectNameEnglish" id="subjectNameEnglish" 
-               class="form-control" placeholder="Subject Name English" required>
-    </div>
+   <div class="col-md-6">
+    <label class="form-label">Library Name (English)</label>
+    <input type="text" name="library_name" id="library_name" class="form-control"
+           placeholder="Library Name in English" required>
+</div>
 </div>
 
 <!-- Row 2: Subject Name Marathi & Description -->
 <div class="mb-3 row">
-    <div class="col-md-6">
-        <label class="form-label">विषयाचे नाव (मराठी) / Subject Name Marathi</label>
-        <input type="text" name="subjectNameMarathi" id="subjectNameMarathi" 
-               class="form-control transliterate" placeholder="Subject Name Marathi" required>
-    </div>
+<div class="col-md-6">
+    <label class="form-label">लायब्ररी नाव / Library Name in Marathi</label>
+    <input type="text" name="library_name_mar" id="library_name_mar" class="form-control"
+           placeholder="Library Name in Marathi" required>
+</div>
 
     <div class="col-md-6">
         <label class="form-label">वर्णन / Description</label>
@@ -286,20 +286,27 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-
-{% comment %} <script src="https://www.google.com/jsapi"></script>
 <script>
-   document.getElementById("materialNameMarathi").addEventListener("blur", function() {
-    let input = this.value;
-    if(input.trim() !== ""){
-        fetch(`/transliterate/?text=${encodeURIComponent(input)}`)
-        .then(res => res.json())
-        .then(data => {
-            this.value = data.marathi; // Replace with Marathi text
-        });
-    }
-});
-</script> {% endcomment %}
+document.getElementById("library_name").addEventListener("input", function() {
+    let englishText = this.value.trim();
 
+    if (englishText === "") {
+        document.getElementById("library_name_mar").value = "";
+        return;
+    }
+
+    // Call Google Translate API (free endpoint)
+    fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=mr&dt=t&q=" + encodeURIComponent(englishText))
+        .then(response => response.json())
+        .then(data => {
+            // Extract Marathi translation
+            let translatedText = data[0][0][0];
+            document.getElementById("library_name_mar").value = translatedText;
+        })
+        .catch(err => {
+            console.error("Translation Error:", err);
+        });
+});
+</script>
   
 {% endblock %}

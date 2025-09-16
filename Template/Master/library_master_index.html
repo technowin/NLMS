@@ -95,7 +95,7 @@
         </div>
         <div class="col-md-6 text-end">
             <a href="{% url 'library_create' %}" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> 	स्थान नोंदवही मास्टर तयार करा
+                <i class="bi bi-plus-circle"></i> 	ग्रंथालय नोंदवही मास्टर तयार करा
             </a>
         </div>
     </div>
@@ -146,30 +146,32 @@
                                     <i class="fa-solid fa-toggle-off"></i>
                                 </button>
                             {% endif %}
-                            {% comment %} <!-- View Button -->
-                            <a href="{% url 'library_master_view' %}?library_id={{ library.id }}" 
+
+                            <!-- View Button -->
+                           <a href="{% url 'library_master_view' %}?id={{ library.encrypted_id }}" class="btn btn-sm btn-info"
                                class="action-btn"
                                style="background-color:#FFD700; color:black;"
                                title="View">
                                 <i class="fa-solid fa-eye"></i>
-                            </a>  {% endcomment %}
+                            </a>
 
-                            {% comment %} <!-- Edit Button -->
-                            <a href="{% url 'library_master_edit' %}?library_id={{ library.id }}" 
+                            <!-- Edit Button -->
+                           <a href="{% url 'library_master_edit' %}?library_id={{ library.encrypted_id }}" 
                                 class="action-btn"
                                 style="background-color:#007BFF; color:white;"
                                 title="Edit">
                                 <i class="fa-solid fa-pen-to-square"></i>
-                            </a>  {% endcomment %}
+                                </a>
 
-                            {% comment %} <!-- Delete Button -->
+
+                            <!-- Delete Button -->
                             <button type="button" 
                                     class="action-btn"
                                     style="background-color:#FF4136; color:white;"
-                                    onclick="library_master_delete('{{ library.id }}')" 
+                                    onclick="library_master_delete('{{ library.encrypted_id }}')" 
                                     title="Delete">
                                 <i class="fa-solid fa-trash"></i>
-                            </button> {% endcomment %}
+                            </button>
                         </div> 
                     </td>
                 </tr>
@@ -331,7 +333,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function location_master_delete(encId) {
+function library_master_delete(encId) {
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -343,7 +345,7 @@ function location_master_delete(encId) {
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch("{% url 'location_master_delete' %}", {
+            fetch("{% url 'library_master_delete' %}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -356,7 +358,7 @@ function location_master_delete(encId) {
                 if (data.success) {
                     Swal.fire(
                         'Deleted!',
-                        'Funding Source has been deleted.',
+                        'Library Master has been deleted.',
                         'success'
                     ).then(() => {
                         // Reload page or remove row dynamically

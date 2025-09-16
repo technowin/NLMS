@@ -78,7 +78,7 @@ urlpatterns = [
     path('book_catalog_create/', book_catalog_create, name='book_catalog_create'),
     path('book_accession_index/', book_accession_index, name='book_accession_index'),
     path('book_accession_create/', book_accession_create, name='book_accession_create'),
-     path('material_type_master_index/', material_type_master_index, name='material_type_master_index'),
+    path('material_type_master_index/', material_type_master_index, name='material_type_master_index'),
     path("updatestatus", updatestatus, name="updatestatus"),
     path('materialtype_list/', materialtype_list, name='materialtype_list'),
     path('material_type_create/', material_type_create, name='material_type_create'),
@@ -130,7 +130,9 @@ urlpatterns = [
     path('library_master_index/', library_master_index, name='library_master_index'), 
     path('update_library_status/', update_library_status, name='update_library_status'), 
     path('library_create/', library_create, name='library_create'),
-    
+    path('library_master_edit/', library_master_edit, name='library_master_edit'),
+    path('library_master_view/', library_master_view, name='library_master_view'),
+    path('library_master_delete/', library_master_delete, name='library_master_delete'),
 
     #Reports 
     path('common_html', common_html, name='common_html'),

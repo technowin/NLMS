@@ -95,15 +95,15 @@
            placeholder="Material Code" required data-original="" maxlength="3">
 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">साहित्याचे नाव (इंग्रजी) / Material Name English</label>
-                    <input type="text" name="materialNameEnglish" id="materialNameEnglish" class="form-control" placeholder="Material Name English" required>
-                </div>
-            </div>
-                <div class="col-md-6">
-                    <label class="form-label">साहित्याचे नाव (मराठी) / Material Name Marathi</label>
-                    <input type="text" name="materialNameMarathi" id="materialNameMarathi" class="form-control transliterate" placeholder="Material Name Marathi" required>
-                </div>
+               <div class="col-md-6">
+    <label class="form-label">साहित्याचे नाव (इंग्रजी) / Material Name English</label>
+    <input type="text" name="materialNameEnglish" id="materialNameEnglish" class="form-control" placeholder="Material Name English" required>
+</div>
+
+<div class="col-md-6">
+    <label class="form-label">साहित्याचे नाव (मराठी) / Material Name Marathi</label>
+    <input type="text" name="materialNameMarathi" id="materialNameMarathi" class="form-control" placeholder="Material Name Marathi" required>
+</div>
 
                 <!-- BUTTONS -->
                 <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
@@ -271,20 +271,27 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-
-{% comment %} <script src="https://www.google.com/jsapi"></script>
 <script>
-   document.getElementById("materialNameMarathi").addEventListener("blur", function() {
-    let input = this.value;
-    if(input.trim() !== ""){
-        fetch(`/transliterate/?text=${encodeURIComponent(input)}`)
-        .then(res => res.json())
-        .then(data => {
-            this.value = data.marathi; // Replace with Marathi text
-        });
-    }
-});
-</script> {% endcomment %}
+document.getElementById("materialNameEnglish").addEventListener("input", function() {
+    let englishText = this.value.trim();
 
+    if (englishText === "") {
+        document.getElementById("materialNameMarathi").value = "";
+        return;
+    }
+
+    // Call Google Translate API
+    fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=mr&dt=t&q=" + encodeURIComponent(englishText))
+        .then(response => response.json())
+        .then(data => {
+            // Extract Marathi translation
+            let translatedText = data[0][0][0];
+            document.getElementById("materialNameMarathi").value = translatedText;
+        })
+        .catch(err => {
+            console.error("Translation Error:", err);
+        });
+});
+</script>
   
 {% endblock %}

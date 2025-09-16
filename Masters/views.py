@@ -2744,6 +2744,7 @@ def library_create(request):
             # 🔹 Form fields
             library_code = request.POST.get("library_code", "").strip()
             library_name = request.POST.get("library_name", "").strip()
+            library_name_mar = request.POST.get("library_name_mar", "").strip()
             location_id = request.POST.get("location_id", "").strip()
             accounting_code_id = request.POST.get("accounting_code_id", "").strip()
             parent_ward_id = request.POST.get("parent_ward_id", "").strip()
@@ -2756,7 +2757,7 @@ def library_create(request):
             membership_rules = request.POST.get("membership_rules", "").strip()
             membership_page_link = request.POST.get("membership_page_link", "").strip()
             opening_hours = request.POST.get("opening_hours", "").strip()
-            est_year = request.POST.get("est_year", "").strip()  # 🆕 Establishment Year
+            est_year = request.POST.get("est_year", "").strip()
             location_url = request.POST.get("location_url", "").strip()
             facebook_url = request.POST.get("facebook_url", "").strip()
             twitter_url = request.POST.get("twitter_url", "").strip()
@@ -2779,20 +2780,27 @@ def library_create(request):
                 return redirect("library_create")
 
             # ========================================================
-            # 📂 Save in Documents: MEDIA_ROOT / <library_code>/library_images/
+            # 📂 Save in Documents: MEDIA_ROOT/<library_code>/library_images/
             # ========================================================
-            library_folder = os.path.join(settings.MEDIA_ROOT, library_code, "library_images")
-            os.makedirs(library_folder, exist_ok=True)
-
-            # Save uploaded image
             image_url = ""
             if library_image:
-                image_path = os.path.join(library_folder, library_image.name)
+                # Full path for saving the file
+                image_path = os.path.join(
+                    settings.MEDIA_ROOT,
+                    library_code,
+                    "library_images",
+                    library_image.name
+                )
+
+                # Ensure directory exists
+                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+
+                # Save uploaded file
                 with open(image_path, "wb+") as f:
                     for chunk in library_image.chunks():
                         f.write(chunk)
 
-                # Relative path (for DB)
+                # ✅ Relative path for DB (no leading slash, works with MEDIA_URL)
                 image_url = f"/{library_code}/library_images/{library_image.name}"
 
             # 🔹 Update existing library
@@ -2802,6 +2810,7 @@ def library_create(request):
 
                 library.library_code = library_code
                 library.library_name = library_name
+                library.library_name_mar = library_name_mar
                 library.location_id = int(location_id) if location_id and location_id.isdigit() else None
                 library.parent_ward_id = int(parent_ward_id) if parent_ward_id and parent_ward_id.isdigit() else None
                 library.library_accounting_code_id = int(accounting_code_id) if accounting_code_id and accounting_code_id.isdigit() else None
@@ -2814,7 +2823,7 @@ def library_create(request):
                 library.membership_rules = membership_rules
                 library.membership_page_link = membership_page_link
                 library.opening_hours = opening_hours
-                library.est_year = int(est_year) if est_year.isdigit() else None   # 🆕
+                library.est_year = int(est_year) if est_year.isdigit() else None
                 library.location_url = location_url
                 library.facebook_url = facebook_url
                 library.twitter_url = twitter_url
@@ -2835,6 +2844,7 @@ def library_create(request):
             LibraryMaster.objects.create(
                 library_code=library_code,
                 library_name=library_name,
+                library_name_mar=library_name_mar,
                 location_id=int(location_id) if location_id and location_id.isdigit() else None,
                 parent_ward_id=int(parent_ward_id) if parent_ward_id and parent_ward_id.isdigit() else None,
                 library_accounting_code_id=int(accounting_code_id) if accounting_code_id and accounting_code_id.isdigit() else None,
@@ -2847,7 +2857,7 @@ def library_create(request):
                 membership_rules=membership_rules,
                 membership_page_link=membership_page_link,
                 opening_hours=opening_hours,
-                est_year=int(est_year) if est_year.isdigit() else None,  # 🆕
+                est_year=int(est_year) if est_year.isdigit() else None,
                 location_url=location_url,
                 image_url=image_url,
                 facebook_url=facebook_url,
@@ -2876,7 +2886,6 @@ def library_create(request):
 
         active_wards = WardMaster.objects.filter(is_active=1)
         active_locations = LibraryLocationMaster.objects.filter(is_active=1)
-        # ✅ Accounting codes also from WardMaster
         active_accounting_codes = WardMaster.objects.filter(is_active=1)
 
         return render(
@@ -2900,21 +2909,248 @@ def library_create(request):
         return redirect("library_master_index")
 
 
+@login_required
+def library_master_edit(request):
+    library = None
 
+    try:
+        if request.method == "POST":
+            # 🔹 Get encrypted ID from hidden form
+            enc_id = request.POST.get("id")
+            if not enc_id:
+                messages.error(request, "Missing Library ID!")
+                return redirect("library_master_index")
 
-        data = json.loads(request.body)
-        text = data.get("text", "")
+            # 🔹 Decrypt ID safely
+            try:
+                library_id = int(dec(enc_id))
+            except Exception:
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("library_master_index")
+
+            # 🔹 Fetch library record
+            try:
+                library = LibraryMaster.objects.get(id=library_id)
+            except LibraryMaster.DoesNotExist:
+                messages.error(request, "Library not found!")
+                return redirect("library_master_index")
+
+            user_id = request.user.id
+
+            # ------------------------
+            # Form fields
+            # ------------------------
+            library_code = request.POST.get("library_code", "").strip()
+            library_name = request.POST.get("library_name", "").strip()
+            library_name_mar = request.POST.get("library_name_mar", "").strip()
+            location_id = request.POST.get("location_id", "").strip()
+            parent_ward_id = request.POST.get("parent_ward_id", "").strip()
+            accounting_code_id = request.POST.get("accounting_code_id", "").strip()
+            librarian_name = request.POST.get("librarian_name", "").strip()
+            contact_email = request.POST.get("contact_email", "").strip()
+            contact_phone = request.POST.get("contact_phone", "").strip()
+            landing_page_link = request.POST.get("landing_page_link", "").strip()
+            about_library = request.POST.get("about_library", "").strip()
+            library_rules = request.POST.get("library_rules", "").strip()
+            membership_rules = request.POST.get("membership_rules", "").strip()
+            membership_page_link = request.POST.get("membership_page_link", "").strip()
+            opening_hours = request.POST.get("opening_hours", "").strip()
+            est_year = request.POST.get("est_year", "").strip()
+            location_url = request.POST.get("location_url", "").strip()
+            facebook_url = request.POST.get("facebook_url", "").strip()
+            twitter_url = request.POST.get("twitter_url", "").strip()
+            instagram_url = request.POST.get("instagram_url", "").strip()
+            youtube_url = request.POST.get("youtube_url", "").strip()
+            capacity = request.POST.get("capacity", "").strip()
+            is_active = int(request.POST.get("is_active", 1))
+
+            # ------------------------
+            # Uploaded image
+            # ------------------------
+            library_image = request.FILES.get("library_photo")
+            image_url = library.image_url  # keep old if no new image
+
+            if library_image:
+                library_folder = os.path.join(settings.MEDIA_ROOT, library_code, "library_images")
+                os.makedirs(library_folder, exist_ok=True)
+
+                image_path = os.path.join(library_folder, library_image.name)
+                with open(image_path, "wb+") as f:
+                    for chunk in library_image.chunks():
+                        f.write(chunk)
+
+                image_url = os.path.join(library_code, "library_images", library_image.name).replace("\\", "/")
+
+            # ------------------------
+            # Validation
+            # ------------------------
+            if not library_name:
+                messages.error(request, "Library Name is required!")
+                return redirect(request.path)
+
+            # ------------------------
+            # Duplicate checks
+            # ------------------------
+            duplicate_code = LibraryMaster.objects.filter(library_code__iexact=library_code).exclude(id=library.id)
+            if duplicate_code.exists():
+                messages.error(request, f"Library Code '{library_code}' already exists!")
+                return redirect("library_master_index")
+
+            duplicate_name = LibraryMaster.objects.filter(library_name__iexact=library_name).exclude(id=library.id)
+            if duplicate_name.exists():
+                messages.error(request, f"Library Name '{library_name}' already exists!")
+                return redirect("library_master_index")
+
+            # ------------------------
+            # Update record
+            # ------------------------
+            library.library_code = library_code
+            library.library_name = library_name
+            library.library_name_mar = library_name_mar
+            library.location_id = int(location_id) if location_id.isdigit() else None
+            library.parent_ward_id = int(parent_ward_id) if parent_ward_id.isdigit() else None
+            library.library_accounting_code_id = int(accounting_code_id) if accounting_code_id.isdigit() else None
+            library.librarian_name = librarian_name
+            library.contact_email = contact_email
+            library.contact_phone = contact_phone
+            library.landing_page_link = landing_page_link
+            library.about_library = about_library
+            library.library_rules = library_rules
+            library.membership_rules = membership_rules
+            library.membership_page_link = membership_page_link
+            library.opening_hours = opening_hours
+            library.est_year = int(est_year) if est_year.isdigit() else None
+            library.location_url = location_url
+            library.image_url = image_url
+            library.facebook_url = facebook_url
+            library.twitter_url = twitter_url
+            library.instagram_url = instagram_url
+            library.youtube_url = youtube_url
+            library.capacity = capacity
+            library.is_active = bool(is_active)
+            library.updated_by = user_id
+            library.updated_at = timezone.now()
+            library.save()
+
+            messages.success(request, f"Library '{library_name}' updated successfully!")
+            return redirect("library_master_index")
+
+        else:  # GET request
+            enc_id = request.GET.get("library_id")
+            if not enc_id:
+                messages.error(request, "Missing Library ID!")
+                return redirect("library_master_index")
+
+            try:
+                library_id = int(dec(enc_id))
+            except Exception:
+                messages.error(request, "Invalid or corrupted ID!")
+                return redirect("library_master_index")
+
+            try:
+                library = LibraryMaster.objects.get(id=library_id)
+            except LibraryMaster.DoesNotExist:
+                messages.error(request, "Library not found!")
+                return redirect("library_master_index")
+
+            library.encrypted_id = enc(str(library.id))
+
+        # ------------------------
+        # Prepare display image
+        # ------------------------
+        if library.image_url:
+            library.display_image_url = settings.MEDIA_URL + library.image_url
+        else:
+            library.display_image_url = None
+
+    except Exception as e:
+        import traceback
+        print("❌ Library Edit Error:", traceback.format_exc())
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("library_master_index")
+
+    # ------------------------
+    # Dropdowns
+    # ------------------------
+    active_wards = WardMaster.objects.filter(is_active=True)
+    active_locations = LibraryLocationMaster.objects.filter(is_active=True)
+    active_accounting_codes = WardMaster.objects.filter(is_active=True)
+
+    return render(request, "Master/library_master_edit.html", {
+        "library": library,
+        "wards": active_wards,
+        "locations": active_locations,
+        "accounting_codes": active_accounting_codes,
+    })
+    
+@login_required
+def library_master_view(request):
+    try:
+        enc_id = request.GET.get("id")  # Must match your template link: ?id={{ library.encrypted_id }}
+        if not enc_id:
+            messages.error(request, "Missing Library ID!")
+            return redirect("library_master_index")
+
+        # 🔹 Decrypt Library ID
+        library_id = int(dec(enc_id))
+
+        # 🔹 Fetch main library record
+        library = LibraryMaster.objects.get(id=library_id)
+        library.encrypted_id = enc(str(library.id))
+
+        # 🔹 Set display image URL
+        library.display_image_url = None
+        if library.image_url:
+            library.display_image_url = settings.MEDIA_URL + str(library.image_url)
+
+        # 🔹 Fetch location details if location_id exists (if stored in LibraryMaster)
+        location = None
+        if library.location_id:
+            try:
+                location = LibraryMaster.objects.get(id=library.location_id)
+                location.encrypted_id = enc(str(location.id))
+            except LibraryMaster.DoesNotExist:
+                location = None
+
+        context = {
+            "library": library,
+            "location": location
+        }
+        return render(request, "Master/library_master_view.html", context)
+
+    except LibraryMaster.DoesNotExist:
+        messages.error(request, "Library not found!")
+        return redirect("library_master_index")
+    except Exception as e:
+        print("❌ Decryption/View Error:", e)
+        messages.error(request, "Invalid or corrupted ID!")
+        return redirect("library_master_index")
+
+@login_required
+def library_master_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  # parse JSON
+            enc_id = data.get("id")  # encrypted ID
+        except (json.JSONDecodeError, KeyError):
+            return JsonResponse({"success": False, "error": "Invalid data"})
+
+        if not enc_id:
+            return JsonResponse({"success": False, "error": "Library ID is missing"})
 
         try:
-            # Call LibreTranslate API (no key required)
-            response = requests.post("https://libretranslate.de/translate", data={
-                "q": text,
-                "source": "en",
-                "target": "mr",
-                "format": "text"
-            })
-            translated = response.json().get("translatedText", text)
-        except Exception:
-            translated = text
+            # 🔹 Decrypt the ID
+            library_id = int(dec(enc_id))
 
-        return JsonResponse({"translated_text": translated})
+            # 🔹 Fetch and delete record
+            library = LibraryMaster.objects.get(id=library_id)
+            library.delete()
+            return JsonResponse({"success": True})
+
+        except LibraryMaster.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Library not found"})
+        except Exception as e:
+            print("❌ Delete Error:", e)
+            return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
