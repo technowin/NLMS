@@ -1,59 +1,13 @@
 from django.db import models
-from administration.models import * 
-
-class error_log(models.Model):
-    id = models.AutoField(primary_key=True)
-    method =models.TextField(null=True,blank=True)
-    error =models.TextField(null=True,blank=True)
-    error_date = models.DateTimeField(null=True,blank=True,auto_now_add=True)
-    user_id = models.TextField(null=True,blank=True)
-    
-    class Meta:
-        db_table = 'error_log'
-
-class WardMaster(models.Model):
-    ward_id = models.AutoField(primary_key=True)
-    ward_name = models.TextField(null=True, blank=True)              # Ward name
-    ward_address = models.TextField(null=True, blank=True)           # Address of the ward
-    pincode = models.TextField(null=True, blank=True)                # comma-separated pincodes
-    accounting_code = models.TextField(null=True, blank=True)        # accounting code
-    is_active = models.IntegerField(default=1)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = models.TextField(null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    updated_by = models.TextField(null=True, blank=True)
-
-    class Meta:
-        db_table = "tbl_wardmaster"
-
-    def __str__(self):
-        return f"Ward {self.ward_no} - {self.ward_name}"
-    
-class LibraryLocationMaster(models.Model):
-    location_id = models.AutoField(primary_key=True)
-    location_name = models.TextField(null=True, blank=True)                # Library name
-    address = models.TextField(null=True, blank=True)                      # Address of library
-    pincode = models.TextField(null=True, blank=True)                      # Pincode
-    ward = models.ForeignKey(WardMaster,on_delete=models.CASCADE,related_name="libraries",   db_column="ward_id",null=True,blank=True)
-    is_active = models.IntegerField(default=1)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = models.TextField(null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
-    updated_by = models.TextField(null=True, blank=True)
-
-    class Meta:
-        db_table = "tbl_librarylocationmaster"
-
-    def __str__(self):
-        return f"{self.location_name} ({self.location_code})"
+from decimal import Decimal
 
 class tbl_librarymasterL01(models.Model):
     id = models.AutoField(primary_key=True)  # auto-increment
     library_code = models.TextField(null=True, blank=True)
     library_name = models.TextField(null=True, blank=True)
-    location = models.ForeignKey(LibraryLocationMaster, on_delete=models.SET_NULL, related_name="librariesL01", db_column="location_id", null=True, blank=True)
-    parent_ward = models.ForeignKey(WardMaster, on_delete=models.SET_NULL, related_name="ward_librariesL01", db_column="ward_id", null=True, blank=True)
-    library_accounting_code = models.ForeignKey(WardMaster, on_delete=models.SET_NULL, related_name="ward_accounting_codeL01", db_column="accounting_id", null=True, blank=True)
+    location = models.TextField(null=True, blank=True)
+    parent_ward = models.TextField(null=True, blank=True)
+    library_accounting_code = models.TextField(null=True, blank=True)
     landing_page_link = models.TextField(null=True, blank=True)
     about_library = models.TextField(null=True, blank=True)
     library_rules = models.TextField(null=True, blank=True)
@@ -81,3 +35,113 @@ class tbl_librarymasterL01(models.Model):
 
     def __str__(self):
         return f"{self.library_name} ({self.library_code})"
+
+class MembershipMaster(models.Model):
+    id = models.AutoField(primary_key=True)
+    membership_code = models.CharField(max_length=50, unique=True, null=True, blank=True)  # <-- changed
+    membership_type = models.TextField(null=True, blank=True)
+    membership_type_en = models.TextField(null=True, blank=True)
+    deposit = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    entry_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    subscription_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fine = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    outsider = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    days = models.IntegerField(default=0)
+    item = models.IntegerField(default=0)
+    remarks_txt = models.TextField(null=True, blank=True)
+    isactive = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_membershipmaster"
+
+    def __str__(self):
+        return f"{self.membership_code} - {self.membership_type}"
+
+class StatusMaster(models.Model):
+    id = models.AutoField(primary_key=True)
+    status_code = models.CharField(max_length=50, unique=True)
+    status_name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    isactive = models.IntegerField(default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_statusmaster"
+
+    def __str__(self):
+        return f"{self.status_code} - {self.status_name}"
+    
+class DocumentMaster(models.Model):
+    id = models.AutoField(primary_key=True)
+    document_name = models.CharField(max_length=500)
+    document_name_mar = models.CharField(max_length=500)
+    description = models.TextField(null=True, blank=True)
+    isactive = models.IntegerField(default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_documentmaster"
+
+    def __str__(self):
+        return self.document_name
+
+class MembershipDetails(models.Model):
+    id = models.AutoField(primary_key=True)
+    first_name = models.TextField(null=True, blank=True)
+    middle_name = models.TextField(null=True, blank=True)
+    last_name = models.TextField(null=True, blank=True)
+    ward = models.TextField(null=True, blank=True)
+    pincode = models.TextField(null=True, blank=True)
+    library_name = models.TextField(null=True, blank=True)
+    local_address = models.TextField(null=True, blank=True)
+    mobile_no = models.TextField(null=True, blank=True)
+    occupation = models.TextField(null=True, blank=True)
+    office_phone = models.TextField(null=True, blank=True)
+    education = models.TextField(null=True, blank=True)
+    institute_name = models.TextField(null=True, blank=True)
+    recommender_details = models.TextField(null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
+    membership = models.ForeignKey(MembershipMaster, on_delete=models.CASCADE, db_column="membership_id", related_name="membership_holders")
+    status = models.ForeignKey(StatusMaster, on_delete=models.CASCADE, db_column="status_id", related_name="memberships")
+    aadhar_no = models.CharField(max_length=12, unique=True)
+    user_id = models.CharField(max_length=50, unique=True)
+    password = models.CharField(max_length=255)
+
+    isactive = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta: db_table = "tbl_membershipdetails"
+
+    def __str__(self):
+        full_name = " ".join(filter(None, [self.first_name, self.middle_name, self.last_name]))
+        return f"{full_name} ({self.user_id})"
+
+class DocumentDetails(models.Model):
+    id = models.AutoField(primary_key=True)
+    membership = models.ForeignKey(MembershipDetails, on_delete=models.CASCADE, db_column="membership_id", related_name="documents")
+    document = models.ForeignKey(DocumentMaster, on_delete=models.CASCADE, db_column="document_id", related_name="document_usages")
+    file_path = models.CharField(max_length=255, null=True, blank=True)
+    isactive = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta: db_table = "tbl_documentdetails"
+    def __str__(self): return f"{self.membership.full_name} - {self.document.document_name}"
+

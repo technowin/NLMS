@@ -577,7 +577,6 @@ def transliterate_to_english(text):
         print(f"Error in transliterate_to_english: {e}")
         return text or ""
 
-
 @login_required
 def material_type_master_index(request):
     try:

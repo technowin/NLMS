@@ -262,3 +262,29 @@ in variable name put PYTHONDONTWRITEBYTECODE
 and in variable value put 1
 
 click on ok and restart Vscode
+
+python manage.py makemigrations common_app
+python manage.py migrate common_app --database=1
+python manage.py migrate common_app --database=2
+python manage.py migrate --database=default
+python manage.py makemigrations Account
+python manage.py makemigrations Masters
+python manage.py makemigrations MenuManager
+python manage.py makemigrations Reports
+python manage.py makemigrations DrainageConnection
+python manage.py makemigrations TreeCutting
+python manage.py makemigrations L01
+
+python manage.py migrate Account --database=default
+python manage.py migrate Account --database=L01
+python manage.py migrate Account --database=2
+python manage.py migrate L01 --database=L01
+
+python manage.py migrate Masters --database=1
+python manage.py migrate Masters --database=2
+
+python manage.py migrate MenuManager --database=1
+python manage.py migrate MenuManager --database=2
+
+python manage.py migrate Reports --database=1
+python manage.py migrate Reports --database=2

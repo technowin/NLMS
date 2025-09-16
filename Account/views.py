@@ -43,15 +43,30 @@ from django.http import HttpResponseBadRequest
 import logging
 import requests
 from django.db import models
+from administration.models import *
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
+from django.contrib.auth.hashers import check_password
+from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+User = get_user_model()
+
 @csrf_exempt
 def Login(request):
     if request.method=="GET":
-       request.session.flush()
-       return render(request,'bootstrap/account/login.html')
+       library_code = request.session.get('library_db', None) 
+       library = LibraryMaster.objects.using('default').filter(
+            is_active=1, 
+            library_code=library_code
+        ).first()  # <-- important
+       membership_url = library.membership_page_link.strip() if library and library.membership_page_link else "#"
+
+       return render(request,'bootstrap/account/login.html',{'library_code':library_code,'registration_url':membership_url })
     
     if request.method=="POST":
         username = request.POST.get('username')
@@ -78,10 +93,29 @@ def Login(request):
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
+        
+# def logoutView(request):
+#     logout(request)
+#     return redirect("Account")  
 
 def logoutView(request):
-    logout(request)
-    return redirect("Account")  
+    library_code = request.session.get('library_db', None)
+
+    # Flush session
+    request.session.flush()
+    from django.contrib.auth import logout as django_logout
+    # Log out user using Django's built-in logout
+    django_logout(request)
+    from django.shortcuts import redirect
+    from django.contrib.auth.models import AnonymousUser
+    # Ensure user is set to anonymous
+    request.user = AnonymousUser()
+
+    # Redirect based on whether library_code existed
+    if library_code == 'default':
+        return redirect("Account")  
+    else:
+        return redirect("library_list")
 
 def register_new_user(request):
     Db.closeConnection()

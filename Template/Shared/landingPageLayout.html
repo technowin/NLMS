@@ -6,12 +6,18 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Navi Mumbai Municipal Corporation</title>
-        <link href="{% static 'css/library.css' %}" rel="stylesheet">
-        
+
         <!-- Google Fonts -->
         <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <!-- Bootstrap 5 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Optional: Bootstrap icons -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+        <link href="{% static 'css/library.css' %}" rel="stylesheet">
+        
     {% endblock %}
 </head>
 
@@ -70,6 +76,8 @@
                             <li><a href="#">Online Services</a></li>
                         </ul>
                     </li>
+                    
+                    {% comment %} <li class="nav-item"><a href="{% url 'Login' %}">Login</a></li> {% endcomment %}
 
                     <li class="icon">
                         <a href="javascript:void(0);" onclick="toggleNavbar()">☰</a>

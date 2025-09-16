@@ -437,7 +437,7 @@ class WardMaster(models.Model):
         db_table = "tbl_wardmaster"
 
     def __str__(self):
-        return f"Ward {self.ward_no} - {self.ward_name}"
+        return f"Ward {self.ward_id} - {self.ward_name}"
     
 class LibraryLocationMaster(models.Model):
     location_id = models.AutoField(primary_key=True)
@@ -455,4 +455,4 @@ class LibraryLocationMaster(models.Model):
         db_table = "tbl_librarylocationmaster"
 
     def __str__(self):
-        return f"{self.location_name} ({self.location_code})"
+        return f"{self.location_name} ({self.location_id})"

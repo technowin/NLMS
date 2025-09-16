@@ -29,18 +29,48 @@
                 </div>
             </div>
 
+            <!-- 🔽 Library Dropdown -->
+            {% comment %} <div class="dropdown-container">
+                <div class="custom-dropdown">
+                    <div class="dropdown-selected">🔍 Search Library</div>
+                    <ul class="dropdown-options">
+                        {% for library in library_details %}
+                            <li data-value="{{ library.library_code }}">📚 {{ library.library_name }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div> {% endcomment %}
+
+            <div class="dropdown-container">
+                <div class="custom-dropdown">
+                    <!-- Wrap input with an icon -->
+                    <div class="input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="dropdownSearch" placeholder="Search Library..." class="dropdown-input">
+                    </div>
+
+                    <!-- Dropdown list -->
+                    <ul id="dropdownOptions" class="dropdown-options">
+                    {% for library in library_details %}
+                        <li data-value="{{ library.libraries }}">📚 {{ library.library_name }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
             <div class="card-grid">
                 {% for library in library_details %}
                     <div class="library-card">
-                        <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="library-img">
+                        {% comment %} <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="library-img"> {% endcomment %}
+                        <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="library-img">
                         <div class="library-content">
                             <h3>{{ library.library_name }} - Vashi</h3>
-                            <h4>Established: {{ library.establishedYear }}</h4>
+                            <h4>Established: {{ library.est_year }}</h4>
                             <p>{{ library.about_library }}</p>
                             
                             <form method="POST" action="{% url 'service_redirect' %}">
                                 {% csrf_token %}
-                                <input type="hidden" name="library_code" value="{{ library.library_code }}">
+                                <input type="hidden" name="library_code" value="{{ library.libraries }}">
                                 <button type="submit" class="card-btn">View More</button>
                             </form>
 
@@ -49,25 +79,113 @@
                 {% endfor %}
             </div>
 
+            <!-- Hidden form -->
+            <form id="libraryForm" method="POST" action="{% url 'service_redirect' %}" style="display:none;">
+                {% csrf_token %}
+                <input type="hidden" name="library_code" id="libraryCodeInput">
+            </form>
            
         </div>
     </section>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("dropdownSearch");
+            const options = document.getElementById("dropdownOptions");
+            const items = options.getElementsByTagName("li");
+            const form = document.getElementById("libraryForm");
+            const hiddenInput = document.getElementById("libraryCodeInput");
 
-<script>
-    document.getElementById("grid-view-btn").addEventListener("click", function () {
-        document.querySelector(".card-grid").classList.add("grid-view");
-        document.querySelector(".card-grid").classList.remove("list-view");
-        this.classList.add("active");
-        document.getElementById("list-view-btn").classList.remove("active");
-    });
+            // Show all options when input is focused
+            input.addEventListener("focus", function () {
+                options.style.display = "block";
+            });
 
-    document.getElementById("list-view-btn").addEventListener("click", function () {
-        document.querySelector(".card-grid").classList.add("list-view");
-        document.querySelector(".card-grid").classList.remove("grid-view");
-        this.classList.add("active");
-        document.getElementById("grid-view-btn").classList.remove("active");
-    });
-</script>
+            // Filter while typing
+            input.addEventListener("input", function () {
+                let filter = input.value.toLowerCase();
+                let hasMatch = false;
 
+                for (let i = 0; i < items.length; i++) {
+                    let txtValue = items[i].textContent || items[i].innerText;
+                    if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                        items[i].style.display = "";
+                        hasMatch = true;
+                    } else {
+                        items[i].style.display = "none";
+                    }
+                }
+
+                if (!hasMatch) {
+                    options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
+                }
+            });
+
+            // Select option & auto-submit form
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener("click", function () {
+                    const selectedValue = this.getAttribute("data-value");
+                    input.value = this.textContent.trim();
+
+                    // Set hidden input & submit form
+                    hiddenInput.value = selectedValue;
+                    form.submit();
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!e.target.closest(".custom-dropdown")) {
+                    options.style.display = "none";
+                }
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById("grid-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("grid-view");
+            document.querySelector(".card-grid").classList.remove("list-view");
+            this.classList.add("active");
+            document.getElementById("list-view-btn").classList.remove("active");
+        });
+
+        document.getElementById("list-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("list-view");
+            document.querySelector(".card-grid").classList.remove("grid-view");
+            this.classList.add("active");
+            document.getElementById("grid-view-btn").classList.remove("active");
+        });
+    </script>
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {% comment %} {% block extra_javascript %} {% endcomment %}
+
+    {% if messages %}
+        <script>
+            $(document).ready(function() {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                
+                {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags }}',
+                    title: '{{ message.tags|title }}',
+                    text: '{{ message|escapejs }}',
+                    confirmButtonText: 'OK',
+                    background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                    color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                    confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
 {% endblock %}

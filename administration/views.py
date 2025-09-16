@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.http import HttpResponse
 from django.contrib.sessions.models import Session
 from .thread_local import set_current_service
+from django.conf import settings
 
 def library_list(request):
     Db.closeConnection()
@@ -20,7 +21,10 @@ def library_list(request):
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
         
-        return render(request, 'administration/library_list.html', {'library_details': library_details})
+        return render(request, 'administration/library_list.html', {
+            'library_details': library_details,
+            'MEDIA_URL': settings.MEDIA_URL
+        })
     
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -32,7 +36,8 @@ def library_list(request):
     
 def service_redirect(request):
     # Get the library code from POST
-    service_code = request.POST.get('library_code')
+    service_code_decrypted = request.POST.get('library_code')
+    service_code = dec(service_code_decrypted)
 
     # Save to session
     request.session['library_db'] = service_code

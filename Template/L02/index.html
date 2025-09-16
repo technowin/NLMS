@@ -7,15 +7,16 @@
         {% for library in libraries %}
             <div class="oz-library-card">
                 <!-- Image -->
-                <div class="oz-library-img-wrapper">
-                        <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="oz-library-img">
+                <div class="oz-libraryInd-img-wrapper">
+                        {% comment %} <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="oz-library-img"> {% endcomment %}
+                        <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="libraryInd-img">
                 </div>
 
                 <!-- Content -->
                 <div class="oz-library-content">
                     <h3>{{ library.library_name }}</h3>
                     {% if library.establishedYear %}
-                        <h4>Since {{ library.establishedYear }}</h4>
+                        <h4>Since {{ library.est_year }}</h4>
                     {% endif %}
 
                     <p class="library-description">{{ library.about_library }}</p>

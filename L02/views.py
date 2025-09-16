@@ -2,6 +2,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from L02.models import *
+from administration.models import *
+from django.conf import settings
 
 def index(request):
     # Get the library code from session
@@ -18,5 +20,6 @@ def index(request):
     # Pass to template
     return render(request, "L02/index.html", {
         'libraries': library_details,
-        'library_name': library_name
+        'library_name': library_name,
+        'MEDIA_URL': settings.MEDIA_URL
     })

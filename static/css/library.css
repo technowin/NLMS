@@ -951,3 +951,203 @@ footer a:hover {
     margin-right: 8px;     /* space between icon and text */
     color: var(--primary-color);
 }
+
+/* Center container on the page */
+
+.dropdown-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Input wrapper with icon */
+.input-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #015296;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+/* Input field */
+.dropdown-input {
+  width: 100%;
+  padding: 0.7rem 1rem 0.7rem 2.5rem; /* extra left padding for icon */
+  border: 1px solid #ccc;
+  border-radius: 0.8rem;
+  background: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.dropdown-input:focus {
+  border-color: #015296;
+  box-shadow: 0 0 8px rgba(1,82,150,0.25);
+  outline: none;
+}
+
+/* Dropdown options */
+.dropdown-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 320px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0.8rem;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  max-height: 220px;
+  overflow-y: auto;
+  position: absolute;
+  z-index: 999;
+  display: none;
+}
+
+.dropdown-options li {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-options li:hover {
+  background: #015296;
+  color: #fff;
+}
+/* 
+.library-cta {
+    margin-top: 15px;
+}
+
+.library-cta p {
+    font-size: 1rem;
+    color: #333;
+}
+
+.library-cta .join-link {
+    color: #015296;
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 5px;
+    transition: color 0.3s;
+}
+
+.library-cta .join-link:hover {
+    color: #013d70;
+    text-decoration: underline;
+} */
+
+.library-cta {
+    margin-top: 15px;
+}
+
+.cta-inline {
+    display: flex;
+    align-items: center; /* vertically aligns text and link */
+    gap: 5px; /* spacing between text and link */
+}
+
+.library-cta .join-link {
+    all: unset;         /* remove button styles */
+    color: #015296;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.library-cta .join-link:hover {
+    color: #013d70;
+}
+
+/* ind library css */
+
+.libraryInd-img {
+    width: 100%;
+    object-fit: cover; /* makes image look neat, cropped properly */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.oz-libraryInd-img-wrapper {
+    flex: 3 1 400px; /* bigger image */
+    /* max-width: 450px; */
+    /* padding: 3%; */
+    padding: 5% 2%;
+}
+
+/* registration page css */
+
+/* Use your existing CSS */
+.est-info-wrapper {
+    padding: 3rem;
+    border-radius: 1rem;
+    background-color: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    font-family: 'Merriweather', serif;
+    /* margin-bottom: 5%;
+    margin-top: 2%; */
+    margin: 2% 5% 5% 5%;
+}
+.est-info-wrapper h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.est-info-wrapper .form-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.est-info-wrapper .form-control {
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+}
+.est-info-wrapper .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.2);
+    outline: none;
+}
+.est-info-wrapper .btn-submit {
+    padding: 0.75rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.65rem;
+    background-color: #5865f2;
+    border: none;
+    color: white;
+}
+.est-info-wrapper .btn-submit:hover {
+    background-color: #4752d6;
+    transform: translateY(-1px);
+}
+.est-info-wrapper .btn-go-back {
+    padding: 0.6rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    border: 2px solid #ced4da;
+    border-radius: 0.5rem;
+    text-decoration: none;
+}
+.est-info-wrapper .btn-go-back:hover {
+    background-color: #495057;
+    color: #fff;
+}

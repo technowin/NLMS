@@ -11,11 +11,12 @@ class="authentication-bg position-relative"
 <div class="position-absolute start-0 end-0 start-0 bottom-0 w-100 h-100">
     <svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%' viewBox='0 0 800 800'>
         <g fill-opacity='0.22'>
-            <circle style="fill: rgba(var(--ct-primary-rgb), 0.1);" cx='400' cy='400' r='600' />
-            <circle style="fill: rgba(var(--ct-primary-rgb), 0.2);" cx='400' cy='400' r='500' />
-            <circle style="fill: rgba(var(--ct-primary-rgb), 0.3);" cx='400' cy='400' r='300' />
-            <circle style="fill: rgba(var(--ct-primary-rgb), 0.4);" cx='400' cy='400' r='200' />
-            <circle style="fill: rgba(var(--ct-primary-rgb), 0.5);" cx='400' cy='400' r='100' />
+            <circle style="fill: rgba(1, 82, 150, 0.1);" cx="400" cy="400" r="600" />
+            <circle style="fill: rgba(1, 82, 150, 0.2);" cx="400" cy="400" r="500" />
+            <circle style="fill: rgba(1, 82, 150, 0.3);" cx="400" cy="400" r="300" />
+            <circle style="fill: rgba(1, 82, 150, 0.4);" cx="400" cy="400" r="200" />
+            <circle style="fill: rgba(1, 82, 150, 0.5);" cx="400" cy="400" r="100" />
+
         </g>
     </svg>
 </div>
@@ -26,16 +27,16 @@ class="authentication-bg position-relative"
                 <div class="card">
 
                     <!-- Logo -->
-                    <div class="card-header py-4 text-center bg-primary">
+                    <div class="card-header py-4 text-center" style="background-color:#015296;">
                         <a href="{% url 'dashboard:index' %}">
-                            <span style="color:white !important;font-weight:bold"><img src="{% static 'images/technologo2.png' %}" alt="logo" height="22">&nbsp;&nbsp;Technowin Xperience</span>
+                            <span style="color:white !important;font-weight:bold;"><img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" height="100">&nbsp;&nbsp;</span>
                         </a>
                     </div>
 
                     <div class="card-body p-4">
 
                         <div class="text-center w-75 m-auto">
-                            <h4 class="text-dark-50 text-center pb-0 fw-bold">Sign In</h4>
+                            <h4 class="text-dark-50 text-center pb-0 fw-bold" style="color:#015296;">Admin Login</h4>
                             <p class="text-muted mb-4">Enter your email address and password to access admin
                                 panel.</p>
                         </div>
@@ -60,29 +61,35 @@ class="authentication-bg position-relative"
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" name="remember_me" id="remember_me" checked>
-                                    <label class="form-check-label" for="remember_me">Remember me</label>
-                                </div>
-                            </div>
-
-
                             <div class="mb-3 mb-0 text-center">
-                                <button class="btn btn-primary" type="submit"> Log In </button>
+                                <button class="btn btn-primary" style="background-color:#14479E;color:white;" type="submit"> Log In </button>
                             </div>
                         </form>
-                    </div> <!-- end card-body -->
+                        {% if library_code != 'default' %}
+                            <div class="text-center mt-4">
+                                <p style="font-size: 0.95rem; color: #015296;">
+                                    New member? 
+                                    {% comment %} <a href="{% url 'L01:registration' %}" style="font-weight: bold; text-decoration: underline; color: #14479E;">
+                                        Register now
+                                    </a>  {% endcomment %}
+                                    <a href="{{ registration_url }}" style="font-weight: bold; text-decoration: underline; color: #14479E;">
+                                        Register now
+                                    </a>
+                                    and start your journey through our library’s treasures.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div> 
                 </div>
                 <!-- end card -->
 
-                <div class="row mt-3">
+                {% comment %} <div class="row mt-3">
                     <div class="col-12 text-center">
                         <p class="text-muted">Don't have an account? <a href="{% url 'pages:register' %}"
                                 class="text-muted ms-1"><b>Sign Up</b></a>
                         </p>
                     </div> <!-- end col -->
-                </div>
+                </div> {% endcomment %}
                 <!-- end row -->
 
             </div> <!-- end col -->
@@ -93,11 +100,10 @@ class="authentication-bg position-relative"
 </div>
 <!-- end page -->
 
-<footer class="footer footer-alt">
-    2018 -
+{% comment %} <footer class="footer footer-alt">
     <script>document.write(new Date().getFullYear())</script>
-    © NLMS - Coderthemes.com
-</footer>
+    © NLMS - Technowin It 
+</footer> {% endcomment %}
 {% endblock %}
 
 {% block extra_javascript %}
@@ -105,4 +111,35 @@ class="authentication-bg position-relative"
     document.getElementById('id_login').value = "user@demo.com"
     document.getElementById('id_password').value = "password"
 </script> {% endcomment %}
+
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% comment %} {% block extra_javascript %} {% endcomment %}
+
+{% if messages %}
+    <script>
+        $(document).ready(function() {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            
+            {% for message in messages %}
+            Swal.fire({
+                icon: '{{ message.tags }}',
+                title: '{{ message.tags|title }}',
+                text: '{{ message|escapejs }}',
+                confirmButtonText: 'OK',
+                background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                customClass: {
+                    popup: 'rounded-4 shadow',
+                    confirmButton: 'btn btn-primary px-4 py-2'
+                }
+            });
+            {% endfor %}
+        });
+    </script>
+{% endif %}
+
 {% endblock %}

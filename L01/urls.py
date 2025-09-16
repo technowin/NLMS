@@ -3,4 +3,5 @@ from L01.views import *
 
 urlpatterns = [
     path("index",index,name='index'),
+    path("registration",registration,name='registration'),
 ]
