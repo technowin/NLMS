@@ -11,6 +11,7 @@
 
         <!-- USER ID -->
         <div class="mb-3 mt-3 row">
+
             <div class="col-md-6 position-relative">
                 <label class="form-label" for="userIdInput">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
                 <input type="text" id="userIdInput" class="form-control" placeholder="Enter User ID">
@@ -30,9 +31,8 @@
                 <small id="aadharError" class="text-danger d-none"></small>
                 <span id="aadharStatus"></span>
             </div>
-        </div>
 
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+        </div>
 
         <!-- FIRST NAME -->
         <div class="mb-3 row">
@@ -70,8 +70,6 @@
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
         <!-- WARD NAME -->
         <div class="mb-3 row">
             <div class="col-md-6">
@@ -92,9 +90,8 @@
                     <option value="">Select Pincode</option>
                 </select>
             </div>
-        </div>
 
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+        </div>
 
         <!-- LIBRARY NAME -->
         <div class="mb-3 row">
@@ -117,10 +114,6 @@
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-        <!-- Member Type -->
-         
         <div class="mb-3 row">
             <div class="col-md-6">
                 <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
@@ -159,7 +152,7 @@
             </div>
         </div>
 
-        <!-- REFERRER DETAILS -->
+        <!-- Referrer -->
         <div class="mb-3 row" id="referrer_row">
             <div class="col-md-6">
                 <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
@@ -167,7 +160,13 @@
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+        <!-- DATE OF BIRTH -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label" for="dob">Date of Birth / जन्मतारीख <span class="text-danger">*</span></label>
+                <input type="date" name="dob" class="form-control" required>
+            </div>
+        </div>
 
         <!-- Are you from NMMC -->
         <div class="mb-3 row">
@@ -209,96 +208,7 @@
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-        <!-- Membership Type -->
-        <div class="mb-3 row">
-            <div class="col-md-6">
-                <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
-                <select name="membershiptype" class="form-control" id="membershiptype" required>
-                    <option value="">Select Membership Type</option>
-                    {% for membership_option in membership_Master %}
-                        <option value="{{ membership_option.id }}">{{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <!-- membership Details Table will be rendered here -->
-        <div id="membershipDetails" style="display:none;">
-            <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
-                {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
-            </h5>
-            <div class="table-responsive">
-                <table class="table table-bordered text-center">
-                    <thead>
-                        <tr>
-                            <th style="background-color: #015296; color: white;">Deposit<br><small>(ठेव)</small></th>
-                            <th style="background-color: #015296; color: white;">Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
-                            <th style="background-color: #015296; color: white;">Subscription<br><small>(सभासद फी)</small></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td id="depositCell"></td>
-                            <td id="entryFeesCell"></td>
-                            <td id="subscriptionCell"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Months + Date Fields -->
-        <div id="membershipDuration" style="display:none; margin-top: 20px;">
-            <div class="mb-3 row">
-                <!-- Number of Months -->
-                <div class="mb-3 col-md-6">
-                    <label class="form-label">
-                        Membership Duration (Months) / सदस्यत्व कालावधी
-                        <span class="text-danger">*</span>
-                    </label>
-                    <input type="number" id="months" name="months" class="form-control" 
-                        min="1" max="12" required placeholder="Enter months (1-12)">
-                </div>
-
-                <!-- From Date -->
-                <div class="col-md-6">
-                    <label class="form-label">
-                        Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                    </label>
-                    <input type="date" id="fromDate" name="fromDate" class="form-control" required>
-                </div>
-
-                <!-- To Date -->
-                <div class="col-md-6">
-                    <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
-                    <input type="date" id="toDate" name="toDate" class="form-control" readonly>
-                </div>
-            </div>
-        </div>
-
-        <!-- Amount Fields -->
-        <div id="amountFields" style="display:none; margin-top: 15px;">
-            <div class="mb-3 row">
-                <div class="col-md-4">
-                    <label class="form-label">Deposit / ठेव</label>
-                    <input type="text" id="depositInput" class="form-control" readonly>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                    <input type="text" id="entryFeesInput" class="form-control" readonly>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Subscription / सभासद फी</label>
-                    <input type="text" id="subscriptionInput" class="form-control" readonly>
-                </div>
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-        <!-- Photo Upload & ID Document (Scanned) -->
+        <!-- Photo Upload -->
         <div class="mb-3 row">
             <div class="col-md-6">
                 <label class="form-label" for="photo_upload">Photo / फोटो <span class="text-danger">*</span></label>
@@ -343,33 +253,19 @@
             </div>
         </div>
 
-        <div class="mb-3 row d-none" id="employee_row">
-            <div class="col-md-6">
-                <label class="form-label" for="employee_letter">Employee ID / कर्मचारी ओळखपत्र <span class="text-danger">*</span></label>
-                <input type="file" id="employee_letter" name="employee_letter" class="form-control" accept="image/*,.pdf">
-                <input type="hidden" name="employee_letter" value="4">
-                <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
-                <small id="employeeError" class="text-danger d-none"></small>
-                <div id="employeePreview" class="mt-2"></div>
-            </div>
-        </div>
-
-        <!-- SUBMISSION -->
+        <!-- SUBMIT BUTTON -->
         <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
             <button type="submit" class="btn btn-submit">
                 <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
             </button>
         </div>
     </form>
-
-
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-{% comment %} Word translate {% endcomment %}
 <script>
     $(document).ready(function () {
         $('.translate-marathi-input').on('blur', function () {
@@ -395,7 +291,6 @@
     });
 </script>
 
-{% comment %} userid check  {% endcomment %}
 <script>
     $(document).ready(function () {
         const regex = /^[a-zA-Z0-9_]{5,20}$/;
@@ -475,7 +370,6 @@
     });
 </script>
 
-{% comment %} aadhar card check {% endcomment %}
 <script>
     $(document).ready(function () {
         const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
@@ -533,7 +427,6 @@
                 errorMsg.text("Aadhar number cannot be empty.").removeClass("d-none");
                 statusIcon.html("");
                 submitBtn.prop("disabled", true);
-                aadharHelp.addClass("d-none");  // Hide help text
             }
         });
 
@@ -558,7 +451,6 @@
     });
 </script>
 
-{% comment %} Member Type / सदस्य प्रकार Logic to show fields accordingly student / employed / retired {% endcomment %}
 <script>
 
     $(document).ready(function() {
@@ -584,7 +476,6 @@
 
 </script>
 
-{% comment %} file upload validation & preview {% endcomment %}
 <script>
     $(document).ready(function () {
 
@@ -645,16 +536,9 @@
             validateFileSize(this, 'nagarsevakError');
             previewFile(this, '#nagarsevakPreview');
         });
-
-        // ✅ Employee ID upload
-        $('#employee_letter').change(function () {
-            validateFileSize(this, 'employeeError');
-            previewFile(this, '#employeePreview');
-        });
     });
 </script>
 
-{% comment %} NMMC Resident Logic and aadhar card {% endcomment %}
 <script>
     
     $(document).ready(function() {
@@ -719,7 +603,6 @@
 
 </script>
 
-{% comment %} Ward Name & Pincode Logic {% endcomment %}
 <script>
     $(document).ready(function() {
         $('#ward_name').change(function() {
@@ -752,117 +635,5 @@
     });
 </script>
 
-{% comment %} Membership Type / सदस्यत्व प्रकार {% endcomment %}
-<script>
-    function formatCurrency(amount) {
-        if (!amount) return "₹ 0";
-        let num = parseFloat(amount);
-        return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
-    }
-
-    $(document).ready(function () {
-
-        let baseDeposit = 0;
-        let baseEntryFees = 0;
-        let baseSubscription = 0;
-
-        $("#membershiptype").change(function () {
-            var encId = $(this).val();
-            if (encId) {
-                $.ajax({
-                    url: "{% url 'L01:get_membership_details' %}",
-                    type: "GET",
-                    data: { id: encId },
-                    success: function (response) {
-                        if (response.success) {
-                            baseDeposit = parseFloat(response.data.deposit) || 0;
-                            baseEntryFees = parseFloat(response.data.entry_fees) || 0;
-                            baseSubscription = parseFloat(response.data.subscription_fees) || 0;
-
-                            $("#depositCell").text(formatCurrency(baseDeposit));
-                            $("#entryFeesCell").text(formatCurrency(baseEntryFees));
-                            $("#subscriptionCell").text(formatCurrency(baseSubscription));
-
-                            $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
-
-                            updateAmountFields(); // update initial amounts
-                        } else {
-                            $("#membershipDetails, #membershipDuration, #amountFields").hide();
-                            alert("Membership not found");
-                        }
-                    }
-                });
-            } else {
-                $("#membershipDetails, #membershipDuration, #amountFields").hide();
-            }
-        });
-
-        $("#months").on("input change", function() {
-            let val = parseInt($(this).val());
-
-            if (val > 12) $(this).val(12);
-            else if (val < 1) $(this).val("");
-
-            updateAmountFields();
-        });
-
-        $("#fromDate").on("change", function() {
-            updateToDate();
-        });
-
-        function updateToDate() {
-            let months = parseInt($("#months").val());
-            let fromDate = $("#fromDate").val();
-
-            if (months && fromDate) {
-                let from = new Date(fromDate);
-                let to = new Date(from);
-                to.setMonth(to.getMonth() + months);
-                $("#toDate").val(to.toISOString().split("T")[0]);
-            } else {
-                $("#toDate").val("");
-            }
-        }
-
-        function updateAmountFields() {
-            let months = parseInt($("#months").val()) || 0;
-
-            $("#depositInput").val(formatCurrency(baseDeposit));
-            $("#entryFeesInput").val(formatCurrency(baseEntryFees));
-            $("#subscriptionInput").val(formatCurrency(baseSubscription * months));
-
-            updateToDate();
-        }
-
-    });
-</script>
-
-{% comment %} Employee ID Upload (NMMC Employee + Membership Type 3 or 4) {% endcomment %}
-<script>
-    $(document).ready(function() {
-        function toggleEmployeeUpload() {
-            const memberType = $('#membertype').val(); // e.g., "Government Employee (NMMC)"
-            const membershipType = $('#membershiptype').val(); // e.g., "3"
-
-            if (memberType === 'Government Employee (NMMC)' && (membershipType === '3' || membershipType === '4')) {
-                $('#employee_row').removeClass('d-none');
-                $('#employee_letter').attr('required', true); // Make it required
-            } else {
-                $('#employee_row').addClass('d-none');
-                $('#employee_letter').removeAttr('required'); // Remove required
-                // Optional: clear file input if hiding
-                $('#employee_letter').val('');
-                $('#employeePreview').html('');
-                $('#employeeError').addClass('d-none').text('');
-            }
-        }
-
-        // Run whenever either dropdown changes
-        $('#membertype, #membershiptype').on('change', toggleEmployeeUpload);
-
-        // Run on page load in case default values are set
-        toggleEmployeeUpload();
-    });
-</script>
 
 {% endblock %}

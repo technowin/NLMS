@@ -5,6 +5,7 @@ class tbl_librarymasterL01(models.Model):
     id = models.AutoField(primary_key=True)  # auto-increment
     library_code = models.TextField(null=True, blank=True)
     library_name = models.TextField(null=True, blank=True)
+    library_name_mar = models.TextField(null=True, blank=True)
     location = models.TextField(null=True, blank=True)
     parent_ward = models.TextField(null=True, blank=True)
     library_accounting_code = models.TextField(null=True, blank=True)
@@ -24,6 +25,7 @@ class tbl_librarymasterL01(models.Model):
     twitter_url = models.TextField(null=True, blank=True)
     instagram_url = models.TextField(null=True, blank=True)
     youtube_url = models.TextField(null=True, blank=True)
+    est_year = models.TextField(null=True, blank=True)
     capacity = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.TextField(null=True, blank=True)
@@ -105,6 +107,7 @@ class MembershipDetails(models.Model):
     ward = models.TextField(null=True, blank=True)
     pincode = models.TextField(null=True, blank=True)
     library_name = models.TextField(null=True, blank=True)
+    library_name_mar = models.TextField(null=True, blank=True)
     local_address = models.TextField(null=True, blank=True)
     mobile_no = models.TextField(null=True, blank=True)
     occupation = models.TextField(null=True, blank=True)
@@ -145,3 +148,17 @@ class DocumentDetails(models.Model):
     class Meta: db_table = "tbl_documentdetails"
     def __str__(self): return f"{self.membership.full_name} - {self.document.document_name}"
 
+class parameter_master_L01(models.Model):
+    parameter_id = models.AutoField(primary_key=True)
+    parameter_name =models.TextField(null=True,blank=True)
+    parameter_value =models.TextField(null=True,blank=True)
+    isactive = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+    
+    class Meta:
+        db_table = 'parameter_master_L01'
+    def __str__(self):
+        return self.parameter_name

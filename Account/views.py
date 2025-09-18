@@ -104,7 +104,6 @@ def logoutView(request):
     # Flush session
     request.session.flush()
     from django.contrib.auth import logout as django_logout
-    # Log out user using Django's built-in logout
     django_logout(request)
     from django.shortcuts import redirect
     from django.contrib.auth.models import AnonymousUser
