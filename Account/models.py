@@ -83,8 +83,6 @@ class roles(models.Model):
     class Meta:
         db_table = 'roles'
     
-
-    
 class password_storage(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_id_repos',blank=True, null=True,db_column='user_id')

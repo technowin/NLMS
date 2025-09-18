@@ -6,14 +6,14 @@
 <div class="est-info-wrapper">
     <h2><i class="bi bi-person-badge"></i> Fill Membership Details / सदस्य माहिती भरा</h2>
 
-    <form id="membershipForm" method="post">
+    <form id="membershipForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- USER ID -->
         <div class="mb-3 mt-3 row">
             <div class="col-md-6 position-relative">
                 <label class="form-label" for="userIdInput">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
-                <input type="text" id="userIdInput" class="form-control" placeholder="Enter User ID">
+                <input type="text" id="userIdInput" name="user_id" class="form-control" placeholder="Enter User ID">
                 <small id="userIdHelp" class="form-text text-muted">
                     User ID must be 5–20 characters. Letters, numbers, and underscore only (no spaces).
                 </small>
@@ -23,7 +23,7 @@
             
             <div class="col-md-6">
                 <label class="form-label" for="aadharInput">Aadhar Number / आधार क्रमांक <span class="text-danger">*</span></label>
-                <input type="text" id="aadharInput" class="form-control" placeholder="Enter Aadhar Number">
+                <input type="text" id="aadharInput" name="aadhar_no" class="form-control" placeholder="Enter Aadhar Number">
                 <small id="aadharHelp" class="form-text text-muted">
                     Aadhar Number must be exactly 12 digits (no spaces or dashes).
                 </small>
@@ -127,7 +127,8 @@
                 <select name="membertype" class="form-control" id="membertype" required>
                     <option value="">Select Membership</option>
                     {% for option in membership_options %}
-                        <option value="{{ option.parameter_value }}">{{ option.parameter_value }}</option>
+                        {% comment %} <option value="{{ option.parameter_value }}">{{ option.parameter_value }}</option> {% endcomment %}
+                        <option value="{{ option.parameter_id }}">{{ option.parameter_value }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -283,18 +284,70 @@
             <div class="mb-3 row">
                 <div class="col-md-4">
                     <label class="form-label">Deposit / ठेव</label>
-                    <input type="text" id="depositInput" class="form-control" readonly>
+                    <input type="text" id="depositInput"class="form-control" readonly>
+                    <input type="hidden" id="depositHidden" name="deposit">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                    <input type="text" id="entryFeesInput" class="form-control" readonly>
+                    <input type="text" id="entryFeesInput"class="form-control" readonly>
+                    <input type="hidden" id="entryFeesHidden" name="entry_fees">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Subscription / सभासद फी</label>
-                    <input type="text" id="subscriptionInput" class="form-control" readonly>
+                    <input type="text" id="subscriptionInput"class="form-control" readonly>
+                    <input type="hidden" id="subscriptionHidden" name="subscription">
                 </div>
             </div>
         </div>
+
+        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+        <!-- Email And Phone Number -->
+        <div class="mb-3 row">
+            <div class="mb-3 col-md-6">
+                <label class="form-label" for="email">Email / ईमेल <span class="text-danger">*</span></label>        
+                <input type="email" id="email" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" required>
+                <small id="emailHelp" class="form-text text-muted">
+                    Please provide a valid email address.
+                </small>
+                <small id="emailError" class="text-danger d-none"></small>
+                <span id="emailStatus"></span>
+            </div>
+        
+            <div class="col-md-6">
+                <label class="form-label" for="mobile_number">Mobile Number / मोबाइल नंबर <span class="text-danger">*</span></label>   
+                <input type="text" id="mobile_number" name="mobile_number" class="form-control" placeholder="e.g. 9876543210" required>
+                <small id="mobileHelp" class="form-text text-muted">
+                    Mobile Number must be exactly 10 digits (no spaces or dashes).
+                </small>
+                <small id="mobileError" class="text-danger d-none"></small>
+
+                <span id="mobileStatus"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label" for="dob">Date of Birth / जन्म तारीख  <span class="text-danger">*</span></label>
+                <input type="date" id="dob" name="dob" class="form-control" required>
+                <small id="dobError" class="text-danger d-none"></small>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label" for="new_password">New Password / नवीन पासवर्ड <span class="text-danger">*</span></label>
+                <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Enter new password" required>
+                <small id="passwordError" class="text-danger d-none"></small>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label" for="repeat_password">Repeat Password / पासवर्ड पुन्हा टाका <span class="text-danger">*</span></label>
+                <input type="password" id="repeat_password" name="repeat_password" class="form-control" placeholder="Repeat password" required>
+                <small id="repeatPasswordError" class="text-danger d-none"></small>
+            </div>
+        </div>
+
 
         <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
@@ -347,7 +400,7 @@
             <div class="col-md-6">
                 <label class="form-label" for="employee_letter">Employee ID / कर्मचारी ओळखपत्र <span class="text-danger">*</span></label>
                 <input type="file" id="employee_letter" name="employee_letter" class="form-control" accept="image/*,.pdf">
-                <input type="hidden" name="employee_letter" value="4">
+                <input type="hidden" name="employee_letter" value="3">
                 <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
                 <small id="employeeError" class="text-danger d-none"></small>
                 <div id="employeePreview" class="mt-2"></div>
@@ -569,13 +622,15 @@
             var val = $(this).val();
 
             // First, hide all
-            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row').hide();
+            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row')
+            .hide()
+            .find('input, select').prop('required', false);
 
-            if(val === 'Student') {
+            if(val === '1') {
                 $('#education_row, #institution_row').show();
-            } else if(val === 'Employed Professional' || val === 'Government Employee (NMMC)') {
+            } else if(val === '2' || val === '3') {
                 $('#occupation_row, #phone_row').show();
-            } else if(val === 'Retired / Senior Citizen') {
+            } else if(val === '4') {
                 $('#referrer_row').show();
             }
         });
@@ -827,12 +882,24 @@
         function updateAmountFields() {
             let months = parseInt($("#months").val()) || 0;
 
-            $("#depositInput").val(formatCurrency(baseDeposit));
-            $("#entryFeesInput").val(formatCurrency(baseEntryFees));
-            $("#subscriptionInput").val(formatCurrency(baseSubscription * months));
+            // Ensure base values are always numeric
+            const deposit = parseInt(baseDeposit.toString().replace(/[^0-9]/g, '')) || 0;
+            const entryFees = parseInt(baseEntryFees.toString().replace(/[^0-9]/g, '')) || 0;
+            const subscription = (parseInt(baseSubscription.toString().replace(/[^0-9]/g, '')) || 0) * months;
+
+            // Show plain numbers in readonly inputs
+            $("#depositInput").val(deposit);
+            $("#entryFeesInput").val(entryFees);
+            $("#subscriptionInput").val(subscription);
+
+            // Save raw numeric values in hidden fields for form POST
+            $("#depositHidden").val(deposit);
+            $("#entryFeesHidden").val(entryFees);
+            $("#subscriptionHidden").val(subscription);
 
             updateToDate();
         }
+
 
     });
 </script>
@@ -844,7 +911,7 @@
             const memberType = $('#membertype').val(); // e.g., "Government Employee (NMMC)"
             const membershipType = $('#membershiptype').val(); // e.g., "3"
 
-            if (memberType === 'Government Employee (NMMC)' && (membershipType === '3' || membershipType === '4')) {
+            if (memberType === '3' && (membershipType === '3' || membershipType === '4')) {
                 $('#employee_row').removeClass('d-none');
                 $('#employee_letter').attr('required', true); // Make it required
             } else {
@@ -862,6 +929,134 @@
 
         // Run on page load in case default values are set
         toggleEmployeeUpload();
+    });
+</script>
+
+{% comment %} Email & Mobile Validation password Validation {% endcomment %}
+<script>
+    $(document).ready(function () {
+        const submitBtn = $(".btn-submit");
+
+        // Email validation
+        $("#email").on("blur input", function () {
+            const emailVal = $(this).val().trim();
+            const emailStatus = $("#emailStatus");
+            const emailError = $("#emailError");
+            const emailHelp = $("#emailHelp");
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (emailVal === "") {
+                emailError.text("Email cannot be empty.").removeClass("d-none");
+                emailStatus.html("");
+                submitBtn.prop("disabled", true);
+                emailHelp.addClass("d-none");
+            } else if (!emailRegex.test(emailVal)) {
+                emailError.text("Invalid email format.").removeClass("d-none");
+                emailStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                submitBtn.prop("disabled", true);
+                emailHelp.addClass("d-none");
+            } else {
+                emailError.addClass("d-none");
+                emailStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                submitBtn.prop("disabled", false);
+                emailHelp.removeClass("d-none");
+            }
+        });
+
+        // Mobile validation
+        $("#mobile_number").on("blur input", function () {
+            const mobileVal = $(this).val().trim();
+            const mobileStatus = $("#mobileStatus");
+            const mobileError = $("#mobileError");
+            const mobileHelp = $("#mobileHelp");
+
+            const mobileRegex = /^[0-9]{10}$/;
+
+            if (mobileVal === "") {
+                mobileError.text("Mobile number cannot be empty.").removeClass("d-none");
+                mobileStatus.html("");
+                submitBtn.prop("disabled", true);
+                mobileHelp.addClass("d-none");
+            } else if (!mobileRegex.test(mobileVal)) {
+                mobileError.text("Invalid mobile number: must be 10 digits.").removeClass("d-none");
+                mobileStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                submitBtn.prop("disabled", true);
+                mobileHelp.addClass("d-none");
+            } else {
+                mobileError.addClass("d-none");
+                mobileStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                submitBtn.prop("disabled", false);
+                mobileHelp.removeClass("d-none");
+            }
+        });
+
+        // Block spaces in mobile
+        $("#mobile_number").on("keypress", function (e) {
+            if (e.which === 32) e.preventDefault();
+        });
+
+        $("#mobile_number").on("input", function () {
+            this.value = this.value.replace(/\s/g, "");
+        });
+
+        // Password validation
+        function validatePassword() {
+            const pwd = $("#new_password").val();
+            const repeatPwd = $("#repeat_password").val();
+            const pwdError = $("#passwordError");
+            const repeatError = $("#repeatPasswordError");
+
+            // Regex: 8-16 chars, at least 1 upper, 1 lower, 1 digit, 1 special char
+            const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
+
+            let valid = true;
+
+            if (!pwdRegex.test(pwd)) {
+                pwdError.text("Password must be 8-16 chars, include uppercase, lowercase, digit & special char.")
+                        .removeClass("d-none");
+                valid = false;
+            } else {
+                pwdError.addClass("d-none");
+            }
+
+            if (pwd !== repeatPwd) {
+                repeatError.text("Passwords do not match.").removeClass("d-none");
+                valid = false;
+            } else {
+                repeatError.addClass("d-none");
+            }
+
+            submitBtn.prop("disabled", !valid);
+            return valid;
+        }
+
+        $("#new_password, #repeat_password").on("blur input", validatePassword);
+
+        // Prevent form submission if invalid
+        $("#membershipForm").on("submit", function (e) {
+            if ($(".btn-submit").prop("disabled")) e.preventDefault();
+        });
+    });
+</script>
+
+{% comment %} form final submission with confirmation {% endcomment %}
+<script>
+    document.getElementById("membershipForm").addEventListener("submit", function(e) {
+        e.preventDefault(); // stop normal submission
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "Do you want to submit this membership form?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, submit',
+            cancelButtonText: 'No, cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit(); // now submit
+            }
+        });
     });
 </script>
 
