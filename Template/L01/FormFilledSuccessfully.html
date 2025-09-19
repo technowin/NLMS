@@ -1,0 +1,27 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+    <div class="card shadow-lg border-0 rounded-4 text-center p-5" style="max-width: 600px; width: 100%;">
+
+        <!-- Success Message -->
+        <h2 class="fw-bold mb-3" style="color:#C49B30">Membership Form Submitted!</h2>
+        {% comment %} <h2 class="fw-bold mb-3" style="color:#C49B30">🎉 Membership Form Submitted!</h2> {% endcomment %}
+        <p class="text-muted fs-5 mb-4">
+            Your membership form has been filled successfully.  
+            Please wait while your form gets approved.  
+            You will receive your login credentials on your registered mobile number.  
+            <br>Thank you for choosing us! 💙
+        </p>
+
+        <!-- Library Link -->
+        <a href="/{{library_code}}/index" 
+           class="btn btn-lg px-4 rounded-pill shadow-sm" style="background-color: #015296; color: white; text-decoration: none;">
+           Go Back To Main Page
+        </a>
+    </div>
+</div>
+
+{% endblock %}

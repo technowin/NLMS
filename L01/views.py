@@ -17,7 +17,7 @@ from django.utils import timezone
 import datetime
 import uuid
 from django.contrib.auth.hashers import make_password
-
+from django.urls import reverse
 
 def index(request):
     # Get the library code from session
@@ -114,32 +114,49 @@ def registration(request):
         library_code = request.session.get('library_db', None)
 
         if request.method == "GET":
-            if library_code:
-                library_details = tbl_librarymasterL01.objects.filter(is_active=1, library_code=library_code)
-                for lilo in library_details:
-                    encrypted_library_code = enc(lilo.library_code)
-                    lilo.libraries = encrypted_library_code
-                print(library_details)
             
-                membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
+            formfilledsuccessfullyVariable = request.GET.get("formfilledsuccessfully", None)
+            
+            # you will get throgh post function formfilledsuccessfullyVariable encrypted value
+            # decrypt it here
+            if formfilledsuccessfullyVariable != None:
                 
-                ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                formfilledsuccessfullyDecrypted = dec(formfilledsuccessfullyVariable)
                 
-                membership_Master = MembershipMaster.objects.filter(isactive=1)
-                if membership_Master.exists():
-                    for mema in membership_Master:
-                        encrypted_membership_id = enc(str(mema.id))
-                        mema.membership_id_enc = encrypted_membership_id
-                    print(membership_Master)
+                template = "L01/FormFilledSuccessfully.html"
+                context = {'MEDIA_URL': settings.MEDIA_URL,
+                           "library_code": request.session.get("library_db"),
+                        }
+                
+            else:
+                if library_code:
+                    library_details = tbl_librarymasterL01.objects.filter(is_active=1, library_code=library_code)
+                    for lilo in library_details:
+                        encrypted_library_code = enc(lilo.library_code)
+                        lilo.libraries = encrypted_library_code
+                    print(library_details)
+                
+                    membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
+                    
+                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    
+                    membership_Master = MembershipMaster.objects.filter(isactive=1)
+                    if membership_Master.exists():
+                        for mema in membership_Master:
+                            encrypted_membership_id = enc(str(mema.id))
+                            mema.membership_id_enc = encrypted_membership_id
+                        print(membership_Master)
 
-            return render(request, "L01/registration.html", {
-            # return render(request, "L01/registrationTest1.html", {
-                'MEDIA_URL': settings.MEDIA_URL,
-                'library_details':library_details,
-                'membership_options':membership_options,
-                'ward_details':ward_details,
-                'membership_Master':membership_Master,
-            })
+                template = "L01/registration.html"
+                context = {
+                    'MEDIA_URL': settings.MEDIA_URL,
+                    'library_details': library_details,
+                    'membership_options': membership_options,
+                    'ward_details': ward_details,
+                    'membership_Master': membership_Master,
+                }
+                
+            return render(request, template, context)
 
         elif request.method == "POST":
             try:
@@ -278,9 +295,12 @@ def registration(request):
                         user=custom_user,
                         passwordText=raw_password
                     )
-    
+                    
+                    formfilledsuccessfullyVariable = enc('1')
 
-                    return HttpResponse("✅ Membership & documents saved successfully!")
+                    # return redirect('/registration/?formfilledsuccessfully=1')
+                    return redirect(f'/{library_code}/registration?formfilledsuccessfully={formfilledsuccessfullyVariable}')
+
 
             except Exception as e:
                 tb = traceback.extract_tb(e.__traceback__)

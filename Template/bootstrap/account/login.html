@@ -43,7 +43,8 @@ class="authentication-bg position-relative"
 
                         <form method="POST" action="Login" novalidate>
                               <div class="mb-3">
-                                <label for="emailaddress" class="form-label">Email address</label>
+                                {% comment %} <label for="emailaddress" class="form-label">Email address</label> {% endcomment %}
+                                <label for="emailaddress" class="form-label">Username</label>
                                 <input class="form-control" type="email" id="emailaddress" name="username"  required=""
                                     placeholder="Enter your email">
                             </div>
