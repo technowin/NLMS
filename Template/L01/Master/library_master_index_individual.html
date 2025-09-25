@@ -1,0 +1,668 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Workflow{% endblock title %}
+
+{% block extra_css %}
+
+    <!-- Keeping only SweetAlert and essential layout styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font: Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय नोंदवही मास्टर' sub_title='' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        {% comment %} <form method="POST" action="{% url 'library_master_index_individual' %}" enctype="multipart/form-data"> {% endcomment %}
+         <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="id" value="{% if library %}{{ library.encrypted_id }}{% endif %}">
+
+
+     <!-- Row 1: Library Code & Name (English) -->
+  <div class="mb-3 row">
+    <!-- Library Code -->
+    <div class="col-md-6">
+        <label class="form-label">लायब्ररी कोड / Library Code</label>
+        <input type="text" name="library_code" id="library_code" class="form-control"
+               value="{% if library %}{{ library.library_code }}{% else %}{{ new_library_code }}{% endif %}"
+               readonly>
+    </div>
+
+    <!-- Library Name English -->
+    <div class="col-md-6">
+        <label class="form-label">Library Name (English)</label>
+        <input type="text" name="library_name" id="library_name" class="form-control"
+               placeholder="Library Name in English"
+               value="{% if library %}{{ library.library_name }}{% endif %}" required>
+    </div>
+</div>
+
+<!-- Row 2: Name (Marathi) & Accounting Code -->
+<div class="mb-3 row">
+    <!-- Marathi Name -->
+    <div class="col-md-6">
+        <label class="form-label">लायब्ररी नाव / Library Name in Marathi</label>
+        <input type="text" name="library_name_mar" id="library_name_mar" class="form-control"
+               placeholder="Library Name in Marathi"
+               value="{% if library %}{{ library.library_name_mar }}{% endif %}" required>
+    </div>
+
+   <!-- Accounting Code -->
+<div class="col-md-6">
+    <label class="form-label">लेखांकन कोड / Accounting Code</label>
+   <select name="accounting_code_id" id="accounting_code_id" class="form-control" required>
+    {% for code in accounting_codes %}
+        {% if library and library.library_accounting_code == code.accounting_code %}
+            <option value="{{ code.accounting_code }}" selected>{{ code.accounting_code }}</option>
+        {% else %}
+            <option value="{{ code.accounting_code }}">{{ code.accounting_code }}</option>
+        {% endif %}
+    {% endfor %}
+</select>
+</div>
+
+
+
+</div>
+
+
+    <!-- Row 3: Location & Ward -->
+    <div class="mb-3 row">
+      <div class="col-md-6">
+    <label class="form-label">स्थान / Location</label>
+   <select name="location_id" id="location_id" class="form-control" required>
+    {% for loc in locations %}
+        {% if library and library.location == loc.location_name %}
+            <option value="{{ loc.location_name }}" selected>{{ loc.location_name }}</option>
+        {% else %}
+            <option value="{{ loc.location_name }}">{{ loc.location_name }}</option>
+        {% endif %}
+    {% endfor %}
+</select>
+</div>
+
+   <div class="col-md-6">
+    <label class="form-label">वॉर्ड / Ward</label>
+    <select name="parent_ward_id" id="parent_ward_id" class="form-control" required>
+    {% for ward in wards %}
+        {% if ward.is_active %}
+            {% if library and library.parent_ward == ward.ward_name %}
+                <option value="{{ ward.ward_name }}" selected>{{ ward.ward_name }}</option>
+            {% else %}
+                <option value="{{ ward.ward_name }}">{{ ward.ward_name }}</option>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+</select>
+</div>
+
+
+    </div>
+
+    <!-- Row 4: Librarian Name & Contact Email -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">लायब्रेरियन नाव / Librarian Name</label>
+            <input type="text" name="librarian_name" id="librarian_name" class="form-control"
+                   value="{% if library %}{{ library.librarian_name }}{% endif %}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">ईमेल / Contact Email</label>
+            <input type="email" name="contact_email" id="contact_email" class="form-control"
+                   placeholder="example@domain.com"
+                   value="{% if library %}{{ library.contact_email }}{% endif %}" required>
+        </div>
+    </div>
+
+    <!-- Row 5: Contact Phone & Landing Page -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">फोन / Contact Phone</label>
+            <input type="text" name="contact_phone" id="contact_phone" class="form-control"
+                   placeholder="Enter 10-digit mobile number" maxlength="10"
+                   value="{% if library %}{{ library.contact_phone }}{% endif %}" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">लँडिंग पेज लिंक / Landing Page Link</label>
+            <input type="url" name="landing_page_link" class="form-control"
+                   value="{% if library %}{{ library.landing_page_link }}{% endif %}">
+        </div>
+    </div>
+
+    <!-- Row 6: About Library & Membership Page -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">लायब्ररी बद्दल / About Library</label>
+            <textarea name="about_library" class="form-control">{% if library %}{{ library.about_library }}{% endif %}</textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">मेंबरशिप पेज लिंक / Membership Page Link</label>
+            <input type="text" name="membership_page_link" class="form-control"
+                   value="{% if library %}{{ library.membership_page_link }}{% endif %}">
+        </div>
+    </div>
+
+    <!-- Row 7: Library Rules & Membership Rules -->
+    <div class="mb-3 row">
+     <div class="row">
+    <div class="col-md-6">
+        <label class="form-label">📘 लायब्ररी नियम / Library Rules</label>
+        <textarea id="library_rules_editor" name="library_rules" class="form-control">
+            {% if library %}{{ library.library_rules|safe }}{% endif %}
+        </textarea>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label">📝 मेंबरशिप नियम / Membership Rules</label>
+        <textarea id="membership_rules_editor" name="membership_rules" class="form-control">
+            {% if library %}{{ library.membership_rules|safe }}{% endif %}
+        </textarea>
+    </div>
+</div>
+
+
+    </div>
+
+    <!-- Row 8: Social Media URLs -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">फेसबुक URL</label>
+            <input type="url" name="facebook_url" class="form-control"
+                   value="{% if library %}{{ library.facebook_url }}{% endif %}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">ट्विटर URL</label>
+            <input type="url" name="twitter_url" class="form-control"
+                   value="{% if library %}{{ library.twitter_url }}{% endif %}">
+        </div>
+    </div>
+
+    <!-- Row 9: Instagram & YouTube URLs -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">इंस्टाग्राम URL</label>
+            <input type="url" name="instagram_url" class="form-control"
+                   value="{% if library %}{{ library.instagram_url }}{% endif %}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">यूट्यूब URL</label>
+            <input type="url" name="youtube_url" class="form-control"
+                   value="{% if library %}{{ library.youtube_url }}{% endif %}">
+        </div>
+    </div>
+
+    <!-- Row 10: Image & Capacity -->
+    <div class="mb-3 row">
+ <div class="col-md-6">
+    <label class="form-label">लायब्ररी इमेज / Library Image</label>
+    <div class="mb-2">
+        <!-- Show previous image if exists -->
+        {% if library and library.image_url %}
+            <img id="previewImage"
+                 src="{{ MEDIA_URL }}{{ library.image_url }}"
+                 style="height:180px; border:1px solid #ddd;">
+        {% else %}
+            <img id="previewImage" src="" style="display:none; height:180px; border:1px solid #ddd;">
+        {% endif %}
+    </div>
+
+    <!-- File input -->
+    <input type="file" name="library_photo" id="library_photo" class="form-control" accept="image/*">
+</div>
+
+        <div class="col-md-6">
+            <label class="form-label">क्षमता / Capacity</label>
+            <input type="text" name="capacity" class="form-control"
+                   value="{% if library %}{{ library.capacity }}{% endif %}">
+        </div>
+    </div>
+
+    <!-- Row 11: Opening Hours & Location URL -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">उघडण्याचे तास / Opening Hours</label>
+            <input type="text" name="opening_hours" class="form-control"
+                   value="{% if library %}{{ library.opening_hours }}{% endif %}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">स्थान URL / Map link</label>
+            <input type="url" name="location_url" class="form-control"
+                   value="{% if library %}{{ library.location_url }}{% endif %}">
+        </div>
+    </div>
+
+    <!-- Row 12: Establishment Year -->
+    <div class="mb-3 row">
+        <div class="col-md-6">
+            <label class="form-label">स्थापनेचे वर्ष / Establishment Year</label>
+            <input type="number" name="est_year" class="form-control"
+                   placeholder="YYYY" min="1800" max="{{ now|date:'Y' }}"
+                   value="{% if library %}{{ library.est_year }}{% endif %}">
+        </div>
+    </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+                </button>
+                {% comment %} <a href="{% url 'library_master_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                </a> {% endcomment %}
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- Keeping only SweetAlert and optional message popup -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <!-- jQuery (required) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap 5 (if not already included in your project) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Summernote CSS + JS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.js"></script>
+
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message.tags|title }}",
+                    text: "{{ message|escapejs }}",
+                    icon: "{{ message.tags }}",
+                    confirmButtonText: "OK",
+                    background: theme === 'dark' ? '#343a40' : '#ffffff',
+                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+            {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+            let languageSelected = false;
+            let transliterateEnabled = false;
+
+            function containsDevanagari(text) {
+                return /[\u0900-\u097F]/.test(text);
+            }
+
+            // Transliteration functions
+            function translateAllWords($field) {
+                if (!transliterateEnabled) return;
+
+                let value = $field.val().trim();
+                if (!value) return;
+
+                let words = value.split(/\s+/);
+                let translatedWords = [];
+                let pending = words.length;
+
+                words.forEach((word, index) => {
+                    if (containsDevanagari(word) || word.trim() === "") {
+                        translatedWords[index] = word;
+                        pending--;
+                        if (pending === 0) $field.val(translatedWords.join(" "));
+                    } else {
+                        $.ajax({
+                            url: '{% url "translate_word" %}',
+                            type: 'GET',
+                            data: { q: word },
+                            headers: { 'X-CSRFToken': csrfToken },
+                            success: function (data) {
+                                translatedWords[index] = data.translated || word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            },
+                            error: function () {
+                                translatedWords[index] = word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            }
+                        });
+                    }
+                });
+            }
+
+            function translateLastWord($field) {
+                if (!transliterateEnabled) return;
+
+                let words = $field.val().trim().split(/\s+/);
+                let lastWord = words[words.length - 1];
+                if (!lastWord || containsDevanagari(lastWord)) return;
+
+                $.ajax({
+                    url: '{% url "translate_word" %}',
+                    type: 'GET',
+                    data: { q: lastWord },
+                    headers: { 'X-CSRFToken': csrfToken },
+                    success: function (data) {
+                        if (data.translated) {
+                            words[words.length - 1] = data.translated;
+                            $field.val(words.join(" "));
+                        }
+                    }
+                });
+            }
+
+            // Enable fields only after language selection
+            $('#language_id').on('change', function () {
+                if (languageSelected) return;
+
+                let selectedText = $(this).find('option:selected').text();
+                if (!selectedText) return;
+
+                languageSelected = true;
+
+                $(this).prop('disabled', true);
+                $('#language-note').text('Language locked after selection. Refresh to change.');
+
+                // Unlock all except classification, cutter, call number
+                $('.transliterate, input, textarea').not('input[name="classification_number"], input[name="cutter_number"], input[name="call_number"]').prop('readonly', false);
+
+                $('#subject_id').prop('disabled', false);
+                $('#material_id').prop('disabled', false);
+
+                transliterateEnabled = selectedText.toLowerCase().includes('marathi');
+            });
+
+            // Transliteration events
+            $(document).on('input', '.transliterate', function () {
+                const $field = $(this);
+                // Save original Latin text for Call/Cutter number
+                $field.data('original', $field.val());
+                if ($field.val().slice(-1) === " ") translateLastWord($field);
+
+                updateAutoFields();
+            });
+
+            $(document).on('blur', '.transliterate', function () {
+                translateAllWords($(this));
+                updateAutoFields();
+            });
+
+            $(document).on('keydown', '.transliterate', function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    translateAllWords($(this));
+                    updateAutoFields();
+                }
+            });
+
+            $('#subject_id, #author, input[name="year_of_publication"]').on('input change', function () {
+                updateAutoFields();
+            });
+
+            function updateAutoFields() {
+                const selectedOption = $('#subject_id').find('option:selected')[0];
+                const subjectCode = selectedOption ? $(selectedOption).data('code') : '';
+                const authorOriginal = $('#author').data('original') || '';
+                const authorCode = authorOriginal ? authorOriginal.substring(0, 3) : '';
+                const year = $('input[name="year_of_publication"]').val().trim();
+
+                // Classification & Cutter
+                $('input[name="classification_number"]').val(subjectCode || '');
+                $('input[name="cutter_number"]').val(authorCode || '');
+
+                // Call Number
+                if (subjectCode && authorCode && year) {
+                    $('input[name="call_number"]').val(`${subjectCode}.${authorCode}.${year}`);
+                } else {
+                    $('input[name="call_number"]').val('');
+                }
+            }
+
+            // Add this inside your $(document).ready()
+            $('input[name="call_number"]').on('click', function () {
+                const selectedOption = $('#subject_id').find('option:selected')[0];
+                const subjectCode = selectedOption ? $(selectedOption).data('code') : '';
+                const authorOriginal = $('#author').data('original') || '';
+                const year = $('input[name="year_of_publication"]').val().trim();
+
+                let missingFields = [];
+                if (!subjectCode) missingFields.push('Subject');
+                if (!authorOriginal) missingFields.push('Author Name');
+                if (!year) missingFields.push('Year of Publication');
+
+                if (missingFields.length > 0) {
+                    const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: `Please enter: ${missingFields.join(', ')}`,
+                        confirmButtonText: 'OK',
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                } else {
+                    // If all fields are present, update call number
+                    const authorCode = authorOriginal.substring(0, 3);
+                    $(this).val(`${subjectCode}.${authorCode}.${year}`);
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+// Function to auto-translate (dummy example with fetch)
+document.getElementById("materialNameEnglish").addEventListener("blur", function () {
+    let englishText = this.value;
+    if (englishText.trim() === "") return;
+
+    // Example: call backend translation API
+    fetch(`/translate-to-marathi/?text=${encodeURIComponent(englishText)}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("materialNameMarathi").value = data.translated_text;
+        })
+        .catch(err => console.error("Translation Error:", err));
+});
+</script>
+
+<script>
+document.getElementById("library_image").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgPreview = document.getElementById("previewImage");
+            imgPreview.src = e.target.result;
+            imgPreview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+  
+ <!-- Preview JS -->
+    <script>
+        document.getElementById("library_photo").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById("previewImage");
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+
+
+<script>
+$(document).ready(function() {
+    $('#library_rules_editor, #membership_rules_editor').summernote({
+        height: 250,
+        tabsize: 2,
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['fontsize', 'color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['link']],
+            ['view', ['codeview']]
+        ]
+    });
+});
+</script>
+
+<script>
+const englishInput = document.getElementById("library_name");
+const marathiInput = document.getElementById("library_name_mar");
+let userEditedMarathi = false;
+
+// Detect if user manually edits Marathi field
+marathiInput.addEventListener("input", () => {
+    userEditedMarathi = true;
+});
+
+englishInput.addEventListener("input", function() {
+    const englishText = this.value;
+
+    if (englishText.trim() === "" || userEditedMarathi) {
+        if (!userEditedMarathi) marathiInput.value = "";
+        return;
+    }
+
+    // Call Google Translate API
+    fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=mr&dt=t&q=" + encodeURIComponent(englishText))
+        .then(response => response.json())
+        .then(data => {
+            const translatedText = data[0][0][0]; // Extract Marathi text
+            marathiInput.value = translatedText;
+        })
+        .catch(err => {
+            console.error("Translation Error: ", err);
+        });
+});
+</script>
+
+
+{% endblock %}

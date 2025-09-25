@@ -8,25 +8,29 @@
             <div class="logo-topbar">
                 <!-- Logo light -->
                 <a href="{% url 'LMS_Dashboard' %}" class="logo-light">
-                    <span style="color:white !important;font-weight:bold" class="logo-lg">
+                    <span style="color:white !important;font-weight:bold" class="">
                         {% comment %} <img src="{% static 'images/logo.png' %}" alt="logo"> {% endcomment %}
-                        <img src="{% static 'images/technologo1.png' %}" alt="logo">&nbsp;&nbsp;Technowin
+                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="logo">&nbsp;&nbsp;Technowin {% endcomment %}
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">&nbsp;&nbsp;NMMC Library
                     </span>
                     <span class="logo-sm">
                         {% comment %} <img src="{% static 'images/logo-sm.png' %}" alt="small logo"> {% endcomment %}
-                         <img src="{% static 'images/technologo1.png' %}" alt="small logo">
+                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="small logo"> {% endcomment %}
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="small logo" style="height:50px;">
                     </span>
                 </a>
 
                 <!-- Logo Dark -->
                 <a href="{% url 'LMS_Dashboard' %}" class="logo-dark">
-                    <span style="color:white !important;font-weight:bold" class="logo-lg">
+                    <span style="color:white !important;font-weight:bold;" class="">
                         {% comment %} <img src="{% static 'images/logo-dark.png' %}" alt="dark logo"> {% endcomment %}
-                        <img src="{% static 'images/technologo1.png' %}" alt="logo">&nbsp;&nbsp;Technowin
+                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="logo">&nbsp;&nbsp;Technowin {% endcomment %}
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">&nbsp;&nbsp;NMMC Library
                     </span>
                     <span class="logo-sm">
                         {% comment %} <img src="{% static 'images/logo-dark-sm.png' %}" alt="small logo"> {% endcomment %}
-                         <img src="{% static 'images/technologo1.png' %}" alt="small logo">
+                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="small logo"> {% endcomment %}
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="small logo" style="height:50px;">
                     </span>
                 </a>
             </div>
@@ -46,7 +50,7 @@
             </button>
 
             <!-- Topbar Search Form -->
-            <div class="app-search dropdown d-none d-lg-block">
+            {% comment %} <div class="app-search dropdown d-none d-lg-block">
                 <form>
                     <div class="input-group">
                         <input type="search" class="form-control dropdown-toggle" placeholder="Search..." id="top-search">
@@ -108,7 +112,7 @@
                         </a>
                     </div>
                 </div>
-            </div>
+            </div> {% endcomment %}
         </div>
 
         <ul class="topbar-menu d-flex align-items-center gap-3">
@@ -153,7 +157,7 @@
                 </div>
             </li> {% endcomment %}
 
-            <li class="dropdown notification-list">
+            {% comment %} <li class="dropdown notification-list">
                 <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
                     <i class="ri-notification-3-line font-22"></i>
                     <span class="noti-icon-badge"></span>
@@ -174,7 +178,7 @@
 
                     <div class="px-2" style="max-height: 300px;" data-simplebar>
 
-                        {% comment %} <h5 class="text-muted font-13 fw-normal mt-2">Today</h5>
+                        <h5 class="text-muted font-13 fw-normal mt-2">Today</h5>
                         <!-- item-->
 
                         <a href="javascript:void(0);" class="dropdown-item p-0 notify-item card unread-noti shadow-none mb-2">
@@ -268,7 +272,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </a> {% endcomment %}
+                        </a> 
 
                         <div class="text-center">
                             <i class="mdi mdi-dots-circle mdi-spin text-muted h3 mt-0"></i>
@@ -281,7 +285,7 @@
                     </a>
 
                 </div>
-            </li>
+            </li> {% endcomment %}
 
             {% comment %} <li class="dropdown d-none d-sm-inline-block">
                 <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
@@ -336,11 +340,11 @@
                 </div>
             </li> {% endcomment %}
 
-            <li class="d-none d-sm-inline-block">
+            {% comment %} <li class="d-none d-sm-inline-block">
                 <a class="nav-link" data-bs-toggle="offcanvas" href="#theme-settings-offcanvas">
                     <i class="ri-settings-3-line font-22"></i>
                 </a>
-            </li>
+            </li> {% endcomment %}
 
             <li class="d-none d-sm-inline-block">
                 <div class="nav-link" id="light-dark-mode" data-bs-toggle="tooltip" data-bs-placement="left" title="Theme Mode">
@@ -372,7 +376,7 @@
                     </div>
 
                     <!-- item-->
-                    <a href="javascript:void(0);" class="dropdown-item">
+                    {% comment %} <a href="javascript:void(0);" class="dropdown-item">
                         <i class="mdi mdi-account-circle me-1"></i>
                         <span>My Account</span>
                     </a>
@@ -381,10 +385,10 @@
                     <a data-bs-toggle="offcanvas" href="#theme-settings-offcanvas" class="dropdown-item">
                         <i class="mdi mdi-cog-outline me-1"></i>
                         <span>Settings</span>
-                    </a>
+                    </a> {% endcomment %}
                    
                     <!-- item-->
-                    <a href="javascript:void(0);" class="dropdown-item">
+                    {% comment %} <a href="javascript:void(0);" class="dropdown-item">
                         <i class="mdi mdi-lifebuoy me-1"></i>
                         <span>Support</span>
                     </a>
@@ -393,7 +397,7 @@
                     <a href="javascript:void(0);" class="dropdown-item">
                         <i class="mdi mdi-lock-outline me-1"></i>
                         <span>Lock Screen</span>
-                    </a>
+                    </a> {% endcomment %}
 
                     <!-- item-->
                     <a href="/logout" class="dropdown-item">

@@ -149,12 +149,15 @@ class MembershipDetails(models.Model):
     entry_fees = models.FloatField(null=True, blank=True) # ✅ new
     subscription = models.FloatField(null=True, blank=True) # ✅ new
     email = models.EmailField(max_length=255, null=True, blank=True, unique=True)
-
+    actionperformed = models.TextField(null=True, blank=True)  # admin username/id
+    reviewed = models.CharField(max_length=50, null=True, blank=True)  # admin username/id
+    reviewed_at = models.DateTimeField(null=True, blank=True)
     isactive = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     updated_by = models.CharField(max_length=50, null=True, blank=True)
+    membership_code = models.TextField(null=True, blank=True)
 
     class Meta: db_table = "tbl_membershipdetails"
 
@@ -177,3 +180,15 @@ class DocumentDetails(models.Model):
     class Meta: db_table = "tbl_documentdetails"
     def __str__(self): return f"{self.membership.full_name} - {self.document.document_name}"
 
+class IncrementMaster(models.Model):
+    id = models.AutoField(primary_key=True)
+    incrementFieldName = models.CharField(max_length=50, unique=True)
+    incrementFieldNumber = models.TextField(null=True, blank=True)
+    isactive = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_incrementmaster"

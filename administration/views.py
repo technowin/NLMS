@@ -16,7 +16,9 @@ def library_list(request):
     cursor = m.cursor()
     
     try:
-        library_details = LibraryMaster.objects.using('default').filter(is_active=1)
+        # ✅ bring location in same query
+        library_details = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+
         for lilo in library_details:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code

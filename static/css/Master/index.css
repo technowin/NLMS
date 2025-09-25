@@ -514,7 +514,106 @@ body[data-bs-theme="dark"] .card.no-shadow-dark {
   margin-left: 1ch;
 }
 
+.est-info-wrapper {
+    padding: 3rem;
+    border-radius: 1rem;
+    background-color: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    font-family: 'Merriweather', serif;
+    /* margin-bottom: 5%;
+    margin-top: 2%; */
+    /* margin: 2% 5% 5% 5%; */
+}
+.est-info-wrapper .form-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.est-info-wrapper .form-control {
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+}
+.est-info-wrapper .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.2);
+    outline: none;
+}
+.est-info-wrapper .btn-go-back {
+    padding: 0.6rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    border: 2px solid #ced4da;
+    border-radius: 0.5rem;
+    text-decoration: none;
+}
+.est-info-wrapper .btn-go-back:hover {
+    background-color: #495057;
+    color: #fff;
+}
 
+/* Desktop / PC view (default) */
+.est-info-wrapper h2 {
+    font-size: 2.2rem;   /* Large heading for desktop */
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
 
+/* Tablet view (medium screens) */
+@media (max-width: 991px) {
+    .est-info-wrapper h2 {
+        font-size: 1.8rem;  /* Slightly smaller */
+        gap: 0.5rem;
+    }
+}
 
+/* Mobile view (small screens) */
+@media (max-width: 576px) {
+    .est-info-wrapper h2 {
+        font-size: 1.5rem;  /* Fit smaller screens */
+        gap: 0.4rem;
+        flex-direction: column; /* Stack icon + text vertically if any */
+        align-items: flex-start; /* Align text to left */
+    }
+}
 
+/* Desktop / PC view (default) */
+.est-info-wrapper .btn-submit {
+    padding: 0.75rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.65rem;
+    background-color: #5865f2;
+    border: none;
+    color: white;
+    transition: all 0.2s ease; /* smooth hover effect */
+}
+
+.est-info-wrapper .btn-submit:hover {
+    background-color: #4752d6;
+    transform: translateY(-1px);
+}
+
+/* Tablet view (medium screens) */
+@media (max-width: 991px) {
+    .est-info-wrapper .btn-submit {
+        padding: 0.65rem 2rem;
+        font-size: 1rem;
+    }
+}
+
+/* Mobile view (small screens) */
+@media (max-width: 576px) {
+    .est-info-wrapper .btn-submit {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.95rem;
+        width: 100%; /* full-width button for mobile */
+        border-radius: 0.5rem;
+    }
+}

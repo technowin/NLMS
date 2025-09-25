@@ -1,0 +1,1193 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}सदस्यत्व फॉर्म संपादित करा{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='सदस्यत्व अर्ज पडताळणी' sub_title='सदस्यत्व फॉर्म संपादित करा' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+        <h2><i class="bi bi-person-badge"></i> Fill Membership Details / सदस्य माहिती भरा</h2>
+
+        <form id="membershipForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="membership_id" value="{{ membership.id }}">
+            <!-- USER ID -->
+            <div class="mb-3 mt-3 row">
+                <div class="col-md-6 position-relative">
+                    <label class="form-label" for="userIdInput">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
+                    <input type="text" id="" name="user_id" class="form-control" placeholder="Enter User ID" value="{{ membership.user_id|default:'' }}" readonly>
+                    <small id="userIdHelp" class="form-text text-muted">
+                        User ID must be 5–20 characters. Letters, numbers, and underscore only (no spaces).
+                    </small>
+                    <small id="userIdError" class="text-danger d-none"></small>
+                    <span id="userIdStatus"></span>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label" for="aadharInput">Aadhar Number / आधार क्रमांक <span class="text-danger">*</span></label>
+                    <input type="text" id="" name="aadhar_no" class="form-control" placeholder="Enter Aadhar Number" value="{{ membership.aadhar_no|default:'' }}" readonly>
+                    <small id="aadharHelp" class="form-text text-muted">
+                        Aadhar Number must be exactly 12 digits (no spaces or dashes).
+                    </small>
+                    <small id="aadharError" class="text-danger d-none"></small>
+                    <span id="aadharStatus"></span>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- FIRST NAME -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">First Name (English) <span class="text-danger">*</span></label>
+                    <input type="text" name="first_name" class="form-control translate-marathi-input" placeholder="e.g. Pruthvi" value="{{ membership.first_name|default:'' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">पहिले नाव (Marathi) <span class="text-danger">*</span></label>
+                    <input type="text" name="first_name_mar" class="form-control translate-marathi-output" placeholder="उदा. पृथ्वी" value="{{ membership.first_name_mar|default:'' }}" required>
+                </div>
+            </div>
+
+            <!-- MIDDLE NAME -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">Middle Name (English)</label>
+                    <input type="text" name="middle_name" class="form-control translate-marathi-input" placeholder="e.g. Narendra" value="{{ membership.middle_name|default:'' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">मधले नाव (Marathi)</label>
+                    <input type="text" name="middle_name_mar" class="form-control translate-marathi-output" placeholder="उदा. नरेंद्र" value="{{ membership.middle_name_mar|default:'' }}" required>
+                </div>
+            </div>
+
+            <!-- LAST NAME -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">Last Name (English) <span class="text-danger">*</span></label>
+                    <input type="text" name="last_name" class="form-control translate-marathi-input" placeholder="e.g. Hajare" value="{{ membership.last_name|default:'' }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">आडनाव (Marathi) <span class="text-danger">*</span></label>
+                    <input type="text" name="last_name_mar" class="form-control translate-marathi-output" placeholder="उदा. हजारे" value="{{ membership.last_name_mar|default:'' }}" required>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- WARD NAME -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
+                    <select name="ward_name" id="ward_name" class="form-control" required>
+                        <option value="">Select Ward</option>
+                        {% for ward in ward_details %}
+                            {% comment %} <option value="{{ ward.ward_name }}">{{ ward.ward_name }}</option> {% endcomment %}
+                            <option value="{{ ward.ward_name }}" {% if membership.ward == ward.ward_name %}selected{% endif %}>
+                                {{ ward.ward_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <input type="hidden" id="saved_pincode" value="{{ membership.pincode }}">
+
+                <div class="col-md-6" id="pincode_row">
+                    <label class="form-label" for="pincode">
+                        Pincode / पिनकोड <span class="text-danger">*</span>
+                    </label>
+                    <select name="pincode" id="pincode" class="form-control" required>
+                        <option value="">Select Pincode</option>
+                        <option value="{{ membership.pincode }}" selected>{{ membership.pincode }}</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- LIBRARY NAME -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">Library Name <span class="text-danger">*</span></label>
+                    {% if library_details %}
+                        <input type="text" name="library_name" class="form-control"
+                            value="{{ library_details.0.library_name }}" 
+                            placeholder="Library Name" readonly>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">ग्रंथालयाचे नाव (मराठी) <span class="text-danger">*</span></label>
+                    {% if library_details %}
+                        <input type="text" name="library_name_mar" class="form-control"
+                            value="{{ library_details.0.library_name_mar }}" 
+                            placeholder="ग्रंथालयाचे नाव" readonly>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- Member Type -->
+            
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
+                    <select name="membertype" class="form-control" id="membertype" required>
+                        <option value="">Select Membership</option>
+                        {% for option in membership_options %}
+                            <option value="{{ option.parameter_id }}" 
+                                {% if option.parameter_id == membership.member_type_id %}selected{% endif %}>
+                                {{ option.parameter_value }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Occupation & Office Location -->
+            <div class="mb-3 row" id="occupation_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="occupation_details">Occupation & Office Location / व्यवसाय, हुद्दा व व्यवसायाचे ठिकाण <span class="text-danger">*</span></label>
+                    <input type="text" id="occupation_details" name="occupation_details" class="form-control" placeholder="e.g. Software Developer, Vashi, Navi Mumbai" value="{{ membership.occupation }}" required>
+                </div>
+
+                <div class="col-md-6" id="phone_row">
+                    <label class="form-label" for="phone_number">Phone Number (Office) / दूरध्वनी क्रमांक (व्यवसाय) <span class="text-danger">*</span></label>
+                    <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. 022-12345678" value="{{ membership.office_phone }}" required>
+                </div>
+            </div>
+
+            <!-- Educational Institution -->
+            <div class="mb-3 row" id="education_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
+                    <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." value="{{ membership.education }}" required>
+                </div>
+
+                <div class="col-md-6" id="institution_row">
+                    <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
+                    <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" value="{{ membership.institute_name }}" required>
+                </div>
+            </div>
+
+            <!-- REFERRER DETAILS -->
+            <div class="mb-3 row" id="referrer_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
+                    <input type="text" id="referrer_details" name="referrer_details" class="form-control" placeholder="e.g. Mr. ABC, Teacher, Vashi" value="{{ membership.recommender_details }}" required>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- Are you from NMMC -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">
+                        Are you a resident of Navi Mumbai Municipal Corporation (NMMC)? /
+                        आपण नवी मुंबई महानगरपालिका (NMMC) मधील रहिवासी आहात का? 
+                        <span class="text-danger">*</span>
+                    </label><br>
+
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_yes" 
+                            value="yes" {% if membership.is_resident_of_nmmc == 1 %}checked{% endif %}>
+                        <label class="form-check-label" for="nmmc_yes">Yes / होय</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_no" 
+                            value="no" {% if membership.is_resident_of_nmmc == 0 %}checked{% endif %}>
+                        <label class="form-check-label" for="nmmc_no">No / नाही</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Address -->
+            <div class="mb-3 row d-none" id="local_address_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="local_address">Local Address / स्थानिक पत्ता <span class="text-danger">*</span></label>
+                    <input type="text" id="local_address" name="local_address" class="form-control"
+                        value="{{ membership.local_address }}"
+                        placeholder="Enter your local address">
+                </div>
+
+                <!-- Only for Yes option -->
+                <div class="col-md-6 d-none" id="same_aadhar_row">
+                    <label class="form-label">
+                        Is this address same as Aadhar? / हा पत्ता आधार प्रमाणपत्राशी सारखाच आहे का?
+                        <span class="text-danger">*</span>
+                    </label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_yes" 
+                            value="yes" {% if membership.address_same_as_aadhar == 1 %}checked{% endif %}>
+                        <label class="form-check-label" for="same_aadhar_yes">Yes / होय</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_no" 
+                            value="no" {% if membership.address_same_as_aadhar == 0 %}checked{% endif %}>
+                        <label class="form-check-label" for="same_aadhar_no">No / नाही</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- Membership Type -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
+                    <select name="membershiptype" class="form-control" id="membershiptype" required>
+                        <option value="">Select Membership Type</option>
+                        {% for membership_option in membership_Master %}
+                            <option value="{{ membership_option.id }}" 
+                                {% if membership_option.id == membership.membership_id %}selected{% endif %}>
+                                {{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- membership Details Table will be rendered here -->
+            <div id="membershipDetails">
+                <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
+                    {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center">
+                        <thead>
+                            <tr>
+                                <th >Deposit<br><small>(ठेव)</small></th>
+                                <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
+                                <th >Subscription<br><small>(सभासद फी)</small></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="depositCell"></td>
+                                <td id="entryFeesCell"></td>
+                                <td id="subscriptionCell"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Months + Date Fields -->
+            <div id="membershipDuration" style="margin-top: 20px;">
+                <div class="mb-3 row">
+                    <!-- Number of Months -->
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">
+                            Membership Duration (Months) / सदस्यत्व कालावधी
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" id="months" name="months" class="form-control" 
+                            min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}">
+                    </div>
+
+                    <!-- From Date -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" required>
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="col-md-6">
+                        <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
+                        <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amount Fields -->
+            <div id="amountFields" style="margin-top: 15px;">
+                <div class="mb-3 row">
+                    <div class="col-md-4">
+                        <label class="form-label">Deposit / ठेव</label>
+                        <input type="text" id="depositInput"class="form-control" readonly>
+                        <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
+                        <input type="text" id="entryFeesInput"class="form-control" readonly>
+                        <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Subscription / सभासद फी</label>
+                        <input type="text" id="subscriptionInput"class="form-control" readonly>
+                        <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- Email And Phone Number -->
+            <div class="mb-3 row">
+                <div class="mb-3 col-md-6">
+                    <label class="form-label" for="email">Email / ईमेल <span class="text-danger">*</span></label>        
+                    <input type="email" id="" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" value="{{ membership.email }}" required readonly>
+                    <small id="emailHelp" class="form-text text-muted">
+                        Please provide a valid email address.
+                    </small>
+                    <small id="emailError" class="text-danger d-none"></small>
+                    <span id="emailStatus"></span>
+                </div>
+            
+                <div class="col-md-6">
+                    <label class="form-label" for="mobile_number">Mobile Number / मोबाइल नंबर <span class="text-danger">*</span></label>   
+                    <input type="text" id="" name="mobile_number" class="form-control" placeholder="e.g. 9876543210" value="{{ membership.mobile_no }}" required readonly>
+                    <small id="mobileHelp" class="form-text text-muted">
+                        Mobile Number must be exactly 10 digits (no spaces or dashes).
+                    </small>
+                    <small id="mobileError" class="text-danger d-none"></small>
+
+                    <span id="mobileStatus"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label" for="dob">Date of Birth / जन्म तारीख  <span class="text-danger">*</span></label>
+                    <input type="date" id="dob" name="dob" class="form-control" value="{{ membership.dob|date:'Y-m-d' }}" required>
+                    <small id="dobError" class="text-danger d-none"></small>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- Photo Upload & ID Document (Scanned) -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label" for="photo_upload">
+                        Photo / फोटो 
+                        {% if not documents_map.1 %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <input type="file" id="photo_upload" name="photo_upload" class="form-control" accept="image/*"
+                        {% if not documents_map.1 %}required{% endif %}>
+                    <small id="photoError" class="text-danger d-none"></small>    
+                    {% if documents_map.1 %}
+                        <div class="mt-2">
+                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.1.doc_id_enc %}" target="_blank">
+                                View Existing File
+                            </a>
+                            <small class="text-muted d-block">Upload only if you want to replace it.</small>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label" for="id_upload">
+                        ID Document (Scanned) / ओळखपत्र छायांकित 
+                        {% if not documents_map.2 %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <input type="file" id="id_upload" name="id_upload" class="form-control" accept="image/*,.pdf"
+                        {% if not documents_map.2 %}required{% endif %}>
+                    <small id="idError" class="text-danger d-none"></small>
+                    {% if documents_map.2 %}
+                        <div class="mt-2">
+                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.2.doc_id_enc %}" target="_blank">
+                                View Existing Document
+                            </a>
+                            <small class="text-muted d-block">Upload only if you want to replace it.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Agreement Copy -->
+            <div class="mb-3 row d-none" id="agreement_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="agreement_copy">
+                        Agreement Copy / करार प्रत 
+                        {% if not documents_map.5 %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <input type="file" id="agreement_copy" name="agreement_copy" class="form-control" accept="image/*,.pdf"
+                        {% if not documents_map.5 %}required{% endif %}>
+                    <input type="hidden" name="document_agreement_copy" value="5">
+                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                    <small id="agreementError" class="text-danger d-none"></small>
+                    {% if documents_map.5 %}
+                        <div id="agreementPreview" class="mt-2">
+                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.5.doc_id_enc %}" target="_blank">
+                                View Existing Document
+                            </a>
+                            <small class="text-muted d-block">Upload only if you want to replace it.</small>
+                        </div>
+                    {% else %}
+                        <div id="agreementPreview" class="mt-2"></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Nagarsevak Letter -->
+            <div class="mb-3 row d-none" id="nagarsevak_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="nagarsevak_letter">
+                        Nagarsevak Letter / नगरसेवकाचे पत्र 
+                        {% if not documents_map.4 %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <input type="file" id="nagarsevak_letter" name="nagarsevak_letter" class="form-control" accept="image/*,.pdf"
+                        {% if not documents_map.4 %}required{% endif %}>
+                    <input type="hidden" name="document_nagarsevak_letter" value="4">
+                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                    <small id="nagarsevakError" class="text-danger d-none"></small>
+                    {% if documents_map.4 %}
+                        <div id="nagarsevakPreview" class="mt-2">
+                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.4.doc_id_enc %}" target="_blank">
+                                View Existing Document
+                            </a>
+                            <small class="text-muted d-block">Upload only if you want to replace it.</small>
+                        </div>
+                    {% else %}
+                        <div id="nagarsevakPreview" class="mt-2"></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Employee Letter -->
+            <div class="mb-3 row d-none" id="employee_row">
+                <div class="col-md-6">
+                    <label class="form-label" for="employee_letter">
+                        Employee ID / कर्मचारी ओळखपत्र 
+                        {% if not documents_map.3 %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    <input type="file" id="employee_letter" name="employee_letter" class="form-control" accept="image/*,.pdf"
+                        {% if not documents_map.3 %}required{% endif %}>
+                    <input type="hidden" name="document_employee_letter" value="3">
+                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                    <small id="employeeError" class="text-danger d-none"></small>   
+                    {% if documents_map.3 %}
+                        <div id="employeePreview" class="mt-2">
+                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.3.doc_id_enc %}" target="_blank">
+                                View Existing Document
+                            </a>
+                            <small class="text-muted d-block">Upload only if you want to replace it.</small>
+                        </div>
+                    {% else %}
+                        <div id="employeePreview" class="mt-2"></div>
+                    {% endif %}
+                </div>
+            </div>
+
+
+            <!-- SUBMISSION -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+                </button>
+            </div>
+        </form>
+
+    </div>    
+
+{% endblock %}
+
+{% block extra_javascript %}
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+{% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message.tags|title }}",
+                    text: "{{ message|escapejs }}",
+                    icon: "{{ message.tags }}",
+                    confirmButtonText: "OK",
+                    background: theme === 'dark' ? '#343a40' : '#ffffff',
+                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+            {% endfor %}
+        });
+    </script>
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% comment %} Word translate {% endcomment %}
+<script>
+    $(document).ready(function () {
+        $('.translate-marathi-input').on('blur', function () {
+            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+            const input = $(this);
+            const text = input.val().trim();
+
+            if (text !== "") {
+                $.ajax({
+                    url: "{% url 'translate_word' %}",
+                    type: "GET",
+                    data: { q: text },
+                    headers: { "X-CSRFToken": csrfToken },
+                    success: function(response) {
+                        input.closest('.row').find('.translate-marathi-output').val(response.translated || text);
+                    },
+                    error: function() {
+                        input.closest('.row').find('.translate-marathi-output').val(text);
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+{% comment %} userid check  {% endcomment %}
+<script>
+    $(document).ready(function () {
+        const regex = /^[a-zA-Z0-9_]{5,20}$/;
+
+        $("#userIdInput").on("blur", function () {
+            debugger;
+            const userId = $(this).val().trim().toLowerCase();
+            const statusIcon = $("#userIdStatus");
+            const submitBtn = $(".btn-submit");
+            const errorMsg = $("#userIdError");
+            const userIdHelp = $("#userIdHelp");
+
+            if (userId !== "") {
+                if (!regex.test(userId)) {
+                    // Show format error
+                    errorMsg.text("Invalid format: only letters, numbers, and underscore allowed (5–20 chars).")
+                            .removeClass("d-none");
+                    statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                    submitBtn.prop("disabled", true);
+                    userIdHelp.addClass("d-none");  // Hide help text
+                    return;
+                } else {
+                    errorMsg.addClass("d-none");
+                    userIdHelp.removeClass("d-none");  // Show help text
+                }
+
+                // Ajax call to check uniqueness
+                $.ajax({
+                    url: "{% url 'L01:check_user_id' %}",
+                    type: "GET",
+                    data: { user_id: userId },
+                    success: function (response) {
+                        if (response.exists) {
+                            errorMsg.text("This User ID is already taken. Please choose another.")
+                                    .removeClass("d-none");
+                            statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                            submitBtn.prop("disabled", true);
+                        } else {
+                            errorMsg.addClass("d-none");
+                            statusIcon.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                            submitBtn.prop("disabled", false);
+                        }
+                    },
+                    error: function () {
+                        errorMsg.text("Something went wrong. Try again later.").removeClass("d-none");
+                        statusIcon.html('<i class="fa-solid fa-triangle-exclamation text-warning"></i>');
+                        submitBtn.prop("disabled", true);
+                    }
+                });
+            } else {
+                errorMsg.text("User ID cannot be empty.").removeClass("d-none");
+                statusIcon.html("");
+                submitBtn.prop("disabled", true);
+                userIdHelp.addClass("d-none");  // Hide help text
+            }
+        });
+
+        // Extra safety: prevent form submit if disabled
+        $("#membershipForm").on("submit", function (e) {
+            if ($(".btn-submit").prop("disabled")) {
+                e.preventDefault();
+            }
+        });
+
+        // Block spaces on typing
+        $("#userIdInput").on("keypress", function (e) {
+            if (e.which === 32) {
+                e.preventDefault();
+            }
+        });
+
+        // Clean pasted input (remove spaces)
+        $("#userIdInput").on("input", function () {
+            this.value = this.value.replace(/\s/g, "");
+        });
+
+    });
+</script>
+
+{% comment %} aadhar card check {% endcomment %}
+<script>
+    $(document).ready(function () {
+        const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+        // Aadhar validation function
+        $("#aadharInput").on("blur", function () {
+            const aadharNumber = $(this).val().trim();
+            const statusIcon = $("#aadharStatus");
+            const submitBtn = $(".btn-submit");
+            const errorMsg = $("#aadharError");
+            const aadharHelp = $("#aadharHelp");
+
+            // Regex for 12 digits
+            const regex = /^[0-9]{12}$/;
+
+            if (aadharNumber !== "") {
+                // Validate format: 12 digits
+                if (!regex.test(aadharNumber)) {
+                    errorMsg.text("Invalid Aadhar format: must be 12 digits (no spaces, no dashes).")
+                            .removeClass("d-none");
+                    statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                    submitBtn.prop("disabled", true);
+                    aadharHelp.addClass("d-none");  // Hide help text
+                    return;
+                } else {
+                    errorMsg.addClass("d-none");
+                    aadharHelp.removeClass("d-none");  // Show help text
+                }
+
+                // AJAX call to check uniqueness of Aadhar number
+                $.ajax({
+                    url: "{% url 'L01:check_aadhar' %}",
+                    type: "GET",
+                    data: { aadhar_number: aadharNumber },
+                    headers: { "X-CSRFToken": csrfToken },
+                    success: function (response) {
+                        if (response.exists) {
+                            errorMsg.text("This Aadhar number is already registered. Please use a different one.")
+                                    .removeClass("d-none");
+                            statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                            submitBtn.prop("disabled", true);
+                        } else {
+                            errorMsg.addClass("d-none");
+                            statusIcon.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                            submitBtn.prop("disabled", false);
+                        }
+                    },
+                    error: function () {
+                        errorMsg.text("Something went wrong. Try again later.").removeClass("d-none");
+                        statusIcon.html('<i class="fa-solid fa-triangle-exclamation text-warning"></i>');
+                        submitBtn.prop("disabled", true);
+                    }
+                });
+            } else {
+                errorMsg.text("Aadhar number cannot be empty.").removeClass("d-none");
+                statusIcon.html("");
+                submitBtn.prop("disabled", true);
+                aadharHelp.addClass("d-none");  // Hide help text
+            }
+        });
+
+        // Extra safety: prevent form submit if disabled
+        $("#membershipForm").on("submit", function (e) {
+            if ($(".btn-submit").prop("disabled")) {
+                e.preventDefault();
+            }
+        });
+
+        // Block spaces while typing in Aadhar input field
+        $("#aadharInput").on("keypress", function (e) {
+            if (e.which === 32) {
+                e.preventDefault();
+            }
+        });
+
+        // Clean pasted input (remove spaces)
+        $("#aadharInput").on("input", function () {
+            this.value = this.value.replace(/\s/g, "");
+        });
+    });
+</script>
+
+{% comment %} Member Type / सदस्य प्रकार Logic to show fields accordingly student / employed / retired {% endcomment %}
+<script>
+
+    $(document).ready(function () {
+        // Hide all rows initially
+        $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row').hide();
+
+        function toggleMemberFields(val) {
+            // Hide all first
+            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row')
+                .hide()
+                .find('input, select').prop('required', false);
+
+            if (val === '1') { // Student
+                $('#education_row, #institution_row').show()
+                    .find('input').prop('required', true);
+            } else if (val === '2' || val === '3') { // Employed/ Govt
+                $('#occupation_row, #phone_row').show()
+                    .find('input').prop('required', true);
+            } else if (val === '4') { // Retired / Senior Citizen
+                $('#referrer_row').show()
+                    .find('input').prop('required', true);
+            }
+        }
+
+        // Run on change
+        $('#membertype').change(function () {
+            toggleMemberFields($(this).val());
+        });
+
+        // 🔑 Run once on page load if editing
+        let preselected = "{{ membership.member_type_id }}";
+        if (preselected) {
+            toggleMemberFields(preselected);
+        }
+    });
+
+</script>
+
+{% comment %} file upload validation & preview {% endcomment %}
+<script>
+    $(document).ready(function () {
+
+        function validateFileSize(input, errorId) {
+            const file = input.files[0];
+
+            if (file && file.size > 4 * 1024 * 1024) { // 4 MB
+                $('#' + errorId).text('File size exceeds 4 MB.').removeClass('d-none');
+                input.value = ''; // reset file input
+            } else {
+                $('#' + errorId).addClass('d-none').text('');
+            }
+        }
+
+        function previewFile(input, previewDiv) {
+            const file = input.files[0];
+            const previewContainer = $(previewDiv);
+            previewContainer.empty();
+
+            if (file) {
+                const fileType = file.type;
+                if (fileType.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewContainer.html(
+                            `<img src="${e.target.result}" alt="Preview" class="img-thumbnail" style="max-width:150px;">`
+                        );
+                    };
+                    reader.readAsDataURL(file);
+                } else if (fileType === 'application/pdf') {
+                    const fileURL = URL.createObjectURL(file);
+                    previewContainer.html(`<a href="${fileURL}" target="_blank">${file.name} (PDF)</a>`);
+                } else {
+                    previewContainer.html(`<p>${file.name}</p>`);
+                }
+            }
+        }
+
+        // Event listeners for all inputs
+        $('#photo_upload').change(function () {
+            validateFileSize(this, 'photoError');
+            previewFile(this, '#photoPreview');
+        });
+
+        $('#id_upload').change(function () {
+            validateFileSize(this, 'idError');
+            previewFile(this, '#idPreview');
+        });
+
+        // ✅ Agreement Copy
+        $('#agreement_copy').change(function () {
+            validateFileSize(this, 'agreementError');
+            previewFile(this, '#agreementPreview');
+        });
+
+        // ✅ Nagarsevak Letter
+        $('#nagarsevak_letter').change(function () {
+            validateFileSize(this, 'nagarsevakError');
+            previewFile(this, '#nagarsevakPreview');
+        });
+
+        // ✅ Employee ID upload
+        $('#employee_letter').change(function () {
+            validateFileSize(this, 'employeeError');
+            previewFile(this, '#employeePreview');
+        });
+    });
+</script>
+
+{% comment %} NMMC Resident Logic and aadhar card {% endcomment %}
+<script>
+    
+    $(document).ready(function () {
+        function resetFields(divSelector) {
+            const div = $(divSelector);
+            div.find('input[type="file"]').val('');
+            div.find('input[type="radio"]').prop('checked', false);
+            div.find('[required]').removeAttr('required');
+        }
+
+        function toggleAgreement() {
+            const sameNo = $('#same_aadhar_no').is(':checked');
+            if (sameNo) {
+                $('#agreement_row').removeClass('d-none');
+                // $('#agreement_copy').attr('required', true);
+                $('.agreement-required-star').show();
+            } else {
+                $('#agreement_row').addClass('d-none');
+                $('#agreement_copy').removeAttr('required');
+                $('.agreement-required-star').hide();
+            }
+        }
+
+        function toggleFields() {
+            const nmmcYes = $('#nmmc_yes').is(':checked');
+            const nmmcNo = $('#nmmc_no').is(':checked');
+
+            // Always show local address
+            $('#local_address_row').removeClass('d-none');
+            $('#local_address').attr('required', true);
+
+            if (nmmcYes) {
+                $('#same_aadhar_row').removeClass('d-none');
+                $('#nagarsevak_row').addClass('d-none');
+                resetFields('#nagarsevak_row');
+                toggleAgreement();
+            } else if (nmmcNo) {
+                $('#same_aadhar_row, #agreement_row').addClass('d-none');
+                //resetFields('#same_aadhar_row, #agreement_row');
+                resetFields('#agreement_row');
+                $('#nagarsevak_row').removeClass('d-none');
+                //$('#nagarsevak_letter').attr('required', true);
+            }
+        }
+
+        $('input[name="is_nmmc"]').change(function () {
+            toggleFields();
+        });
+
+        $('input[name="same_aadhar"]').change(function () {
+            toggleAgreement();
+        });
+
+        // 🔑 Initialize on page load (edit mode)
+        toggleFields();
+    });
+
+
+</script>
+
+{% comment %} Ward Name & Pincode Logic {% endcomment %}
+<script>
+    $(document).ready(function() {
+        $('#ward_name').change(function() {
+            const wardName = $(this).val();
+
+            if (wardName) {
+                // show pincode field & make it required
+                $('#pincode_row').removeClass('d-none');
+                $('#pincode').prop('required', true);
+
+                $.ajax({
+                    url: "{% url 'L01:get_pincodes' %}",
+                    type: "GET",
+                    data: { wardname: wardName },
+                    success: function(response) {
+                        let options = '<option value="">Select Pincode</option>';
+                        response.pincodes.forEach(function(pincode) {
+                            const selected = (pincode == $('#saved_pincode').val()) ? 'selected' : '';
+                            options += `<option value="${pincode}" ${selected}>${pincode}</option>`;
+                        });
+                        $('#pincode').html(options);
+                    }
+                });
+            } else {
+                // hide pincode & remove required
+                $('#pincode_row').addClass('d-none');
+                $('#pincode').prop('required', false)
+                            .html('<option value="">Select Pincode</option>');
+            }
+        });
+    });
+</script>
+
+{% comment %} Membership Type / सदस्यत्व प्रकार {% endcomment %}
+<script>
+    function formatCurrency(amount) {
+        if (!amount) return "₹ 0";
+        let num = parseFloat(amount);
+        return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
+    }
+
+    $(document).ready(function () {
+
+        let baseDeposit = 0;
+        let baseEntryFees = 0;
+        let baseSubscription = 0;
+
+        $("#membershiptype").change(function () {
+            var encId = $(this).val();
+            if (encId) {
+                $.ajax({
+                    url: "{% url 'L01:get_membership_details' %}",
+                    type: "GET",
+                    data: { id: encId },
+                    success: function (response) {
+                        if (response.success) {
+                            baseDeposit = parseFloat(response.data.deposit) || 0;
+                            baseEntryFees = parseFloat(response.data.entry_fees) || 0;
+                            baseSubscription = parseFloat(response.data.subscription_fees) || 0;
+
+                            $("#depositCell").text(formatCurrency(baseDeposit));
+                            $("#entryFeesCell").text(formatCurrency(baseEntryFees));
+                            $("#subscriptionCell").text(formatCurrency(baseSubscription));
+
+                            $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+
+                            updateAmountFields(); // update initial amounts
+                        } else {
+                            $("#membershipDetails, #membershipDuration, #amountFields").hide();
+                            alert("Membership not found");
+                        }
+                    }
+                });
+            } else {
+                $("#membershipDetails, #membershipDuration, #amountFields").hide();
+            }
+        });
+
+        let selectedMembershipId = "{{ membership.membership_id }}";
+        if (selectedMembershipId) {
+            $("#membershiptype").val(selectedMembershipId).trigger("change");
+            $("#months").val("{{ membership.membership_duration }}");
+            $("#fromDate").val("{{ membership.from_date|date:'Y-m-d' }}");
+            $("#toDate").val("{{ membership.to_date|date:'Y-m-d' }}");
+
+            $("#depositInput").val("{{ membership.deposit }}");
+            $("#entryFeesInput").val("{{ membership.entry_fees }}");
+            $("#subscriptionInput").val("{{ membership.subscription }}");
+
+            $("#depositHidden").val("{{ membership.deposit }}");
+            $("#entryFeesHidden").val("{{ membership.entry_fees }}");
+            $("#subscriptionHidden").val("{{ membership.subscription }}");
+        }
+
+        $("#months").on("input change", function() {
+            let val = parseInt($(this).val());
+
+            if (val > 12) $(this).val(12);
+            else if (val < 1) $(this).val("");
+
+            updateAmountFields();
+        });
+
+        $("#fromDate").on("change", function() {
+            updateToDate();
+        });
+
+        function updateToDate() {
+            let months = parseInt($("#months").val());
+            let fromDate = $("#fromDate").val();
+
+            if (months && fromDate) {
+                let from = new Date(fromDate);
+                let to = new Date(from);
+                to.setMonth(to.getMonth() + months);
+                $("#toDate").val(to.toISOString().split("T")[0]);
+            } else {
+                $("#toDate").val("");
+            }
+        }
+
+        function updateAmountFields() {
+            let months = parseInt($("#months").val()) || 0;
+
+            // Ensure base values are always numeric
+            const deposit = parseInt(baseDeposit.toString().replace(/[^0-9]/g, '')) || 0;
+            const entryFees = parseInt(baseEntryFees.toString().replace(/[^0-9]/g, '')) || 0;
+            const subscription = (parseInt(baseSubscription.toString().replace(/[^0-9]/g, '')) || 0) * months;
+
+            // Show plain numbers in readonly inputs
+            $("#depositInput").val(deposit);
+            $("#entryFeesInput").val(entryFees);
+            $("#subscriptionInput").val(subscription);
+
+            // Save raw numeric values in hidden fields for form POST
+            $("#depositHidden").val(deposit);
+            $("#entryFeesHidden").val(entryFees);
+            $("#subscriptionHidden").val(subscription);
+
+            updateToDate();
+        }
+    });
+</script>
+
+{% comment %} Employee ID Upload (NMMC Employee + Membership Type 3 or 4) {% endcomment %}
+<script>
+    $(document).ready(function() {
+        function toggleEmployeeUpload() {
+            const memberType = $('#membertype').val(); // e.g., "Government Employee (NMMC)"
+            const membershipType = $('#membershiptype').val(); // e.g., "3"
+
+            if (memberType === '3' && (membershipType === '3' || membershipType === '4')) {
+                $('#employee_row').removeClass('d-none');
+                // $('#employee_letter').attr('required', true); // Make it required
+            } else {
+                $('#employee_row').addClass('d-none');
+                $('#employee_letter').removeAttr('required'); // Remove required
+                // Optional: clear file input if hiding
+                $('#employee_letter').val('');
+                $('#employeePreview').html('');
+                $('#employeeError').addClass('d-none').text('');
+            }
+        }
+
+        // Run whenever either dropdown changes
+        $('#membertype, #membershiptype').on('change', toggleEmployeeUpload);
+
+        // Run on page load in case default values are set
+        toggleEmployeeUpload();
+    });
+</script>
+
+{% comment %} Email & Mobile Validation password Validation {% endcomment %}
+<script>
+    $(document).ready(function () {
+        const submitBtn = $(".btn-submit");
+
+        // Email validation
+        $("#email").on("blur input", function () {
+            const emailVal = $(this).val().trim();
+            const emailStatus = $("#emailStatus");
+            const emailError = $("#emailError");
+            const emailHelp = $("#emailHelp");
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (emailVal === "") {
+                emailError.text("Email cannot be empty.").removeClass("d-none");
+                emailStatus.html("");
+                submitBtn.prop("disabled", true);
+                emailHelp.addClass("d-none");
+            } else if (!emailRegex.test(emailVal)) {
+                emailError.text("Invalid email format.").removeClass("d-none");
+                emailStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                submitBtn.prop("disabled", true);
+                emailHelp.addClass("d-none");
+            } else {
+                emailError.addClass("d-none");
+                emailStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                submitBtn.prop("disabled", false);
+                emailHelp.removeClass("d-none");
+            }
+        });
+
+        // Mobile validation
+        $("#mobile_number").on("blur input", function () {
+            const mobileVal = $(this).val().trim();
+            const mobileStatus = $("#mobileStatus");
+            const mobileError = $("#mobileError");
+            const mobileHelp = $("#mobileHelp");
+
+            const mobileRegex = /^[0-9]{10}$/;
+
+            if (mobileVal === "") {
+                mobileError.text("Mobile number cannot be empty.").removeClass("d-none");
+                mobileStatus.html("");
+                submitBtn.prop("disabled", true);
+                mobileHelp.addClass("d-none");
+            } else if (!mobileRegex.test(mobileVal)) {
+                mobileError.text("Invalid mobile number: must be 10 digits.").removeClass("d-none");
+                mobileStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                submitBtn.prop("disabled", true);
+                mobileHelp.addClass("d-none");
+            } else {
+                mobileError.addClass("d-none");
+                mobileStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                submitBtn.prop("disabled", false);
+                mobileHelp.removeClass("d-none");
+            }
+        });
+
+        // Block spaces in mobile
+        $("#mobile_number").on("keypress", function (e) {
+            if (e.which === 32) e.preventDefault();
+        });
+
+        $("#mobile_number").on("input", function () {
+            this.value = this.value.replace(/\s/g, "");
+        });
+
+        // Password validation
+        function validatePassword() {
+            const pwd = $("#new_password").val();
+            const repeatPwd = $("#repeat_password").val();
+            const pwdError = $("#passwordError");
+            const repeatError = $("#repeatPasswordError");
+
+            // Regex: 8-16 chars, at least 1 upper, 1 lower, 1 digit, 1 special char
+            const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
+
+            let valid = true;
+
+            if (!pwdRegex.test(pwd)) {
+                pwdError.text("Password must be 8-16 chars, include uppercase, lowercase, digit & special char.")
+                        .removeClass("d-none");
+                valid = false;
+            } else {
+                pwdError.addClass("d-none");
+            }
+
+            if (pwd !== repeatPwd) {
+                repeatError.text("Passwords do not match.").removeClass("d-none");
+                valid = false;
+            } else {
+                repeatError.addClass("d-none");
+            }
+
+            submitBtn.prop("disabled", !valid);
+            return valid;
+        }
+
+        $("#new_password, #repeat_password").on("blur input", validatePassword);
+
+        // Prevent form submission if invalid
+        $("#membershipForm").on("submit", function (e) {
+            if ($(".btn-submit").prop("disabled")) e.preventDefault();
+        });
+    });
+</script>
+
+{% comment %} form final submission with confirmation {% endcomment %}
+<script>
+    document.getElementById("membershipForm").addEventListener("submit", function(e) {
+        e.preventDefault(); // stop normal submission
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "Do you want to submit this membership form?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, submit',
+            cancelButtonText: 'No, cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit(); // now submit
+            }
+        });
+    });
+</script>
+
+{% endblock %}
