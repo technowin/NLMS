@@ -409,6 +409,8 @@
                     {% csrf_token %}
                     <input type="hidden" name="membership_id" value="{{ membership.id }}">
                     <input type="hidden" name="action" id="actionInput">
+                    <input type="hidden" name="membershipmaster_id" value="{{ membership_Master.0.membership_code_enc }}">
+                    <input type="hidden" name="user_id" value="{{ membership.user_id }}">
 
                     <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
                         <button type="submit" class="btn btn-success" onclick="document.getElementById('actionInput').value='approved'">
@@ -420,7 +422,6 @@
                     </div>
                 </form>
             {% endif %}
-
     </div>   
 
 {% endblock %}

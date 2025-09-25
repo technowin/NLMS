@@ -24,7 +24,6 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404, FileResponse
 from pathlib import Path
 from django.core.files.storage import default_storage
-
 # Part First While Filling Membership Form
 
 def index(request):
@@ -815,8 +814,9 @@ def membership_form_view(request):
                     membership_Master = MembershipMaster.objects.filter(isactive=1)
                     if membership_Master.exists():
                         for mema in membership_Master:
-                            encrypted_membership_id = enc(str(mema.id))
-                            mema.membership_id_enc = encrypted_membership_id
+                            mema.membership_id_enc = enc(str(mema.id))
+                            mema.membership_code_enc = enc(str(mema.membership_code)) if mema.membership_code else None
+
                         print(membership_Master)
                         
                     membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)    
@@ -845,23 +845,71 @@ def membership_form_view(request):
             return render(request, template, context)
         
         if request.method == "POST":
+            # Step 1: Get POST data
             membership_id = request.POST.get("membership_id")
             action = request.POST.get("action")  # approve / reject
+            membershipmaster_code = dec(request.POST.get("membershipmaster_id"))
+            user_id = request.POST.get("user_id")
 
+            # Step 2: Get the membership object
             membership = get_object_or_404(MembershipDetails, id=membership_id, isactive=1)
 
-            # Map actions to status IDs
+            # Step 3: Map actions to status IDs
             status_map = {
-                "approved": 2,  # APPROVED
-                "rejected": 3,   # REJECT
+                "approved": 2,
+                "rejected": 3,
             }
             new_status_id = status_map.get(action)
 
             if new_status_id:
+                # --- Only generate code if approved ---
+                if new_status_id == 2:  # APPROVED
+                    if membership.membership_code:
+                        messages.warning(request, "Membership code already exists. No new code generated.")
+                    else:
+                        increment_master = get_object_or_404(
+                            IncrementMaster,
+                            id=1,
+                            isactive=1
+                        )
+
+                        current_number = int(increment_master.incrementFieldNumber)
+                        new_number = current_number + 1
+                        new_number_str = str(new_number).zfill(5)
+
+                        membership_code = f"{increment_master.incrementFieldName}_{timezone.now().strftime('%Y%m%d')}_{new_number_str}"
+
+                        increment_master.incrementFieldNumber = new_number_str
+                        increment_master.save()
+
+                        membership.membership_code = membership_code
+
+                    # --- Update user status to active ---
+                    user = CustomUser.objects.get(username=user_id)
+                    user.is_active = True
+                    user.save()
+                    
+                    # --- Get password from password_storage ---
+                    password_entry = get_object_or_404(password_storage, user=user)
+                    user_password = password_entry.passwordText  # Password fetched from password_storage
+
+                    # --- Retrieve OTP message template ---
+                    otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)  # Assuming OTPIDNumber=1 for registration
+                    message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
+
+                    # --- Send SMS ---
+                    send_sms(user.phone, message)  # Send SMS to the user's mobile
+
+                    # --- Log the SMS ---
+                    log_sms(user, user.phone, message, 'Success', 'unique_id_here')  # You can generate a unique ID as needed
+
+                    messages.success(request, f"User {user.username} activated successfully and SMS sent.")
+
+                # --- Update membership fields ---
                 membership.actionperformed = action
                 membership.reviewed = user_code
                 membership.reviewed_at = timezone.now()
-                membership.status_id = new_status_id  # update status foreign key
+                membership.status_id = new_status_id
                 membership.save()
 
                 messages.success(request, f"Membership {action.capitalize()}d successfully.")
@@ -877,7 +925,56 @@ def membership_form_view(request):
         print(f"error: {e}")
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_approval")
-    
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+def send_sms(mobile, message):
+    try:
+        api_url = f"https://api.pinnacle.in/index.php/sms/send/NMMCSV/{mobile}/{message}/TXT?apikey=6ac137-a52260-71ad83-05eea9-422b6e"
+
+        response = requests.get(api_url)
+        if response.status_code == 200:
+            return True
+        else:
+            logger.error(f"Error sending SMS to {mobile}: {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"Error sending SMS to {mobile}: {e}")
+        return False
+
+def log_sms(user, mobile, message, status, unique_id):
+    try:
+        SMSLog.objects.create(
+            user=user,
+            mobile=mobile,
+            message=message,
+            status=status,
+            unique_id=unique_id,
+            content_type="text",
+            response_status="Success" if status == 'Success' else "Failed",
+            response_uri="API_URL",
+            status_description="Message Sent" if status == 'Success' else "Failed",
+            error_exception="N/A",
+            error_message="N/A",
+        )
+    except Exception as e:
+        logger.error(f"Error logging SMS for user {user.username} (ID: {user.id}): {e}")
+        SMSLog.objects.create(
+            user=user,
+            mobile=mobile,
+            message=message,
+            status="Failed",
+            unique_id=unique_id,
+            content_type="text",
+            response_status="Failed",
+            response_uri="API_URL",
+            status_description="Logging Failed",
+            error_exception=str(e),
+            error_message="Failed to log SMS due to an exception",
+        )
+
 # Palavees work
 
 @login_required

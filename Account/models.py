@@ -120,4 +120,36 @@ class common_model(models.Model):
     def __str__(self):
         return self.id1    
 
+class SMSLog(models.Model):
+    user = models.CharField(max_length=255, blank=True, null=True)  # store username
+    mobile = models.CharField(max_length=15)
+    message = models.TextField()
+    content = models.TextField(blank=True)
+    status = models.CharField(max_length=50, blank=True)
+    unique_id = models.CharField(max_length=255, blank=True)
+    content_type = models.CharField(max_length=50, blank=True)
+    response_status = models.CharField(max_length=50, blank=True)
+    response_uri = models.CharField(max_length=255, blank=True)
+    status_description = models.TextField(blank=True)
+    error_exception = models.TextField(blank=True)
+    error_message = models.TextField(blank=True)
 
+    # Additional text fields
+    library_code = models.TextField(null=True, blank=True)
+    membership_id = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "sms_log"
+
+class OTPMessage(models.Model):
+    OTPText = models.TextField()
+    OTPPurpose = models.CharField(max_length=255)
+    OTPIDNumber = models.PositiveIntegerField(unique=True)
+
+    class Meta:
+        db_table = 'otp_messages'
+
+    def __str__(self):
+        return f"{self.OTPPurpose} - {self.OTPIDNumber}"
