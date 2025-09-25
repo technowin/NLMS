@@ -1,5 +1,6 @@
 from django.conf import settings
-from Account.models import roles
+from Account.models import *
+from L01.models import *
 from NLMS.encryption import dec
 import Db
 from .db_utils import callproc
@@ -7,7 +8,7 @@ from django.utils import timezone
 from administration.thread_local import get_current_service  # ✅ import from your other app
 
 def logged_in_user(request):
-    user =''
+    user = ''
     session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
     session_timeout_minutes = session_cookie_age_seconds 
     username = request.session.get('username', '')
@@ -15,12 +16,16 @@ def logged_in_user(request):
     user_id = request.session.get('user_id', '')
     role_id = request.session.get('role_id', '')
     role_name = ''
-    if request.user.is_authenticated ==True:
+    if request.user.is_authenticated:
         user = str(request.user.id or '')
+    
     reports = ''    
     menu_items = []
     
-    if user_id!='' and role_id!='':
+    # Initialize file path variable
+    file_path = '/static/images/user.png'  # Default fallback
+
+    if user_id != '' and role_id != '':
         
         current_db = get_current_service() or 'default'
         
@@ -51,5 +56,88 @@ def logged_in_user(request):
     
         # Get top level items (parent_id = -1 or your specific root indicator)
         menu_items = [item for item in items if item['parent_id'] == -1]
+        
+    membership = None
+    # Step 1: Get the CustomUser model based on user_id
+    if role_id == '3':
+        try:
+            user_obj = CustomUser.objects.get(id=user_id)
+            username = user_obj.username  # Retrieve the username of the user
+        except CustomUser.DoesNotExist:
+            username = None
 
-    return {'username':username,'full_name':full_name,'role_name':role_name,'session_timeout_minutes':session_timeout_minutes,'reports':reports, 'menu_items': menu_items}
+        # Step 2: Find the MembershipDetails entry where user_id = username
+        if username:
+            try:
+                membership = MembershipDetails.objects.get(user_id=username)
+            except MembershipDetails.DoesNotExist:
+                membership = None
+
+            # Step 3: Find the DocumentDetails where membership_id = membership.id and document_id = 1
+            if membership:
+                try:
+                    document = DocumentDetails.objects.get(membership_id=membership.id, document_id=1)
+                    file_path = document.file_path  # Retrieve the file path from DocumentDetails
+                except DocumentDetails.DoesNotExist:
+                    file_path = '/static/images/user.png'  # Fallback in case the document is not found
+
+    # Return context with the file_path for image
+    return {
+        'username': username,
+        'full_name': full_name,
+        'role_name': role_name,
+        'session_timeout_minutes': session_timeout_minutes,
+        'reports': reports,
+        'menu_items': menu_items,
+        'profile_picture_url': settings.MEDIA_URL + file_path,  # Construct the full image path
+        'membership': membership, 
+    }
+
+
+# def logged_in_user(request):
+#     user =''
+#     session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
+#     session_timeout_minutes = session_cookie_age_seconds 
+#     username = request.session.get('username', '')
+#     full_name = request.session.get('full_name', '')
+#     user_id = request.session.get('user_id', '')
+#     role_id = request.session.get('role_id', '')
+#     role_name = ''
+#     if request.user.is_authenticated ==True:
+#         user = str(request.user.id or '')
+#     reports = ''    
+#     menu_items = []
+    
+#     if user_id!='' and role_id!='':
+        
+#         current_db = get_current_service() or 'default'
+        
+#         role_obj = roles.objects.using(current_db).get(id=role_id)
+#         role_name = role_obj.role_name
+#         menu_items = []
+#         menu_data = callproc("stp_get_side_navbar_details", [user_id, role_id])
+#         items = []
+#         for row in menu_data:
+#             item = {
+#                 'id': row[1],
+#                 'name': row[2],
+#                 'action': row[3],
+#                 'is_parent': row[4],
+#                 'parent_id': row[5],
+#                 'is_sub_menu': row[6],
+#                 'sub_menu': row[7],
+#                 'is_sub_menu2': row[8],
+#                 'sub_menu2': row[9],
+#                 'menu_icon': row[10],
+#                 'badge': row[11] if len(row) > 11 else None  # Optional badge/count
+#             }
+#             items.append(item)
+
+#         # Build hierarchy
+#         for item in items:
+#             item['children'] = [i for i in items if i['parent_id'] == item['id']]
+    
+#         # Get top level items (parent_id = -1 or your specific root indicator)
+#         menu_items = [item for item in items if item['parent_id'] == -1]
+
+#     return {'username':username,'full_name':full_name,'role_name':role_name,'session_timeout_minutes':session_timeout_minutes,'reports':reports, 'menu_items': menu_items}
