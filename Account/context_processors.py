@@ -57,7 +57,7 @@ def logged_in_user(request):
         # Get top level items (parent_id = -1 or your specific root indicator)
         menu_items = [item for item in items if item['parent_id'] == -1]
         
-    membership = None
+    membershipshow = None
     # Step 1: Get the CustomUser model based on user_id
     if role_id == '3':
         try:
@@ -69,14 +69,14 @@ def logged_in_user(request):
         # Step 2: Find the MembershipDetails entry where user_id = username
         if username:
             try:
-                membership = MembershipDetails.objects.get(user_id=username)
+                membershipshow = MembershipDetails.objects.get(user_id=username)
             except MembershipDetails.DoesNotExist:
-                membership = None
+                membershipshow = None
 
             # Step 3: Find the DocumentDetails where membership_id = membership.id and document_id = 1
-            if membership:
+            if membershipshow:
                 try:
-                    document = DocumentDetails.objects.get(membership_id=membership.id, document_id=1)
+                    document = DocumentDetails.objects.get(membership_id=membershipshow.id, document_id=1)
                     file_path = document.file_path  # Retrieve the file path from DocumentDetails
                 except DocumentDetails.DoesNotExist:
                     file_path = '/static/images/user.png'  # Fallback in case the document is not found
@@ -90,7 +90,7 @@ def logged_in_user(request):
         'reports': reports,
         'menu_items': menu_items,
         'profile_picture_url': settings.MEDIA_URL + file_path,  # Construct the full image path
-        'membership': membership, 
+        'membershipshow': membershipshow, 
     }
 
 

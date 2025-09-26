@@ -24,6 +24,7 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404, FileResponse
 from pathlib import Path
 from django.core.files.storage import default_storage
+
 # Part First While Filling Membership Form
 
 def index(request):
@@ -112,6 +113,8 @@ def get_membership_details(request):
             return JsonResponse({"success": True, "data": data})
         except MembershipMaster.DoesNotExist:
             return JsonResponse({"success": False, "error": "Membership not found"})
+
+# membership form filled by member first time registeration
 
 def registration(request):
     Db.closeConnection()
