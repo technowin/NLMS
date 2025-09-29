@@ -24,6 +24,8 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404, FileResponse
 from pathlib import Path
 from django.core.files.storage import default_storage
+import logging
+logger = logging.getLogger(__name__)
 
 # Part First While Filling Membership Form
 
@@ -797,6 +799,7 @@ def membership_form_view(request):
     try:
         library_code = request.session.get('library_db', None)
         user_code = request.session["user_id"]
+        role_id = request.session["role_id"]
         
         if request.method == "GET":
             
@@ -814,6 +817,8 @@ def membership_form_view(request):
                     
                     ward_details = WardMaster.objects.using('default').filter(is_active=1)
                     
+                    membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)    
+                    
                     membership_Master = MembershipMaster.objects.filter(isactive=1)
                     if membership_Master.exists():
                         for mema in membership_Master:
@@ -821,8 +826,6 @@ def membership_form_view(request):
                             mema.membership_code_enc = enc(str(mema.membership_code)) if mema.membership_code else None
 
                         print(membership_Master)
-                        
-                    membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)    
                     
                     document_details = DocumentDetails.objects.filter(
                         membership=membership, isactive=1
@@ -843,6 +846,7 @@ def membership_form_view(request):
                 'library_code': library_code,
                 'membership': membership,
                 'documents_map': documents_map,
+                'role_id': role_id,
             }
                 
             return render(request, template, context)
@@ -851,73 +855,110 @@ def membership_form_view(request):
             # Step 1: Get POST data
             membership_id = request.POST.get("membership_id")
             action = request.POST.get("action")  # approve / reject
-            membershipmaster_code = dec(request.POST.get("membershipmaster_id"))
             user_id = request.POST.get("user_id")
 
             # Step 2: Get the membership object
             membership = get_object_or_404(MembershipDetails, id=membership_id, isactive=1)
 
-            # Step 3: Map actions to status IDs
-            status_map = {
-                "approved": 2,
-                "rejected": 3,
-            }
-            new_status_id = status_map.get(action)
-
-            if new_status_id:
-                # --- Only generate code if approved ---
-                if new_status_id == 2:  # APPROVED
-                    if membership.membership_code:
-                        messages.warning(request, "Membership code already exists. No new code generated.")
-                    else:
-                        increment_master = get_object_or_404(
-                            IncrementMaster,
-                            id=1,
-                            isactive=1
-                        )
-
-                        current_number = int(increment_master.incrementFieldNumber)
-                        new_number = current_number + 1
-                        new_number_str = str(new_number).zfill(5)
-
-                        membership_code = f"{increment_master.incrementFieldName}_{timezone.now().strftime('%Y%m%d')}_{new_number_str}"
-
-                        increment_master.incrementFieldNumber = new_number_str
-                        increment_master.save()
-
-                        membership.membership_code = membership_code
-
-                    # --- Update user status to active ---
-                    user = CustomUser.objects.get(username=user_id)
-                    user.is_active = True
-                    user.save()
+            if action == 'payment_received':
+                
+                try:
+                    # Step 1: Update MembershipDetails status
+                    status_received = StatusMaster.objects.get(id=5)  # status_id = 5
+                    membership.status = status_received
+                    membership.updated_by = user_code
+                    membership.save()
                     
-                    # --- Get password from password_storage ---
-                    password_entry = get_object_or_404(password_storage, user=user)
-                    user_password = password_entry.passwordText  # Password fetched from password_storage
+                    membership_master = membership.membership    
+                    # Step 2: Insert a row in PaymentDetails
+                    PaymentDetails.objects.create(
+                        membership=membership,
+                        payment_mode="Offline",
+                        payment_method="Cash/Cheque/Other",  # choose dynamically if needed
+                        payment_type="Membership",  # choose dynamically if needed
+                        deposit_amount=membership.deposit,
+                        entry_fee_amount=membership.entry_fees,
+                        monthly_subscription_amount=membership_master.subscription_fees,
+                        total_subscription_amount=(membership.subscription),
+                        subscription_from=membership.from_date,
+                        subscription_to=membership.to_date,
+                        status=status_received,
+                        membership_code=membership.membership_code,
+                        user_id=user_id,
+                        created_by=user_code,
+                        updated_by=user_code,
+                        payment_date=timezone.now().date(),
+                    )
 
-                    # --- Retrieve OTP message template ---
-                    otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)  # Assuming OTPIDNumber=1 for registration
-                    message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
+                    messages.success(request, "Payment marked as received successfully!")
+                    return redirect("L01:membership_approval")
 
-                    # --- Send SMS ---
-                    send_sms(user.phone, message)  # Send SMS to the user's mobile
-
-                    # --- Log the SMS ---
-                    log_sms(user, user.phone, message, 'Success', 'unique_id_here')  # You can generate a unique ID as needed
-
-                    messages.success(request, f"User {user.username} activated successfully and SMS sent.")
-
-                # --- Update membership fields ---
-                membership.actionperformed = action
-                membership.reviewed = user_code
-                membership.reviewed_at = timezone.now()
-                membership.status_id = new_status_id
-                membership.save()
-
-                messages.success(request, f"Membership {action.capitalize()}d successfully.")
+                except Exception as e:
+                    messages.error(request, f"Error processing payment: {str(e)}")
+                    return redirect("L01:membership_approval")
+            
             else:
-                messages.error(request, "Invalid action!")
+                # Step 3: Map actions to status IDs
+                status_map = {
+                    "approved": 2,
+                    "rejected": 3,
+                }
+                new_status_id = status_map.get(action)
+
+                if new_status_id:
+                    # --- Only generate code if approved ---
+                    if new_status_id == 2:  # APPROVED
+                        if membership.membership_code:
+                            messages.warning(request, "Membership code already exists. No new code generated.")
+                        else:
+                            increment_master = get_object_or_404(
+                                IncrementMaster,
+                                id=1,
+                                isactive=1
+                            )
+
+                            current_number = int(increment_master.incrementFieldNumber)
+                            new_number = current_number + 1
+                            new_number_str = str(new_number).zfill(5)
+
+                            membership_code = f"{increment_master.incrementFieldName}_{timezone.now().strftime('%Y%m%d')}_{new_number_str}"
+
+                            increment_master.incrementFieldNumber = new_number_str
+                            increment_master.save()
+
+                            membership.membership_code = membership_code
+
+                        # --- Update user status to active ---
+                        user = CustomUser.objects.get(username=user_id)
+                        user.is_active = True
+                        user.save()
+                        
+                        # --- Get password from password_storage ---
+                        password_entry = get_object_or_404(password_storage, user=user)
+                        user_password = password_entry.passwordText  # Password fetched from password_storage
+
+                        # --- Retrieve OTP message template ---
+                        otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)  # Assuming OTPIDNumber=1 for registration
+                        message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
+
+                        # --- Send SMS ---
+                        send_sms(user.phone, message)  # Send SMS to the user's mobile
+
+                        # --- Log the SMS ---
+                        log_sms(user, user.phone, message, 'Success', 'unique_id_here')  # You can generate a unique ID as needed
+
+                        messages.success(request, f"User {user.username} activated successfully and SMS sent.")
+
+                    # --- Update membership fields ---
+                    membership.actionperformed = action
+                    membership.reviewed = user_code
+                    membership.reviewed_at = timezone.now()
+                    membership.status_id = new_status_id
+                    membership.save()
+
+                    messages.success(request, f"Membership {action.capitalize()}d successfully.")
+                else:
+                    messages.error(request, "Invalid action!")
 
             return redirect("L01:membership_approval")
         
@@ -928,10 +969,6 @@ def membership_form_view(request):
         print(f"error: {e}")
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_approval")
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 def send_sms(mobile, message):
     try:
@@ -978,8 +1015,69 @@ def log_sms(user, mobile, message, status, unique_id):
             error_message="Failed to log SMS due to an exception",
         )
 
-# Palavees work
+# Membership Management Views by Member
 
+@login_required
+def membership_payment_index(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session["user_id"]
+        role_id = request.session["role_id"]
+
+        if request.method == "GET":
+            # member's membershp details
+            memberships = (
+                MembershipDetails.objects
+                .select_related("status", "membership")
+                .filter(user_id=username)
+            )
+            for mem in memberships:
+                mem.membership_id_enc = enc(str(mem.id))        
+                mem.per_month_subscription = mem.membership.subscription_fees if mem.membership else 0
+                
+            # Library Name
+            library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
+            library_name_mar = library.library_name_mar if library else ""
+                
+            return render(
+                request,
+                "L01/Member Payment/member_payment.html",
+                {
+                    "MEDIA_URL": settings.MEDIA_URL,
+                    "library_code": library_code,
+                    "memberships": memberships,
+                    "library_name_mar": library_name_mar,
+                }
+            )
+            
+        if request.method == "POST":
+            membership_id = dec(request.POST.get("membership_id"))
+            payment_type = request.POST.get("payment_type")
+            
+            # Update membership details as offline payment pending
+            mem = MembershipDetails.objects.filter(id=membership_id, user_id=username).first()
+            if mem:
+                # Set status to Payment Pending
+                pay_pending_status = StatusMaster.objects.get(status_code="PAY_OFFLINE")
+                mem.status = pay_pending_status
+                mem.updated_by = user_id
+                mem.save()
+                messages.success(request, "ऑफलाइन देयक प्रक्रिया सुरू आहे. स्थिती 'Payment Offline' मध्ये बदलली गेली आहे.")
+                return redirect("L01:membership_payment_index")
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "library_list"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return render(request, "L01/Member Payment/member_payment.html", {})
+
+# Palavees work
 @login_required
 def library_master_index_individual(request):
     library = None
@@ -1259,3 +1357,4 @@ def library_master_index_individual(request):
         cursor.callproc("stp_error_log", [fun, str(e), library_code])
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
+        

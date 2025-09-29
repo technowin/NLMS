@@ -16,6 +16,9 @@ urlpatterns = [
     path("membership_form_view", membership_form_view, name="membership_form_view"),
     path("secure_document_view/<str:doc_id_enc>/", secure_document_view, name="secure_document_view"),
     
+    # membership side
+    path("membership_payment_index", membership_payment_index, name="membership_payment_index"),
+    
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
 ]

@@ -405,25 +405,49 @@
                 </div>
             </div>
 
-            {% if not membership.actionperformed or membership.actionperformed == 'rejected' %}
-                <form id="membershipForm" method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <input type="hidden" name="membership_id" value="{{ membership.id }}">
-                    <input type="hidden" name="action" id="actionInput">
-                    <input type="hidden" name="membershipmaster_id" value="{{ membership_Master.0.membership_code_enc }}">
-                    <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+            {% if not role_id == '3' %}
 
-                    <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
-                        <button type="submit" class="btn btn-success" onclick="document.getElementById('actionInput').value='approved'">
-                            Approve / मान्य करा
-                        </button>
-                        <button type="submit" class="btn btn-danger" onclick="document.getElementById('actionInput').value='rejected'">
-                            Reject / नाकार करा
-                        </button>
+                {% if not membership.actionperformed or membership.actionperformed == 'rejected' %}
+                
+                    <form id="membershipForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                        <input type="hidden" name="action" id="actionInput">
+                        <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+
+                        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                            <button type="submit" class="btn btn-success" onclick="document.getElementById('actionInput').value='approved'">
+                                Approve / मान्य करा
+                            </button>
+                            <button type="submit" class="btn btn-danger" onclick="document.getElementById('actionInput').value='rejected'">
+                                Reject / नाकार करा
+                            </button>
+                        </div>
+                    </form>
+
+                {% elif membership.status_id == 8 %}
+                    <div class="alert alert-warning text-center">
+                        The member has selected offline payment. / सदस्याने ऑफलाइन देयक निवडले आहे.<br>
+                        Please click the button below if you have received the payment. / कृपया रक्कम प्राप्त झाल्यावर खालील बटणावर क्लिक करा.<br>
+                        Thank you! / धन्यवाद!
                     </div>
-                </form>
+
+                    <form id="membershipForm" method="post" enctype="multipart/form-data" class="text-center mt-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                        <input type="hidden" name="action" id="paymentReceivedInput" value="payment_received">
+                        <input type="hidden" name="membershipmaster_id" value="{{ membership_Master.0.membership_code_enc }}">
+                        <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+
+                        <button type="submit" class="btn btn-success btn-lg">
+                            Payment Received / देयक प्राप्त केले
+                        </button>
+                    </form>
+                {% endif %}
+
             {% endif %}
     </div>   
+
     <!-- Back to Top Button -->
     <a href="#" class="back-to-top" id="backToTop">
         <i class="fas fa-arrow-up"></i>
@@ -461,7 +485,6 @@
 {% endif %}
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>

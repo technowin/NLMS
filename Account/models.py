@@ -41,7 +41,7 @@ class CustomUser(AbstractBaseUser):
     first_name = models.CharField(max_length=255, null=True, blank=True)
     last_name = models.CharField(max_length=255, null=True, blank=True)
     full_name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
+    email = models.EmailField()
     phone = models.CharField(max_length=15)
     first_time_login = models.IntegerField(default=1)
     last_login = models.DateTimeField(default=timezone.now)

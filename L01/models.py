@@ -192,3 +192,32 @@ class IncrementMaster(models.Model):
 
     class Meta:
         db_table = "tbl_incrementmaster"
+
+class PaymentDetails(models.Model):
+    id = models.AutoField(primary_key=True)
+    membership = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE,db_column="membership_id",related_name="payments")
+    payment_mode = models.CharField(max_length=20)
+    payment_type = models.TextField(null=True, blank=True)  
+    payment_method = models.CharField(max_length=50, null=True, blank=True)  # e.g., 'Cash', 'Cheque', 'UPI', 'Card'
+    deposit_amount = models.FloatField(null=True, blank=True)
+    entry_fee_amount = models.FloatField(null=True, blank=True)
+    monthly_subscription_amount = models.FloatField(null=True, blank=True)
+    total_subscription_amount = models.FloatField(null=True, blank=True)
+    subscription_from = models.DateField(null=True, blank=True)
+    subscription_to = models.DateField(null=True, blank=True)
+    status = models.ForeignKey(StatusMaster,on_delete=models.SET_NULL,null=True,blank=True,db_column="status_id",related_name="payment_statuses")
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)  # Online txn ID or receipt
+    remarks = models.TextField(null=True, blank=True)
+    user_id = models.CharField(max_length=50, null=True, blank=True)
+    membership_code = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+    payment_date = models.DateField(null=True, blank=True) 
+
+    class Meta:
+        db_table = "tbl_paymentdetails"
+
+    def __str__(self):
+        return f"{self.membership} - {self.payment_mode} - {self.total_amount} ₹"

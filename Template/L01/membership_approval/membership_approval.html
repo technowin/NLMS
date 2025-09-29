@@ -70,6 +70,8 @@
                                     <span class="badge bg-danger px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% elif m.status.status_code == "PAY_PROGRESS" %}
                                     <span class="badge bg-info text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
+                                {% elif m.status.status_code == "PAY_OFFLINE" %}
+                                    <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% else %}
                                     <span class="badge bg-light text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% endif %}
@@ -82,14 +84,14 @@
                             </td>
                             <td>{{ m.subscription }}</td>
                             <td>
-                                <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
-                                    class="btn btn-success btn-sm">
-                                        {% comment %} सदस्यत्व फॉर्म संपादित करा {% endcomment %}
-                                        संपादित करा
-                                </a>
+                                {% if m.status.status_code in "APP_SUB,REJECT" %}
+                                    <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-success btn-sm">
+                                            संपादित करा
+                                    </a>
+                                {% endif %}
                                 <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
                                     class="btn btn-primary btn-sm ms-2">
-                                        {% comment %} फॉर्म तपासा / मंजूर करा {% endcomment %} 
                                         फॉर्म तपासा
                                 </a>
                             </td>
