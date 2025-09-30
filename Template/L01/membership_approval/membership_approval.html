@@ -84,7 +84,7 @@
                             </td>
                             <td>{{ m.subscription }}</td>
                             <td>
-                                {% if m.status.status_code in "APP_SUB,REJECT" %}
+                                {% if m.status.status_code in "APP_SUB,REJECT" %} 
                                     <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
                                         class="btn btn-success btn-sm">
                                             संपादित करा

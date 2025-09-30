@@ -18,6 +18,7 @@ urlpatterns = [
     
     # membership side
     path("membership_payment_index", membership_payment_index, name="membership_payment_index"),
+    path("membership_paymentreceipt_download", membership_paymentreceipt_download, name="membership_paymentreceipt_download"),
     
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 

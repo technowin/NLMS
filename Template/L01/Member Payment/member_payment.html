@@ -87,6 +87,13 @@
                                     </a>
                                 {% endif %}
 
+                                {% if m.status.status_code == "PAY_SUCCESS" %}
+                                    <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-success btn-sm" >
+                                        देयक पावती डाउनलोड करा
+                                    </a>
+                                {% endif %}
+
                                 <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
                                     class="btn btn-primary btn-sm ms-2">
                                         फॉर्म तपासा

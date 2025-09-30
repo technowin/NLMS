@@ -25,6 +25,18 @@ from django.http import Http404, FileResponse
 from pathlib import Path
 from django.core.files.storage import default_storage
 import logging
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+import pathlib
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+
 logger = logging.getLogger(__name__)
 
 # Part First While Filling Membership Form
@@ -1077,6 +1089,7 @@ def membership_payment_index(request):
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/Member Payment/member_payment.html", {})
 
+
 # Palavees work
 @login_required
 def library_master_index_individual(request):
@@ -1357,4 +1370,176 @@ def library_master_index_individual(request):
         cursor.callproc("stp_error_log", [fun, str(e), library_code])
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
-        
+
+
+
+
+
+from io import BytesIO
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.decorators import login_required
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
+import os
+
+@login_required
+def membership_paymentreceipt_download(request):
+    try:
+        membership_id = dec(request.GET.get("membershipid"))
+        membership = get_object_or_404(MembershipDetails, id=membership_id)
+        membership_master = membership.membership
+        payments = PaymentDetails.objects.filter(
+            membership=membership,
+            payment_type='Membership'
+        )
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+
+        regular_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Regular.ttf')
+        bold_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Bold.ttf')
+        pdfmetrics.registerFont(TTFont('Merriweather', regular_font_path))
+        pdfmetrics.registerFont(TTFont('Merriweather-Bold', bold_font_path))
+
+        # Page margins
+        left_margin = 20*mm
+        right_margin = width - 20*mm
+        top_margin = height - 10*mm
+        bottom_margin = 20*mm
+        y = top_margin
+
+        # ✅ Full-page border
+        c.setLineWidth(1)
+        c.rect(10, 10, width - 20, height - 20)
+
+        # Logo
+        logo_path = os.path.join(settings.BASE_DIR, 'static/images/administrative/nmmc-logo.jpeg')
+        logo_width = 30*mm
+        logo_height = 30*mm
+        if os.path.exists(logo_path):
+            c.drawImage(logo_path, left_margin, y - logo_height, width=logo_width, height=logo_height, mask='auto')
+
+        # Header text - side by side with logo
+        text_x = left_margin + logo_width + 10*mm
+        text_y = y - logo_height/2 + 12
+
+        c.setFont("Merriweather", 24)
+        c.drawString(text_x, text_y, "Navi Mumbai Municipal Corporation")
+
+        c.setFont("Merriweather", 14)
+        c.drawString(text_x, text_y - 30, "Membership Payment Receipt")
+
+        # Move y down for next content
+        y = y - logo_height - 30
+
+        # ---------------- Member Details Table ----------------
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Member Details:")
+        y -= 60
+
+        table_data = [
+            ["Field", "Details"],
+            ["Full Name", f"{membership.first_name} {membership.middle_name or ''} {membership.last_name}"],
+            ["User ID", membership.user_id],
+            ["Library", membership.library_name],
+            ["Membership Name", membership_master.membership_type_en],
+            ["Membership Duration", f"{membership.membership_duration} months ({membership.from_date} to {membership.to_date})"]
+        ]
+
+        table = Table(table_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('TOPPADDING', (0,0), (-1,-1), 8),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ]))
+        table.wrapOn(c, width, height)
+        table.drawOn(c, left_margin, y - (len(table_data) * 20))
+        y = y - (len(table_data) * 20) - 20
+
+        # ---------------- Payment Details Table ----------------
+        y -= 10
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Payment Details:")
+        y -= 60
+
+        payment_data_list = []
+        for idx, p in enumerate(payments, start=1):
+            payment_data_list.append(["Field", "Details"])
+            payment_data_list.append(["Payment Date", str(p.payment_date)])
+            payment_data_list.append(["Payment Mode", str(p.payment_mode)])
+            payment_data_list.append(["Payment Status", str(p.status.status_name if p.status else "")])
+            payment_data_list.append(["Deposit (₹)", f"{p.deposit_amount or 0:.2f}"])
+            payment_data_list.append(["Entry Fee (₹)", f"{p.entry_fee_amount or 0:.2f}"])
+            payment_data_list.append(["Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
+            payment_data_list.append(["Total Paid (₹)", f"{p.total_subscription_amount or 0:.2f}"])
+            payment_data_list.append(["Transaction / Remarks", f"{p.transaction_id or ''} {('(' + p.remarks + ')' if p.remarks else '')}"])
+
+        if not payment_data_list:
+            payment_data_list = [["No payments found", ""]]
+
+        payment_table = Table(payment_data_list, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        payment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        payment_table.wrapOn(c, width, height)
+        payment_table.drawOn(c, left_margin, y - (len(payment_data_list) * 20))
+        y = y - (len(payment_data_list) * 20) - 20
+
+        # ---------------- Membership Summary Table ----------------
+        y -= 10
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Membership Summary:")
+        y -= 20
+
+        sub_data = [
+            ["Total Subscription Fee (₹)", f"{membership.subscription:.2f}"]
+        ]
+
+        summary_table = Table(sub_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        summary_table.setStyle(TableStyle([
+            ('FONTNAME', (0,0), (-1,-1), 'Merriweather'),
+            ('FONTSIZE', (0,0), (-1,-1), 12),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        summary_table.wrapOn(c, width, height)
+        summary_table.drawOn(c, left_margin, y - (len(sub_data) * 20))
+        y = y - (len(sub_data) * 20) - 20
+
+        # Footer
+        c.setFont("Merriweather", 12)
+        c.drawString(left_margin, bottom_margin, "This is a computer-generated receipt and does not require signature. NMMC Library")
+
+        c.save()
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="payment_receipt_{membership.user_id}.pdf"'
+        return response
+
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        messages.error(request, "Oops! Something went wrong!")
+        return render(request, "L01/Member Payment/member_payment.html", {})

@@ -1,0 +1,34 @@
+<div class="header" style="display:flex; align-items:center; border-bottom:2px solid #000; padding:10px 0;">
+    <!-- Logo on the left -->
+    <img src="file:///{{ logo_path }}" alt="NMMC Logo" style="height:80px; width:auto; margin-right:20px;">
+    
+    <!-- Text on the right -->
+    <div style="display:flex; flex-direction:column; justify-content:center;">
+        <div style="font-size:28pt; font-weight:bold; letter-spacing:1px; font-family:'NotoSansDevanagari', sans-serif;">
+            नवी मुंबई महानगरपालिका
+        </div>
+        <div style="font-size:16pt; font-weight:normal; letter-spacing:0.5px; margin-top:4px; font-family:'NotoSansDevanagari', sans-serif;">
+            Membership Payment Receipt
+        </div>
+    </div>
+</div>
+
+<!-- Payment table -->
+<table style="width:100%; border-collapse:collapse; margin-top:25px; font-family:'NotoSansDevanagari', sans-serif;">
+    <thead>
+        <tr>
+            <th style="border:1px solid black; padding:8px; background-color:#f0f0f0;">Payment Date</th>
+            <th style="border:1px solid black; padding:8px; background-color:#f0f0f0;">Amount</th>
+            <th style="border:1px solid black; padding:8px; background-color:#f0f0f0;">Mode</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for payment in payments %}
+        <tr>
+            <td style="border:1px solid black; padding:8px;">{{ payment.payment_date }}</td>
+            <td style="border:1px solid black; padding:8px;">{{ payment.total_subscription_amount }}</td>
+            <td style="border:1px solid black; padding:8px;">{{ payment.payment_mode }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
