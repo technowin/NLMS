@@ -93,7 +93,6 @@ def logged_in_user(request):
         'membershipshow': membershipshow, 
     }
 
-
 # def logged_in_user(request):
 #     user =''
 #     session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']

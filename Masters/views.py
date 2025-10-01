@@ -597,7 +597,6 @@ def material_type_master_index(request):
         fun = tb[0].name
         callproc("stp_error_log",[fun,str(e),user])  
         messages.error(request, 'Oops...! Something went wrong!')
-        
     
 @login_required
 def updatestatus(request):
@@ -624,8 +623,6 @@ def updatestatus(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
-        
 
 @login_required
 def material_type_create(request):
@@ -681,8 +678,6 @@ def materialtype_list(request):
         print(f"Mat ID: {mat.id}, Encrypted: {mat.encrypted_id}")  # debug
     return render(request, "Master/materialtype_list.html", {"materials": materials})
 
-
-
 @login_required
 def materialtype_view(request):
     try:
@@ -714,8 +709,6 @@ def materialtype_view(request):
         print("❌ Decryption/View Error:", e)
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("material_type_master_index")
-
-
 
 @login_required
 def materialtype_edit(request):
@@ -760,7 +753,6 @@ def materialtype_edit(request):
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("material_type_master_index")
 
-
 @login_required
 def materialtype_delete(request):
     if request.method == "POST":
@@ -779,9 +771,6 @@ def materialtype_delete(request):
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid request"})
-
-
-
 
 @login_required
 def subject_type_master_index(request):
@@ -810,7 +799,6 @@ def subject_type_master_index(request):
         callproc("stp_error_log", [fun, str(e), user])  
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
-
 
 @login_required
 def subject_type_create(request):
@@ -864,7 +852,6 @@ def subject_type_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect('subject_type_create')
     
-    
 @login_required
 def subject_type_view(request):
     try:
@@ -894,9 +881,6 @@ def subject_type_view(request):
         print("❌ Decryption/View Error:", e)
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("subject_type_master_index")
-
-
-
 
 @login_required
 def subject_edit(request):
@@ -978,8 +962,6 @@ def subject_edit(request):
 
         return render(request, "Master/subject_edit.html", {"subject": subject})
 
-
-
 @login_required
 def subject_delete(request):
     if request.method == "POST":
@@ -1009,7 +991,6 @@ def subject_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
-
 @login_required
 def update_subject_status(request):
     if request.method == "POST":
@@ -1028,7 +1009,6 @@ def update_subject_status(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
 
 @login_required
 def language_master_index(request):
@@ -1058,7 +1038,6 @@ def language_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
 
-
 @login_required
 def update_language_status(request):
     if request.method == "POST":
@@ -1085,7 +1064,6 @@ def update_language_status(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
 
 @login_required
 def language_create(request):
@@ -1250,7 +1228,6 @@ def language_view(request):
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("language_master_index")
 
-
 @login_required
 def language_delete(request):
     if request.method == "POST":
@@ -1279,7 +1256,6 @@ def language_delete(request):
             return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
-
 
 @login_required
 def supplier_master_index(request):
@@ -1362,7 +1338,6 @@ def supplier_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("supplier_master_index")
 
-
 @login_required
 def update_supplier_status(request):
     if request.method == "POST":
@@ -1422,7 +1397,6 @@ def supplier_view(request):
         print("❌ Decryption/View Error:", e)
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("supplier_master_index")
-
 
 @login_required
 def supplier_edit(request):
@@ -1520,7 +1494,6 @@ def supplier_edit(request):
             return redirect("supplier_master_index")
 
         return render(request, "Master/supplier_edit.html", {"supplier": supplier})
-    
 
 @login_required
 def supplier_delete(request):
@@ -1548,7 +1521,6 @@ def supplier_delete(request):
     
     messages.error(request, "Invalid request")
     return redirect("supplier_master_index")
-
 
 @login_required
 def fundingsource_master_index(request):
@@ -1609,7 +1581,6 @@ def update_fundingsource_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
-
 @login_required
 def fundingsource_create(request):
     try:
@@ -1666,7 +1637,6 @@ def fundingsource_create(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("fundingsource_master_index")
-
 
 @login_required
 def fundingsource_edit(request):
@@ -1843,8 +1813,6 @@ def conditionatentry_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
 
-
-
 @login_required
 def update_conditionatentry_status(request):
     if request.method == "POST":
@@ -1874,7 +1842,6 @@ def update_conditionatentry_status(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
 
 @login_required
 def conditionatentry_edit(request):
@@ -1956,7 +1923,6 @@ def conditionatentry_edit(request):
     # 🔹 Render edit form
     return render(request, "Master/conditionatentry_edit.html", {"condition": condition})
 
-
 @login_required
 def conditionatentry_create(request):
     try:
@@ -2014,7 +1980,6 @@ def conditionatentry_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("conditionatentry_master_index")
 
-
 @login_required
 def conditionatentry_view(request):
     try:
@@ -2042,7 +2007,6 @@ def conditionatentry_view(request):
         print("❌ Decryption/View Error:", e)
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("conditionatentry_master_index")
-
 
 @login_required
 def conditionatentry_delete(request):
@@ -2072,7 +2036,6 @@ def conditionatentry_delete(request):
             return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
-
 
 @login_required
 def ward_master_index(request):
@@ -2207,8 +2170,6 @@ def ward_create(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("ward_master_index")
-
-    
     
 @login_required
 def ward_master_edit(request):
@@ -2301,8 +2262,6 @@ def ward_master_edit(request):
         messages.error(request, "An unexpected error occurred!")
         return redirect("ward_master_index")
 
-
-
 @login_required
 def ward_master_view(request):
     try:
@@ -2394,7 +2353,6 @@ def location_master_index(request):
         callproc("stp_error_log", [fun, str(e), user])  
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
-
     
 @login_required
 def update_location_status(request):
@@ -2425,7 +2383,6 @@ def update_location_status(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
 
 @login_required
 def location_create(request):
@@ -2580,7 +2537,6 @@ def location_master_edit(request):
         "wards": wards
     })
 
-
 @login_required
 def location_master_view(request):
     try:
@@ -2650,7 +2606,6 @@ def location_master_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
-
 @login_required
 def library_master_index(request):
     try:
@@ -2698,7 +2653,6 @@ def library_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")
 
-
 @login_required
 def update_library_status(request):
     if request.method == "POST":
@@ -2729,8 +2683,6 @@ def update_library_status(request):
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
-
-
 
 @login_required
 def library_create(request):
@@ -2906,7 +2858,6 @@ def library_create(request):
         print("❌ Library Create Error:", e)
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("library_master_index")
-
 
 @login_required
 def library_master_edit(request):

@@ -36,6 +36,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +235,7 @@ def registration(request):
 
                     # === Save Membership ===
                     membership = MembershipDetails.objects.create(**data)
-
+                    
                     # === Handle Document Uploads ===
                     library_code = request.session.get("library_db", "default")
                     documents_info = []
@@ -639,6 +640,8 @@ def membership_form_edit(request):
             }
                 
             return render(request, template, context)
+        
+        # notepad++ 352 
         
         if request.method == "POST":
             with transaction.atomic():
@@ -1089,6 +1092,452 @@ def membership_payment_index(request):
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/Member Payment/member_payment.html", {})
 
+@login_required
+def membership_paymentreceipt_download(request):
+    try:
+        membership_id = dec(request.GET.get("membershipid"))
+        membership = get_object_or_404(MembershipDetails, id=membership_id)
+        membership_master = membership.membership
+        payments = PaymentDetails.objects.filter(
+            membership=membership,
+            payment_type='Membership'
+        ).order_by('-id')[:1] 
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+
+        regular_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Regular.ttf')
+        bold_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Bold.ttf')
+        pdfmetrics.registerFont(TTFont('Merriweather', regular_font_path))
+        pdfmetrics.registerFont(TTFont('Merriweather-Bold', bold_font_path))
+
+        # Page margins
+        left_margin = 20*mm
+        right_margin = width - 20*mm
+        top_margin = height - 10*mm
+        bottom_margin = 20*mm
+        y = top_margin
+
+        # ✅ Full-page border
+        c.setLineWidth(1)
+        c.rect(10, 10, width - 20, height - 20)
+
+        # Logo
+        logo_path = os.path.join(settings.BASE_DIR, 'static/images/administrative/nmmc-logo.jpeg')
+        logo_width = 30*mm
+        logo_height = 30*mm
+        if os.path.exists(logo_path):
+            c.drawImage(logo_path, left_margin, y - logo_height, width=logo_width, height=logo_height, mask='auto')
+
+        # Header text - side by side with logo
+        text_x = left_margin + logo_width + 10*mm
+        text_y = y - logo_height/2 + 12
+
+        c.setFont("Merriweather", 24)
+        c.drawString(text_x, text_y, "Navi Mumbai Municipal Corporation")
+
+        c.setFont("Merriweather", 14)
+        c.drawString(text_x, text_y - 30, "Membership Payment Receipt")
+
+        # Move y down for next content
+        y = y - logo_height - 30
+
+        # ---------------- Member Details Table ----------------
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Member Details:")
+        y -= 60
+
+        table_data = [
+            ["Field", "Details"],
+            ["Full Name", f"{membership.first_name} {membership.middle_name or ''} {membership.last_name}"],
+            ["User ID", membership.user_id],
+            ["Library", membership.library_name],
+            ["Membership Name", membership_master.membership_type_en],
+            ["Membership Duration", f"{membership.membership_duration} months ({membership.from_date} to {membership.to_date})"]
+        ]
+
+        table = Table(table_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('TOPPADDING', (0,0), (-1,-1), 8),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ]))
+        table.wrapOn(c, width, height)
+        table.drawOn(c, left_margin, y - (len(table_data) * 20))
+        y = y - (len(table_data) * 20) - 20
+
+        # ---------------- Payment Details Table ----------------
+        y -= 10
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Payment Details:")
+        y -= 60
+
+        payment_data_list = []
+        for idx, p in enumerate(payments, start=1):
+            payment_data_list.append(["Field", "Details"])
+            payment_data_list.append(["Payment Date", str(p.payment_date)])
+            payment_data_list.append(["Payment Mode", str(p.payment_mode)])
+            payment_data_list.append(["Payment Status", str(p.status.status_name if p.status else "")])
+            payment_data_list.append(["Deposit (₹)", f"{p.deposit_amount or 0:.2f}"])
+            payment_data_list.append(["Entry Fee (₹)", f"{p.entry_fee_amount or 0:.2f}"])
+            payment_data_list.append(["Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
+            payment_data_list.append(["Total Paid (₹)", f"{p.total_subscription_amount or 0:.2f}"])
+            payment_data_list.append(["Transaction / Remarks", f"{p.transaction_id or ''} {('(' + p.remarks + ')' if p.remarks else '')}"])
+
+        if not payment_data_list:
+            payment_data_list = [["No payments found", ""]]
+
+        payment_table = Table(payment_data_list, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        payment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        payment_table.wrapOn(c, width, height)
+        payment_table.drawOn(c, left_margin, y - (len(payment_data_list) * 20))
+        y = y - (len(payment_data_list) * 20) - 20
+
+        # ---------------- Membership Summary Table ----------------
+        y -= 10
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Membership Summary:")
+        y -= 20
+
+        sub_data = [
+            ["Total Subscription Fee (₹)", f"{membership.subscription:.2f}"]
+        ]
+
+        summary_table = Table(sub_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        summary_table.setStyle(TableStyle([
+            ('FONTNAME', (0,0), (-1,-1), 'Merriweather'),
+            ('FONTSIZE', (0,0), (-1,-1), 12),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        summary_table.wrapOn(c, width, height)
+        summary_table.drawOn(c, left_margin, y - (len(sub_data) * 20))
+        y = y - (len(sub_data) * 20) - 20
+
+        # Footer
+        c.setFont("Merriweather", 12)
+        c.drawString(left_margin, bottom_margin, "This is a computer-generated receipt and does not require signature. NMMC Library")
+
+        c.save()
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="payment_receipt_{membership.user_id}.pdf"'
+        return response
+
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        messages.error(request, "Oops! Something went wrong!")
+        return render(request, "L01/Member Payment/member_payment.html", {})
+
+@login_required
+def membership_form_renew(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        library_code = request.session.get('library_db', None)
+        user_code = request.session["user_id"]
+
+        if request.method == "GET":
+            
+            if library_code:
+                
+                    membershipid = dec(request.GET.get('membershipid'))
+                
+                    library_details = tbl_librarymasterL01.objects.filter(is_active=1, library_code=library_code)
+                    for lilo in library_details:
+                        encrypted_library_code = enc(lilo.library_code)
+                        lilo.libraries = encrypted_library_code
+                    print(library_details)
+                
+                    membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
+                    
+                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    
+                    membership_Master = MembershipMaster.objects.filter(isactive=1)
+                    if membership_Master.exists():
+                        for mema in membership_Master:
+                            encrypted_membership_id = enc(str(mema.id))
+                            mema.membership_id_enc = encrypted_membership_id
+                        print(membership_Master)
+                        
+                    membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)    
+                    
+                    document_details = DocumentDetails.objects.filter(
+                        membership=membership, isactive=1
+                    ).select_related("document")
+
+                    documents_map = {}
+                    for doc in document_details:
+                        doc.doc_id_enc = enc(str(doc.id))  # encrypt document ID
+                        documents_map[doc.document.id] = doc
+                        
+            template = "L01/membership_approval/membership_form_renew.html"
+            context = {
+                'MEDIA_URL': settings.MEDIA_URL,
+                'library_details': library_details,
+                'membership_options': membership_options,
+                'ward_details': ward_details,
+                'membership_Master': membership_Master,
+                'library_code': library_code,
+                'membership': membership,
+                'documents_map': documents_map,
+            }
+                
+            return render(request, template, context)
+        
+        if request.method == "POST":
+            with transaction.atomic():
+                membership_id = request.POST.get("membership_id")
+                user_id = request.POST.get("user_id")
+                membership = get_object_or_404(MembershipDetails, id=membership_id)
+
+                updated = False  # Flag to track if any changes happened
+
+                # ------------------------------
+                # 1. Mapping form fields to model fields
+                # ------------------------------
+                field_map = {
+                    "occupation_details": "occupation",
+                    "phone_number": "office_phone",
+                    "education": "education",
+                    "institution_name": "institute_name",
+                    "referrer_details": "recommender_details",
+                    "membershiptype": "membership_id",  # FK to MembershipMaster
+                    "membertype": "member_type_id",     # FK to parameter_master_L01
+                    "months": "membership_duration",
+                    "fromDate": "from_date",
+                    "toDate": "to_date",
+                }
+
+                # ------------------------------
+                # 2. Check if any field changed (before updating)
+                # ------------------------------
+                for form_field, model_field in field_map.items():
+                    new_value = request.POST.get(form_field)
+
+                    # Normalize string 'None' or empty strings to Python None
+                    if new_value in ["", "None", None]:
+                        new_value = None
+
+                    # Convert integer fields
+                    if model_field == "membership_duration" and new_value is not None:
+                        new_value = int(new_value)
+
+                    # Convert FK fields
+                    if model_field in ["membership_id", "member_type_id"] and new_value is not None:
+                        new_value = int(new_value)
+
+                    # Convert date fields
+                    if model_field in ["from_date", "to_date"] and new_value is not None:
+                        new_value = datetime.strptime(new_value, "%Y-%m-%d").date()
+
+                    old_value = getattr(membership, model_field, None)
+                    if old_value in ["", "None", None]:
+                        old_value = None
+
+                    if new_value != old_value:
+                        updated = True
+                        break
+
+                # ------------------------------
+                # 3. Check monetary fields
+                # ------------------------------
+                money_fields = ["deposit", "entry_fees", "subscription"]
+                for field in money_fields:
+                    new_value = request.POST.get(field)
+                    new_value = float(new_value) if new_value else 0.0
+                    old_value = getattr(membership, field, 0.0)
+                    if new_value != old_value:
+                        updated = True
+                        break
+
+                # ------------------------------
+                # 4. Check if any files uploaded
+                # ------------------------------
+                file_fields = ["photo_upload", "id_upload", "employee_letter", "nagarsevak_letter", "agreement_copy"]
+                for field in file_fields:
+                    if request.FILES.get(field):
+                        updated = True
+                        break
+
+                # ------------------------------
+                # 5. Save current membership state to history (only if updates detected)
+                # ------------------------------
+                
+                if updated:
+                    MembershipDetailsHistory.objects.create(
+                        membership=membership,
+                        membershipmaster=membership.membership,
+                        status=membership.status,
+                        member_type=membership.member_type,  
+                        first_name=membership.first_name,
+                        middle_name=membership.middle_name,
+                        last_name=membership.last_name,
+                        first_name_mar=membership.first_name_mar,
+                        middle_name_mar=membership.middle_name_mar,
+                        last_name_mar=membership.last_name_mar,
+                        ward=membership.ward,
+                        pincode=membership.pincode,
+                        library_name=membership.library_name,
+                        library_name_mar=membership.library_name_mar,
+                        local_address=membership.local_address,
+                        mobile_no=membership.mobile_no,
+                        occupation=membership.occupation,
+                        office_phone=membership.office_phone,
+                        education=membership.education,
+                        institute_name=membership.institute_name,
+                        recommender_details=membership.recommender_details,
+                        dob=membership.dob,
+                        aadhar_no=membership.aadhar_no,
+                        user_id=membership.user_id,
+                        password=membership.password,
+                        membership_duration=membership.membership_duration,
+                        from_date=membership.from_date,
+                        to_date=membership.to_date,
+                        deposit=membership.deposit,
+                        entry_fees=membership.entry_fees,
+                        subscription=membership.subscription,
+                        email=membership.email,
+                        is_resident_of_nmmc=membership.is_resident_of_nmmc,
+                        address_same_as_aadhar=membership.address_same_as_aadhar,
+                        actionperformed = membership.actionperformed,
+                        reviewed = membership.reviewed,
+                        reviewed_at = membership.reviewed_at,
+                        membership_code=membership.membership_code,
+                        created_at=membership.created_at,
+                        created_by=membership.created_by,
+                        updated_at=membership.updated_at,
+                        updated_by=membership.updated_by,
+                        changed_by=user_code,
+                    )
+
+                # ------------------------------
+                # 6. Update normal fields if changed
+                # ------------------------------
+                for form_field, model_field in field_map.items():
+                    new_value = request.POST.get(form_field)
+
+                    if model_field == "membership_duration":
+                        new_value = int(new_value) if new_value else None
+                    if model_field in ["membership_id", "member_type_id"]:
+                        new_value = int(new_value) if new_value else None
+
+                    old_value = getattr(membership, model_field, None)
+                    if new_value != old_value:
+                        setattr(membership, model_field, new_value)
+
+                # ------------------------------
+                # 7. Update monetary fields
+                # ------------------------------
+                for field in money_fields:
+                    new_value = request.POST.get(field)
+                    new_value = float(new_value) if new_value else 0.0
+                    old_value = getattr(membership, field, 0.0)
+                    if new_value != old_value:
+                        setattr(membership, field, new_value)
+
+                # ------------------------------
+                # 8. Handle file uploads
+                # ------------------------------
+                file_map = {
+                    "photo_upload": 1,
+                    "id_upload": 2,
+                    "employee_letter": 3,
+                    "nagarsevak_letter": 4,
+                    "agreement_copy": 5
+                }
+
+                for field_name, doc_type in file_map.items():
+                    uploaded_file = request.FILES.get(field_name)
+                    if uploaded_file:
+                        # 1️⃣ Save old file in history if exists
+                        old_doc = DocumentDetails.objects.filter(
+                            membership=membership, document_id=doc_type
+                        ).first()
+                        if old_doc:
+                            DocumentDetailsHistory.objects.create(
+                                original_document=old_doc,
+                                membership=membership,
+                                document=old_doc.document,
+                                file_name=old_doc.file_name,
+                                file_path=old_doc.file_path,
+                                uploaded_by=old_doc.updated_by or old_doc.created_by
+                            )
+
+                        # 2️⃣ Save new file in DocumentDetails
+                        user_folder = f"{library_code}/{user_id}"
+                        doc_type_folder = f"Document - {doc_type}"
+                        save_dir = os.path.join(settings.MEDIA_ROOT, user_folder, doc_type_folder)
+                        os.makedirs(save_dir, exist_ok=True)
+
+                        timestamp = timezone.now().strftime("%Y%m%dT%H%M%S")
+                        filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_{timestamp}.{uploaded_file.name.rsplit('.', 1)[1]}"
+                        save_path = os.path.join(save_dir, filename)
+
+                        with open(save_path, 'wb+') as destination:
+                            for chunk in uploaded_file.chunks():
+                                destination.write(chunk)
+
+                        relative_path = os.path.relpath(save_path, settings.MEDIA_ROOT)
+
+                        if old_doc:
+                            # Update existing record
+                            old_doc.file_name = filename
+                            old_doc.file_path = relative_path
+                            old_doc.updated_by = user_code
+                            old_doc.save()
+                        else:
+                            DocumentDetails.objects.create(
+                                membership=membership,
+                                document_id=doc_type,
+                                file_name=filename,
+                                file_path=relative_path,
+                                created_by=user_code,
+                            )
+
+                # ------------------------------
+                # 9. Save membership if updated
+                # ------------------------------
+                if updated:
+                    membership.updated_by = user_code
+                    membership.status_id = 9
+                    membership.actionperformed = None
+                    membership.reviewed = None
+                    membership.reviewed_at = None
+                    membership.save()
+                    messages.success(request, "Membership updated successfully!")
+                else:
+                    messages.info(request, "No changes detected. Membership not updated.")
+
+                return redirect("L01:membership_payment_index")
+       
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "library_list"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("L01:membership_payment_index")
 
 # Palavees work
 @login_required
@@ -1371,175 +1820,3 @@ def library_master_index_individual(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
 
-
-
-
-
-from io import BytesIO
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
-from django.contrib.auth.decorators import login_required
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import mm
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib import colors
-import os
-
-@login_required
-def membership_paymentreceipt_download(request):
-    try:
-        membership_id = dec(request.GET.get("membershipid"))
-        membership = get_object_or_404(MembershipDetails, id=membership_id)
-        membership_master = membership.membership
-        payments = PaymentDetails.objects.filter(
-            membership=membership,
-            payment_type='Membership'
-        )
-
-        buffer = BytesIO()
-        c = canvas.Canvas(buffer, pagesize=A4)
-        width, height = A4
-
-        regular_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Regular.ttf')
-        bold_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Bold.ttf')
-        pdfmetrics.registerFont(TTFont('Merriweather', regular_font_path))
-        pdfmetrics.registerFont(TTFont('Merriweather-Bold', bold_font_path))
-
-        # Page margins
-        left_margin = 20*mm
-        right_margin = width - 20*mm
-        top_margin = height - 10*mm
-        bottom_margin = 20*mm
-        y = top_margin
-
-        # ✅ Full-page border
-        c.setLineWidth(1)
-        c.rect(10, 10, width - 20, height - 20)
-
-        # Logo
-        logo_path = os.path.join(settings.BASE_DIR, 'static/images/administrative/nmmc-logo.jpeg')
-        logo_width = 30*mm
-        logo_height = 30*mm
-        if os.path.exists(logo_path):
-            c.drawImage(logo_path, left_margin, y - logo_height, width=logo_width, height=logo_height, mask='auto')
-
-        # Header text - side by side with logo
-        text_x = left_margin + logo_width + 10*mm
-        text_y = y - logo_height/2 + 12
-
-        c.setFont("Merriweather", 24)
-        c.drawString(text_x, text_y, "Navi Mumbai Municipal Corporation")
-
-        c.setFont("Merriweather", 14)
-        c.drawString(text_x, text_y - 30, "Membership Payment Receipt")
-
-        # Move y down for next content
-        y = y - logo_height - 30
-
-        # ---------------- Member Details Table ----------------
-        c.setFont("Merriweather-Bold", 14)
-        c.drawString(left_margin, y, "Member Details:")
-        y -= 60
-
-        table_data = [
-            ["Field", "Details"],
-            ["Full Name", f"{membership.first_name} {membership.middle_name or ''} {membership.last_name}"],
-            ["User ID", membership.user_id],
-            ["Library", membership.library_name],
-            ["Membership Name", membership_master.membership_type_en],
-            ["Membership Duration", f"{membership.membership_duration} months ({membership.from_date} to {membership.to_date})"]
-        ]
-
-        table = Table(table_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
-            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
-            ('FONTSIZE', (0, 0), (-1, -1), 12),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-            ('TOPPADDING', (0,0), (-1,-1), 8),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ]))
-        table.wrapOn(c, width, height)
-        table.drawOn(c, left_margin, y - (len(table_data) * 20))
-        y = y - (len(table_data) * 20) - 20
-
-        # ---------------- Payment Details Table ----------------
-        y -= 10
-        c.setFont("Merriweather-Bold", 14)
-        c.drawString(left_margin, y, "Payment Details:")
-        y -= 60
-
-        payment_data_list = []
-        for idx, p in enumerate(payments, start=1):
-            payment_data_list.append(["Field", "Details"])
-            payment_data_list.append(["Payment Date", str(p.payment_date)])
-            payment_data_list.append(["Payment Mode", str(p.payment_mode)])
-            payment_data_list.append(["Payment Status", str(p.status.status_name if p.status else "")])
-            payment_data_list.append(["Deposit (₹)", f"{p.deposit_amount or 0:.2f}"])
-            payment_data_list.append(["Entry Fee (₹)", f"{p.entry_fee_amount or 0:.2f}"])
-            payment_data_list.append(["Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
-            payment_data_list.append(["Total Paid (₹)", f"{p.total_subscription_amount or 0:.2f}"])
-            payment_data_list.append(["Transaction / Remarks", f"{p.transaction_id or ''} {('(' + p.remarks + ')' if p.remarks else '')}"])
-
-        if not payment_data_list:
-            payment_data_list = [["No payments found", ""]]
-
-        payment_table = Table(payment_data_list, colWidths=[60*mm, 100*mm], hAlign='LEFT')
-        payment_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
-            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
-            ('FONTSIZE', (0, 0), (-1, -1), 12),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('TOPPADDING', (0,0), (-1,-1), 6),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ]))
-        payment_table.wrapOn(c, width, height)
-        payment_table.drawOn(c, left_margin, y - (len(payment_data_list) * 20))
-        y = y - (len(payment_data_list) * 20) - 20
-
-        # ---------------- Membership Summary Table ----------------
-        y -= 10
-        c.setFont("Merriweather-Bold", 14)
-        c.drawString(left_margin, y, "Membership Summary:")
-        y -= 20
-
-        sub_data = [
-            ["Total Subscription Fee (₹)", f"{membership.subscription:.2f}"]
-        ]
-
-        summary_table = Table(sub_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
-        summary_table.setStyle(TableStyle([
-            ('FONTNAME', (0,0), (-1,-1), 'Merriweather'),
-            ('FONTSIZE', (0,0), (-1,-1), 12),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('TOPPADDING', (0,0), (-1,-1), 6),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ]))
-        summary_table.wrapOn(c, width, height)
-        summary_table.drawOn(c, left_margin, y - (len(sub_data) * 20))
-        y = y - (len(sub_data) * 20) - 20
-
-        # Footer
-        c.setFont("Merriweather", 12)
-        c.drawString(left_margin, bottom_margin, "This is a computer-generated receipt and does not require signature. NMMC Library")
-
-        c.save()
-        buffer.seek(0)
-        response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="payment_receipt_{membership.user_id}.pdf"'
-        return response
-
-    except Exception as e:
-        print(f"Error generating PDF: {e}")
-        messages.error(request, "Oops! Something went wrong!")
-        return render(request, "L01/Member Payment/member_payment.html", {})

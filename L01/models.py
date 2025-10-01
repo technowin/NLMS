@@ -221,3 +221,77 @@ class PaymentDetails(models.Model):
 
     def __str__(self):
         return f"{self.membership} - {self.payment_mode} - {self.total_amount} ₹"
+
+class MembershipDetailsHistory(models.Model):
+    id = models.AutoField(primary_key=True)
+    membership = models.ForeignKey(MembershipDetails, on_delete=models.CASCADE, db_column='membershipdetails_id', related_name='history')
+    membershipmaster = models.ForeignKey(MembershipMaster, on_delete=models.SET_NULL, null=True, blank=True, db_column='membershipmaster_id', related_name='membership_holders_history')
+    status = models.ForeignKey(StatusMaster, on_delete=models.SET_NULL, null=True, blank=True, db_column='status_id', related_name='memberships_history')
+    member_type = models.ForeignKey(parameter_master_L01, on_delete=models.SET_NULL, null=True, blank=True, db_column='member_type_id', related_name='membership_types_history')
+    
+    first_name = models.TextField(null=True, blank=True)
+    middle_name = models.TextField(null=True, blank=True)
+    last_name = models.TextField(null=True, blank=True)
+    first_name_mar = models.TextField(null=True, blank=True)
+    middle_name_mar = models.TextField(null=True, blank=True)
+    last_name_mar = models.TextField(null=True, blank=True)
+    ward = models.TextField(null=True, blank=True)
+    pincode = models.TextField(null=True, blank=True)
+    library_name = models.TextField(null=True, blank=True)
+    library_name_mar = models.TextField(null=True, blank=True)
+    local_address = models.TextField(null=True, blank=True)
+    mobile_no = models.TextField(null=True, blank=True)
+    occupation = models.TextField(null=True, blank=True)
+    office_phone = models.TextField(null=True, blank=True)
+    education = models.TextField(null=True, blank=True)
+    institute_name = models.TextField(null=True, blank=True)
+    recommender_details = models.TextField(null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
+    aadhar_no = models.CharField(max_length=12, null=True, blank=True)
+    user_id = models.CharField(max_length=50, null=True, blank=True)
+    password = models.CharField(max_length=255, null=True, blank=True)
+    membership_duration = models.IntegerField(null=True, blank=True)
+    from_date = models.DateField(null=True, blank=True)
+    to_date = models.DateField(null=True, blank=True)
+    deposit = models.FloatField(null=True, blank=True)
+    entry_fees = models.FloatField(null=True, blank=True)
+    subscription = models.FloatField(null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+    is_resident_of_nmmc = models.IntegerField(default=0)
+    address_same_as_aadhar = models.IntegerField(default=0)
+    actionperformed = models.TextField(null=True, blank=True)
+    reviewed = models.CharField(max_length=50, null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    isactive = models.IntegerField(default=1)
+    membership_code = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    # History tracking fields
+    changed_by = models.CharField(max_length=50, null=True, blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "tbl_membershipdetails_history"
+
+    def __str__(self):
+        full_name = " ".join(filter(None, [self.first_name, self.middle_name, self.last_name]))
+        return f"{full_name} ({self.change_type} at {self.changed_at})"
+
+class DocumentDetailsHistory(models.Model):
+    id = models.AutoField(primary_key=True)
+    original_document = models.ForeignKey(DocumentDetails,on_delete=models.SET_NULL,null=True,blank=True,db_column="documentdetails_id",related_name="history_versions")
+    document = models.ForeignKey(DocumentMaster,on_delete=models.CASCADE,db_column="document_id",related_name="document_history")
+    membership = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE,db_column="membership_id",related_name="document_history")
+    file_name = models.CharField(max_length=555)
+    file_path = models.CharField(max_length=555)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_documentdetails_history"
+
+    def __str__(self):
+        return f"{self.membership.full_name} - {self.document.document_name} ({self.uploaded_at})"

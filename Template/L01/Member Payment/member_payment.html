@@ -65,6 +65,8 @@
                                     <span class="badge bg-info text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% elif m.status.status_code == "PAY_OFFLINE" %}
                                     <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
+                                {% elif m.status.status_code == "APP_RENEW" %}
+                                    <span class="badge bg-success text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% else %}
                                     <span class="badge bg-light text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% endif %}
@@ -77,8 +79,8 @@
                             </td>
                             <td>{{ m.subscription }}</td>
                             <td>
-                                <!-- सदस्यत्व देयक बटण -->
                                 
+                                <!-- सदस्यत्व देयक बटण -->
                                 {% if m.status.status_code == "APPROVED" %}
                                     <a href="#" class="btn btn-success btn-sm" 
                                         data-bs-toggle="modal" 
@@ -86,7 +88,8 @@
                                             सदस्यत्व देयक
                                     </a>
                                 {% endif %}
-
+                                
+                                {% comment %} Payment Receipt Download Button {% endcomment %}
                                 {% if m.status.status_code == "PAY_SUCCESS" %}
                                     <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
                                         class="btn btn-success btn-sm" >
@@ -94,10 +97,19 @@
                                     </a>
                                 {% endif %}
 
+                                {% comment %} Form check button {% endcomment %}
                                 <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
                                     class="btn btn-primary btn-sm ms-2">
                                         फॉर्म तपासा
                                 </a>
+                                
+                                {% comment %} Renewal Button {% endcomment %}
+                                {% if m.status.status_code not in "APP_RENEW" %}
+                                    <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-warning btn-sm ms-2">
+                                        सदस्यत्व नूतनीकरण करा
+                                    </a>
+                                {% endif %}
 
                                 <!-- Bootstrap Modal -->
 
