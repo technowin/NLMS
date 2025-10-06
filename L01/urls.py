@@ -23,4 +23,9 @@ urlpatterns = [
     
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
+    path('user_master_index/', user_master_index, name='user_master_index'), 
+    path('update_user_status', update_user_status, name='update_user_status'),
+    path('user_create', user_create, name='user_create'),
+    path('user_edit', user_edit, name='user_edit'),
+    path('user_view', user_view, name='user_view'),
 ]

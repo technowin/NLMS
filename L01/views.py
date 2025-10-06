@@ -9,10 +9,15 @@ import Db
 import requests
 from django.http import HttpResponse, JsonResponse
 from NLMS.encryption import *
+from Account.db_utils import callproc
 import re
 from django.shortcuts import render, redirect
 from django.db import transaction
 import os
+from django.http import HttpResponse, JsonResponse
+from NLMS.encryption import *
+import re
+import json
 from django.utils import timezone
 import datetime
 import uuid
@@ -1820,3 +1825,305 @@ def library_master_index_individual(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
 
+@login_required
+def user_master_index(request):
+    try:
+        if request.user.is_authenticated:
+            global user, role_id
+            user = request.user.id
+            role_id = request.user.role_id
+
+        if request.method == "GET":
+            # 🔹 Fetch all user records with related role
+            users = CustomUser.objects.all()
+
+            # 🔹 Attach encrypted_id & role_name for each user
+            for usr in users:
+                usr.encrypted_id = enc(str(usr.id))
+
+                try:
+                    role = roles.objects.get(id=usr.id)
+                    usr.role_name = role.role_name
+                except roles.DoesNotExist:
+                    usr.role_name = "N/A"
+
+            return render(
+                request,
+                'L01/Master/user_master_index.html',
+                {"users": users}
+            )
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("user_master_index")
+
+
+@login_required
+def update_user_status(request):
+    if request.method == "POST":
+        try:
+            print("Request body raw:", request.body)
+            try:
+                data = json.loads(request.body.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                print("JSON parse error:", e)
+                return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+
+            print("Parsed data:", data)
+
+            encrypted_id = data.get("id")
+            is_active = data.get("status")
+
+            if encrypted_id is None or is_active is None:
+                return JsonResponse({"success": False, "error": "Missing data"}, status=400)
+
+            user_id = int(dec(encrypted_id))
+            user = CustomUser.objects.get(id=user_id)
+            user.is_active = bool(int(is_active))
+            user.save()
+
+            return JsonResponse({"success": True, "status": int(user.is_active)})
+
+        except CustomUser.DoesNotExist:
+            return JsonResponse({"success": False, "error": "User not found"}, status=404)
+        except Exception as e:
+            print("❌ Error:", e)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+@login_required
+def user_create(request):
+    try:
+        user_id = request.user.id
+
+        if request.method == "POST":
+
+            enc_id = request.POST.get("id")  # Hidden encrypted ID (for editing)
+            username = request.POST.get("username", "").strip()
+            first_name = request.POST.get("first_name", "").strip()
+            last_name = request.POST.get("last_name", "").strip()
+            full_name = f"{first_name} {last_name}".strip()  # auto-generate full name
+            email = request.POST.get("email", "").strip()
+            phone = request.POST.get("mobile", "").strip()  # ✅ Added phone
+            role_id = request.POST.get("role_id", "").strip()
+            is_active = request.POST.get("is_active", 1)
+            password = request.POST.get("password", "").strip()
+
+            # 🔹 Validation
+            if not username:
+                messages.error(request, "User Name is required!")
+            elif not first_name:
+                messages.error(request, "First Name is required!")
+            elif not last_name:
+                messages.error(request, "Last Name is required!")
+            elif not email:
+                messages.error(request, "Email is required!")
+            elif not phone:
+                messages.error(request, "Phone Number is required!")  # ✅ Validation added
+            elif not role_id:
+                messages.error(request, "Role is required!")
+            elif not enc_id and not password:
+                messages.error(request, "Password is required for new user!")
+
+            # If there were validation errors → re-render form
+            if messages.get_messages(request):
+                roles_list = roles.objects.exclude(role_type='member')
+                return render(request, "L01/Master/user_create.html", {
+                    "roles_list": roles_list,
+                    "post_data": request.POST,
+                    "user_obj": None
+                })
+
+            # 🔹 Update existing user
+            if enc_id:
+                try:
+                    user_pk = int(dec(enc_id))
+                    user_obj = CustomUser.objects.get(pk=user_pk)
+
+                    user_obj.username = username
+                    user_obj.first_name = first_name
+                    user_obj.last_name = last_name
+                    user_obj.full_name = full_name
+                    user_obj.email = email
+                    user_obj.phone = phone  # ✅ Save phone
+                    user_obj.is_active = bool(int(is_active))
+                    user_obj.role_id = role_id   # direct field in CustomUser
+                    user_obj.updated_by = user_id
+                    user_obj.updated_at = timezone.now()
+
+                    if password:
+                        user_obj.set_password(password)
+
+                    user_obj.save()
+
+                    messages.success(request, f"User '{username}' updated successfully!")
+                    return redirect("L01:user_master_index")
+
+                except CustomUser.DoesNotExist:
+                    messages.error(request, "User not found.")
+                    return redirect("L01:user_master_index")
+
+            # 🔹 Create new user
+            new_user = CustomUser.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                is_active=bool(int(is_active))
+            )
+            new_user.first_name = first_name
+            new_user.last_name = last_name
+            new_user.full_name = full_name
+            new_user.phone = phone  # ✅ Save phone
+            new_user.role_id = role_id
+            new_user.created_by = user_id
+            new_user.created_at = timezone.now()
+            new_user.save()
+
+            messages.success(request, f"User '{username}' created successfully!")
+            return redirect("L01:user_master_index")
+
+        # GET → Show form, exclude 'member' roles
+        roles_list = roles.objects.exclude(role_type='member')
+        return render(request, "L01/Master/user_create.html", {
+            "roles_list": roles_list,
+            "user_obj": None
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user_id])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("L01:user_master_index")
+
+@login_required
+def user_edit(request):
+    try:
+        user_id = request.user.id
+
+        # 🔹 Read from query string or hidden field
+        enc_id = request.GET.get("user_id") or request.POST.get("id")
+        if not enc_id:
+            messages.error(request, "Invalid user reference.")
+            return redirect("L01:user_master_index")
+
+        user_pk = int(dec(enc_id))  # Decrypt the ID
+
+        # 🔹 Fetch user or show error
+        try:
+            user_obj = CustomUser.objects.get(pk=user_pk)
+        except CustomUser.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("L01:user_master_index")
+
+        if request.method == "POST":
+            username = request.POST.get("username", "").strip()
+            first_name = request.POST.get("first_name", "").strip()
+            last_name = request.POST.get("last_name", "").strip()
+            full_name = f"{first_name} {last_name}".strip()
+            email = request.POST.get("email", "").strip()
+            phone = request.POST.get("mobile", "").strip()
+            role_id = request.POST.get("role_id", "").strip()
+            is_active = request.POST.get("is_active", 1)
+            password = request.POST.get("password", "").strip()
+            confirm_password = request.POST.get("confirm_password", "").strip()
+            address = request.POST.get("address", "").strip()
+
+            # 🔹 Validation
+            if not username:
+                messages.error(request, "User Name is required!")
+            elif not first_name:
+                messages.error(request, "First Name is required!")
+            elif not last_name:
+                messages.error(request, "Last Name is required!")
+            elif not email:
+                messages.error(request, "Email is required!")
+            elif not phone:
+                messages.error(request, "Phone Number is required!")
+            elif not role_id:
+                messages.error(request, "Role is required!")
+            elif password and password != confirm_password:
+                messages.error(request, "Passwords do not match!")
+
+            # If errors → re-render with form data
+            if messages.get_messages(request):
+                roles_list = roles.objects.exclude(role_type="member")
+                return render(request, "L01/Master/user_edit.html", {
+                    "roles_list": roles_list,
+                    "post_data": request.POST,
+                    "user_obj": user_obj
+                })
+
+            # 🔹 Update user
+            user_obj.username = username
+            user_obj.first_name = first_name
+            user_obj.last_name = last_name
+            user_obj.full_name = full_name
+            user_obj.email = email
+            user_obj.phone = phone
+            user_obj.address = address
+            user_obj.password = password
+            user_obj.confirm_password = confirm_password
+            user_obj.is_active = bool(int(is_active))
+            user_obj.role_id = role_id
+            user_obj.updated_by = user_id
+            user_obj.updated_at = timezone.now()
+
+            if password:
+                user_obj.set_password(password)
+
+            user_obj.save()
+
+            messages.success(request, f"User '{username}' updated successfully!")
+            return redirect("L01:user_master_index")
+
+        # GET → load edit form
+        roles_list = roles.objects.exclude(role_type="member")
+        return render(request, "L01/Master/user_edit.html", {
+            "roles_list": roles_list,
+            "user_obj": user_obj
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user_id])
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("L01:user_master_index")
+
+@login_required
+def user_view(request):
+    try:
+        user_id = request.user.id
+
+        enc_id = request.GET.get("user_id")
+        if not enc_id:
+            messages.error(request, "Invalid user reference.")
+            return redirect("L01:user_master_index")
+
+        user_pk = int(dec(enc_id))  # Decrypt ID
+
+        try:
+            user_obj = CustomUser.objects.get(pk=user_pk)
+        except CustomUser.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("L01:user_master_index")
+
+        # Fetch the role object using role_id
+        role_obj = roles.objects.filter(id=user_obj.role_id).first()
+
+        return render(request, "L01/Master/user_view.html", {
+            "user_obj": user_obj,
+            "role_obj": role_obj
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user_id])
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("L01:user_master_index")

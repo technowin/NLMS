@@ -1,0 +1,379 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Workflow{% endblock title %}
+
+{% block extra_css %}
+
+    <!-- Keeping only SweetAlert and essential layout styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font: Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+
+        /* General action button styles */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+/* Specific View Button */
+.view-btn {
+    background-color: #FFD700; /* Gold */
+    color: #000; /* Black */
+    border: 1px solid #FFC107; /* Optional: slightly darker gold border */
+}
+
+.view-btn:hover {
+    background-color: #FFC107; /* Darker gold on hover */
+    color: #000;
+    transform: scale(1.05); /* Subtle hover effect */
+}
+
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय नोंदवही मास्टर' sub_title='' %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="container mt-4">
+    <!-- Header Row -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2 class="fw-bold">User Master</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'L01:user_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i>  नवीन युजर तयार करा
+            </a>
+        </div>
+    </div>
+
+    <!-- User Master Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table id="userMasterTable" class="table table-bordered table-striped table-hover align-middle mb-0">
+               <thead class="table-dark text-center">
+    <tr>
+        <th>Full Name</th>
+        <th>User Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Address</th>
+        <th>Role</th>
+        <th>Action</th>
+    </tr>
+</thead>
+<tbody>
+    {% for user in users %}
+    <tr>
+        <td class="text-center">{{ user.full_name }}</td>
+        <td class="text-center">{{ user.username }}</td>
+        <td class="text-center">{{ user.email }}</td>
+        <td class="text-center">{{ user.phone }}</td>
+        <td class="text-center">{{ user.address }}</td>
+        <td class="text-center">{{ user.role_name }}</td>
+        <td class="text-center">
+            <div class="mb-2 d-flex gap-2 justify-content-center">
+                <!-- Toggle Active / Inactive -->
+                {% if user.is_active %}
+                    <button class="btn btn-success action-btn toggle-status" 
+                            data-id="{{ user.encrypted_id }}" 
+                            data-status="1"
+                            title="Deactivate">
+                        <i class="fa-solid fa-toggle-on"></i>
+                    </button>
+                {% else %}
+                    <button class="btn btn-danger action-btn toggle-status" 
+                            data-id="{{ user.encrypted_id }}" 
+                            data-status="0"
+                            title="Activate">
+                        <i class="fa-solid fa-toggle-off"></i>
+                    </button>
+                {% endif %}
+
+             
+             <!-- View Button -->
+                <a href="{% url 'L01:user_view' %}?user_id={{ user.encrypted_id }}" class="action-btn view-btn" title="View">
+                    <i class="fa-solid fa-eye"></i>
+                </a>
+
+               {% comment %} <!-- Edit Button --> <a href="{% url 'L01:user_edit' %}?user_id={{ user.encrypted_id }}" class="action-btn" style="background-color:#007BFF; color:white;" title="Edit"> <i class="fa-solid fa-pen-to-square"></i> </a> {% endcomment %}
+                 {% comment %} <!-- Delete Button --> <button type="button" class="action-btn" style="background-color:#FF4136; color:white;" onclick="user_master_delete('{{ user.encrypted_id }}')" title="Delete"> <i class="fa-solid fa-trash"></i> </button> {% endcomment %}
+                   
+            </div> 
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="8" class="text-center text-muted">No users found</td>
+    </tr>
+    {% endfor %}
+</tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- Keeping only SweetAlert and optional message popup -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#userMasterTable').DataTable({
+                "pageLength": 5,  // default rows per page
+                "lengthMenu": [5, 10, 25, 50, 100], // dropdown options
+                "ordering": true, //enable column sorting
+                "searching": true, // enable search box
+            });
+        });
+    </script>
+
+
+
+    {% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        {% for message in messages %}
+            Swal.fire({
+            title: "{{ message.tags|title }}",
+            text: "{{ message|escapejs }}",
+            icon: "{{ message.tags }}",
+            confirmButtonText: "OK",
+            background: theme === 'dark' ? '#343a40' : '#ffffff',
+            color: theme === 'dark' ? '#f8f9fa' : '#212529',
+            confirmButtonColor: '#0d6efd',
+            customClass: {
+                popup: 'rounded-4 shadow',
+                confirmButton: 'btn btn-primary px-4 py-2'
+            }
+            });
+        {% endfor %}
+        });
+    </script>
+    {% endif %}
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script>
+    $(document).ready(function () {
+        const table = $('#employeeTable').DataTable({
+        "pageLength": 10,
+        "lengthChange": false,
+        });
+    });
+    </script>
+
+    <!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    $(document).ready(function() {
+        $(".toggle-status").on("click", function(e) {
+            e.preventDefault();
+
+            var button = $(this);
+            var materialId = button.data("id");
+            var currentStatus = button.data("status");
+            var newStatus = currentStatus == 1 ? 0 : 1;
+
+            // SweetAlert confirmation
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to change the status?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, change it!",
+                cancelButtonText: "Cancel"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Only run AJAX if confirmed
+                    $.ajax({
+                        url: "{% url 'L01:update_user_status' %}",
+                        type: "POST",
+                        contentType: "application/json",
+                        headers: { "X-CSRFToken": '{{ csrf_token }}' },
+                        data: JSON.stringify({
+                            id: materialId,
+                            status: newStatus
+                        }),
+                        success: function(data) {
+                            console.log(data);
+                            if (data.success) {
+                                  if (data.status == 1) {
+                            button.removeClass("btn-danger")
+                                .addClass("btn-success")
+                                .data("status", 1);
+                            Swal.fire("Updated!", "Status set to Active.", "success");
+                        } else {
+                            button.removeClass("btn-success")
+                                .addClass("btn-danger")
+                                .data("status", 0);
+                            Swal.fire("Updated!", "Status set to Inactive.", "success");
+                        }
+                            } else {
+                                Swal.fire("Error!", data.error || "Failed to update status.", "error");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error:", status, error);
+                            Swal.fire("Error!", "An error occurred while updating status.", "error");
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function library_master_delete(encId) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch("{% url 'library_master_delete' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ id: encId }) // send encrypted id
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire(
+                        'Deleted!',
+                        'Library Master has been deleted.',
+                        'success'
+                    ).then(() => {
+                        // Reload page or remove row dynamically
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error!', data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                Swal.fire('Error!', 'An unexpected error occurred!', 'error');
+            });
+        }
+    });
+}
+</script>
+
+
+{% endblock %}
