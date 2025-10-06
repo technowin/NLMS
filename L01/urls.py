@@ -21,6 +21,11 @@ urlpatterns = [
     path("membership_paymentreceipt_download", membership_paymentreceipt_download, name="membership_paymentreceipt_download"),
     path("membership_form_renew", membership_form_renew, name="membership_form_renew"),
     
+    # barcode
+    
+    path("bar_code_index", bar_code_index, name="bar_code_index"),
+    path("generate_barcode", generate_barcode, name="generate_barcode"),
+    
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
     path('user_master_index/', user_master_index, name='user_master_index'), 

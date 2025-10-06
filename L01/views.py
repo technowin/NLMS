@@ -42,6 +42,12 @@ from io import BytesIO
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from datetime import datetime
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
+import barcode
+from barcode.writer import ImageWriter
+from io import BytesIO
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -1544,6 +1550,83 @@ def membership_form_renew(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_payment_index")
 
+# circulation
+@login_required
+def bar_code_index(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session["user_id"]
+        role_id = request.session["role_id"]
+
+        if request.method == "GET":
+            
+            accessions = BookAccession.objects.select_related(
+                'catalogue',  # 👈 pulls in BookCatalog
+                'supplier', 'currency', 'funding_source',
+                'condition_at_entry', 'location', 'status'
+            ).filter(status__status_id=4).order_by("-accession_id")
+            
+            for a in accessions:
+                a.encrypted_id = enc(str(a.accession_id))
+        
+            return render(
+                request,
+                "L01/Circulation/barcodeindex.html",
+                {
+                    "MEDIA_URL": settings.MEDIA_URL,
+                    "library_code": library_code,
+                    "accessions": accessions,
+                }
+            )
+            
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "library_list"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return render(request, "L01/Circulation/barcodeindex.html", {})
+
+@login_required
+def generate_barcode(request):
+    accession_id = request.GET.get("accessionid")
+    if not accession_id:
+        return HttpResponseBadRequest("Missing accession ID")
+
+    try:
+        decrypted_id = dec(accession_id)  # your existing decrypt method
+    except Exception:
+        return HttpResponseBadRequest("Invalid accession ID")
+
+    accession = get_object_or_404(BookAccession, accession_id=decrypted_id)
+
+    accession_number = accession.accession_no or "UNKNOWN"
+
+    # Generate barcode
+    CODE = barcode.get_barcode_class('code128')
+    writer_options = {
+        "module_width": 0.4,   
+        "module_height": 8,   
+        "quiet_zone": 2,       
+        "font_size": 6,       # slightly bigger number
+        "text_distance": 2.5,    # distance between barcode and number
+        "write_text": True
+    }
+    buffer = BytesIO()
+    CODE(accession_number, writer=ImageWriter()).write(buffer, options=writer_options)
+
+    # Convert image to base64
+    barcode_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+    return JsonResponse({
+        "accession_no": accession_number,
+        "barcode_image": barcode_image,
+    })
+
 # Palavees work
 @login_required
 def library_master_index_individual(request):
@@ -1859,7 +1942,6 @@ def user_master_index(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("user_master_index")
-
 
 @login_required
 def update_user_status(request):

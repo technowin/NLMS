@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login ,logout,get_user_model
 from Account.forms import RegistrationForm
 from Account.models import *
 from Masters.models import *
+from L01.models import *
 import Db 
 import bcrypt
 from django.utils.text import slugify
@@ -476,7 +477,6 @@ def book_accession_create(request):
             return render(request, 'Master/book_accession_create.html', context)
 
         if request.method == "POST":
-            # Get form data
             catalogue_id = dec(request.POST.get("catalogue_id"))
             copy_number = int(request.POST.get("copy_number"))
             acquisition_date = request.POST.get("acquisition_date")
@@ -487,18 +487,24 @@ def book_accession_create(request):
             currency_id = dec(request.POST.get("currency_id")) if request.POST.get("currency_id") else None
             funding_source_id = dec(request.POST.get("funding_source_id")) if request.POST.get("funding_source_id") else None
             condition_id = dec(request.POST.get("condition_id")) if request.POST.get("condition_id") else None
-            location_id = dec(request.POST.get("location_id"))
-            status_id = dec(request.POST.get("status_id"))
+            status_id = 4
             remarks = request.POST.get("remarks") or None
 
-            # Find last copy number for this catalogue
-            last_copy = BookAccession.objects.filter(catalogue_id=catalogue_id).aggregate(max_copy=models.Max('copy_number'))['max_copy'] or 0
+            last_copy = BookAccession.objects.filter(
+                catalogue_id=catalogue_id
+            ).aggregate(max_copy=models.Max('copy_number'))['max_copy'] or 0
 
-            # Insert multiple rows starting from last_copy + 1
+            # ✅ Fetch latest accession number
+            increment = IncrementMaster.objects.get(id=2)
+            start_no = increment.incrementFieldNumber
+            start_no = int(start_no)
+
             for i in range(1, copy_number + 1):
+                start_no += 1
                 BookAccession.objects.create(
                     catalogue_id=catalogue_id,
                     copy_number=last_copy + i,
+                    accession_no=start_no,
                     acquisition_date=acquisition_date,
                     supplier_id=supplier_id,
                     invoice_number=invoice_number,
@@ -507,14 +513,21 @@ def book_accession_create(request):
                     currency_id=currency_id,
                     funding_source_id=funding_source_id,
                     condition_at_entry_id=condition_id,
-                    location_id=location_id,
                     status_id=status_id,
                     remarks=remarks,
                     created_by=user
                 )
 
-            messages.success(request, f"{copy_number} new copy(ies) of the book have been successfully added, starting from copy number {last_copy + 1}.")
+            # ✅ Update the master once (after all inserts)
+            increment.incrementFieldNumber = start_no
+            increment.save()
+
+            messages.success(
+                request,
+                f"{copy_number} new copy(ies) successfully added starting from copy number {last_copy + 1}."
+            )
             return redirect('book_accession_index')
+
         
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)

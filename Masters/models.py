@@ -175,6 +175,8 @@ class BookCatalog(models.Model):
     pages = models.TextField(blank=True, null=True)
     date_of_registration = models.DateField(blank=True, null=True)
     other_authors = models.TextField(blank=True, null=True)
+    front_page_photo = models.TextField(blank=True, null=True)
+    last_page_photo = models.TextField(blank=True, null=True)
     status_id = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.TextField(null=True, blank=True)
@@ -280,6 +282,7 @@ class BookAccession(models.Model):
     created_by = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     updated_by = models.TextField(null=True, blank=True)
+    accession_no = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = "tbl_bookaccession"
