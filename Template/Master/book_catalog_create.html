@@ -71,6 +71,99 @@
         body.dark-mode .back-to-top:hover {
             background-color: #5a52d6;
         }
+
+        /* Author dropdown styling */
+.author-suggestions {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 100%;
+    display: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.author-suggestions div {
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.author-suggestions div:hover {
+    background: #f2f2f2;
+}
+
+        /* Author dropdown styling */
+.author-suggestions {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 100%;
+    display: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.author-suggestions div {
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.author-suggestions div:hover {
+    background: #f2f2f2;
+}
+
+/* Author Field Styling */
+#author {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 8px 12px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: none;
+}
+
+#author:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+}
+
+/* Dropdown Box */
+#authorDropdown {
+    width: 35%;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: #fff;
+    margin-top: 4px;
+}
+
+/* Dropdown Items */
+#authorDropdown .author-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.95rem;
+}
+
+#authorDropdown .author-item:hover {
+    background-color: #f1f5ff;
+}
+
+/* Text Helper */
+.form-text.text-muted {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+
     </style>
 
 {% endblock %}
@@ -88,19 +181,19 @@
 
             <!-- Language Dropdown -->
             <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">
-                        भाषा / Language <span class="text-danger">*</span>
-                    </label>
-                    <select name="language_id" id="language_id" class="form-control" style="padding-top: 0%;" required>
-                        <option value="">Select Language</option>
-                        {% for lang in languages %}
-                            <option value="{{ lang.encrypted_id }}">{{ lang.language_name }}</option>
-                        {% endfor %}
-                    </select>
-                    <small id="language-note" class="form-text text-muted"></small>
-                    <input type="hidden" name="language_id_hidden" id="language_id_hidden">
-                </div>
+            <div class="col-md-6 mb-3">
+        <label class="form-label">
+            भाषा / Language <span class="text-danger">*</span>
+        </label>
+        <select name="language_id" id="language_id" class="form-control" style="padding-top: 0%;" required>
+            <option value="">Select Language</option>
+            {% for lang in languages %}
+                <option value="{{ lang.encrypted_id }}">{{ lang.language_name }}</option>
+            {% endfor %}
+        </select>
+        <small id="language-note" class="form-text text-muted"></small>
+        <input type="hidden" name="language_id_hidden" id="language_id_hidden">
+    </div>
             </div>
 
             <!-- Row 1: Title & Subtitle -->
@@ -118,10 +211,23 @@
 
             <!-- Row 2: Author & Other Authors -->
             <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">मुख्य लेखक / Author</label>
-                    <input type="text" name="author" id="author" class="form-control transliterate" placeholder="Main author" readonly data-original="">
-                </div>
+       <div class="col-md-6 mb-3">
+        <label for="author" class="form-label fw-semibold">
+            Author <span class="text-danger">*</span>
+        </label>
+        <input type="text" id="author" name="author" class="form-control transliterate" placeholder="Type or select author" autocomplete="off" required>
+
+        <div class="border rounded mt-1 d-none" id="authorDropdown"
+             style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white;">
+            {% for author in authors %}
+                <div class="dropdown-item author-item" onclick="selectAuthor('{{ author }}')">{{ author }}</div>
+            {% endfor %}
+        </div>
+        <small class="form-text text-muted">Select an author from the list or type a new one.</small>
+    </div>
+
+
+
                 <div class="col-md-6">
                     <label class="form-label">सह-लेखक / Other Authors</label>
                     <input type="text" name="other_authors" id="other_authors" class="form-control transliterate" placeholder="Co-authors/editors" readonly>
@@ -212,18 +318,36 @@
                     <label class="form-label">कीवर्ड्स / Keywords</label>
                     <input type="text" name="keywords" class="form-control transliterate" placeholder="Search tags/keywords" readonly>
                 </div>
-                {% comment %} <div class="col-md-6">
-                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
-                    <input type="text" name="place_of_publication" id="place_of_publication" class="form-control transliterate" placeholder="Place of publication" readonly>
-                </div> {% endcomment %}
 
+     <div class="col-md-6">
+        <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
+        <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*">
+        {% if obj.front_page_photo %}
+            <div class="mt-2">
+                <img src="{{ MEDIA_URL }}{{ obj.front_page_photo }}" alt="Front Page Image" class="img-thumbnail" style="max-height: 120px;">
             </div>
+        {% endif %}
+    </div>
+            </div>  
 
             <!-- Row 9: Remarks -->
-            <div class="mb-3">
+              <div class="mb-3 row">
+         
+    <div class="col-md-6">
+        <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
+        <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*">
+        {% if obj.last_page_photo %}
+            <div class="mt-2">
+                <img src="{{ MEDIA_URL }}{{ obj.last_page_photo }}" alt="Last Page Image" class="img-thumbnail" style="max-height: 120px;">
+            </div>
+        {% endif %}
+    </div>
+
+            <div class="col-md-6">
                 <label class="form-label">टीप / Remarks</label>
                 <textarea name="remarks" class="form-control transliterate" rows="3" placeholder="Notes, e.g. Donated by XYZ" readonly></textarea>
             </div>
+</div>
 
             <!-- BUTTONS -->
             <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
@@ -250,6 +374,7 @@
     <!-- Keeping only SweetAlert and optional message popup -->
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
@@ -548,5 +673,135 @@
             });
         });
     </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const languageSelect = document.getElementById('language_id');
+    const languageHidden = document.getElementById('language_id_hidden');
+    const authorSelect = document.getElementById('author');
+
+    languageSelect.addEventListener('change', function() {
+        debugger;
+        const selectedLang = this.value;
+        languageHidden.value = selectedLang; // update hidden field
+
+        if (!selectedLang) {
+            authorSelect.innerHTML = '<option value="">Select Author</option>';
+            return;
+        }
+
+        // AJAX request to fetch authors based on selected language
+        fetch("{% url 'book_catalog_create' %}?language_id=" + selectedLang, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            authorSelect.innerHTML = '<option value="">Select Author</option>'; // reset
+            data.authors.forEach(author => {
+                const option = document.createElement('option');
+                option.value = author;
+                option.text = author;
+                authorSelect.appendChild(option);
+            });
+        })
+        .catch(err => console.error('Error fetching authors:', err));
+    });
+
+    // Set hidden field on page load
+    if (languageSelect.value) {
+        languageHidden.value = languageSelect.value;
+    }
+});
+</script>
+
+<script>
+    const authorInput = document.getElementById('author');
+    const authorDropdown = document.getElementById('authorDropdown');
+    const languageSelect = document.getElementById('language_id'); // your language dropdown
+
+    // Function to fetch authors based on selected language
+    function fetchAuthors(languageId) {
+        if (!languageId) return;
+
+        fetch(`/book_catalog_create?language_id=${languageId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            authorDropdown.innerHTML = ''; // clear existing items
+            if (data.authors && data.authors.length) {
+                data.authors.forEach(author => {
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item author-item';
+                    div.textContent = author;
+                    div.onclick = () => selectAuthor(author);
+                    authorDropdown.appendChild(div);
+                });
+            } else {
+                authorDropdown.innerHTML = '<div class="dropdown-item text-muted">No authors found</div>';
+            }
+        })
+        .catch(err => console.error('Error fetching authors:', err));
+    }
+
+    // Update authors when language changes
+    languageSelect.addEventListener('change', function() {
+        fetchAuthors(this.value);
+    });
+
+    // Show dropdown on input focus
+    authorInput.addEventListener('focus', () => {
+        if (authorDropdown.children.length) authorDropdown.classList.remove('d-none');
+    });
+
+    // Hide dropdown on blur
+    authorInput.addEventListener('blur', () => setTimeout(() => authorDropdown.classList.add('d-none'), 200));
+
+    // Select author
+    function selectAuthor(name) {
+        authorInput.value = name;
+        authorDropdown.classList.add('d-none');
+    }
+
+    // Filter authors while typing
+    authorInput.addEventListener('input', () => {
+        const filter = authorInput.value.toLowerCase();
+        const items = authorDropdown.querySelectorAll('.author-item');
+        items.forEach(item => {
+            item.style.display = item.textContent.toLowerCase().includes(filter) ? 'block' : 'none';
+        });
+    });
+</script>
+
+
+<!-- Script for Translation -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const languageSelect = document.getElementById('language_id');
+    const authorLabel = document.querySelector('label[for="author"]');
+    const authorInput = document.getElementById('author');
+    const authorHelpText = document.querySelector('#author + small');
+
+    if (languageSelect && authorLabel && authorHelpText && authorInput) {
+        languageSelect.addEventListener('change', function () {
+            const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
+
+            if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
+                // Convert to Marathi
+                authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
+                authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
+                authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
+            } else {
+                // Revert to English
+                authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
+                authorInput.placeholder = 'Type or select author';
+                authorHelpText.textContent = 'Select an author from the list or type a new one.';
+            }
+        });
+    }
+});
+</script>
 
 {% endblock %}

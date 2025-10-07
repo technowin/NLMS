@@ -259,32 +259,84 @@ def book_catalog_index(request):
 def book_catalog_create(request):
     try:
         user = request.user.id
-        if request.method == "GET":
 
-            # Fetch active languages
+        # ---------- AJAX endpoint for fetching authors ----------
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            language_id_encrypted = request.GET.get('language_id', '').strip()
+            authors = []
+
+            if language_id_encrypted:
+                try:
+                    # --- Decrypt language ID ---
+                    language_id = dec(language_id_encrypted)
+
+                    lang_obj = LanguageMaster.objects.filter(id=language_id).first()
+                    lang_name = lang_obj.language_name.lower() if lang_obj else ""
+
+                    if lang_name == "marathi":
+                        authors = AuthorMaster.objects.filter(is_active=True)\
+                            .exclude(author_name_marathi__isnull=True)\
+                            .values_list('author_name_marathi', flat=True)\
+                            .distinct().order_by('author_name_marathi')
+                    else:  # English & Hindi
+                        authors = AuthorMaster.objects.filter(is_active=True)\
+                            .exclude(author_name_english__isnull=True)\
+                            .values_list('author_name_english', flat=True)\
+                            .distinct().order_by('author_name_english')
+
+                except Exception:
+                    authors = []
+
+            return JsonResponse({"authors": list(authors)})
+
+        # ---------- GET Request ----------
+        if request.method == "GET":
+            # Languages
             languages = LanguageMaster.objects.filter(is_active=1)
-            
-            # Encrypt IDs
             for lang in languages:
                 lang.encrypted_id = enc(str(lang.id))
-                
-            # Fetch active subjects
+
+            # Subjects
             subjects = SubjectTypeMaster.objects.filter(is_active=True)
             for sub in subjects:
                 sub.encrypted_id = enc(str(sub.id))
-                
+
+            # Materials
             materials = MaterialTypeMaster.objects.filter(is_active=True)
             for mat in materials:
                 mat.encrypted_id = enc(str(mat.id))
-                
+
+            # Determine selected language from request (if any) or default to first
+            selected_language_id_encrypted = request.GET.get('language_id')
+            if selected_language_id_encrypted:
+                try:
+                    # --- Decrypt language ID ---
+                    selected_language_id = dec(selected_language_id_encrypted)
+                    lang_obj = LanguageMaster.objects.filter(id=selected_language_id).first()
+                except Exception:
+                    lang_obj = languages[0] if languages else None
+            else:
+                lang_obj = languages[0] if languages else None
+
+            lang_name = lang_obj.language_name.lower() if lang_obj else "english"
+
+            # Authors based on selected language
+            if lang_name == "marathi":
+                authors = AuthorMaster.objects.filter(is_active=True)\
+                    .values_list('author_name_marathi', flat=True).distinct().order_by('author_name_marathi')
+            else:  # English & Hindi
+                authors = AuthorMaster.objects.filter(is_active=True)\
+                    .values_list('author_name_english', flat=True).distinct().order_by('author_name_english')
+
             context = {
                 'languages': languages,
                 'subjects': subjects,
-                'materials': materials
+                'materials': materials,
+                'authors': authors
             }
-            
             return render(request, 'Master/book_catalog_create.html', context)
 
+        # ---------- POST Request ----------
         if request.method == "POST":
             form_data = {
                 "title": request.POST.get('title', '').strip(),
@@ -304,7 +356,6 @@ def book_catalog_create(request):
                 "pages": request.POST.get('page_nos', '').strip(),
             }
 
-            # Required fields check
             required_fields = ["title", "author", "publisher", "subject_id", "material_id", "language_id"]
             missing = [f for f in required_fields if not form_data[f]]
             if missing:
@@ -312,23 +363,19 @@ def book_catalog_create(request):
                 return redirect('book_catalog_create')
 
             try:
-                with transaction.atomic():  # Atomic transaction for both tables
-
-                    # Resolve FKs
+                with transaction.atomic():
                     subject = SubjectTypeMaster.objects.filter(id=form_data["subject_id"]).first()
-                    material = MaterialTypeMaster.objects.filter(id=form_data["material_id"]).first()
                     material = MaterialTypeMaster.objects.filter(id=form_data["material_id"]).first()
                     language = LanguageMaster.objects.filter(id=form_data["language_id"]).first()
 
-                    # Handle author transliteration if Devanagari
                     author = form_data["author"]
                     other_authors = form_data.get("other_authors", "").strip()
 
                     if contains_non_english(author):
-                        authorEnglish = transliterate_to_english(author).lower()  # convert to lowercase
+                        authorEnglish = transliterate_to_english(author).lower()
                         authorMarathi = author
                     else:
-                        authorEnglish = author.lower()  # also lowercase English input
+                        authorEnglish = author.lower()
                         authorMarathi = None
 
                     if contains_non_english(other_authors):
@@ -338,14 +385,9 @@ def book_catalog_create(request):
                         otherAuthorEnglish = other_authors.lower()
                         otherAuthorMarathi = None
 
-                    # Classification number (3-digit subjectCode)
                     ClassificationNumber = f"{subject.subjectCode:03}" if subject and subject.subjectCode else "000"
-
-                    # Cutter number (first 3 letters of author English name)
                     author_name_clean = ''.join(filter(str.isalpha, authorEnglish))
                     CutterNumber = author_name_clean[:3].title() if author_name_clean else "XXX"
-
-                    # Call number
                     pub_year = form_data['year_of_publication'] or "0000"
                     call_number = f"{ClassificationNumber}.{CutterNumber}.{pub_year}"
 
@@ -363,7 +405,7 @@ def book_catalog_create(request):
                         classification_number=ClassificationNumber,
                         cutter_number=CutterNumber,
                         publication_year=pub_year,
-                        material=material, 
+                        material=material,
                         remarks=form_data["remarks"],
                         keywords=form_data["keywords"],
                         language=language.language_name if language else None,
@@ -376,30 +418,59 @@ def book_catalog_create(request):
                         updated_by=user
                     )
 
-                    # --- Save AuthorMaster ---
-                    AuthorMaster.objects.create(
-                        author_short_name=CutterNumber,
-                        author_name_english=authorEnglish,
-                        author_name_other_english=otherAuthorEnglish,
-                        author_name_marathi=authorMarathi,
-                        author_name_other_marathi=otherAuthorMarathi,
-                        created_by=user,
-                        updated_by=user
-                    )
+                    # --- Save Author if not exists ---
+                    existing_author = AuthorMaster.objects.filter(author_name_english=authorEnglish).first()
+                    if not existing_author:
+                        AuthorMaster.objects.create(
+                            author_short_name=CutterNumber,
+                            author_name_english=authorEnglish,
+                            author_name_other_english=otherAuthorEnglish,
+                            author_name_marathi=authorMarathi,
+                            author_name_other_marathi=otherAuthorMarathi,
+                            created_by=user,
+                            updated_by=user
+                        )
 
-                messages.success(request, f"Book '{book.title}' and author saved successfully!")
+                    # --- Handle Front & Last Page Images ---
+                    front_photo = request.FILES.get('front_page_image')
+                    last_photo = request.FILES.get('last_page_image')
+
+                    BASE_DIR = Path(__file__).resolve().parent.parent
+                    MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/L01/')
+                    book_folder = os.path.join(MEDIA_ROOT, str(book.cat_ref_num))
+                    os.makedirs(book_folder, exist_ok=True)
+
+                    if front_photo:
+                        front_filename = f"{book.cat_ref_num}_front_{front_photo.name}"
+                        front_path = os.path.join(book_folder, front_filename)
+                        with open(front_path, 'wb+') as destination:
+                            for chunk in front_photo.chunks():
+                                destination.write(chunk)
+                        book.front_page_photo = front_filename
+
+                    if last_photo:
+                        last_filename = f"{book.cat_ref_num}_back_{last_photo.name}"
+                        last_path = os.path.join(book_folder, last_filename)
+                        with open(last_path, 'wb+') as destination:
+                            for chunk in last_photo.chunks():
+                                destination.write(chunk)
+                        book.last_page_photo = last_filename
+
+                    book.save()
+
+                messages.success(request, f"Book '{book.title}' saved successfully!")
                 return redirect('book_catalog_index')
 
             except Exception as e:
-                messages.error(request, f"Error adding book and author: {str(e)}")
+                messages.error(request, f"Error adding book: {str(e)}")
                 return redirect('book_catalog_create')
 
-            
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
+
 
 # Book Accession Index     
 @login_required
