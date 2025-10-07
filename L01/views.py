@@ -1593,39 +1593,167 @@ def bar_code_index(request):
 
 @login_required
 def generate_barcode(request):
-    accession_id = request.GET.get("accessionid")
-    if not accession_id:
-        return HttpResponseBadRequest("Missing accession ID")
-
     try:
-        decrypted_id = dec(accession_id)  # your existing decrypt method
-    except Exception:
-        return HttpResponseBadRequest("Invalid accession ID")
+        # Database connection
+        Db.closeConnection()
+        m = Db.get_connection()
+        cursor = m.cursor()
 
-    accession = get_object_or_404(BookAccession, accession_id=decrypted_id)
+        # Session variables
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session.get("user_id")
+        role_id = request.session.get("role_id")
 
-    accession_number = accession.accession_no or "UNKNOWN"
+        # 🔹 GET: Generate barcode
+        if request.method == "GET":
+            
+            place = request.GET.get("place")
+            
+            if place:
+                
+                books_qs = CirculationCopyStatus.objects.filter(shelf_location__isnull=True).select_related('accession', 'accession__catalogue')
+                books = []
+                for b in books_qs:
+                    accession_no = b.accession.accession_no if b.accession else ''
+                    title = b.accession.catalogue.title if b.accession and b.accession.catalogue else ''
+                    label = f"{accession_no} - {title}"
+                    books.append({'accession_id': b.accession_id, 'accession_no': b.accession_no, 'label': label})
 
-    # Generate barcode
-    CODE = barcode.get_barcode_class('code128')
-    writer_options = {
-        "module_width": 0.4,   
-        "module_height": 8,   
-        "quiet_zone": 2,       
-        "font_size": 6,       # slightly bigger number
-        "text_distance": 2.5,    # distance between barcode and number
-        "write_text": True
-    }
-    buffer = BytesIO()
-    CODE(accession_number, writer=ImageWriter()).write(buffer, options=writer_options)
+                # Fetch active locations
+                locations_qs = ResourceLocationMaster.objects.filter(is_active=1)
+                locations = [{'location_id': loc.location_id, 'location_name': loc.location_name} for loc in locations_qs]
 
-    # Convert image to base64
-    barcode_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                return JsonResponse({'books': books, 'locations': locations})
+            
+            else:
+                accession_id = request.GET.get("accessionid")
+                if not accession_id:
+                    return HttpResponseBadRequest("Missing accession ID")
 
-    return JsonResponse({
-        "accession_no": accession_number,
-        "barcode_image": barcode_image,
-    })
+                try:
+                    decrypted_id = dec(accession_id)
+                except Exception:
+                    return HttpResponseBadRequest("Invalid accession ID")
+
+                accession = get_object_or_404(BookAccession, accession_id=decrypted_id)
+                accession_number = accession.accession_no or "UNKNOWN"
+
+                # Generate barcode
+                CODE = barcode.get_barcode_class('code128')
+                writer_options = {
+                    "module_width": 0.4,
+                    "module_height": 8,
+                    "quiet_zone": 2,
+                    "font_size": 6,
+                    "text_distance": 2.5,
+                    "write_text": True
+                }
+                buffer = BytesIO()
+                CODE(accession_number, writer=ImageWriter()).write(buffer, options=writer_options)
+                barcode_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+                return JsonResponse({
+                    "accession_no": accession_number,
+                    "barcode_image": barcode_image,
+                })
+
+        # 🔹 POST: Save barcode
+        elif request.method == "POST":
+            
+            place = request.POST.get("place")
+            
+            if place:
+                
+                accession_no = request.POST.get("accession_id")
+                shelf_location = request.POST.get("shelf_location")
+                
+                # Validate input
+                if not accession_no or not shelf_location:
+                    messages.error(request, "Accession आणि Shelf Location आवश्यक आहेत.")
+                    return redirect("L01:bar_code_index")
+
+                try:
+                    with transaction.atomic():
+                        # Fetch the circulation copy by accession_no
+                        ccs = CirculationCopyStatus.objects.get(accession_no=accession_no)
+                        
+                        # Update shelf location and audit fields
+                        ccs.shelf_location_id = shelf_location
+                        ccs.updated_by = user_id
+                        ccs.save(update_fields=['shelf_location', 'updated_at', 'updated_by'])
+
+                    messages.success(request, "Shelf location यशस्वीरित्या जतन झाली आहे.")
+                    return redirect("L01:bar_code_index")
+
+                except CirculationCopyStatus.DoesNotExist:
+                    messages.error(request, "संबंधित Circulation copy सापडली नाही.")
+                    return redirect("L01:bar_code_index")
+
+                except Exception as e:
+                    messages.error(request, f"Shelf location जतन करताना त्रुटी: {str(e)}")
+                    return redirect("L01:bar_code_index")
+            
+            else:
+                
+                # Form fields
+                accession_id_enc = request.POST.get("accession_id")
+                accession_no = request.POST.get("accession_no")
+                barcode_no = request.POST.get("barcode_no")
+                user = request.session.get("user_id")
+
+                if not accession_id_enc or not barcode_no:
+                    messages.error(request, "काही आवश्यक माहिती गायब आहे!")
+                    return redirect("L01:bar_code_index")
+
+                try:
+                    # Decrypt accession ID
+                    accession_id = dec(str(accession_id_enc))
+                    accession = get_object_or_404(BookAccession, accession_id=accession_id)
+
+                    # Get status objects
+                    processing_status = status_master.objects.get(status_id=7)  # Inventory: Ready
+                    current_status = status_master.objects.get(status_id=13)    # Circulation: On-Shelf
+
+                    # Wrap in transaction
+                    with transaction.atomic():
+                        # 1️⃣ Insert into CirculationCopyStatus
+                        CirculationCopyStatus.objects.create(
+                            accession=accession,
+                            bookcatalog=accession.catalogue,
+                            accession_no=accession_no,
+                            barcode=barcode_no,
+                            processing_status=processing_status,
+                            current_status=current_status,
+                            date_processed=timezone.now().date(),
+                            created_by=user,
+                        )
+
+                        # 2️⃣ Update BookAccession status
+                        accession.status_id = 5
+                        accession.updated_by = user
+                        accession.save(update_fields=['status_id', 'updated_at', 'updated_by'])
+
+                    messages.success(request, "बारकोड यशस्वीरित्या जतन झाला!")
+                    return redirect("L01:bar_code_index")
+
+                except Exception as e_post:
+                    # Optional: log error in DB
+                    messages.error(request, f"त्रुटी आली: {str(e_post)}")
+                    return redirect("L01:bar_code_index")
+
+        # Unsupported method
+        else:
+            return HttpResponseBadRequest("Invalid request method")
+
+    except Exception as e:
+        # Global exception catch
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "generate_barcode"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("L01:bar_code_index")
 
 # Palavees work
 @login_required

@@ -1,5 +1,6 @@
 from django.db import models
 from decimal import Decimal
+from Masters.models import *
 
 class tbl_librarymasterL01(models.Model):
     id = models.AutoField(primary_key=True)  # auto-increment
@@ -295,3 +296,60 @@ class DocumentDetailsHistory(models.Model):
 
     def __str__(self):
         return f"{self.membership.full_name} - {self.document.document_name} ({self.uploaded_at})"
+
+class CirculationCopyStatus(models.Model):
+    id = models.AutoField(primary_key=True)
+    accession = models.ForeignKey(
+        BookAccession,
+        on_delete=models.CASCADE,
+        db_column="accession_id",
+        blank=True,
+        null=True,
+        related_name="accession_status"
+    )
+    bookcatalog = models.ForeignKey(
+        BookCatalog,
+        on_delete=models.CASCADE,
+        db_column="bookcatalog_id",
+        blank=True,
+        null=True,
+        related_name="bookcatalog_status"
+    )
+    barcode = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    accession_no = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    shelf_location = models.ForeignKey(
+        ResourceLocationMaster,
+        on_delete=models.SET_NULL,
+        db_column="shelf_location_status_id",
+        blank=True,
+        null=True,
+        related_name="shelf_location_status",
+    )
+    processing_status = models.ForeignKey(
+        status_master,
+        on_delete=models.SET_NULL,
+        db_column="processing_status_id",
+        blank=True,
+        null=True,
+        related_name="processing_status",
+    )
+    current_status = models.ForeignKey(
+        status_master,
+        on_delete=models.SET_NULL,
+        db_column="current_status_id",
+        blank=True,
+        null=True,
+        related_name="current_status",
+    )
+    date_processed = models.DateField(blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        db_table = "tbl_circulation"
+    
+    def __str__(self):
+        return f"{self.barcode or 'No Barcode'} ({self.current_status or 'Unknown'})"

@@ -10,6 +10,54 @@
 <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 
+<style>
+    /* Modal header */
+    .modal-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: none;
+    }
+
+    /* Modal body spacing */
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    /* Form labels */
+    .modal-body .form-label {
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    /* Select2 height fix inside Bootstrap modal */
+    .select2-container--bootstrap5 .select2-selection--single {
+        height: 2.5rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    /* Modal footer buttons */
+    .modal-footer .btn {
+        min-width: 120px;
+        font-weight: 500;
+    }
+
+    /* Rounded modal corners */
+    .modal-content {
+        border-radius: 0.75rem;
+    }
+
+    /* Add subtle shadow for better look */
+    .modal-content {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+
+    /* Hover effects for buttons */
+    .modal-footer .btn:hover {
+        transform: translateY(-2px);
+        transition: all 0.2s ease;
+    }
+</style>
+
 {% endblock %}
 
 {% block page_title %}
@@ -19,6 +67,73 @@
 {% block content %}
 
     <div class="mt-4">
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-success" id="openBarcodeModal" data-url="{% url 'L01:generate_barcode' %}">
+                    <i class="bi bi-plus-circle"></i> ग्रंथ ठेवण्याचे ठिकाण निवडा
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="locationbarcodeModalLabel" tabindex="-1" aria-labelledby="locationbarcodeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content shadow-lg border-0 rounded-4">
+                    
+                    <form id="locationbarcodeModal" method="POST" action="{% url 'L01:generate_barcode' %}">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="place" id="place" value="place">
+                        
+                        <!-- Modal Header -->
+                        <div class="modal-header bg-primary text-white rounded-top-4">
+                            <h5 class="modal-title" id="locationbarcodeModalLabel">
+                                <i class="bi bi-upc-scan me-2"></i> ग्रंथ ठेवण्याचे ठिकाण निवडा
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Modal Body -->
+                        <div class="modal-body">
+                            <div class="row g-3">
+
+                                <!-- First Dropdown: Books -->
+                                <div class="col-12">
+                                    <label for="bookSelect" class="form-label fw-bold">पुस्तक निवडा</label>
+                                    <select class="form-select select2" id="bookSelect" name="accession_id" required>
+                                        <option value="">Select Book</option>
+                                    </select>
+                                </div>
+
+                                <!-- Second Dropdown: Locations -->
+                                <div class="col-12">
+                                    <label for="locationSelect" class="form-label fw-bold">ठिकाण निवडा</label>
+                                    <select class="form-select select2" id="locationSelect" name="shelf_location" required>
+                                        <option value="">Select Location</option>
+                                    </select>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="modal-footer border-top-0 d-flex justify-content-between">
+                            <button type="submit" class="btn btn-success shadow-sm">
+                                <i class="bi bi-check2-circle me-1"></i> जतन करा
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary shadow-sm" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i> बंद करा
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
 
         <!-- membership_approval.html -->
         <div class="table-responsive">
@@ -66,17 +181,30 @@
         <div class="modal fade" id="barcodeModal" tabindex="-1" aria-labelledby="barcodeModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="barcodeModalLabel">बारकोड तपशील</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <p><strong>अभिग्रह क्रमांक:</strong> <span id="barcodeAccessionNo"></span></p>
-                    <img id="barcodeImage" src="" alt="Barcode" class="img-fluid border p-2" />
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">बंद करा</button>
-                </div>
+
+                    <form id="barcodeSaveForm" method="POST" action="{% url 'L01:generate_barcode' %}">
+                        {% csrf_token %}
+                        
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="barcodeModalLabel">बारकोड तपशील</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body text-center">
+                            <p><strong>अभिग्रह क्रमांक:</strong> <span id="barcodeAccessionNo"></span></p>
+                            <input type="hidden" name="accession_id" id="hiddenAccessionId">
+                            <input type="hidden" name="accession_no" id="hiddenAccessionNo">
+                            <input type="hidden" name="barcode_no" id="hiddenBarcodeNo">
+
+                            <img id="barcodeImage" src="" alt="Barcode" class="img-fluid border p-2" />
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" id="saveBarcodeBtn">जतन करा</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">बंद करा</button>
+                        </div>
+                    </form>
+
                 </div>
             </div>
         </div>
@@ -116,12 +244,59 @@
 
     <script>
         $(document).ready(function () {
-            $('#membershipTable').DataTable({
+            $('#accessionTable').DataTable({
                 "pageLength": 10,
                 "lengthChange": false,
                 "searching": true,   // <-- enables search box
                 "ordering": true,    // optional: enable column sorting
                 "info": true,        // shows "Showing 1 to 10 of X entries"
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // When "Generate Barcode" clicked
+            $(".btn-generate-barcode").on("click", function(e) {
+                e.preventDefault();
+                const url = $(this).attr("href");
+                const accessionId = url.split("accessionid=")[1];
+
+                $.get(url, function(data) {
+                    // Fill modal data
+                    $("#barcodeAccessionNo").text(data.accession_no);
+                    $("#hiddenAccessionId").val(accessionId);
+                    $("#hiddenAccessionNo").val(data.accession_no);
+                    $("#hiddenBarcodeNo").val(data.accession_no); // or use another barcode number if needed
+                    $("#barcodeImage").attr("src", "data:image/png;base64," + data.barcode_image);
+
+                    $("#barcodeModal").modal("show");
+                }).fail(function() {
+                    Swal.fire({
+                        icon: "error",
+                        title: "त्रुटी आली",
+                        text: "बारकोड तयार करताना समस्या आली!",
+                        confirmButtonText: "ठीक आहे"
+                    });
+                });
+            });
+
+            // Confirm before form submit (Marathi alert)
+            $("#barcodeSaveForm").on("submit", function(e) {
+                e.preventDefault(); // stop default form
+                const form = this;
+
+                Swal.fire({
+                    title: "आपण हा बारकोड जतन करू इच्छिता?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "होय, जतन करा",
+                    cancelButtonText: "नको",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // proceed with normal form POST
+                    }
+                });
             });
         });
     </script>
@@ -141,6 +316,63 @@
                 });
             });
         });
+    </script> 
+
+        <!-- Include jQuery + Bootstrap + Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $('.select2').select2({ dropdownParent: $('#locationbarcodeModalLabel') });
+
+        $('#openBarcodeModal').click(function() {
+            const url = $(this).data('url');
+
+            // Open modal
+            $('#locationbarcodeModalLabel').modal('show');
+
+            // Fetch books and locations from same view with a hardcoded parameter
+            $.ajax({
+                url: url,
+                method: "GET",  // or "GET" depending on your view
+                data: { place: "place" },  // <-- send hardcoded place here
+                dataType: "json",
+                headers: { "X-CSRFToken": "{{ csrf_token }}" }, // make sure CSRF is sent for POST
+                success: function(data) {
+                    // Populate book dropdown
+                    $('#bookSelect').empty().append('<option value="">Select Book</option>');
+                    data.books.forEach(function(book){
+                        $('#bookSelect').append(`<option value="${book.accession_no}">${book.label}</option>`);
+                    });
+
+                    // Populate location dropdown
+                    $('#locationSelect').empty().append('<option value="">Select Location</option>');
+                    data.locations.forEach(function(loc){
+                        $('#locationSelect').append(`<option value="${loc.location_id}">${loc.location_name}</option>`);
+                    });
+                }
+            });
+        });
+
+        // Confirm before form submit (Marathi alert)
+        $("#locationbarcodeModal").on("submit", function(e) {
+            e.preventDefault(); // stop default form
+            const form = this;
+            Swal.fire({
+                title: "तुम्हाला खात्री आहे का?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "होय, जतन करा",
+                cancelButtonText: "नको",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // proceed with normal form POST
+                }
+            });
+        });
+
     </script>
+
 
 {% endblock %}
