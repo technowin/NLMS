@@ -55,6 +55,7 @@ import re
 from indic_transliteration.sanscript import transliterate, DEVANAGARI, HK
 logger = logging.getLogger(__name__)
 from administration.models import *
+from django.db.models import F
 
 @login_required
 def masters(request):
@@ -3188,3 +3189,105 @@ def library_master_delete(request):
             return JsonResponse({"success": False, "error": "Invalid or corrupted ID"})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+# circulation master
+
+@login_required
+def circulation_master_index(request):
+    try:
+        if request.user.is_authenticated:                
+            user = request.user.id    
+            role_id = request.user.role_id 
+            library_code = request.session.get('library_db', None)
+            username = request.session.get('username', None)
+
+        if request.method == "GET":
+            # Fetch circulation data with joins
+            circulation_data = (
+                CirculationCopyStatus.objects
+                .select_related(
+                    'bookcatalog',
+                    'bookcatalog__subject',
+                    'shelf_location',
+                    'current_status',
+                    'processing_status'
+                )
+                .annotate(
+                    title=F('bookcatalog__title'),
+                    isbn=F('bookcatalog__isbn_issn'),
+                    subject=F('bookcatalog__subject__subjectNameEnglish'),  # you can switch to Marathi
+                    shelf_location_name=F('shelf_location__location_name'),
+                    current_status_name=F('current_status__status_name'),
+                    processing_status_name=F('processing_status__status_name'),
+                )
+                .values(
+                    'id',
+                    'title',
+                    'isbn',
+                    'subject',
+                    'barcode',
+                    'shelf_location_name',
+                    'current_status_name',
+                    'processing_status_name',
+                    'accession_no',
+                )
+            )
+            
+            for cd in circulation_data:
+                cd['circulation_id_enc'] = enc(str(cd['id']))
+
+            context = {
+                'circulation_data': circulation_data
+            }
+
+            return render(request, 'Master/circulation_master_index.html', context)
+
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("circulation_master_index")
+
+def circulation_master_view(request):
+    try:
+        circulation_id = dec(str(request.GET.get("circulationid")))
+        if not circulation_id:
+            messages.error(request, "Missing Circulation ID!")
+            return redirect("circulation_master_index")
+        
+
+        # Fetch circulation record with joins
+        circulation = (
+            CirculationCopyStatus.objects
+            .select_related(
+                'bookcatalog',
+                'bookcatalog__subject',
+                'shelf_location',
+                'current_status',
+                'processing_status'
+            )
+            .annotate(
+                title=F('bookcatalog__title'),
+                isbn=F('bookcatalog__isbn_issn'),
+                subject=F('bookcatalog__subject__subjectNameEnglish'),  # you can switch to Marathi
+                shelf_location_name=F('shelf_location__location_name'),
+                current_status_name=F('current_status__status_name'),
+                processing_status_name=F('processing_status__status_name'),
+            )
+            .get(id=circulation_id)
+        )
+
+        context = {
+            "circulation": circulation
+        }
+        return render(request, "Master/circulation_master_view.html", context)
+
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("circulation_master_index")
