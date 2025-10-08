@@ -134,6 +134,7 @@ urlpatterns = [
     path('library_master_view/', library_master_view, name='library_master_view'),
     path('library_master_delete/', library_master_delete, name='library_master_delete'),
     path('circulation_master_index/', circulation_master_index, name='circulation_master_index'),
+    path('circulation_master_edit/', circulation_master_edit, name='circulation_master_edit'),
     path('circulation_master_view/', circulation_master_view, name='circulation_master_view'),
 
     #Reports 

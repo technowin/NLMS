@@ -49,7 +49,7 @@
                         <td>{% if item.accession_no %}{{ item.accession_no }}{% else %}-{% endif %}</td>
                         <td>
                             <!-- Edit Button -->
-                            <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">
+                            <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">
                                 संपादन करा
                             </a>
 

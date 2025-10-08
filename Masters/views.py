@@ -3250,8 +3250,15 @@ def circulation_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("circulation_master_index")
 
+@login_required
 def circulation_master_view(request):
     try:
+        if request.user.is_authenticated:                
+            user = request.user.id    
+            role_id = request.user.role_id 
+            library_code = request.session.get('library_db', None)
+            username = request.session.get('username', None)
+            
         circulation_id = dec(str(request.GET.get("circulationid")))
         if not circulation_id:
             messages.error(request, "Missing Circulation ID!")
@@ -3268,26 +3275,117 @@ def circulation_master_view(request):
                 'current_status',
                 'processing_status'
             )
-            .annotate(
-                title=F('bookcatalog__title'),
-                isbn=F('bookcatalog__isbn_issn'),
-                subject=F('bookcatalog__subject__subjectNameEnglish'),  # you can switch to Marathi
-                shelf_location_name=F('shelf_location__location_name'),
-                current_status_name=F('current_status__status_name'),
-                processing_status_name=F('processing_status__status_name'),
-            )
             .get(id=circulation_id)
         )
 
-        context = {
+        return render(request, "Master/circulation_master_view.html", {
             "circulation": circulation
-        }
-        return render(request, "Master/circulation_master_view.html", context)
+        })
 
     except Exception as e:
         import traceback
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), user])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("circulation_master_index")
+    
+@login_required
+def circulation_master_edit(request):
+    try:
+        if request.user.is_authenticated:                
+            user = request.user.id    
+            role_id = request.user.role_id 
+            library_code = request.session.get('library_db', None)
+            username = request.session.get('username', None)
+        
+        if request.method == "GET":    
+            circulation_id = dec(str(request.GET.get("circulationid")))
+            if not circulation_id:
+                messages.error(request, "Missing Circulation ID!")
+                return redirect("circulation_master_index")
+
+            # Fetch the circulation record with joins
+            circulation = (
+                CirculationCopyStatus.objects
+                .select_related(
+                    'bookcatalog',
+                    'bookcatalog__subject',
+                    'shelf_location',
+                    'current_status',
+                    'processing_status'
+                )
+                .get(id=circulation_id)
+            )
+            
+            for circulation in [circulation]:
+                circulation.circulation_id_enc = enc(str(circulation.id))
+
+            # Dropdown options
+            circulation_statuses = status_master.objects.filter(status_type="Circulation Status", is_active=1)
+            processing_statuses = status_master.objects.filter(status_type="Inventory", is_active=1)
+            locations = ResourceLocationMaster.objects.filter(is_active=1)
+            
+            return render(request, "Master/circulation_master_edit.html", {
+                "circulation": circulation,
+                "circulation_statuses": circulation_statuses,
+                "processing_statuses": processing_statuses,
+                "locations": locations,
+            })
+
+        if request.method == "POST":
+            circulation_id = dec(str(request.POST.get("circulation_id")))
+            if not circulation_id:
+                messages.error(request, "Circulation ID missing!")
+                return redirect("circulation_master_index")
+
+            try:
+                circulation = CirculationCopyStatus.objects.get(id=circulation_id)
+
+                # Get posted values (could be typed text)
+                status_id = request.POST.get("status")
+                processing_status_id = request.POST.get("processing_status")
+                location_id = request.POST.get("location")
+
+                # --- Only update if values changed ---
+                updated = False
+
+                if circulation.current_status_id != int(status_id):
+                    circulation.current_status_id = int(status_id)
+                    updated = True
+
+                if circulation.processing_status_id != int(processing_status_id):
+                    circulation.processing_status_id = int(processing_status_id)
+                    updated = True
+
+                if circulation.shelf_location_id != int(location_id):
+                    circulation.shelf_location_id = int(location_id)
+                    updated = True
+
+                if updated:
+                    circulation.updated_by = user  # or request.user.username
+                    circulation.save()
+                    messages.success(request, "परिपत्रक तपशील यशस्वीपणे अद्यतनित केले गेले आहेत.")
+                else:
+                    messages.info(request, "काहीही बदललेले नाही, अद्यतन आवश्यक नाही.")
+
+                return redirect("circulation_master_index")
+
+            except Exception as e:
+                import traceback
+                tb = traceback.extract_tb(e.__traceback__)
+                fun = tb[0].name
+                user = request.session.get("username")
+                callproc("stp_error_log", [fun, str(e), user])
+                messages.error(request, 'Oops...! Something went wrong!')
+                return redirect("circulation_master_index")
+
+
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        user = request.session.get("username")
+        callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("circulation_master_index")
