@@ -8,7 +8,6 @@
             <div class="oz-library-card">
                 <!-- Image -->
                 <div class="oz-libraryInd-img-wrapper">
-                        {% comment %} <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="oz-library-img"> {% endcomment %}
                         <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="libraryInd-img">
                 </div>
 
@@ -36,6 +35,7 @@
                                 <i class="fa fa-book"></i> Library Rules
                             </button>
                         {% endif %}
+                    
                         {% if library.membership_rules %}
                             <button class="rule-btn" data-modal="#membershipRulesModal{{ library.id }}">
                                 <i class="fa fa-id-card"></i> Membership Rules
@@ -45,24 +45,24 @@
 
                     <!-- Library Rules Modal -->
                     {% if library.library_rules %}
-                    <div id="libraryRulesModal{{ library.id }}" class="modal">
-                    <div class="modal-content">
-                        <span class="close">&times;</span>
-                        <h3>Library Rules</h3>
-                        <div class="rules-content">{{ library.library_rules|safe }}</div>
-                    </div>
-                    </div>
+                        <div id="libraryRulesModal{{ library.id }}" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h3>Library Rules</h3>
+                                <div class="rules-content">{{ library.library_rules|safe }}</div>
+                            </div>
+                        </div>
                     {% endif %}
 
                     <!-- Membership Rules Modal -->
                     {% if library.membership_rules %}
-                    <div id="membershipRulesModal{{ library.id }}" class="modal">
-                    <div class="modal-content">
-                        <span class="close">&times;</span>
-                        <h3>Membership Rules</h3>
-                        <div class="rules-content">{{ library.membership_rules|safe }}</div>
-                    </div>
-                    </div>
+                        <div id="membershipRulesModal{{ library.id }}" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h3>Membership Rules</h3>
+                                <div class="rules-content">{{ library.membership_rules|safe }}</div>
+                            </div>
+                        </div>
                     {% endif %}
 
 
