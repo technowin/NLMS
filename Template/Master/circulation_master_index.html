@@ -23,46 +23,53 @@
         <table class="table table-striped table-bordered" id="circulationTable">
             <thead>
                 <tr>
-                    <th>क्रमांक</th> <!-- Serial No -->
-                    <th>ग्रंथाचे शीर्षक</th> <!-- Book Title -->
+                    <th>क्रमांक</th>
+                    <th>ग्रंथाचे क्रमांक</th>
+                    <th>ग्रंथाचे शीर्षक</th>
+                    <th>कॉपी क्रमांक</th>
                     <th>ISBN / ISSN</th>
-                    <th>विषय</th> <!-- Subject -->
-                    <th>बारकोड</th> <!-- Barcode -->
-                    <th>शेल्फ स्थान</th> <!-- Shelf Location -->
-                    <th>सध्याची स्थिती</th> <!-- Current Status -->
-                    <th>प्रक्रिया स्थिती</th> <!-- Processing Status -->
-                    <th>कॉपी क्रमांक</th> <!-- Accession No -->
-                    <th>क्रिया</th> <!-- Action -->
+                    <th>विषय</th>
+                    <th>बारकोड</th>
+                    <th>शेल्फ स्थान</th>
+                    <th>सध्याची स्थिती</th>
+                    <th>प्रक्रिया स्थिती</th>
+                    <th>क्रिया</th>
+                </tr>
+
+                <!-- 🔽 Dropdown Filter Row -->
+                <tr class="filter-row">
+                    <th></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="1"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="2"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="3"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="4"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="5"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="6"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="7"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="8"><option value="">सर्व</option></select></th>
+                    <th><select class="form-select form-select-sm column-filter" data-col="9"><option value="">सर्व</option></select></th>
+                    <th></th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for item in circulation_data %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{% if item.title %}{{ item.title }}{% else %}-{% endif %}</td>
-                        <td>{% if item.isbn %}{{ item.isbn }}{% else %}-{% endif %}</td>
-                        <td>{% if item.subject %}{{ item.subject }}{% else %}-{% endif %}</td>
-                        <td>{% if item.barcode %}{{ item.barcode }}{% else %}-{% endif %}</td>
-                        <td>{% if item.shelf_location_name %}{{ item.shelf_location_name }}{% else %}-{% endif %}</td>
-                        <td>{% if item.current_status_name %}{{ item.current_status_name }}{% else %}-{% endif %}</td>
-                        <td>{% if item.processing_status_name %}{{ item.processing_status_name }}{% else %}-{% endif %}</td>
-                        <td>{% if item.accession_no %}{{ item.accession_no }}{% else %}-{% endif %}</td>
-                        <td>
-                            <!-- Edit Button -->
-                            <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">
-                                संपादन करा
-                            </a>
-
-                            <!-- View Details Button -->
-                            <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-info">
-                                तपशील पहा
-                            </a>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="10" class="text-center">कोणतीही माहिती उपलब्ध नाही</td>
-                    </tr>
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.cat_ref_num|default:"-" }}</td>
+                    <td>{{ item.title|default:"-" }}</td>
+                    <td>{{ item.accession_no|default:"-" }}</td>
+                    <td>{{ item.isbn|default:"-" }}</td>
+                    <td>{{ item.subject|default:"-" }}</td>
+                    <td>{{ item.barcode|default:"-" }}</td>
+                    <td>{{ item.shelf_location_name|default:"-" }}</td>
+                    <td>{{ item.current_status_name|default:"-" }}</td>
+                    <td>{{ item.processing_status_name|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">संपादन करा</a>
+                        <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-info">तपशील पहा</a>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -81,6 +88,77 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add these in your <head> or before </body> -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            const $table = $("#circulationTable");
+
+            // Add hidden "No Data" row
+            //const noDataRow = `<tr class="no-data text-center table-warning"><td colspan="11">कोणतीही माहिती उपलब्ध नाही</td></tr>`;
+            const noDataRow = `<tr class="no-data text-center table-warning"><td colspan="10">कोणतीही माहिती उपलब्ध नाही</td></tr>`;
+            $table.find("tbody").append(noDataRow);
+            $table.find(".no-data").hide();
+
+            // Build dropdown options dynamically
+            $table.find("thead tr.filter-row select.column-filter").each(function() {
+                let colIndex = $(this).data("col");
+                let uniqueValues = new Set();
+
+                $table.find("tbody tr").each(function() {
+                    let cellValue = $(this).find("td").eq(colIndex).text().trim();
+                    if (cellValue && cellValue !== "-" && !$(this).hasClass("no-data")) {
+                        uniqueValues.add(cellValue);
+                    }
+                });
+
+                Array.from(uniqueValues).sort().forEach(val => {
+                    $(this).append(`<option value="${val}">${val}</option>`);
+                });
+            });
+
+            // Activate Select2 (searchable dropdown)
+            $(".column-filter").select2({
+                placeholder: "शोधा...",
+                allowClear: true,
+                width: 'resolve'
+            });
+
+            // Filter rows when dropdown value changes
+            $(".column-filter").on("change", function() {
+                let filters = {};
+                $(".column-filter").each(function() {
+                    let col = $(this).data("col");
+                    let val = $(this).val();
+                    if (val) filters[col] = val.toLowerCase();
+                });
+
+                let visibleCount = 0;
+
+                $table.find("tbody tr").not(".no-data").each(function() {
+                    let show = true;
+                    for (let col in filters) {
+                        let cellText = $(this).find("td").eq(col).text().toLowerCase();
+                        if (!cellText.includes(filters[col])) {
+                            show = false;
+                            break;
+                        }
+                    }
+                    $(this).toggle(show);
+                    if (show) visibleCount++;
+                });
+
+                if (visibleCount === 0) {
+                    $table.find(".no-data").show();
+                } else {
+                    $table.find(".no-data").hide();
+                }
+            });
+        });
+    </script>
 
     {% if messages %}
         <script>
@@ -113,4 +191,5 @@
             });
         });
     </script>
+
 {% endblock %}

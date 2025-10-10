@@ -2,123 +2,575 @@
 {% load static %}
 
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
-    <div class="oz-card-grid">
-        {% for library in libraries %}
-            <div class="oz-library-card">
-                <!-- Image -->
-                <div class="oz-libraryInd-img-wrapper">
-                        <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="libraryInd-img">
-                </div>
+<style>
+/* ================= Book Gallery Container ================= */
+.library-books-section {
+    margin-top: 30px;
+    padding: 10px;
+}
 
-                <!-- Content -->
-                <div class="oz-library-content">
-                    <h3>{{ library.library_name }}</h3>
-                    {% if library.establishedYear %}
-                        <h4>Since {{ library.est_year }}</h4>
-                    {% endif %}
+/* Library Books Section Title */
+.library-books-section h4 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    color: #2c3e50;  /* Darker shade for readability */
+    text-transform: capitalize;  /* Capitalizes the first letter of each word */
+    position: relative;
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+}
 
-                    <p class="library-description">{{ library.about_library }}</p>
+.library-books-section h4::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 60px;  /* Shorter line than the width of the text */
+    height: 3px;
+    background-color: #f39c12;  /* Golden accent line */
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
 
-                    {% if library.librarian_name %}
-                        <p><strong>Librarian:</strong> {{ library.librarian_name }}</p>
-                    {% endif %}
+.library-books-section h4 span {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #00eeffff;  /* Slightly lighter shade for the subtitle or secondary text */
+}
 
-                    {% if library.opening_hours %}
-                        <p><strong>Opening Hours:</strong> {{ library.opening_hours }}</p>
-                    {% endif %}
-
-                    <!-- Library & Membership Rules Icons -->
-                    <div class="library-rules-icons">
-                        {% if library.library_rules %}
-                            <button class="rule-btn" data-modal="#libraryRulesModal{{ library.id }}">
-                                <i class="fa fa-book"></i> Library Rules
-                            </button>
-                        {% endif %}
-                    
-                        {% if library.membership_rules %}
-                            <button class="rule-btn" data-modal="#membershipRulesModal{{ library.id }}">
-                                <i class="fa fa-id-card"></i> Membership Rules
-                            </button>
-                        {% endif %}
-                    </div>
-
-                    <!-- Library Rules Modal -->
-                    {% if library.library_rules %}
-                        <div id="libraryRulesModal{{ library.id }}" class="modal">
-                            <div class="modal-content">
-                                <span class="close">&times;</span>
-                                <h3>Library Rules</h3>
-                                <div class="rules-content">{{ library.library_rules|safe }}</div>
-                            </div>
-                        </div>
-                    {% endif %}
-
-                    <!-- Membership Rules Modal -->
-                    {% if library.membership_rules %}
-                        <div id="membershipRulesModal{{ library.id }}" class="modal">
-                            <div class="modal-content">
-                                <span class="close">&times;</span>
-                                <h3>Membership Rules</h3>
-                                <div class="rules-content">{{ library.membership_rules|safe }}</div>
-                            </div>
-                        </div>
-                    {% endif %}
+.library-books-section h4:hover {
+    color: #ff0000ff;  /* Golden text on hover */
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
 
 
-                    <!-- Social Icons -->
-                    <div class="library-social-icons">
-                        {% if library.facebook_url %}
-                            <a href="{{ library.facebook_url }}" target="_blank"><i class="fab fa-facebook-f"></i></a>
-                        {% endif %}
-                        {% if library.instagram_url %}
-                            <a href="{{ library.instagram_url }}" target="_blank"><i class="fab fa-instagram"></i></a>
-                        {% endif %}
-                        {% if library.twitter_url %}
-                            <a href="{{ library.twitter_url }}" target="_blank"><i class="fab fa-twitter"></i></a>
-                        {% endif %}
-                        {% if library.youtube_url %}
-                            <a href="{{ library.youtube_url }}" target="_blank"><i class="fab fa-youtube"></i></a>
-                        {% endif %}
-                    </div>
+/* Book Gallery */
+.book-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
 
-                    <div class="library-contact">
-                        {% if library.contact_email %}
-                            <p><i class="fa fa-envelope"></i> 
-                                <a href="mailto:{{ library.contact_email }}">{{ library.contact_email }}</a>
-                            </p>
-                        {% endif %}
-                        {% if library.contact_phone %}
-                            <p><i class="fa fa-phone"></i> 
-                                <a href="tel:{{ library.contact_phone }}">{{ library.contact_phone }}</a>
-                            </p>
-                        {% endif %}
-                        {% if library.location_url %}
-                            <p><i class="fa fa-map-marker-alt"></i> 
-                                <a href="{{ library.location_url }}" target="_blank">View on Map</a>
-                            </p>
-                        {% endif %}
-                    </div>
+/* Individual Book Item */
+.book-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 160px;
+    position: relative;
+    font-family: 'Merriweather', serif;
+}
 
-                    {% if library.membership_page_link %}
-                    
-                        <div class="library-cta">
-                            <div class="cta-inline">
-                                <span>Want to be a member of this library?</span>
-                                <button type="button" class="join-link" onclick="window.location.href='{% url 'Login' %}'">
-                                    Click here
-                                </button>
-                            </div>
-                        </div>
+/* Book Flip Container */
+.book-flip {
+    width: 160px;
+    height: 220px;
+    perspective: 1000px;
+    border-radius: 10px;
+}
 
-                    {% endif %}
+.book-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+}
 
-                </div>
+/* Front & Back Side */
+.book-flip-front, .book-flip-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+}
+
+.book-flip-front img, .book-flip-back img {
+    width: 100%;
+    height: 100%;
+    {% comment %} object-fit: cover; {% endcomment %}
+}
+
+/* Back Side */
+.book-flip-back {
+    transform: rotateY(180deg);
+}
+
+/* Flip Button */
+.flip-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: #015296;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.3s;
+}
+
+.flip-btn:hover {
+    background: #007bff;
+}
+
+/* FontAwesome Icon inside Flip Button */
+.flip-btn i {
+    font-size: 1rem;
+}
+
+/* Book Title */
+.book-title {
+    margin-top: 6px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #000000ff;
+}
+
+/* ================= Zoom Modal ================= */
+
+.zoom-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center; /* center horizontally */
+    align-items: center;     /* center vertically */
+    background-color: rgba(0,0,0,0.85);
+}
+
+.zoom-modal-content-wrapper {
+    display: flex;
+    width: 70%;
+    max-width: 900px;
+    height: 70%;
+    max-height: 600px;
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    animation: fadeInScale 0.4s ease;
+}
+
+.zoom-modal-left {
+    flex: 1;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+}
+
+.zoom-modal-left img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.zoom-modal-right {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+    background: linear-gradient(120deg, #f7f7f7, #e2e2e2);
+}
+
+.zoom-modal-right h2 {
+    margin-top: 0;
+    font-size: 1.8rem;
+    color: #333;
+    font-family: 'Merriweather', Georgia, serif;
+}
+
+.zoom-modal-right p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+.login-btn {
+    margin-top: 20px;
+    padding: 10px 25px;
+    background: linear-gradient(135deg, #015296 0%, #015296 100%);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    font-weight: bold;
+    box-shadow: 0 8px 25px rgba(0,0,0);
+}
+
+.close-zoom {
+    position: absolute;
+    top: 10px;
+    right: calc(15% - 20px);
+    color: white;
+    font-size: 36px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1010;
+    transition: transform 0.3s ease;
+}
+
+.close-zoom:hover {
+    transform: rotate(90deg);
+}
+
+@keyframes fadeInScale {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+
+/* For tablets and mobile devices with smaller screens */
+@media (max-width: 768px) {
+    .book-gallery {
+        flex-wrap: wrap;
+        gap: 15px; /* Reduced gap between cards */
+        justify-content: center; /* Center the items */
+        padding: 0 10px; /* Add some padding for better layout */
+    }
+
+    /* Book item settings */
+    .book-item {
+        width: 48%; /* 2 items per row with some gap */
+        font-size: 0.9rem;
+        margin-bottom: 20px; /* Add space between rows */
+        position: relative;
+    }
+
+    /* Adjust flip card container */
+    .book-flip {
+        width: 100%; /* Full width of the .book-item */
+        height: 220px; /* Adjust the height to fit mobile screens */
+    }
+
+    /* Book item title */
+    .book-title {
+        font-size: 0.9rem; /* Adjust font size for mobile */
+        margin-top: 5px;
+    }
+
+    .book-item img {
+        width: 100%;
+        height: 100%;
+        {% comment %} object-fit: cover; {% endcomment %}
+    }
+
+    /* Ensure hover effects still work well on smaller screens */
+    .book-flip-inner {
+        transition: transform 0.8s ease;
+        transform-style: preserve-3d;
+    }
+
+    /* Flip button */
+    .flip-btn {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+}
+
+/* For very small mobile screens (portrait mode, around 480px or below) */
+@media (max-width: 480px) {
+    .book-gallery {
+        flex-direction: column; /* Stack items vertically for very small screens */
+        gap: 10px; /* Very small gap between items */
+    }
+
+    /* Book item settings */
+    .book-item {
+        width: 100%; /* Full width for each book */
+        font-size: 0.85rem; /* Slightly smaller font size */
+    }
+
+    /* Flip card container */
+    .book-flip {
+        height: 200px; /* Adjust card height */
+    }
+
+    /* Title adjustments */
+    .book-title {
+        font-size: 0.85rem; /* Smaller font size for mobile */
+    }
+
+    /* Flip button */
+    .flip-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+}
+
+/* View More Button */
+.view-more-btn-container {
+    text-align: center;
+    margin-top: 20px;  /* Adds space above the button */
+}
+
+.view-more-btn {
+    background-color: #015296;  /* Blue background color */
+    color: #fff;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 25px;
+    text-decoration: none;  /* Remove underline from link */
+    display: inline-flex;
+    align-items: center;  /* Align text and icon vertically */
+    justify-content: center;
+    gap: 8px;  /* Space between the icon and text */
+    transition: all 0.3s ease;
+}
+
+.view-more-btn i {
+    font-size: 1.2rem;  /* Icon size */
+}
+
+.view-more-btn:hover {
+    background-color: #007bff;  /* Lighter blue on hover */
+    transform: scale(1.05);  /* Slightly enlarge the button */
+}
+</style>
+
+<div class="oz-card-grid">
+    {% for library in libraries %}
+        <div class="oz-library-card">
+            <!-- Image -->
+            <div class="oz-libraryInd-img-wrapper">
+                <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="libraryInd-img">
             </div>
-            
-        {% endfor %}
-        
+
+            <!-- Content -->
+            <div class="oz-library-content">
+                <h3>{{ library.library_name }}</h3>
+                {% if library.establishedYear %}
+                    <h4>Since {{ library.est_year }}</h4>
+                {% endif %}
+
+                <p class="library-description">{{ library.about_library }}</p>
+
+                {% if library.librarian_name %}
+                    <p><strong>Librarian:</strong> {{ library.librarian_name }}</p>
+                {% endif %}
+
+                {% if library.opening_hours %}
+                    <p><strong>Opening Hours:</strong> {{ library.opening_hours }}</p>
+                {% endif %}
+
+                <!-- Library & Membership Rules Icons -->
+                <div class="library-rules-icons">
+                    {% if library.library_rules %}
+                        <button class="rule-btn" data-modal="#libraryRulesModal{{ library.id }}">
+                            <i class="fa fa-book"></i> Library Rules
+                        </button>
+                    {% endif %}
+                    {% if library.membership_rules %}
+                        <button class="rule-btn" data-modal="#membershipRulesModal{{ library.id }}">
+                            <i class="fa fa-id-card"></i> Membership Rules
+                        </button>
+                    {% endif %}
+                </div>
+
+                <!-- Library Rules Modal -->
+                {% if library.library_rules %}
+                    <div id="libraryRulesModal{{ library.id }}" class="modal">
+                        <div class="modal-content">
+                            <span class="close">&times;</span>
+                            <h3>Library Rules</h3>
+                            <div class="rules-content">{{ library.library_rules|safe }}</div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Membership Rules Modal -->
+                {% if library.membership_rules %}
+                    <div id="membershipRulesModal{{ library.id }}" class="modal">
+                        <div class="modal-content">
+                            <span class="close">&times;</span>
+                            <h3>Membership Rules</h3>
+                            <div class="rules-content">{{ library.membership_rules|safe }}</div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Social Icons -->
+                <div class="library-social-icons">
+                    {% if library.facebook_url %}
+                        <a href="{{ library.facebook_url }}" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                    {% endif %}
+                    {% if library.instagram_url %}
+                        <a href="{{ library.instagram_url }}" target="_blank"><i class="fab fa-instagram"></i></a>
+                    {% endif %}
+                    {% if library.twitter_url %}
+                        <a href="{{ library.twitter_url }}" target="_blank"><i class="fab fa-twitter"></i></a>
+                    {% endif %}
+                    {% if library.youtube_url %}
+                        <a href="{{ library.youtube_url }}" target="_blank"><i class="fab fa-youtube"></i></a>
+                    {% endif %}
+                </div>
+
+                <div class="library-contact">
+                    {% if library.contact_email %}
+                        <p><i class="fa fa-envelope"></i> 
+                            <a href="mailto:{{ library.contact_email }}">{{ library.contact_email }}</a>
+                        </p>
+                    {% endif %}
+                    {% if library.contact_phone %}
+                        <p><i class="fa fa-phone"></i> 
+                            <a href="tel:{{ library.contact_phone }}">{{ library.contact_phone }}</a>
+                        </p>
+                    {% endif %}
+                    {% if library.location_url %}
+                        <p><i class="fa fa-map-marker-alt"></i> 
+                            <a href="{{ library.location_url }}" target="_blank">View on Map</a>
+                        </p>
+                    {% endif %}
+                </div>
+
+                {% if library.membership_page_link %}
+                    <div class="library-cta">
+                        <div class="cta-inline">
+                            <span>Want to be a member of this library?</span>
+                            <button type="button" class="join-link" onclick="window.location.href='{% url 'Login' %}'">
+                                Click here
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    <!-- ================= Books Section (Outside Card) ================= -->
+{% if library.books %}
+    <div class="library-books-section">
+        <h4>Books Available in {{ library.library_name }}</h4>
+        <div class="book-gallery">
+            {% for book in library.books %}
+            <div class="book-item">
+                <div class="book-flip" id="book-flip-{{ forloop.counter }}">
+                    <div class="book-flip-inner">
+                        {% if book.front_page_photo %}
+                        <div class="book-flip-front">
+                            <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
+                                alt="{{ book.title }} Front Cover" 
+                                class="book-image" 
+                                onclick="zoomImage(this)" 
+                                data-author="{{ book.author }}" 
+                                data-title="{{ book.title }}" 
+                                data-year="{{ book.year }}" 
+                                data-language="{{ book.language }}" 
+                                data-description="{{ book.description }}">
+                        </div>
+                        {% endif %}
+                        {% if book.last_page_photo %}
+                        <div class="book-flip-back">
+                            <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}" 
+                                alt="{{ book.title }} Back Cover" 
+                                class="book-image" 
+                                onclick="zoomImage(this)" 
+                                data-author="{{ book.author }}" 
+                                data-title="{{ book.title }}" 
+                                data-year="{{ book.year }}" 
+                                data-language="{{ book.language }}" 
+                                data-description="{{ book.description }}">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
+                    <i class="fas fa-sync-alt"></i> Flip
+                </button>
+                <p class="book-title">{{ book.title }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- View More Button -->
+        <!-- View More Button with FontAwesome Icon -->
+        <div class="view-more-btn-container">
+            <a href="{% url 'Login' %}" class="view-more-btn">
+                <i class="fas fa-arrow-down"></i> View More
+            </a>
+        </div>
+
     </div>
+{% endif %}
+<!-- ================= End Books Section ================= -->
+
+<!-- Book Card Section (For Book Catalog) -->
+{% for book in libraries %}
+    <div class="book-card" onclick="openZoomModal(
+        '{{ MEDIA_URL }}{{ book.front_page_photo }}', 
+        '{{ MEDIA_URL }}{{ book.last_page_photo }}', 
+        '{{ book.title }}', 
+        '{{ book.author }}', 
+        '{{ book.year }}', 
+        '{{ book.language }}', 
+        '{{ book.description }}')">
+        <h3>{{ book.title }}</h3>
+        <p>{{ book.author }}</p>
+        <p>{{ book.year }}</p>
+        <p> {{ book.language }}</p> 
+    </div>
+{% endfor %}
+
+<!-- Zoom Modal -->
+<div id="zoomModal" class="zoom-modal">
+    <span class="close-zoom" onclick="closeZoom()">&times;</span>
+    <div class="zoom-modal-content-wrapper">
+        <!-- Left: Book Image -->
+        <div class="zoom-modal-left">
+            <img id="zoomedImage" src="" alt="Book Image">
+        </div>
+
+        <!-- Right: Book Info -->
+        <div class="zoom-modal-right">
+            <h2 id="zoomBookTitle">Book Title</h2>
+            <p><strong>Author:</strong> <span id="zoomBookAuthor"></span></p>
+            <p><strong>Year:</strong> <span id="zoomBookYear"></span></p>
+            <p><strong>Language:</strong> <span id="zoomBookLanguage"></span></p>
+            <p><strong>Description:</strong></p>
+            <p id="zoomBookDescription"></p>
+            <button class="login-btn" onclick="window.location.href='{% url 'Login' %}'">Login to Access</button>
+        </div>
+    </div>
+</div>
+
+
+    {% endfor %}
+
 
     <script>
         // Open modal
@@ -144,5 +596,49 @@
         });
     </script>
 
+<script>
+    // Flip Book
+    function flipBook(flipId) {
+        const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
+        flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
+    }
+</script>
+
+<script>
+    function zoomImage(img) {
+        const modal = document.getElementById("zoomModal");
+        const modalImg = document.getElementById("zoomedImage");
+        const modalAuthor = document.getElementById("zoomBookAuthor");
+        const modalTitle = document.getElementById("zoomBookTitle");
+        const modalYear = document.getElementById("zoomBookYear");
+        const modalLanguage = document.getElementById("zoomBookLanguage");
+        const modalDescription = document.getElementById("zoomBookDescription");
+
+        modal.style.display = "flex";
+        modal.classList.add("show");   // trigger animation
+
+        // Set the image source and details for the zoom modal
+        modalImg.src = img.src;
+        modalAuthor.textContent = img.getAttribute('data-author');
+        modalTitle.textContent = img.getAttribute('data-title');
+        modalYear.textContent = img.getAttribute('data-year');
+        modalLanguage.textContent = img.getAttribute('data-language');
+        modalDescription.textContent = img.getAttribute('data-description');
+    }
+
+    function closeZoom() {
+        const modal = document.getElementById("zoomModal");
+        modal.style.display = "none";
+        modal.classList.remove("show");
+    }
+
+    // Close modal on click outside the image
+    document.getElementById("zoomModal").addEventListener("click", function(e) {
+        if (e.target.id === "zoomModal") {
+            closeZoom();
+        }
+    });
+
+</script>
 
 {% endblock %}

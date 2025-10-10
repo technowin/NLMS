@@ -10,6 +10,37 @@
 <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    .zoom-wrapper {
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .main-image {
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        /* Thumbnail */
+        .thumb-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s ease, border 0.2s ease;
+        }
+
+        .thumb-img:hover {
+            transform: scale(1.1);
+        }
+
+        .thumb-img.active {
+            border: 2px solid #0d6efd;
+        }
+</style>
 {% endblock %}
 
 {% block page_title %}
@@ -26,114 +57,154 @@
                 View Circulation Information / परिपत्रक माहिती पहा
         </h2>
 
-        <!-- Book Info Card -->
-        <div class="card border-0 shadow-lg rounded-4 mb-4">
-                <div class="card-body">
+        <div class="row">
 
-                    <!-- Book Title Row -->
-                    <div class="mb-2">
-                        <label class="fw-bold fs-4">Book Title / पुस्तकाचे नाव :</label>
-                        <span class="text-muted fs-4">{{ circulation.bookcatalog.title|default:'' }} - {{ circulation.bookcatalog.cat_ref_num|default:'' }}</span>
-                    </div>
+                <div class="col-md-4 text-center">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-light">
+                        <h5 class="fw-bold mb-3">Book Images / पुस्तक छायाचित्रे</h5>
 
-                    <!-- Subject Category Row -->
-                    <div class="mb-2">
-                        <label class="fw-bold fs-4">Subject Category / विषय वर्ग :</label>
-                        <span class="text-muted fs-4">{{ circulation.bookcatalog.subject.subjectNameEnglish|default:'' }}</span>
-                    </div>
-
-
-                    <div class="row mt-4 ">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                ISBN / आंतरराष्ट्रीय पुस्तक क्रमांक
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.bookcatalog.isbn_issn|default:'' }}" readonly>
+                        <div class="zoom-wrapper">
+                            {% if circulation.bookcatalog.front_page_photo %}
+                                <img id="mainImage" 
+                                    src="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}" 
+                                    data-zoom="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}"
+                                    class="img-fluid rounded shadow-sm  main-image"
+                                    style="max-height: 450px; object-fit: contain; ">
+                            {% else %}
+                                <p class="text-secondary">No Image Available</p>
+                            {% endif %}
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                Author / लेखक
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.bookcatalog.author|default:'' }}" readonly>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                Edition / आवृत्ती
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.bookcatalog.edition|default:'' }}" readonly>
+                        <div class="thumbnail-wrapper d-flex justify-content-center gap-2 mt-3">
+                            {% if circulation.bookcatalog.front_page_photo %}
+                                <img src="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}" 
+                                    class="img-thumbnail thumb-img active"
+                                    data-large="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}">
+                            {% endif %}
+                            {% if circulation.bookcatalog.last_page_photo %}
+                                <img src="{{ MEDIA_URL }}{{ circulation.bookcatalog.last_page_photo }}" 
+                                    class="img-thumbnail thumb-img"
+                                    data-large="{{ MEDIA_URL }}{{ circulation.bookcatalog.last_page_photo }}">
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-        </div>
-        <!-- Circulation Details -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body">
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                Barcode / बारकोड
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.barcode|default:'' }}" readonly>
-                        </div>
+                <div class="col-md-8 mt-2">
 
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                Accession Number / प्रवेश क्रमांक
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.accession_no|default:'' }}" readonly>
-                        </div>
+                    <!-- Book Info Card -->
+                    <div class="card border-0 shadow-lg rounded-4 mb-4">
+                            <div class="card-body">
+
+                                <!-- Book Title Row -->
+                                <div class="mb-2">
+                                    <label class="fw-bold fs-4">Book Title / पुस्तकाचे नाव :</label>
+                                    <span class="text-muted fs-4">{{ circulation.bookcatalog.title|default:'' }} - {{ circulation.bookcatalog.cat_ref_num|default:'' }}</span>
+                                </div>
+
+                                <!-- Subject Category Row -->
+                                <div class="mb-2">
+                                    <label class="fw-bold fs-4">Subject Category / विषय वर्ग :</label>
+                                    <span class="text-muted fs-4">{{ circulation.bookcatalog.subject.subjectNameEnglish|default:'' }}</span>
+                                </div>
+
+
+                                <div class="row mt-4 ">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            ISBN / आंतरराष्ट्रीय पुस्तक क्रमांक
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.bookcatalog.isbn_issn|default:'' }}" readonly>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Author / लेखक
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.bookcatalog.author|default:'' }}" readonly>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Edition / आवृत्ती
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.bookcatalog.edition|default:'' }}" readonly>
+                                    </div>
+                                </div>
+                            </div>
                     </div>
+                    <!-- Circulation Details -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-body">
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                Circulation Status / परिसंचरण स्थिती
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.current_status.status_name|default:'' }}" readonly>
-                        </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Barcode / बारकोड
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.barcode|default:'' }}" readonly>
+                                    </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold text-secondary">
-                                Physical Location / भौतिक स्थान
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.shelf_location.location_name|default:'' }}" readonly>
-                        </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Accession Number / प्रवेश क्रमांक
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.accession_no|default:'' }}" readonly>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Circulation Status / परिसंचरण स्थिती
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.current_status.status_name|default:'' }}" readonly>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Physical Location / भौतिक स्थान
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.shelf_location.location_name|default:'' }}" readonly>
+                                    </div>
+                                </div>
+
+                                <!-- STATUS & PROCESSING STATUS -->
+                                <div class="mb-3 row">
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Inventory Status / इन्व्हेंटरी स्थिती
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.processing_status.status_name|default:'' }}" readonly>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            Circulation Date / परिचलन तारीख
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" 
+                                            value="{{ circulation.date_processed|default:'' }}" readonly>
+                                    </div>
+
+                                </div>
+
+                            </div>
                     </div>
-
-                    <!-- STATUS & PROCESSING STATUS -->
-                    <div class="mb-3 row">
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">
-                                Inventory Status / इन्व्हेंटरी स्थिती
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.processing_status.status_name|default:'' }}" readonly>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">
-                                Circulation Date / परिचलन तारीख
-                            </label>
-                            <input type="text" class="form-control shadow-sm" 
-                                value="{{ circulation.date_processed|default:'' }}" readonly>
-                        </div>
-
-                    </div>
-
+                    
                 </div>
-        </div>
 
+            </div>
+    
+        </div>
     </div>
 
     <!-- Back to Top Button -->
@@ -189,6 +260,60 @@
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            $(".thumb-img").on("click", function() {
+                let newSrc = $(this).data("large");
+                let mainImage = $("#mainImage");
+
+                // Add transition effect
+                mainImage.fadeOut(200, function() {
+                    mainImage.attr("src", newSrc).fadeIn(200);
+                });
+
+                // Highlight selected thumbnail
+                $(".thumb-img").removeClass("active");
+                $(this).addClass("active");
+            });
+
+            // Mark first thumbnail active by default
+            $(".thumb-img:first").addClass("active");
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Swap main image on thumbnail click
+            $(".thumb-img").on("click", function() {
+                let newSrc = $(this).data("large");
+                $("#mainImage").attr("src", newSrc).attr("data-zoom", newSrc);
+                $(".thumb-img").removeClass("active");
+                $(this).addClass("active");
+            });
+
+            // Zoom effect
+            $(".zoom-wrapper").on("mousemove", function(e) {
+                let zoomer = $(this).find("img");
+                let offset = $(this).offset();
+                let x = e.pageX - offset.left;
+                let y = e.pageY - offset.top;
+                let width = zoomer.width();
+                let height = zoomer.height();
+
+                let xPercent = x / width * 100;
+                let yPercent = y / height * 100;
+
+                zoomer.css('transform-origin', xPercent + '% ' + yPercent + '%');
+                zoomer.css('transform', 'scale(2)'); // zoom factor
+            });
+
+            $(".zoom-wrapper").on("mouseleave", function() {
+                $(this).find("img").css('transform', 'scale(1)');
+                $(this).find("img").css('transform-origin', 'center center');
             });
         });
     </script>

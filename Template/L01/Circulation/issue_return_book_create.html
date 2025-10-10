@@ -1,0 +1,1070 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}पुस्तक निर्गम / परतावा{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+
+        .swal2-border-radius {
+            border-radius: 15px !important;
+            font-family: 'Merriweather', serif;
+        }
+
+        .zoom-wrapper {
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .main-image {
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        /* Thumbnail */
+        .thumb-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s ease, border 0.2s ease;
+        }
+
+        .thumb-img:hover {
+            transform: scale(1.1);
+        }
+
+        .thumb-img.active {
+            border: 2px solid #0d6efd;
+        }
+
+        .custom-dropdown {
+            position: relative;
+        }
+        .dropdown-options {
+            position: absolute;
+            z-index: 999;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: none;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .dropdown-options li {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        .dropdown-options li:hover {
+            background: #f0f0f0;
+        }
+
+        #memberDetails {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            font-family: 'Merriweather', serif;
+            gap: 15px; /* space between cards */
+        }
+
+        .member-card {
+            display: flex;
+            flex-direction: row;
+            background: linear-gradient(145deg, #f0f4ff, #d9e4ff);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 650px;
+            padding: 12px;
+            border: 1px solid #007BFF;
+            gap: 15px; /* space between photo and info */
+        }
+
+        .member-photo {
+            flex: 0 0 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .member-photo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #0056b3;
+            object-fit: cover;
+        }
+
+        .member-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .member-info h4.member-name {
+            margin: 0 0 8px;
+            font-size: 1.2rem;
+            color: #003366;
+            font-weight: 700;
+        }
+
+        .membership-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; /* space between fields */
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .membership-row span {
+            padding: 3px 6px;
+            border-radius: 5px;
+            color: #003366;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+        }
+
+        @media (max-width: 768px) {
+            .member-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 10px;
+            }
+
+            .member-photo {
+                margin-bottom: 10px;
+            }
+
+            .membership-row {
+                justify-content: center;
+            }
+        }
+
+        .date-label {
+            display: inline-block;
+            color: #003366;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 0.4px;
+            margin-left: 3px;
+        }
+        
+        {% comment %} barcode{% endcomment %}
+
+        #barcodeDetails {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            gap: 15px;
+            font-family: 'Merriweather', serif;
+        }
+
+        .book-card {
+            display: flex;
+            flex-direction: row;
+            width: 90%;
+            max-width: 650px;
+            border-radius: 12px;
+            {% comment %} padding: 12px; {% endcomment %}
+            padding: 8px;
+            gap: 15px;
+            border: 2px solid; /* dynamic color via inline style */
+            background-color: #f0fff4; /* default light background */
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .book-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+        }
+
+        .book-photo {
+            flex: 0 0 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .book-photo img {
+            width: 90px;
+            {% comment %} width: 100px;
+            height: 140px; {% endcomment %}
+            height: 120px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #ccc;
+        }
+
+        .book-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .book-info h5 {
+            {% comment %} margin: 0 0 6px; {% endcomment %}
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #28A745;
+            margin-bottom: 4px;  /* was 6px */
+        }
+
+        .book-info p {
+            {% comment %} margin: 3px 0;
+            font-size: 0.9rem; {% endcomment %}
+            margin: 2px 0;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+
+        .book-info p strong {
+            color: #28A745; /* label color */
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .book-info p span {
+            color: #28A745; /* value color */
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px; /* pill style */
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.4px;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); /* subtle shadow */
+        }
+
+
+        @media (max-width: 768px) {
+            .book-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .book-photo {
+                margin-bottom: 10px;
+            }
+
+            .book-info p {
+                font-size: 0.85rem;
+                
+            }
+        }
+
+
+
+    </style>
+
+    <style>
+        .help-icon {
+            font-size: 1.5rem;       /* Bigger and visible */
+            color: #0d6efd;          /* Bootstrap primary blue */
+            cursor: pointer;          /* Pointer on hover */
+            transition: transform 0.2s, color 0.2s;
+            margin-left:2%;
+        }
+
+        .help-icon:hover {
+            color: #0a58ca;
+            transform: scale(1.2);   /* Slight zoom effect */
+        }
+
+        #bookCatalogModal .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        #bookCatalogModal .modal-header {
+         border-bottom: none;
+        }
+
+        #bookCatalogModal .dropdown-options {
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        #bookCatalogTableContainer table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #bookCatalogTableContainer thead th {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        #bookCatalogTableContainer tbody td {
+          font-size: 0.9rem;
+        }
+
+
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='पुस्तक निर्गम / परतावा' sub_title='' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+        <div class="my-4">
+            <h2 class="fw-bold">
+                Book Issue & Return / पुस्तक निर्गम आणि परतावा
+            </h2>
+            <p class="text-muted fs-5">
+                Manage book transactions efficiently. / पुस्तकांचे निर्गमन आणि परतावा कार्यक्षमपणे व्यवस्थापित करा.
+            </p>
+        </div>
+        
+        <div class="row mt-4">
+            <!-- Issue Book Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-lg border-0 rounded-4 h-100">
+                    <div class="card-header bg-primary text-white fw-bold rounded-top-4">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex align-items-center">
+                                <span>Issue Book / पुस्तक निर्गम</span>
+                            </div>
+                            <small class="text-light">
+                                Issue books to library members / ग्रंथालय सदस्यांना पुस्तके निर्गम करा
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="issueBookForm">
+
+                            {% comment %} Member ID / सदस्य आयडी {% endcomment %}
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-secondary">
+                                    Member ID / सदस्य आयडी<span class="text-danger">*</span>
+                                </label>
+                                <div class="custom-dropdown">
+                                    <input type="text" id="memberSearch" class="dropdown-input form-control shadow-sm"
+                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off">
+                                    <ul id="memberOptions" class="dropdown-options">
+                                        {% for m in members %}
+                                            <li data-value="{{ m.member_encrypted_id }}">
+                                                {{ m.membership_code }} - {{ m.first_name }}{% if m.middle_name %} {{ m.middle_name }}{% endif %} {{ m.last_name }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="hidden" name="member_id" id="memberCodeInput">
+                                </div>
+                            </div>
+
+                            <!-- Container where details will appear -->
+                            <div id="memberDetails" class="mt-3"></div>
+                            
+                            {% comment %} Barcode / बारकोड {% endcomment %}
+
+                            <div class="mb-3">
+                                <div class="mb-2 d-flex align-items-center">
+                                    <label class="form-label fw-semibold text-secondary mb-0">
+                                        Barcode / बारकोड<span class="text-danger">*</span>
+                                    </label>
+                                    <i class="bi bi-question-circle-fill help-icon" 
+                                         data-bs-toggle="modal" data-bs-target="#bookCatalogModal"></i>
+                                </div>
+                                <div class="custom-dropdown">
+                                    <input type="text" id="barcodeSearch" class="dropdown-input form-control shadow-sm"
+                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off">
+                                    <ul id="barcodeOptions" class="dropdown-options">
+                                        {% for circ in circulation %}
+                                            <li data-value="{{ circ.circ_encrypted_barcode }}">
+                                                {{ circ.barcode }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="hidden" name="barcode_id" id="barcodeCodeInput">
+                                </div>
+                            </div>
+                            
+                            <!-- Modal -->
+                            <div class="modal fade" id="bookCatalogModal" tabindex="-1" aria-labelledby="bookCatalogModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-xl">  <!-- Larger width for table -->
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="bookCatalogModalLabel">
+                                                <i class="bi bi-book"></i> Book Catalog / पुस्तक सूची
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+
+                                        <div class="modal-body">
+                                            <label class="form-label fw-semibold text-secondary">
+                                                Book Catalog Search / पुस्तक सूची शोध <span class="text-danger">*</span>
+                                            </label>
+
+                                            <!-- Custom Dropdown -->
+                                            <div class="custom-dropdown mt-2 mb-3">
+                                                <input type="text" id="bookCatalogSearch" class="dropdown-input form-control shadow-sm"
+                                                    placeholder="Select Book / पुस्तक निवडा..." autocomplete="off">
+                                                <ul id="bookCatalogOptions" class="dropdown-options">
+                                                    {% for bc in bookcatelog %}
+                                                        <li data-value="{{ bc.bc_encryp_id }}">
+                                                            {{ bc.cat_ref_num }} - {{ bc.title }}
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                                <input type="hidden" name="book_id" id="bookCatalogInput">
+                                            </div>
+
+                                            <!-- 👇 Table will appear here after selecting a book -->
+                                            <div id="bookCatalogTableContainer" class="mt-4"></div>
+                                        </div>
+
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Container where details will appear -->
+                            <div id="barcodeDetails" class="mt-3"></div>
+
+                            <!-- Issue Date -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Issue Date / निर्गम दिनांक <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" id="issueDate" name="issue_date" class="form-control">
+                            </div>
+
+                            <!-- Due Date -->
+                            <div class="mb-3">
+                                <label class="form-label">Due Date / परतावा अंतिम दिनांक <span class="text-danger">*</span></label>
+                                <input type="date" name="due_date" class="form-control">
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="mb-3">
+                                <label class="form-label">Notes / टिप्पण्या (Optional)</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Enter any notes if required"></textarea>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" id="issueBookBtn" class="btn btn-success">
+                                    <i class="uil uil-check-circle"></i> Issue Book
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return Book Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-lg border-0 rounded-4 h-100">
+                    <div class="card-header bg-success text-white fw-bold rounded-top-4">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex align-items-center">
+                                <span>Return Book / पुस्तक परतावा</span>
+                            </div>
+                            <small class="text-light">
+                                Process book returns and calculate fines / पुस्तके परत करा आणि दंड गणना करा
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="returnBookForm">
+                            <div class="mb-3">
+                                <label class="form-label">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
+                                <input type="text" name="user_id" class="form-control" placeholder="Enter User ID">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Book Barcode / पुस्तक बारकोड <span class="text-danger">*</span></label>
+                                <input type="text" name="book_barcode" class="form-control" placeholder="Enter Book Barcode">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Return Date / परतावा दिनांक</label>
+                                <input type="date" name="return_date" class="form-control">
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="uil uil-corner-up-left-alt"></i> Return Book
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>   
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- SweetAlert2 (only once) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Bootstrap Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% comment %} back to top {% endcomment %}
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{{ message.tags|title }}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{{ message.tags }}",
+                        confirmButtonText: "OK",
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    {% comment %} membership code search {% endcomment %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            function setupDropdown(inputId, optionsId, hiddenId) {
+                const input = document.getElementById(inputId);
+                const options = document.getElementById(optionsId);
+                const hiddenInput = document.getElementById(hiddenId);
+                const items = options.getElementsByTagName("li");
+                let highlightedIndex = -1;
+
+                // Show dropdown on focus
+                input.addEventListener("focus", () => options.style.display = "block");
+
+                // Filter items while typing
+                input.addEventListener("input", () => {
+                    const filter = input.value.toLowerCase();
+                    let hasMatch = false;
+                    highlightedIndex = -1;
+
+                    // Remove any "no result" placeholder
+                    const placeholder = options.querySelector(".no-result");
+                    if (placeholder) placeholder.remove();
+
+                    for (let i = 0; i < items.length; i++) {
+                        const txt = items[i].textContent.toLowerCase();
+                        if (txt.includes(filter)) {
+                            items[i].style.display = "";
+                            if (highlightedIndex === -1) highlightedIndex = i;
+                            hasMatch = true;
+                        } else {
+                            items[i].style.display = "none";
+                        }
+                        items[i].classList.remove("highlighted");
+                    }
+
+                    if (highlightedIndex !== -1) {
+                        items[highlightedIndex].classList.add("highlighted");
+                    }
+
+                    if (!hasMatch) {
+                        const li = document.createElement("li");
+                        li.textContent = "❌ No results found";
+                        li.classList.add("no-result");
+                        li.style.padding = "0.5rem 1rem";
+                        li.style.color = "#888";
+                        options.appendChild(li);
+                    }
+                });
+
+                // Keyboard navigation
+                input.addEventListener("keydown", function (e) {
+                    const visibleItems = Array.from(items).filter(i => i.style.display !== "none" && !i.classList.contains("no-result"));
+                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                        e.preventDefault();
+                        if (visibleItems.length === 0) return;
+
+                        visibleItems.forEach(i => i.classList.remove("highlighted"));
+
+                        if (e.key === "ArrowDown") highlightedIndex = (highlightedIndex + 1) % visibleItems.length;
+                        else if (e.key === "ArrowUp") highlightedIndex = (highlightedIndex - 1 + visibleItems.length) % visibleItems.length;
+
+                        visibleItems[highlightedIndex].classList.add("highlighted");
+                        input.value = visibleItems[highlightedIndex].textContent.trim();
+                    }
+
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (highlightedIndex >= 0 && visibleItems.length > 0) {
+                            const selectedItem = visibleItems[highlightedIndex];
+                            input.value = selectedItem.textContent.trim();
+                            hiddenInput.value = selectedItem.getAttribute("data-value");
+
+                            // Call AJAX on Enter
+                            fetchMemberDetails(hiddenInput.value);
+                        }
+                        options.style.display = "none";
+                    }
+                });
+
+                // Click selection
+                for (let i = 0; i < items.length; i++) {
+                    items[i].addEventListener("click", function () {
+                        input.value = this.textContent.trim();
+                        hiddenInput.value = this.getAttribute("data-value");
+                        options.style.display = "none";
+
+                        // Call AJAX on click
+                        fetchMemberDetails(hiddenInput.value);
+                    });
+                }
+
+                // Close dropdown on outside click
+                document.addEventListener("click", function (e) {
+                    if (!e.target.closest(".custom-dropdown")) options.style.display = "none";
+                });
+            }
+
+            // Initialize Member ID dropdown
+            setupDropdown("memberSearch", "memberOptions", "memberCodeInput");
+
+            // AJAX function to fetch member details
+            function fetchMemberDetails(memberId) {
+                $.ajax({
+                    url: "{% url 'L01:get_member_details' %}",  // Django URL
+                    type: "POST",
+                    data: {
+                        member_id: memberId,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'  // Include CSRF token
+                    },
+                    dataType: "json",
+                    success: function(data) {
+                        const container = $("#memberDetails");
+                        container.empty();
+
+                        const today = new Date(); // today's date
+                        let disableSubmit = false; // flag to check if we need to disable the button
+                        let dueDateValue = ""; // will store calculated due date
+
+                        if (data.success && data.documents.length > 0) {
+                            data.documents.forEach(member => {
+                                const fromDate = new Date(member.membership_fromDate);
+                                const toDate = new Date(member.membership_toDate);
+
+                                // Check if this member's membership is expired
+                                const isExpired = today > toDate;
+
+                                // 🔹 Calculate due date (today + membership_days)
+                                const membershipDays = parseInt(member.membership_days) || 0;
+                                const dueDate = new Date(today);
+                                dueDate.setDate(today.getDate() + membershipDays);
+
+                                // Format date to yyyy-mm-dd for input[type=date]
+                                const formattedDueDate = dueDate.toISOString().split('T')[0];
+                                dueDateValue = formattedDueDate;
+
+                                // If any member is expired, disable the submit button
+                                if (isExpired) {
+                                    disableSubmit = true;
+                                }
+
+                                container.append(`
+                                    <div class="member-card">
+                                        <div class="member-photo">
+                                            <img src="${member.file_path ? data.MEDIA_URL + member.file_path : '/static/images/default-user.png'}" alt="Member Photo">
+                                        </div>
+                                        <div class="member-info">
+                                            <h4 class="member-name">${member.full_name}</h4>
+                                            <div class="membership-row">
+                                                <span><strong>Membership:</strong> ${member.membership_type || '-'}</span>
+                                                <span><strong>From → To:</strong> ${member.membership_fromDate || '-'} to ${member.membership_toDate || '-'}</span>
+                                                <span><strong>Duration:</strong> ${member.membership_duration ? member.membership_duration + ' Month' : '-'}</span>
+                                            </div>
+
+                                            ${isExpired ? `<small class="text-danger mt-1 d-block">Membership expired. Cannot issue book.</small>` : ''}
+                                        </div>
+                                    </div>
+                                `);
+                            });
+
+                            // 🔹 Auto-fill Due Date field
+                            if (dueDateValue) {
+                                const dueDateInput = document.querySelector("input[name='due_date']");
+                                if (dueDateInput) {
+                                    dueDateInput.value = dueDateValue;
+                                    dueDateInput.min = dueDateValue; // optional: prevent earlier changes
+                                }
+                            }
+
+                            // Disable or enable the submit button based on the flag
+                            if (disableSubmit) {
+                                $("#issueBookBtn")
+                                    .prop("disabled", true)
+                                    .removeClass("btn-success btn-secondary")
+                                    .addClass("btn-danger"); // red color when disabled
+                            } else {
+                                $("#issueBookBtn")
+                                    .prop("disabled", false)
+                                    .removeClass("btn-danger btn-secondary")
+                                    .addClass("btn-success"); // green color when enabled
+                            }
+
+                        } else {
+                            container.html(`<p class="text-danger">${data.error || "No details found"}</p>`);
+                            $("#issueBookBtn")
+                                .prop("disabled", true)
+                                .removeClass("btn-success btn-danger")
+                                .addClass("btn-secondary"); // neutral color if no members
+                        }
+                    },
+                });
+            }
+
+        });
+    </script>
+
+    {% comment %} barcode search {% endcomment %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            function setupDropdown(inputId, optionsId, hiddenId, fetchFunction) {
+                const input = document.getElementById(inputId);
+                const options = document.getElementById(optionsId);
+                const hiddenInput = document.getElementById(hiddenId);
+                const items = options.getElementsByTagName("li");
+                let highlightedIndex = -1;
+
+                // Show dropdown on focus
+                input.addEventListener("focus", () => options.style.display = "block");
+
+                // Filter items while typing
+                input.addEventListener("input", () => {
+                    const filter = input.value.toLowerCase();
+                    let hasMatch = false;
+                    highlightedIndex = -1;
+
+                    const placeholder = options.querySelector(".no-result");
+                    if (placeholder) placeholder.remove();
+
+                    for (let i = 0; i < items.length; i++) {
+                        const txt = items[i].textContent.toLowerCase();
+                        if (txt.includes(filter)) {
+                            items[i].style.display = "";
+                            if (highlightedIndex === -1) highlightedIndex = i;
+                            hasMatch = true;
+                        } else {
+                            items[i].style.display = "none";
+                        }
+                        items[i].classList.remove("highlighted");
+                    }
+
+                    if (highlightedIndex !== -1) {
+                        items[highlightedIndex].classList.add("highlighted");
+                    }
+
+                    if (!hasMatch) {
+                        const li = document.createElement("li");
+                        li.textContent = "❌ No results found";
+                        li.classList.add("no-result");
+                        li.style.padding = "0.5rem 1rem";
+                        li.style.color = "#888";
+                        options.appendChild(li);
+                    }
+                });
+
+                // Keyboard navigation
+                input.addEventListener("keydown", function (e) {
+                    const visibleItems = Array.from(items).filter(i => i.style.display !== "none" && !i.classList.contains("no-result"));
+                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                        e.preventDefault();
+                        if (visibleItems.length === 0) return;
+
+                        visibleItems.forEach(i => i.classList.remove("highlighted"));
+
+                        if (e.key === "ArrowDown") highlightedIndex = (highlightedIndex + 1) % visibleItems.length;
+                        else if (e.key === "ArrowUp") highlightedIndex = (highlightedIndex - 1 + visibleItems.length) % visibleItems.length;
+
+                        visibleItems[highlightedIndex].classList.add("highlighted");
+                        input.value = visibleItems[highlightedIndex].textContent.trim();
+                    }
+
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (highlightedIndex >= 0 && visibleItems.length > 0) {
+                            const selectedItem = visibleItems[highlightedIndex];
+                            input.value = selectedItem.textContent.trim();
+                            hiddenInput.value = selectedItem.getAttribute("data-value");
+
+                            fetchFunction(hiddenInput.value);  // Call specific fetch function
+                        }
+                        options.style.display = "none";
+                    }
+                });
+
+                // Click selection
+                for (let i = 0; i < items.length; i++) {
+                    items[i].addEventListener("click", function () {
+                        input.value = this.textContent.trim();
+                        hiddenInput.value = this.getAttribute("data-value");
+                        options.style.display = "none";
+
+                        fetchFunction(hiddenInput.value); // Call specific fetch function
+                    });
+                }
+
+                // Close dropdown on outside click
+                document.addEventListener("click", function (e) {
+                    if (!e.target.closest(".custom-dropdown")) options.style.display = "none";
+                });
+            }
+
+            // Initialize Barcode dropdown
+            setupDropdown("barcodeSearch", "barcodeOptions", "barcodeCodeInput", fetchBookDetails);
+
+            // AJAX function to fetch book details
+            function fetchBookDetails(barcodeId) {
+                $.ajax({
+                    url: "{% url 'L01:get_book_details' %}",  // Django URL
+                    type: "POST",
+                    data: {
+                        barcode_id: barcodeId,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    success: function(data) {
+                        const container = $("#barcodeDetails");
+                        container.empty();
+
+                        if (data.success) {
+                            const books = Array.isArray(data.book) ? data.book : [data.book];
+
+                            books.forEach(book => {
+                                // Determine status-based colors
+                                const isOnShelf = book.status_name === 'On-Shelf';
+                                const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
+                                const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
+                                const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
+                                const textColor = isOnShelf ? '#28a745' : '#dc3545';    // for title & labels
+
+                                container.append(`
+                                    <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
+                                        <div class="book-photo">
+                                            <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
+                                                alt="Book Photo">
+                                        </div>
+                                        <div class="book-info">
+                                            <h5 style="color:${textColor};">${book.title || 'Untitled Book'}</h5>
+                                            <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
+                                            <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
+                                            <p> 
+                                                <span class="status-badge" style="background-color: ${badgeBg}; color: ${textColor};">
+                                                    ${book.status_name || 'Unknown'}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                `);
+                            });
+                        } else {
+                            container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+    {% comment %} open model for Book Catalog Search / पुस्तक सूची शोध{% endcomment %}
+    <script>
+        const bookInput = document.getElementById('bookCatalogSearch');
+        const bookOptions = document.getElementById('bookCatalogOptions');
+        const bookHiddenInput = document.getElementById('bookCatalogInput');
+
+        bookInput.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            Array.from(bookOptions.children).forEach(li => {
+                li.style.display = li.textContent.toLowerCase().includes(filter) ? '' : 'none';
+            });
+        });
+
+        Array.from(bookOptions.children).forEach(li => {
+            li.addEventListener('click', function() {
+                bookInput.value = this.textContent;
+                bookHiddenInput.value = this.dataset.value;
+                bookOptions.style.display = 'none';
+            });
+        });
+
+        // Optional: show/hide options on focus
+        bookInput.addEventListener('focus', () => bookOptions.style.display = 'block');
+        bookInput.addEventListener('blur', () => setTimeout(() => bookOptions.style.display = 'none', 200));
+    </script>
+
+    {% comment %} render data for book search {% endcomment %}
+    <script>
+        $(document).ready(function() {
+            // When a user selects a book from the dropdown
+            $("#bookCatalogOptions li").on("click", function() {
+                const bookId = $(this).data("value");
+                $("#bookCatalogInput").val(bookId);
+
+                // 🧹 Clear any old table content first
+                $("#bookCatalogTableContainer").empty();
+
+                // 🌀 Optional loading spinner
+                $("#bookCatalogTableContainer").html(`
+                    <div class="text-center text-muted mt-3">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div>Loading book details...</div>
+                    </div>
+                `);
+
+                $.ajax({
+                    url: "{% url 'L01:get_book_circulation_status' %}",
+                    type: "POST",
+                    data: {
+                        book_id: bookId,
+                        csrfmiddlewaretoken: "{{ csrf_token }}"
+                    },
+                    success: function(response) {
+                        console.log("Book Circulation Data:", response);
+                        renderCirculationData(response);
+                    },
+                    error: function(xhr) {
+                        console.error("Error fetching book details:", xhr.responseText);
+                        $("#bookCatalogTableContainer").html(
+                            `<div class="alert alert-danger mt-3">Error fetching book details.</div>`
+                        );
+                    }
+                });
+            });
+
+            // Function to display returned data inside modal
+            function renderCirculationData(data) {
+                // 🧹 Always clear container before adding new table
+                $("#bookCatalogTableContainer").empty();
+
+                if (!data || data.length === 0) {
+                    $("#bookCatalogTableContainer").html(`
+                        <div class="alert alert-warning mt-3">No records found.</div>
+                    `);
+                    return;
+                }
+
+                let html = `
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-striped align-middle shadow-sm">
+                            <thead class="table-primary text-center">
+                                <tr>
+                                    <th>Accession No</th>
+                                    <th>Barcode</th>
+                                    <th>Ref Num</th>
+                                    <th>Title</th>
+                                    <th>Author</th>
+                                    <th>Classification</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(row => `
+                                    <tr>
+                                        <td>${row.accession__accession_no || ""}</td>
+                                        <td>${row.barcode || ""}</td>
+                                        <td>${row.bookcatalog__cat_ref_num || ""}</td>
+                                        <td>${row.bookcatalog__title || ""}</td>
+                                        <td>${row.bookcatalog__author || ""}</td>
+                                        <td>${row.bookcatalog__classification_number || ""}</td>
+                                        <td>${row.current_status__status_name || ""}</td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                $("#bookCatalogTableContainer").html(html);
+            }
+        });
+    </script>
+
+    {% comment %} today's date for Issue Date / निर्गम दिनांक{% endcomment %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const issueDateInput = document.getElementById("issueDate");
+            const today = new Date();
+
+            // Format date to YYYY-MM-DD
+            const formattedDate = today.toISOString().split('T')[0];
+
+            // Set default value to today
+            issueDateInput.value = formattedDate;
+
+            // Set minimum date (disables past dates)
+            issueDateInput.min = formattedDate;
+        });
+    </script>
+
+{% endblock %}

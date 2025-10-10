@@ -472,7 +472,6 @@ def book_catalog_create(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
 
-
 # Book Accession Index     
 @login_required
 def book_accession_index(request):
@@ -3213,6 +3212,7 @@ def circulation_master_index(request):
                     'processing_status'
                 )
                 .annotate(
+                    cat_ref_num=F('bookcatalog__cat_ref_num'),
                     title=F('bookcatalog__title'),
                     isbn=F('bookcatalog__isbn_issn'),
                     subject=F('bookcatalog__subject__subjectNameEnglish'),  # you can switch to Marathi
@@ -3222,6 +3222,7 @@ def circulation_master_index(request):
                 )
                 .values(
                     'id',
+                    'cat_ref_num',
                     'title',
                     'isbn',
                     'subject',
@@ -3279,7 +3280,8 @@ def circulation_master_view(request):
         )
 
         return render(request, "Master/circulation_master_view.html", {
-            "circulation": circulation
+            "circulation": circulation,
+            'MEDIA_URL': settings.MEDIA_URL,
         })
 
     except Exception as e:
@@ -3331,6 +3333,7 @@ def circulation_master_edit(request):
                 "circulation_statuses": circulation_statuses,
                 "processing_statuses": processing_statuses,
                 "locations": locations,
+                'MEDIA_URL': settings.MEDIA_URL
             })
 
         if request.method == "POST":

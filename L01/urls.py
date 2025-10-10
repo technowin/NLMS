@@ -26,6 +26,12 @@ urlpatterns = [
     path("bar_code_index", bar_code_index, name="bar_code_index"),
     path("generate_barcode", generate_barcode, name="generate_barcode"),
     
+    # Issue Book / Return Book
+    path("issue_return_book_create", issue_return_book_create, name="issue_return_book_create"),
+    path("get_member_details", get_member_details, name="get_member_details"),
+    path("get_book_details", get_book_details, name="get_book_details"),
+    path("get_book_circulation_status", get_book_circulation_status, name="get_book_circulation_status"),
+    
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
     path('user_master_index/', user_master_index, name='user_master_index'), 

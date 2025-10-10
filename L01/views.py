@@ -30,6 +30,7 @@ from django.http import Http404, FileResponse
 from pathlib import Path
 from django.core.files.storage import default_storage
 import logging
+from Masters.models import *
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 from reportlab.pdfgen import canvas
@@ -62,12 +63,40 @@ def index(request):
         for lilo in library_details:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
+
+            # Fetch 5 most recent books
+            books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
+            lilo.books = [
+                {
+                    "title": book.title or "Untitled",
+                    "author": book.author or "Unknown",
+                    "year": book.year_of_publication or "N/A",
+                    "language": book.language or "Unknown",  # Include language here
+                    "front_page_photo": book.front_page_photo if book.front_page_photo else "",
+                    "last_page_photo": book.last_page_photo if book.last_page_photo else "",
+                    "description": book.remarks or "No description available."
+                } for book in books
+            ]
+
         library_name = library_details.first().library_name if library_details.exists() else ""
     else:
         library_details = LibraryMaster.objects.using('default').filter(is_active=1)
+        for lilo in library_details:
+            books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
+            lilo.books = [
+                {
+                    "title": book.title or "Untitled",
+                    "author": book.author or "Unknown",
+                    "year": book.year_of_publication or "N/A",
+                    "language": book.language or "Unknown",  # Include language here
+                    "front_page_photo": book.front_page_photo if book.front_page_photo else "",
+                    "last_page_photo": book.last_page_photo if book.last_page_photo else "",
+                    "description": book.remarks or "No description available."
+                } for book in books
+            ]
+
         library_name = ""
 
-    # Pass to template
     return render(request, "L01/index.html", {
         'libraries': library_details,
         'library_name': library_name,
@@ -1755,6 +1784,218 @@ def generate_barcode(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:bar_code_index")
 
+# Issue Book / Return Book
+@login_required
+def issue_return_book_create(request):
+    try:
+        Db.closeConnection()
+        m = Db.get_connection()
+        cursor = m.cursor()
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session["user_id"]
+        role_id = request.session["role_id"]
+
+        if request.method == "GET":
+            
+            members = MembershipDetails.objects.filter(isactive=1)
+            
+            for m in members:
+                m.member_encrypted_id = enc(str(m.id))
+                
+            circulation = CirculationCopyStatus.objects.all()
+            
+            for circ in circulation:
+                circ.circ_encrypted_barcode = enc(str(circ.barcode))
+                
+            bookcatelog = BookCatalog.objects.all()
+            
+            for bc in bookcatelog:
+                bc.bc_encryp_id = enc(str(bc.cat_ref_num))
+                
+            return render(
+                request,
+                "L01/Circulation/issue_return_book_create.html",
+                {
+                    "MEDIA_URL": settings.MEDIA_URL,
+                    "members": members,
+                    "circulation": circulation,
+                    "bookcatelog": bookcatelog,
+                }
+            )
+            
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "library_list"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return render(request, "L01/Circulation/issue_return_book_create.html", {})
+
+@csrf_exempt  # Only if needed; otherwise use CSRF token in JS
+def get_member_details(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Invalid request method"})
+
+    member_id = dec(str(request.POST.get("member_id")))
+    if not member_id:
+        return JsonResponse({"success": False, "error": "Member ID missing"})
+
+    try:
+        Db.closeConnection()
+        m = Db.get_connection()
+        cursor = m.cursor()
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session["user_id"]
+        role_id = request.session["role_id"]
+
+        # Fetch DocumentDetails for this member where document_id=1
+        documents = DocumentDetails.objects.filter(
+            membership_id=member_id,
+            document_id=1,
+            isactive=1
+        ).select_related(
+            'membership__membership',       # MembershipMaster
+            'membership__member_type',      # parameter_master_L01
+            'document'
+        )
+
+        document_list = []
+        for doc in documents:
+            membership = doc.membership
+            membership_master = membership.membership
+            member_type_param = membership.member_type
+            
+            # Format dates
+            from_date = membership.from_date.strftime("%d %b %Y") if membership.from_date else '-'
+            to_date = membership.to_date.strftime("%d %b %Y") if membership.to_date else '-'
+
+            document_list.append({
+                "membership_id": membership.id,
+                "full_name": f"{membership.first_name} {membership.middle_name or ''} {membership.last_name}",
+                "email": membership.email,
+                "mobile_no": membership.mobile_no,
+                "membership_code": membership_master.membership_code if membership_master else '',
+                "membership_type": membership_master.membership_type_en if membership_master else '',
+                "membership_days": membership_master.days if membership_master else '',
+                "member_type_name": member_type_param.parameter_name if member_type_param else '',
+                "membership_fromDate": from_date,
+                "membership_toDate": to_date,
+                "membership_duration": membership.membership_duration,
+                "document_id": doc.document.id,
+                "document_name": doc.document.document_name if doc.document else '',
+                "file_name": doc.file_name,
+                "file_path": doc.file_path,
+            })
+
+        return JsonResponse({
+            "success": True,
+            "documents": document_list,
+            "MEDIA_URL": settings.MEDIA_URL
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "library_list"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return render(request, "L01/Circulation/issue_return_book_create.html", {})
+
+@csrf_exempt  # Remove this if you’re using CSRF token in AJAX
+def get_book_details(request):
+    if request.method == "POST":
+        try:
+            # --- Session Variables ---
+            library_code = request.session.get('library_db', None)
+            username = request.session.get('username', None)
+            user_id = request.session.get("user_id")
+            role_id = request.session.get("role_id")
+
+            # --- Barcode / Encrypted ID ---
+            barcode_id = request.POST.get("barcode_id")
+            if not barcode_id:
+                return JsonResponse({"success": False, "message": "Barcode ID missing."}, status=400)
+
+            # --- Decrypt if needed ---
+            try:
+                barcode_id = dec(barcode_id)
+            except Exception:
+                # If not encrypted, just use it as-is
+                pass
+
+            # --- Fetch Book Details ---
+            circ = (
+                CirculationCopyStatus.objects
+                .select_related("bookcatalog", "shelf_location", "current_status")
+                .get(barcode=barcode_id)  # <--- match by barcode
+            )
+
+            data = {
+                "success": True,
+                "MEDIA_URL": settings.MEDIA_URL,
+                "book": {
+                    "title": circ.bookcatalog.title if circ.bookcatalog else "-",
+                    "author": circ.bookcatalog.author if circ.bookcatalog else "-",
+                    "isbn_issn": circ.bookcatalog.isbn_issn if circ.bookcatalog else "-",
+                    "pages": circ.bookcatalog.pages if circ.bookcatalog else "-",
+                    "language": circ.bookcatalog.language if circ.bookcatalog else "-",
+                    "front_page_photo": circ.bookcatalog.front_page_photo if circ.bookcatalog else "",
+                    "location_name": circ.shelf_location.location_name if circ.shelf_location else "-",
+                    "status_name": circ.current_status.status_name if circ.current_status else "Unknown",
+                    "status_color": circ.current_status.status_color if circ.current_status else "#999",
+                },
+            }
+            return JsonResponse(data)
+
+        except CirculationCopyStatus.DoesNotExist:
+            return JsonResponse({"success": False, "message": "No book found with this barcode."}, status=404)
+
+        except Exception as e:
+            tb = traceback.extract_tb(e.__traceback__)
+            fun = tb[0].name if tb else "get_book_details"
+
+            try:
+                # Log error in DB (if your stored procedure exists)
+                Db.closeConnection()
+                m = Db.get_connection()
+                cursor = m.cursor()
+                cursor.callproc("stp_error_log", [fun, str(e), library_code])
+            except Exception:
+                pass
+
+            print(f"Error in {fun}: {e}")
+            messages.error(request, "Oops...! Something went wrong!")
+            return JsonResponse({"success": False, "message": "Internal Server Error"}, status=500)
+
+    else:
+        return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+
+@csrf_exempt
+def get_book_circulation_status(request):
+    if request.method == "POST":
+        book_id = dec(str(request.POST.get("book_id")))
+        if not book_id:
+            return JsonResponse({"error": "Missing book_id"}, status=400)
+
+        records = (
+            CirculationCopyStatus.objects.filter(bookcatalog_id=book_id)
+            .select_related("bookcatalog", "current_status", "accession")
+            .values(
+                "id",
+                "barcode",
+                "bookcatalog__cat_ref_num",
+                "bookcatalog__title",
+                "bookcatalog__author",
+                "bookcatalog__classification_number",
+                "current_status__status_name",
+                "accession__accession_no"
+            )
+        )
+
+        return JsonResponse(list(records), safe=False)
+    
 # Palavees work
 @login_required
 def library_master_index_individual(request):
