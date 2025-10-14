@@ -5,363 +5,363 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 <style>
-/* ================= Book Gallery Container ================= */
-.library-books-section {
-    margin-top: 30px;
-    padding: 10px;
-}
+    /* ================= Book Gallery Container ================= */
+    .library-books-section {
+        margin-top: 30px;
+        padding: 10px;
+    }
 
-/* Library Books Section Title */
-.library-books-section h4 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    text-align: center;
-    color: #2c3e50;  /* Darker shade for readability */
-    text-transform: capitalize;  /* Capitalizes the first letter of each word */
-    position: relative;
-    padding-bottom: 10px;
-    margin-bottom: 30px;
-}
+    /* Library Books Section Title */
+    .library-books-section h4 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        text-align: center;
+        color: #2c3e50;  /* Darker shade for readability */
+        text-transform: capitalize;  /* Capitalizes the first letter of each word */
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 30px;
+    }
 
-.library-books-section h4::after {
+    .library-books-section h4::after {
     content: "";
     position: absolute;
     bottom: 0;
-    left: 50%;
-    width: 60px;  /* Shorter line than the width of the text */
-    height: 3px;
-    background-color: #f39c12;  /* Golden accent line */
-    transform: translateX(-50%);
-    border-radius: 2px;
-}
+        left: 50%;
+        width: 60px;  /* Shorter line than the width of the text */
+        height: 3px;
+        background-color: #f39c12;  /* Golden accent line */
+        transform: translateX(-50%);
+        border-radius: 2px;
+    }
 
-.library-books-section h4 span {
-    font-size: 1.2rem;
-    font-weight: 400;
-    color: #00eeffff;  /* Slightly lighter shade for the subtitle or secondary text */
-}
+    .library-books-section h4 span {
+        font-size: 1.2rem;
+        font-weight: 400;
+        color: #00eeffff;  /* Slightly lighter shade for the subtitle or secondary text */
+    }
 
-.library-books-section h4:hover {
-    color: #ff0000ff;  /* Golden text on hover */
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-
-/* Book Gallery */
-.book-gallery {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-}
-
-/* Individual Book Item */
-.book-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 160px;
-    position: relative;
-    font-family: 'Merriweather', serif;
-}
-
-/* Book Flip Container */
-.book-flip {
-    width: 160px;
-    height: 220px;
-    perspective: 1000px;
-    border-radius: 10px;
-}
-
-.book-flip-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.8s;
-    transform-style: preserve-3d;
-    cursor: pointer;
-}
-
-/* Front & Back Side */
-.book-flip-front, .book-flip-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-}
-
-.book-flip-front img, .book-flip-back img {
-    width: 100%;
-    height: 100%;
-    {% comment %} object-fit: cover; {% endcomment %}
-}
-
-/* Back Side */
-.book-flip-back {
-    transform: rotateY(180deg);
-}
-
-/* Flip Button */
-.flip-btn {
-    margin-top: 8px;
-    padding: 6px 12px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    background: #015296;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.3s;
-}
-
-.flip-btn:hover {
-    background: #007bff;
-}
-
-/* FontAwesome Icon inside Flip Button */
-.flip-btn i {
-    font-size: 1rem;
-}
-
-/* Book Title */
-.book-title {
-    margin-top: 6px;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #000000ff;
-}
-
-/* ================= Zoom Modal ================= */
-
-.zoom-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    justify-content: center; /* center horizontally */
-    align-items: center;     /* center vertically */
-    background-color: rgba(0,0,0,0.85);
-}
-
-.zoom-modal-content-wrapper {
-    display: flex;
-    width: 70%;
-    max-width: 900px;
-    height: 70%;
-    max-height: 600px;
-    background-color: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-    animation: fadeInScale 0.4s ease;
-}
-
-.zoom-modal-left {
-    flex: 1;
-    background-color: #f9f9f9;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 15px;
-}
-
-.zoom-modal-left img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-}
-
-.zoom-modal-right {
-    flex: 1;
-    padding: 25px;
-    overflow-y: auto;
-    background: linear-gradient(120deg, #f7f7f7, #e2e2e2);
-}
-
-.zoom-modal-right h2 {
-    margin-top: 0;
-    font-size: 1.8rem;
-    color: #333;
-    font-family: 'Merriweather', Georgia, serif;
-}
-
-.zoom-modal-right p {
-    margin: 10px 0;
-    font-size: 1rem;
-    color: #555;
-    line-height: 1.5;
-}
-
-.login-btn {
-    margin-top: 20px;
-    padding: 10px 25px;
-    background: linear-gradient(135deg, #015296 0%, #015296 100%);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.login-btn:hover {
-    transform: translateY(-2px);
-    font-weight: bold;
-    box-shadow: 0 8px 25px rgba(0,0,0);
-}
-
-.close-zoom {
-    position: absolute;
-    top: 10px;
-    right: calc(15% - 20px);
-    color: white;
-    font-size: 36px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 1010;
-    transition: transform 0.3s ease;
-}
-
-.close-zoom:hover {
-    transform: rotate(90deg);
-}
-
-@keyframes fadeInScale {
-    0% { opacity: 0; transform: scale(0.8); }
-    100% { opacity: 1; transform: scale(1); }
-}
+    .library-books-section h4:hover {
+        color: #ff0000ff;  /* Golden text on hover */
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
 
 
-
-@keyframes fadeIn {
-    from {opacity: 0;}
-    to {opacity: 1;}
-}
-
-
-/* For tablets and mobile devices with smaller screens */
-@media (max-width: 768px) {
+    /* Book Gallery */
     .book-gallery {
+        display: flex;
         flex-wrap: wrap;
-        gap: 15px; /* Reduced gap between cards */
-        justify-content: center; /* Center the items */
-        padding: 0 10px; /* Add some padding for better layout */
+        justify-content: center;
+        gap: 20px;
     }
 
-    /* Book item settings */
+    /* Individual Book Item */
     .book-item {
-        width: 48%; /* 2 items per row with some gap */
-        font-size: 0.9rem;
-        margin-bottom: 20px; /* Add space between rows */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 160px;
         position: relative;
+        font-family: 'Merriweather', serif;
     }
 
-    /* Adjust flip card container */
+    /* Book Flip Container */
     .book-flip {
-        width: 100%; /* Full width of the .book-item */
-        height: 220px; /* Adjust the height to fit mobile screens */
+        width: 160px;
+        height: 220px;
+        perspective: 1000px;
+        border-radius: 10px;
     }
 
-    /* Book item title */
-    .book-title {
-        font-size: 0.9rem; /* Adjust font size for mobile */
-        margin-top: 5px;
+    .book-flip-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+        cursor: pointer;
     }
 
-    .book-item img {
+    /* Front & Back Side */
+    .book-flip-front, .book-flip-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+    }
+
+    .book-flip-front img, .book-flip-back img {
         width: 100%;
         height: 100%;
         {% comment %} object-fit: cover; {% endcomment %}
     }
 
-    /* Ensure hover effects still work well on smaller screens */
-    .book-flip-inner {
-        transition: transform 0.8s ease;
-        transform-style: preserve-3d;
+    /* Back Side */
+    .book-flip-back {
+        transform: rotateY(180deg);
     }
 
-    /* Flip button */
+    /* Flip Button */
     .flip-btn {
-        font-size: 0.8rem;
-        padding: 5px 10px;
-    }
-}
-
-/* For very small mobile screens (portrait mode, around 480px or below) */
-@media (max-width: 480px) {
-    .book-gallery {
-        flex-direction: column; /* Stack items vertically for very small screens */
-        gap: 10px; /* Very small gap between items */
-    }
-
-    /* Book item settings */
-    .book-item {
-        width: 100%; /* Full width for each book */
-        font-size: 0.85rem; /* Slightly smaller font size */
+        margin-top: 8px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        background: #015296;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.3s;
     }
 
-    /* Flip card container */
-    .book-flip {
-        height: 200px; /* Adjust card height */
+    .flip-btn:hover {
+        background: #007bff;
     }
 
-    /* Title adjustments */
+    /* FontAwesome Icon inside Flip Button */
+    .flip-btn i {
+        font-size: 1rem;
+    }
+
+    /* Book Title */
     .book-title {
-        font-size: 0.85rem; /* Smaller font size for mobile */
+        margin-top: 6px;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #000000ff;
     }
 
-    /* Flip button */
-    .flip-btn {
-        padding: 4px 8px;
-        font-size: 0.7rem;
+    /* ================= Zoom Modal ================= */
+
+    .zoom-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        justify-content: center; /* center horizontally */
+        align-items: center;     /* center vertically */
+        background-color: rgba(0,0,0,0.85);
     }
-}
 
-/* View More Button */
-.view-more-btn-container {
-    text-align: center;
-    margin-top: 20px;  /* Adds space above the button */
-}
+    .zoom-modal-content-wrapper {
+        display: flex;
+        width: 70%;
+        max-width: 900px;
+        height: 70%;
+        max-height: 600px;
+        background-color: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        animation: fadeInScale 0.4s ease;
+    }
 
-.view-more-btn {
-    background-color: #015296;  /* Blue background color */
-    color: #fff;
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-radius: 25px;
-    text-decoration: none;  /* Remove underline from link */
-    display: inline-flex;
-    align-items: center;  /* Align text and icon vertically */
-    justify-content: center;
-    gap: 8px;  /* Space between the icon and text */
-    transition: all 0.3s ease;
-}
+    .zoom-modal-left {
+        flex: 1;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px;
+    }
 
-.view-more-btn i {
-    font-size: 1.2rem;  /* Icon size */
-}
+    .zoom-modal-left img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
 
-.view-more-btn:hover {
-    background-color: #007bff;  /* Lighter blue on hover */
-    transform: scale(1.05);  /* Slightly enlarge the button */
-}
+    .zoom-modal-right {
+        flex: 1;
+        padding: 25px;
+        overflow-y: auto;
+        background: linear-gradient(120deg, #f7f7f7, #e2e2e2);
+    }
+
+    .zoom-modal-right h2 {
+        margin-top: 0;
+        font-size: 1.8rem;
+        color: #333;
+        font-family: 'Merriweather', Georgia, serif;
+    }
+
+    .zoom-modal-right p {
+        margin: 10px 0;
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.5;
+    }
+
+    .login-btn {
+        margin-top: 20px;
+        padding: 10px 25px;
+        background: linear-gradient(135deg, #015296 0%, #015296 100%);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .login-btn:hover {
+        transform: translateY(-2px);
+        font-weight: bold;
+        box-shadow: 0 8px 25px rgba(0,0,0);
+    }
+
+    .close-zoom {
+        position: absolute;
+        top: 10px;
+        right: calc(15% - 20px);
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1010;
+        transition: transform 0.3s ease;
+    }
+
+    .close-zoom:hover {
+        transform: rotate(90deg);
+    }
+
+    @keyframes fadeInScale {
+        0% { opacity: 0; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+
+
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+
+    /* For tablets and mobile devices with smaller screens */
+    @media (max-width: 768px) {
+        .book-gallery {
+            flex-wrap: wrap;
+            gap: 15px; /* Reduced gap between cards */
+            justify-content: center; /* Center the items */
+            padding: 0 10px; /* Add some padding for better layout */
+        }
+
+        /* Book item settings */
+        .book-item {
+            width: 48%; /* 2 items per row with some gap */
+            font-size: 0.9rem;
+            margin-bottom: 20px; /* Add space between rows */
+            position: relative;
+        }
+
+        /* Adjust flip card container */
+        .book-flip {
+            width: 100%; /* Full width of the .book-item */
+            height: 220px; /* Adjust the height to fit mobile screens */
+        }
+
+        /* Book item title */
+        .book-title {
+            font-size: 0.9rem; /* Adjust font size for mobile */
+            margin-top: 5px;
+        }
+
+        .book-item img {
+            width: 100%;
+            height: 100%;
+            {% comment %} object-fit: cover; {% endcomment %}
+        }
+
+        /* Ensure hover effects still work well on smaller screens */
+        .book-flip-inner {
+            transition: transform 0.8s ease;
+            transform-style: preserve-3d;
+        }
+
+        /* Flip button */
+        .flip-btn {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+        }
+    }
+
+    /* For very small mobile screens (portrait mode, around 480px or below) */
+    @media (max-width: 480px) {
+        .book-gallery {
+            flex-direction: column; /* Stack items vertically for very small screens */
+            gap: 10px; /* Very small gap between items */
+        }
+
+        /* Book item settings */
+        .book-item {
+            width: 100%; /* Full width for each book */
+            font-size: 0.85rem; /* Slightly smaller font size */
+        }
+
+        /* Flip card container */
+        .book-flip {
+            height: 200px; /* Adjust card height */
+        }
+
+        /* Title adjustments */
+        .book-title {
+            font-size: 0.85rem; /* Smaller font size for mobile */
+        }
+
+        /* Flip button */
+        .flip-btn {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+    }
+
+    /* View More Button */
+    .view-more-btn-container {
+        text-align: center;
+        margin-top: 20px;  /* Adds space above the button */
+    }
+
+    .view-more-btn {
+        background-color: #015296;  /* Blue background color */
+        color: #fff;
+        padding: 12px 25px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 25px;
+        text-decoration: none;  /* Remove underline from link */
+        display: inline-flex;
+        align-items: center;  /* Align text and icon vertically */
+        justify-content: center;
+        gap: 8px;  /* Space between the icon and text */
+        transition: all 0.3s ease;
+    }
+
+    .view-more-btn i {
+        font-size: 1.2rem;  /* Icon size */
+    }
+
+    .view-more-btn:hover {
+        background-color: #007bff;  /* Lighter blue on hover */
+        transform: scale(1.05);  /* Slightly enlarge the button */
+    }
 </style>
 
 <div class="oz-card-grid">
