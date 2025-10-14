@@ -69,11 +69,19 @@ def index(request):
             lilo.books = [
                 {
                     "title": book.title or "Untitled",
+                    "subtitle": book.subtitle or "",
                     "author": book.author or "Unknown",
-                    "year": book.year_of_publication or "N/A",
-                    "language": book.language or "Unknown",  # Include language here
+                    "publisher": book.publisher or "",
+                    "isbn_issn": book.isbn_issn or "",
+                    "edition": book.edition or "",
+                    # "subject": book.subject.subjectNameEnglish if book.subject else "",
+                    "publication_place": book.publication_place or "",
+                    "year_of_publication": book.year_of_publication or "N/A",  # ✅ fixed key name
+                    "pages": book.pages or "",
+                    "language": book.language or "Unknown",
                     "front_page_photo": book.front_page_photo if book.front_page_photo else "",
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
+                    "remarks": book.remarks or "",
                     "description": book.remarks or "No description available."
                 } for book in books
             ]
@@ -86,11 +94,19 @@ def index(request):
             lilo.books = [
                 {
                     "title": book.title or "Untitled",
+                    "subtitle": book.subtitle or "",
                     "author": book.author or "Unknown",
-                    "year": book.year_of_publication or "N/A",
-                    "language": book.language or "Unknown",  # Include language here
+                    "publisher": book.publisher or "",
+                    "isbn_issn": book.isbn_issn or "",
+                    "edition": book.edition or "",
+                    # "subject": book.subject.subjectNameEnglish if book.subject else "",
+                    "publication_place": book.publication_place or "",
+                    "year_of_publication": book.year_of_publication or "N/A",  # ✅ fixed key name
+                    "pages": book.pages or "",
+                    "language": book.language or "Unknown",
                     "front_page_photo": book.front_page_photo if book.front_page_photo else "",
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
+                    "remarks": book.remarks or "",
                     "description": book.remarks or "No description available."
                 } for book in books
             ]

@@ -472,102 +472,107 @@
             </div>
         </div>
 
-    <!-- ================= Books Section (Outside Card) ================= -->
-{% if library.books %}
-    <div class="library-books-section">
-        <h4>Books Available in {{ library.library_name }}</h4>
-        <div class="book-gallery">
-            {% for book in library.books %}
-            <div class="book-item">
-                <div class="book-flip" id="book-flip-{{ forloop.counter }}">
-                    <div class="book-flip-inner">
-                        {% if book.front_page_photo %}
-                        <div class="book-flip-front">
-                            <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
-                                alt="{{ book.title }} Front Cover" 
-                                class="book-image" 
-                                onclick="zoomImage(this)" 
-                                data-author="{{ book.author }}" 
-                                data-title="{{ book.title }}" 
-                                data-year="{{ book.year }}" 
-                                data-language="{{ book.language }}" 
-                                data-description="{{ book.description }}">
+        {% if library.books %}
+            <div class="library-books-section">
+                <h4>Books Available in {{ library.library_name }}</h4>
+                <div class="book-gallery">
+                    {% for book in library.books %}
+                    <div class="book-item">
+                        <div class="book-flip" id="book-flip-{{ forloop.counter }}">
+                            <div class="book-flip-inner">
+
+                                {% if book.front_page_photo %}
+                                <div class="book-flip-front">
+                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
+                                        alt="{{ book.title }} Front Cover"
+                                        class="book-image"
+                                        onclick="zoomImage(this)"
+                                        data-author="{{ book.author }}"
+                                        data-title="{{ book.title }}"
+                                        data-subtitle="{{ book.subtitle }}"
+                                        data-publisher="{{ book.publisher }}"
+                                        data-isbn_issn="{{ book.isbn_issn }}"
+                                        data-edition="{{ book.edition }}"
+                                        {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
+                                        data-publication_place="{{ book.publication_place }}"
+                                        data-year_of_publication="{{ book.year_of_publication }}"
+                                        data-pages="{{ book.pages }}"
+                                        data-remarks="{{ book.remarks }}"
+                                        data-language="{{ book.language }}"
+                                        data-description="{{ book.description }}">
+                                </div>
+                                {% endif %}
+
+                                {% if book.last_page_photo %}
+                                <div class="book-flip-back">
+                                    <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
+                                        alt="{{ book.title }} Back Cover"
+                                        class="book-image"
+                                        onclick="zoomImage(this)"
+                                        data-author="{{ book.author }}"
+                                        data-title="{{ book.title }}"
+                                        data-subtitle="{{ book.subtitle }}"
+                                        data-publisher="{{ book.publisher }}"
+                                        data-isbn_issn="{{ book.isbn_issn }}"
+                                        data-edition="{{ book.edition }}"
+                                        {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
+                                        data-publication_place="{{ book.publication_place }}"
+                                        data-year_of_publication="{{ book.year_of_publication }}"
+                                        data-pages="{{ book.pages }}"
+                                        data-remarks="{{ book.remarks }}"
+                                        data-language="{{ book.language }}"
+                                        data-description="{{ book.description }}">
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        {% endif %}
-                        {% if book.last_page_photo %}
-                        <div class="book-flip-back">
-                            <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}" 
-                                alt="{{ book.title }} Back Cover" 
-                                class="book-image" 
-                                onclick="zoomImage(this)" 
-                                data-author="{{ book.author }}" 
-                                data-title="{{ book.title }}" 
-                                data-year="{{ book.year }}" 
-                                data-language="{{ book.language }}" 
-                                data-description="{{ book.description }}">
-                        </div>
-                        {% endif %}
+
+                        <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
+                            <i class="fas fa-sync-alt"></i> Flip
+                        </button>
+                        <p class="book-title">{{ book.title }}</p>
                     </div>
+                    {% endfor %}
                 </div>
-                <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
-                    <i class="fas fa-sync-alt"></i> Flip
-                </button>
-                <p class="book-title">{{ book.title }}</p>
+
+                <!-- View More Button -->
+                {% comment %} <div class="view-more-btn-container">
+                    <a href="{% url 'L01:view_catalogue' %}" class="view-more-btn">
+                        <i class="fas fa-arrow-down"></i> View More
+                    </a>
+                </div> {% endcomment %}
             </div>
-            {% endfor %}
+        {% endif %}
+
+        <!-- ================= Zoom Modal ================= -->
+        <div id="zoomModal" class="zoom-modal">
+            <span class="close-zoom" onclick="closeZoom()">&times;</span>
+            <div class="zoom-modal-content-wrapper">
+                <!-- Left: Book Image -->
+                <div class="zoom-modal-left">
+                    <img id="zoomedImage" src="" alt="Book Image">
+                </div>
+
+                <!-- Right: Book Info -->
+                <div class="zoom-modal-right">
+                    <h2 id="zoomBookTitle">Book Title</h2>
+                    <p id="zoomBookSubtitle"></p>
+                    <p><strong>Author:</strong> <span id="zoomBookAuthor"></span></p>
+                    <p><strong>Publisher:</strong> <span id="zoomBookPublisher"></span></p>
+                    <p><strong>ISBN/ISSN:</strong> <span id="zoomBookISBN"></span></p>
+                    <p><strong>Edition:</strong> <span id="zoomBookEdition"></span></p>
+                    {% comment %} <p><strong>Subject:</strong> <span id="zoomBookSubject"></span></p> {% endcomment %}
+                    <p><strong>Language:</strong> <span id="zoomBookLanguage"></span></p>
+                    <p><strong>Publication Place:</strong> <span id="zoomBookPlace"></span></p>
+                    <p><strong>Year of Publication:</strong> <span id="zoomBookYear"></span></p>
+                    <p><strong>Pages:</strong> <span id="zoomBookPages"></span></p>
+                    <p><strong>Remarks:</strong> <span id="zoomBookRemarks"></span></p>
+                    <p><strong>Description:</strong> <span id="zoomBookDescription"></span></p>
+
+                    <button class="login-btn" onclick="window.location.href='{% url 'Login' %}'">Login to Access</button>
+                </div>
+            </div>
         </div>
-
-        <!-- View More Button -->
-        <!-- View More Button with FontAwesome Icon -->
-        <div class="view-more-btn-container">
-            <a href="{% url 'Login' %}" class="view-more-btn">
-                <i class="fas fa-arrow-down"></i> View More
-            </a>
-        </div>
-
-    </div>
-{% endif %}
-<!-- ================= End Books Section ================= -->
-
-<!-- Book Card Section (For Book Catalog) -->
-{% for book in libraries %}
-    <div class="book-card" onclick="openZoomModal(
-        '{{ MEDIA_URL }}{{ book.front_page_photo }}', 
-        '{{ MEDIA_URL }}{{ book.last_page_photo }}', 
-        '{{ book.title }}', 
-        '{{ book.author }}', 
-        '{{ book.year }}', 
-        '{{ book.language }}', 
-        '{{ book.description }}')">
-        <h3>{{ book.title }}</h3>
-        <p>{{ book.author }}</p>
-        <p>{{ book.year }}</p>
-        <p> {{ book.language }}</p> 
-    </div>
-{% endfor %}
-
-<!-- Zoom Modal -->
-<div id="zoomModal" class="zoom-modal">
-    <span class="close-zoom" onclick="closeZoom()">&times;</span>
-    <div class="zoom-modal-content-wrapper">
-        <!-- Left: Book Image -->
-        <div class="zoom-modal-left">
-            <img id="zoomedImage" src="" alt="Book Image">
-        </div>
-
-        <!-- Right: Book Info -->
-        <div class="zoom-modal-right">
-            <h2 id="zoomBookTitle">Book Title</h2>
-            <p><strong>Author:</strong> <span id="zoomBookAuthor"></span></p>
-            <p><strong>Year:</strong> <span id="zoomBookYear"></span></p>
-            <p><strong>Language:</strong> <span id="zoomBookLanguage"></span></p>
-            <p><strong>Description:</strong></p>
-            <p id="zoomBookDescription"></p>
-            <button class="login-btn" onclick="window.location.href='{% url 'Login' %}'">Login to Access</button>
-        </div>
-    </div>
-</div>
-
 
     {% endfor %}
 
@@ -596,49 +601,103 @@
         });
     </script>
 
-<script>
-    // Flip Book
-    function flipBook(flipId) {
-        const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
-        flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
-    }
-</script>
-
-<script>
-    function zoomImage(img) {
-        const modal = document.getElementById("zoomModal");
-        const modalImg = document.getElementById("zoomedImage");
-        const modalAuthor = document.getElementById("zoomBookAuthor");
-        const modalTitle = document.getElementById("zoomBookTitle");
-        const modalYear = document.getElementById("zoomBookYear");
-        const modalLanguage = document.getElementById("zoomBookLanguage");
-        const modalDescription = document.getElementById("zoomBookDescription");
-
-        modal.style.display = "flex";
-        modal.classList.add("show");   // trigger animation
-
-        // Set the image source and details for the zoom modal
-        modalImg.src = img.src;
-        modalAuthor.textContent = img.getAttribute('data-author');
-        modalTitle.textContent = img.getAttribute('data-title');
-        modalYear.textContent = img.getAttribute('data-year');
-        modalLanguage.textContent = img.getAttribute('data-language');
-        modalDescription.textContent = img.getAttribute('data-description');
-    }
-
-    function closeZoom() {
-        const modal = document.getElementById("zoomModal");
-        modal.style.display = "none";
-        modal.classList.remove("show");
-    }
-
-    // Close modal on click outside the image
-    document.getElementById("zoomModal").addEventListener("click", function(e) {
-        if (e.target.id === "zoomModal") {
-            closeZoom();
+    <script>
+        // Flip Book
+        function flipBook(flipId) {
+            const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
+            flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
         }
-    });
+    </script>
 
-</script>
+    <script>
+        function zoomImage(img) {
+            const modal = document.getElementById("zoomModal");
+            const modalImg = document.getElementById("zoomedImage");
+            const modalAuthor = document.getElementById("zoomBookAuthor");
+            const modalTitle = document.getElementById("zoomBookTitle");
+            const modalYear = document.getElementById("zoomBookYear");
+            const modalLanguage = document.getElementById("zoomBookLanguage");
+            const modalDescription = document.getElementById("zoomBookDescription");
+
+            modal.style.display = "flex";
+            modal.classList.add("show");   // trigger animation
+
+            // Set the image source and details for the zoom modal
+            modalImg.src = img.src;
+            modalAuthor.textContent = img.getAttribute('data-author');
+            modalTitle.textContent = img.getAttribute('data-title');
+            modalYear.textContent = img.getAttribute('data-year');
+            modalLanguage.textContent = img.getAttribute('data-language');
+            modalDescription.textContent = img.getAttribute('data-description');
+        }
+
+        function closeZoom() {
+            const modal = document.getElementById("zoomModal");
+            modal.style.display = "none";
+            modal.classList.remove("show");
+        }
+
+        // Close modal on click outside the image
+        document.getElementById("zoomModal").addEventListener("click", function(e) {
+            if (e.target.id === "zoomModal") {
+                closeZoom();
+            }
+        });
+
+    </script>
+
+    <script>
+        function zoomImage(img) {
+            const modal = document.getElementById("zoomModal");
+            const modalImg = document.getElementById("zoomedImage");
+
+            // Core fields
+            const modalAuthor = document.getElementById("zoomBookAuthor");
+            const modalTitle = document.getElementById("zoomBookTitle");
+            const modalSubtitle = document.getElementById("zoomBookSubtitle");
+            const modalPublisher = document.getElementById("zoomBookPublisher");
+            const modalISBN = document.getElementById("zoomBookISBN");
+            const modalEdition = document.getElementById("zoomBookEdition");
+            
+            const modalLanguage = document.getElementById("zoomBookLanguage");
+            const modalPlace = document.getElementById("zoomBookPlace");
+            const modalYear = document.getElementById("zoomBookYear");
+            const modalPages = document.getElementById("zoomBookPages");
+            const modalRemarks = document.getElementById("zoomBookRemarks");
+            const modalDescription = document.getElementById("zoomBookDescription");
+
+            // Show modal
+            modal.style.display = "flex";
+            modal.classList.add("show");
+
+            // Assign values safely
+            modalImg.src = img.src;
+            modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
+            modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
+            modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
+            modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
+            modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
+            modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
+            modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
+            modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
+            modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
+            modalPages.textContent = img.getAttribute('data-pages') || "N/A";
+            modalRemarks.textContent = img.getAttribute('data-remarks') || "";
+            modalDescription.textContent = img.getAttribute('data-description') || "";
+        }
+
+        function closeZoom() {
+            const modal = document.getElementById("zoomModal");
+            modal.style.display = "none";
+            modal.classList.remove("show");
+        }
+
+        // Close modal on click outside image
+        document.getElementById("zoomModal").addEventListener("click", function (e) {
+            if (e.target.id === "zoomModal") {
+                closeZoom();
+            }
+        });
+    </script>
 
 {% endblock %}

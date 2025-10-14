@@ -4,7 +4,7 @@
 
     {% comment %} Slider {% endcomment %}
 
-    <section class="hero-section" style="background-image: url('{% static 'images/administrative/slider.jpg' %}');">
+    <section class="hero-section" id="hero-english" style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
         <div class="hero-overlay">
             <div class="hero-text">
                 <h1>Welcome to NMMC Library</h1>
@@ -13,10 +13,22 @@
         </div>
     </section>
 
+    <section class="hero-section" id="hero-marathi" style="background-image: url('{% static "images/administrative/slider.jpg" %}');">
+        <div class="hero-overlay">
+            <div class="hero-text">
+                <h1 id="hero-title">नवी मुंबई महानगरपालिका ग्रंथालयात आपले स्वागत आहे</h1>
+                <p id="hero-subtitle">आमच्या ग्रंथालयांचा शोध घ्या आणि ज्ञान मिळवा.</p>
+            </div>
+        </div>
+    </section>
+
+
     <section id="libraries-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Find Out Libraries in NMMC</h2>
+                <h2 class="section-title" id="section-english" style="display:none">Find Out Libraries in NMMC</h2>
+
+                <h2 class="section-title" id="section-marathi">नवी मुंबई महानगरपालिकेतील ग्रंथालय शोधा</h2>
 
                 <!-- View Toggle (Desktop Only) -->
                 <div class="view-toggle">
@@ -187,5 +199,5 @@
             });
         </script>
     {% endif %}
-    
+
 {% endblock %}

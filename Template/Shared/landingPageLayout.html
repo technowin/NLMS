@@ -24,37 +24,62 @@
 
     <header>
             
-            <div class="headerUtilityRow">
+            <div class="headerUtilityRow" id="head-english" style="display: none;">
                 <div class="govLinkContainer">
                     <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                         aria-label="Welcome to NMMC Library official website">
-                        Navi Mumbai Municipal Corporation
+                            Navi Mumbai Municipal Corporation
                         <span class="underlineHover"></span>
                     </a>
                 </div>
+
                 <div class="fontControlContainer">
                     <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
                     <button onclick="decreaseFont()" class="fontControlBtn" title="Decrease Font Size">A-</button>
                     <button onclick="resetFont()" class="fontControlBtn" title="Reset Font Size">A</button>
+                    <button onclick="toggleLanguage()" class="fontControlBtn" title="Change Language">English</button>
+                </div>
+            </div>
+
+            <div class="headerUtilityRow" id="head-marathi">
+                <div class="govLinkContainer">
+                    <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
+                        aria-label="नवी मुंबई महानगरपालिका ग्रंथालयाच्या अधिकृत वेबसाइटवर आपले स्वागत आहे">
+                        नवी मुंबई महानगरपालिका
+                        <span class="underlineHover"></span>
+                    </a>
+                </div>
+
+                <div class="fontControlContainer">
+                    <button onclick="increaseFont()" class="fontControlBtn" title="अक्षर आकार वाढवा">अ+</button>
+                    <button onclick="decreaseFont()" class="fontControlBtn" title="अक्षर आकार कमी करा">अ-</button>
+                    <button onclick="resetFont()" class="fontControlBtn" title="अक्षर आकार रीसेट करा">अ</button>
+                    <button onclick="toggleLanguage()" class="fontControlBtn" title="Change Language">English</button>
                 </div>
             </div>
             
             <div class="top-bar">
                 <!-- Left: logo + title -->
-                <div class="brand-left">
+                <div class="brand-left" id="brand-english" style="display: none;">
                     <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="NMMC Logo" class="logo">
-                    <h1 class="header-title">Navi Mumbai Municipal Corporation</h1>
+                    <h1 class="header-title">NMMC Library</h1>
+                </div> 
+
+                <!-- Marathi Brand (default visible) -->
+                <div class="brand-left" id="brand-marathi">
+                    <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo">
+                    <h1 class="header-title">नवी मुंबई महानगरपालिका ग्रंथालय</h1>
                 </div>
+
 
                 <!-- Right logo -->
                 <img src="{% static 'images/administrative/layout_img.png' %}" alt="NMMC Logo" class="logo right-logo">
             </div>
 
             <!-- Navbar -->
-            <nav class="navbar" id="myTopnav">
+            <nav class="navbar"  id="navbar-english" style="display: none;">
                 <ul>
                     <li class="nav-item"><a href="{% url 'library_list' %}">Home</a></li>
-
                     <li class="nav-item dropdown">
                         <a href="javascript:void(0);" class="dropbtn">About Us ▾</a>
                         <ul class="dropdown-menu">
@@ -76,11 +101,44 @@
                     
                     {% comment %} <li class="nav-item"><a href="{% url 'Login' %}">Login</a></li> {% endcomment %}
 
-                    <li class="icon">
+                    {% comment %} <li class="icon">
                         <a href="javascript:void(0);" onclick="toggleNavbar()">☰</a>
+                    </li> {% endcomment %}
+                    <li class="icon">
+                        <a href="javascript:void(0);" onclick="toggleNavbar('navbar-english')">☰</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <nav class="navbar" id="navbar-marathi">
+                <ul>
+                    <li class="nav-item"><a href="{% url 'library_list' %}">मुख्य पृष्ठ</a></li>
+                    
+                    <li class="nav-item dropdown">
+                        <a href="javascript:void(0);" class="dropbtn">आमच्याबद्दल ▾</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">नवी मुंबई महानगरपालिका</a></li>
+                            <li><a href="#">दृष्टिकोन आणि ध्येय</a></li>
+                            <li><a href="#">आधारभूत सुविधा</a></li>
+                            <li><a href="#">पुरस्कार आणि सन्मान</a></li>
+                            <li><a href="#">यश आणि उपलब्धी</a></li>
+                        </ul>
                     </li>
 
-
+                    <li class="nav-item dropdown">
+                        <a href="javascript:void(0);" class="dropbtn">सेवा ▾</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">ग्रंथालय सेवा</a></li>
+                            <li><a href="#">ऑनलाइन सेवा</a></li>
+                        </ul>
+                    </li>
+                    
+                    {% comment %} <li class="icon">
+                        <a href="javascript:void(0);" onclick="toggleNavbar()">☰</a>
+                    </li> {% endcomment %}
+                    <li class="icon">
+                        <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>
+                    </li>
                 </ul>
             </nav>
 
@@ -92,12 +150,24 @@
         {% endblock %}
     </main>
 
-    <footer>
+    <!-- Default Marathi Footer -->
+    <footer id="footer-marathi">
         <div class="footer-content">
-            <p class="footer-left">&copy; 2024 Navi Mumbai Municipal Corporation. All rights reserved.</p>
+            <p class="footer-left">&copy; 2025 नवी मुंबई महानगरपालिका. सर्व हक्क राखीव.</p>
+            <p class="footer-right">
+                डिझाईन आणि विकास :
+                <a href="https://technowinitinfra.com/" target="_blank">टेक्नोविन आयटी इन्फ्रा प्रा. लि.</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Hidden English Footer -->
+    <footer id="footer-english" style="display: none;">
+        <div class="footer-content">
+            <p class="footer-left">&copy; 2025 Navi Mumbai Municipal Corporation. All rights reserved.</p>
             <p class="footer-right">
                 Designed and Developed by 
-                <a href="https://technowinitinfra.com/" target="_blank">Technowin IT Infra Pvt Ltd, NMMC</a>
+                <a href="https://technowinitinfra.com/" target="_blank">Technowin IT Infra Pvt Ltd</a>
             </p>
         </div>
     </footer>
@@ -109,7 +179,7 @@
 </body>
 
     <script>
-        function toggleNavbar() {
+        {% comment %} function toggleNavbar() {
             const navbar = document.getElementById("myTopnav");
             navbar.classList.toggle("responsive");
         }
@@ -122,7 +192,23 @@
                 dropdown.classList.toggle('show');
                 }
             });
-        });
+        }); {% endcomment %}
+        function toggleNavbar(navbarId) {
+            const navbar = document.getElementById(navbarId);
+            if (!navbar) return;
+
+            navbar.classList.toggle("responsive");
+
+            // Toggle dropdowns in mobile view
+            navbar.querySelectorAll('.dropbtn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 1000) { // mobile/tablet only
+                        const dropdown = this.nextElementSibling;
+                        dropdown.classList.toggle('show');
+                    }
+                });
+            });
+        }
     </script>
 
     <!-- Script -->
@@ -141,6 +227,115 @@
         function topFunction() {
             document.body.scrollTop = 0;
             document.documentElement.scrollTop = 0;
+        }
+    </script>
+
+    <script>
+        let currentScale = 1;
+        const scaleStep = 0.1;
+        const maxIncrease = 2; // can increase only twice
+        const maxDecrease = 2; // can decrease only twice
+        let increaseCount = 0;
+        let decreaseCount = 0;
+        const root = document.documentElement;
+
+        // Store the original values
+        const baseFontSizes = {
+        xxl: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-xxl')),
+        xl: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-xl')),
+        lg: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-lg')),
+        md: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-md')),
+        sm: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-sm')),
+        };
+
+        function applyFontScale() {
+        root.style.setProperty('--font-size-xxl', `${baseFontSizes.xxl * currentScale}rem`);
+        root.style.setProperty('--font-size-xl', `${baseFontSizes.xl * currentScale}rem`);
+        root.style.setProperty('--font-size-lg', `${baseFontSizes.lg * currentScale}rem`);
+        root.style.setProperty('--font-size-md', `${baseFontSizes.md * currentScale}rem`);
+        root.style.setProperty('--font-size-sm', `${baseFontSizes.sm * currentScale}rem`);
+        }
+
+        function increaseFont() {
+            if (increaseCount < maxIncrease) {
+                currentScale += scaleStep;
+                increaseCount++;
+                decreaseCount = Math.max(0, decreaseCount - 1); // balance out if we go back
+                applyFontScale();
+            } else {
+                alert("Font size is already at maximum!");
+            }
+        }
+
+        function decreaseFont() {
+            if (decreaseCount < maxDecrease) {
+                currentScale -= scaleStep;
+                decreaseCount++;
+                increaseCount = Math.max(0, increaseCount - 1);
+                applyFontScale();
+            } else {
+                alert("Font size is already at minimum!");
+            }
+        }
+
+        function resetFont() {
+            currentScale = 1;
+            increaseCount = 0;
+            decreaseCount = 0;
+            applyFontScale();
+        }
+
+    </script>
+
+    <script>
+        function toggleLanguage() {
+            debugger;
+            const marathiFooter = document.getElementById('footer-marathi');
+            const englishFooter = document.getElementById('footer-english');
+            const navbarMarathi = document.getElementById('navbar-marathi');
+            const navbarEnglish = document.getElementById('navbar-english');
+            const brandMarathi = document.getElementById('brand-marathi');
+            const brandEnglish = document.getElementById('brand-english');
+            const headMarathi = document.getElementById('head-marathi');
+            const headEnglish = document.getElementById('head-english');
+            const marathihero = document.getElementById('hero-marathi');
+            const englishhero = document.getElementById('hero-english');
+            const marathisection = document.getElementById('section-marathi');
+            const englishsection= document.getElementById('section-english');
+
+            const langBtn = document.querySelector('.fontControlBtn[onclick="toggleLanguage()"]');
+
+            if (marathiFooter.style.display === 'none') {
+                // Switch to Marathi
+                marathiFooter.style.display = 'block';
+                englishFooter.style.display = 'none';
+                navbarMarathi.style.display = 'block';
+                navbarEnglish.style.display = 'none';
+                brandMarathi.style.display = 'flex';
+                brandEnglish.style.display = 'none';
+                headMarathi.style.display = 'flex';
+                headEnglish.style.display = 'none';
+                marathihero.style.display = 'block';
+                englishhero.style.display = 'none';
+                marathisection.style.display = 'block';
+                englishsection.style.display = 'none';
+                langBtn.textContent = 'English';
+            } else {
+                // Switch to English
+                marathiFooter.style.display = 'none';
+                englishFooter.style.display = 'block';
+                navbarMarathi.style.display = 'none';
+                navbarEnglish.style.display = 'block';
+                brandMarathi.style.display = 'none';
+                brandEnglish.style.display = 'flex';
+                headMarathi.style.display = 'none';
+                headEnglish.style.display = 'flex';
+                marathihero.style.display = 'none';
+                englishhero.style.display = 'block';
+                marathisection.style.display = 'none';
+                englishsection.style.display = 'block';
+                langBtn.textContent = 'मराठी';
+            }
         }
     </script>
 
