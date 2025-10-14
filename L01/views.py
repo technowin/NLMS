@@ -550,7 +550,8 @@ def membership_form_create(request):
                             filename, ext = os.path.splitext(file.name)
 
                             # Generate unique filename
-                            timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+                            # timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+                            timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
                             short_uuid = str(uuid.uuid4())[:8]
                             unique_filename = f"{filename}_{timestamp}_{short_uuid}{ext}"
 
