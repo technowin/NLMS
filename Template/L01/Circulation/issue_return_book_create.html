@@ -548,18 +548,34 @@
                     </div>
                     <div class="card-body">
                         <form id="returnBookForm">
+                            
+                            {% comment %} Barcode / बारकोड {% endcomment %}
+
                             <div class="mb-3">
-                                <label class="form-label">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
-                                <input type="text" name="user_id" class="form-control" placeholder="Enter User ID">
+                                <div class="mb-2 d-flex align-items-center">
+                                    <label class="form-label fw-semibold text-secondary mb-0">
+                                        Barcode / बारकोड<span class="text-danger">*</span>
+                                    </label>
+                                    {% comment %} <i class="bi bi-question-circle-fill help-icon" 
+                                         data-bs-toggle="modal" data-bs-target="#bookCatalogModal"></i> {% endcomment %}
+                                </div>
+                                <div class="custom-dropdown">
+                                    <input type="text" id="barcodeSearchReturn" class="dropdown-input form-control shadow-sm"
+                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off" required>
+                                    <ul id="barcodeOptionsReturn" class="dropdown-options">
+                                        {% for circ in circulation %}
+                                            <li data-value="{{ circ.circ_encrypted_barcode }}">
+                                                {{ circ.barcode }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="hidden" name="barcode_id" id="barcodeCodeInputReturn">
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Book Barcode / पुस्तक बारकोड <span class="text-danger">*</span></label>
-                                <input type="text" name="book_barcode" class="form-control" placeholder="Enter Book Barcode">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Return Date / परतावा दिनांक</label>
-                                <input type="date" name="return_date" class="form-control">
-                            </div>
+
+                            <!-- Container where details will appear -->
+                            <div id="barcodeDetailsReturn" class="mt-3"></div>
+
                             <div class="text-end">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="uil uil-corner-up-left-alt"></i> Return Book
@@ -1017,6 +1033,261 @@
                     dataType: "json",
                     success: function(data) {
                         const container = $("#barcodeDetails");
+                        const issueBtn = $("#issueBookBtn");
+                        container.empty();
+
+                        if (data.success) {
+                            const books = Array.isArray(data.book) ? data.book : [data.book];
+
+                            books.forEach(book => {
+                                // Determine status-based colors
+                                const isOnShelf = book.status_name === 'On-Shelf';
+                                if (!isOnShelf) {
+                                    allOnShelf = false; // found at least one not on shelf
+                                }
+                                const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
+                                const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
+                                const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
+                                const textColor = isOnShelf ? '#28a745' : '#dc3545';    // for title & labels
+
+                                container.append(`
+                                    <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
+                                        <div class="book-photo">
+                                            <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
+                                                alt="Book Photo">
+                                        </div>
+                                        <div class="book-info">
+                                            <h5 style="color:${textColor};">${book.title || 'Untitled Book'}</h5>
+                                            <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
+                                            <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
+                                            <p> 
+                                                <span 
+                                                    class="status-badge"
+                                                    style="background-color: ${badgeBg}; color: ${textColor};"
+                                                    ${book.status_name === "Issued" ? `onclick="viewCirculationDetails('${barcodeId}')"` : ''}
+                                                >
+                                                    ${book.status_name || 'Unknown'}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                `);
+                            });
+                            // Disable or enable Issue button based on status
+                            if (!allOnShelf) {
+                                issueBtn.prop('disabled', true)
+                                        .addClass('btn-secondary')
+                                        .removeClass('btn-success')
+                                        .html('<i class="uil uil-ban"></i> Cannot Issue');
+                            } else {
+                                issueBtn.prop('disabled', false)
+                                        .addClass('btn-success')
+                                        .removeClass('btn-secondary')
+                                        .html('<i class="uil uil-check-circle"></i> Issue Book');
+                            }
+                        } else {
+                            container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
+                            $("#issueBookBtn").prop("disabled", true)
+                                .addClass('btn-secondary')
+                                .removeClass('btn-success')
+                                .html('<i class="uil uil-ban"></i> Cannot Issue');
+                        }
+                    }
+                });
+            }
+        });
+
+        function viewCirculationDetails(barcode) {
+            debugger;
+            if (!barcode) return;
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('circulationDetailsModal'));
+            modal.show();
+
+            // Show loading text
+            const modalBody = document.querySelector('#circulationDetailsModal .modal-body');
+            modalBody.innerHTML = `<p class="text-center text-muted">लोड होत आहे...</p>`;
+
+            // AJAX call
+            $.ajax({
+                url: "{% url 'L01:circulation_transaction_details' %}", // adjust URL to your endpoint
+                type: 'GET',
+                data: { barcode: barcode },
+                success: function(data) {
+                    debugger;
+                    if (data.success) {
+                        if (data.transactions.length === 0) {
+                            modalBody.innerHTML = `<p class="text-center text-muted">कोणतेही रेकॉर्ड नाहीत</p>`;
+                            return;
+                        }
+
+                        // Member info
+                        const memberName = data.transactions[0].member_name || '-';
+                        const membershipCode = data.transactions[0].membership_code || '-';
+                        let html = `
+                            <div class="mb-3 p-2 bg-light rounded">
+                                <p><strong>सदस्याचे नाव:</strong> ${memberName}</p>
+                                <p><strong>सदस्य क्रमांक:</strong> ${membershipCode}</p>
+                            </div>
+                        `;
+
+                        // Table header
+                        html += `
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>पुस्तकाचे नाव</th>
+                                        <th>दालन क्र.</th>
+                                        <th>जारी दिनांक</th>
+                                        <th>देय दिनांक</th>
+                                        <th>स्थिती</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        // Table rows
+                        data.transactions.forEach(t => {
+                            html += `
+                                <tr>
+                                    <td>${t.title || '-'}</td>
+                                    <td>${t.accession_no || '-'}</td>
+                                    <td>${t.issue_date || '-'}</td>
+                                    <td>${t.due_date || '-'}</td>
+                                    <td>${t.status_name || '-'}</td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `</tbody></table>`;
+
+                        // Set modal content
+                        modalBody.innerHTML = html;
+
+                    } else {
+                        modalBody.innerHTML = `<p class="text-center text-danger">${data.error || "त्रुटी आली"}</p>`;
+                    }
+                },
+                error: function(err) {
+                    modalBody.innerHTML = `<p class="text-center text-danger">AJAX त्रुटी झाली</p>`;
+                    console.error(err);
+                }
+
+            });
+        }
+    </script>
+
+    {% comment %} barcode in return {% endcomment %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            function setupDropdown(inputId, optionsId, hiddenId, fetchFunction) {
+                const input = document.getElementById(inputId);
+                const options = document.getElementById(optionsId);
+                const hiddenInput = document.getElementById(hiddenId);
+                const items = options.getElementsByTagName("li");
+                let highlightedIndex = -1;
+
+                // Show dropdown on focus
+                input.addEventListener("focus", () => options.style.display = "block");
+
+                // Filter items while typing
+                input.addEventListener("input", () => {
+                    const filter = input.value.toLowerCase();
+                    let hasMatch = false;
+                    highlightedIndex = -1;
+
+                    const placeholder = options.querySelector(".no-result");
+                    if (placeholder) placeholder.remove();
+
+                    for (let i = 0; i < items.length; i++) {
+                        const txt = items[i].textContent.toLowerCase();
+                        if (txt.includes(filter)) {
+                            items[i].style.display = "";
+                            if (highlightedIndex === -1) highlightedIndex = i;
+                            hasMatch = true;
+                        } else {
+                            items[i].style.display = "none";
+                        }
+                        items[i].classList.remove("highlighted");
+                    }
+
+                    if (highlightedIndex !== -1) {
+                        items[highlightedIndex].classList.add("highlighted");
+                    }
+
+                    if (!hasMatch) {
+                        const li = document.createElement("li");
+                        li.textContent = "❌ No results found";
+                        li.classList.add("no-result");
+                        li.style.padding = "0.5rem 1rem";
+                        li.style.color = "#888";
+                        options.appendChild(li);
+                    }
+                });
+
+                // Keyboard navigation
+                input.addEventListener("keydown", function (e) {
+                    const visibleItems = Array.from(items).filter(i => i.style.display !== "none" && !i.classList.contains("no-result"));
+                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                        e.preventDefault();
+                        if (visibleItems.length === 0) return;
+
+                        visibleItems.forEach(i => i.classList.remove("highlighted"));
+
+                        if (e.key === "ArrowDown") highlightedIndex = (highlightedIndex + 1) % visibleItems.length;
+                        else if (e.key === "ArrowUp") highlightedIndex = (highlightedIndex - 1 + visibleItems.length) % visibleItems.length;
+
+                        visibleItems[highlightedIndex].classList.add("highlighted");
+                        input.value = visibleItems[highlightedIndex].textContent.trim();
+                    }
+
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (highlightedIndex >= 0 && visibleItems.length > 0) {
+                            const selectedItem = visibleItems[highlightedIndex];
+                            input.value = selectedItem.textContent.trim();
+                            hiddenInput.value = selectedItem.getAttribute("data-value");
+
+                            fetchFunction(hiddenInput.value);  // Call specific fetch function
+                        }
+                        options.style.display = "none";
+                    }
+                });
+
+                // Click selection
+                for (let i = 0; i < items.length; i++) {
+                    items[i].addEventListener("click", function () {
+                        input.value = this.textContent.trim();
+                        hiddenInput.value = this.getAttribute("data-value");
+                        options.style.display = "none";
+
+                        fetchFunction(hiddenInput.value); // Call specific fetch function
+                    });
+                }
+
+                // Close dropdown on outside click
+                document.addEventListener("click", function (e) {
+                    if (!e.target.closest(".custom-dropdown")) options.style.display = "none";
+                });
+            }
+
+            // Initialize Barcode dropdown
+            setupDropdown("barcodeSearchReturn", "barcodeOptionsReturn", "barcodeCodeInputReturn", fetchBookDetails);
+
+            // AJAX function to fetch book details
+            function fetchBookDetails(barcodeId) {
+                $.ajax({
+                    url: "{% url 'L01:get_book_details' %}",  // Django URL
+                    type: "POST",
+                    data: {
+                        barcode_id: barcodeId,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    success: function(data) {
+                        const container = $("#barcodeDetailsReturn");
                         const issueBtn = $("#issueBookBtn");
                         container.empty();
 

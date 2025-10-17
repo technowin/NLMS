@@ -23,7 +23,7 @@
                 अ‍ॅडव्हान्स्ड शोध / Advanced Search:
             </label>
 
-          <select id="searchType" onchange="clearResults(); validateInput();" 
+          <select id="searchType" onchange="clearResults();" 
     style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; background: #f8fafc; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
     <option value="">Select Type</option>
     <option value="books">पुस्तके / Books</option>
@@ -39,7 +39,6 @@
     type="text"
     id="advancedSearchInput"
     placeholder="Type to search..."
-    oninput="validateInput()"
     style="padding: 10px 12px; width: 240px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-size: 15px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
 />
 
@@ -79,14 +78,155 @@
     </div>
 
     <!-- Marathi Letters -->
-    <div class="keyword-row marathi" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
-        {% for letter in "अआइईउऊएऐओऔअंअःकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळक्षज्ञ" %}
-            <button type="button" class="keyword-btn" onclick="selectKeyword('{{ letter }}')" 
-                style="background: #015296; color: white; border: none; box-shadow: 0 2px 8px rgba(0,0,0); padding: 8px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.3s;">
-                {{ letter }}
-            </button>
-        {% endfor %}
-    </div>
+       <div class="keyword-row marathi" 
+     style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px;">
+
+    <button type="button" onclick="selectKeyword('अ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">अ</button>
+
+    <button type="button" onclick="selectKeyword('आ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">आ</button>
+
+    <button type="button" onclick="selectKeyword('इ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">इ</button>
+
+    <button type="button" onclick="selectKeyword('ई')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ई</button>
+
+    <button type="button" onclick="selectKeyword('उ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">उ</button>
+
+    <button type="button" onclick="selectKeyword('ऊ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ऊ</button>
+
+    <button type="button" onclick="selectKeyword('ए')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ए</button>
+
+    <button type="button" onclick="selectKeyword('ऐ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ऐ</button>
+
+    <button type="button" onclick="selectKeyword('ओ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ओ</button>
+
+    <button type="button" onclick="selectKeyword('औ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">औ</button>
+
+    <button type="button" onclick="selectKeyword('अं')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">अं</button>
+
+    <button type="button" onclick="selectKeyword('अः')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">अः</button>
+
+    <button type="button" onclick="selectKeyword('क')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">क</button>
+
+    <button type="button" onclick="selectKeyword('ख')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ख</button>
+
+    <button type="button" onclick="selectKeyword('ग')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ग</button>
+
+    <button type="button" onclick="selectKeyword('घ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">घ</button>
+
+    <button type="button" onclick="selectKeyword('ङ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ङ</button>
+
+    <button type="button" onclick="selectKeyword('च')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">च</button>
+
+    <button type="button" onclick="selectKeyword('छ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">छ</button>
+
+    <button type="button" onclick="selectKeyword('ज')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ज</button>
+
+    <button type="button" onclick="selectKeyword('झ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">झ</button>
+
+    <button type="button" onclick="selectKeyword('ञ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ञ</button>
+
+    <button type="button" onclick="selectKeyword('ट')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ट</button>
+
+    <button type="button" onclick="selectKeyword('ठ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ठ</button>
+
+    <button type="button" onclick="selectKeyword('ड')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ड</button>
+
+    <button type="button" onclick="selectKeyword('ढ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ढ</button>
+
+    <button type="button" onclick="selectKeyword('ण')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ण</button>
+
+    <button type="button" onclick="selectKeyword('त')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">त</button>
+
+    <button type="button" onclick="selectKeyword('थ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">थ</button>
+
+    <button type="button" onclick="selectKeyword('द')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">द</button>
+
+    <button type="button" onclick="selectKeyword('ध')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ध</button>
+
+    <button type="button" onclick="selectKeyword('न')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">न</button>
+
+    <button type="button" onclick="selectKeyword('प')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">प</button>
+
+    <button type="button" onclick="selectKeyword('फ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">फ</button>
+
+    <button type="button" onclick="selectKeyword('ब')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ब</button>
+
+    <button type="button" onclick="selectKeyword('भ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">भ</button>
+
+    <button type="button" onclick="selectKeyword('म')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">म</button>
+
+    <button type="button" onclick="selectKeyword('य')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">य</button>
+
+    <button type="button" onclick="selectKeyword('र')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">र</button>
+
+    <button type="button" onclick="selectKeyword('ल')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ल</button>
+
+    <button type="button" onclick="selectKeyword('व')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">व</button>
+
+    <button type="button" onclick="selectKeyword('श')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">श</button>
+
+    <button type="button" onclick="selectKeyword('ष')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ष</button>
+
+    <button type="button" onclick="selectKeyword('स')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">स</button>
+
+    <button type="button" onclick="selectKeyword('ह')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ह</button>
+
+    <button type="button" onclick="selectKeyword('ळ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ळ</button>
+
+    <button type="button" onclick="selectKeyword('क्ष')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">क्ष</button>
+
+    <button type="button" onclick="selectKeyword('ज्ञ')" 
+        style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ज्ञ</button>
+
+</div>
+
 </div>
 
     <!-- Advanced Search Results -->
@@ -375,17 +515,32 @@ function toggleYearInputs() {
 
 <script>
 function toggleKeywordSection() {
-    debugger;
     const keywordSection = document.getElementById("keywordSection");
     const indexBtn = document.getElementById("indexSearchBtn");
 
     if (keywordSection.style.display === "none" || keywordSection.style.display === "") {
         keywordSection.style.display = "block";
-        indexBtn.innerHTML = '<i class="fa fa-times"></i> Close Index';
+        indexBtn.innerHTML = '<i class="fa fa-times"></i> बंद करा / Close Index';
+        indexBtn.style.background = "linear-gradient(135deg, #991b1b, #450a0a)";
     } else {
         keywordSection.style.display = "none";
-        indexBtn.innerHTML = '<i class="fa fa-list"></i> Index Search';
+        indexBtn.innerHTML = '<i class="fa fa-list"></i> सूची शोध / Index Search';
+        indexBtn.style.background = "linear-gradient(135deg, #1d4ed8, #0f172a)";
     }
+}
+
+// ✅ Function to insert keyword into search input
+function selectKeyword(letter) {
+    const input = document.getElementById("advancedSearchInput");
+
+    // Append the letter to existing input value (with a space if needed)
+    if (input.value && !input.value.endsWith(" ")) {
+        input.value += " ";
+    }
+    input.value += letter;
+
+    // Focus back to input for continuous typing
+    input.focus();
 }
 </script>
 
