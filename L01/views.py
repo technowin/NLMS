@@ -54,7 +54,7 @@ import barcode
 from barcode.writer import ImageWriter
 from io import BytesIO
 import base64
-
+from django.core.exceptions import ObjectDoesNotExist
 logger = logging.getLogger(__name__)
 
 # Part First While Filling Membership Form
@@ -1833,6 +1833,11 @@ def issue_return_book_create(request):
                 circ.circ_encrypted_id = enc(str(circ.id))
                 circ.circ_encrypted_accession_id = enc(str(circ.accession.accession_id))
                 
+            circulationTran = CirculationTransaction.objects.filter(return_condition_id=14)
+            
+            for circT in circulationTran:
+                circT.circT_encrypted_barcode = enc(str(circT.barcode))
+                
             bookcatelog = BookCatalog.objects.all()
             
             for bc in bookcatelog:
@@ -1846,6 +1851,7 @@ def issue_return_book_create(request):
                     "members": members,
                     "circulation": circulation,
                     "bookcatelog": bookcatelog,
+                    "circulationTran": circulationTran,
                 }
             )
         
@@ -1998,42 +2004,120 @@ def get_book_details(request):
 
             # --- Barcode / Encrypted ID ---
             barcode_id = request.POST.get("barcode_id")
+            returnProcess = request.POST.get("returnProcess")
+            
             if not barcode_id:
                 return JsonResponse({"success": False, "message": "Barcode ID missing."}, status=400)
+            
+            if not returnProcess:
 
-            # --- Decrypt if needed ---
-            try:
+                # --- Decrypt if needed ---
+                try:
+                    barcode_id = dec(barcode_id)
+                except Exception:
+                    # If not encrypted, just use it as-is
+                    pass
+
+                # --- Fetch Book Details ---
+                circ = (
+                    CirculationCopyStatus.objects
+                    .select_related("bookcatalog", "shelf_location", "current_status")
+                    .get(barcode=barcode_id)  # <--- match by barcode
+                )
+
+                data = {
+                    "success": True,
+                    "MEDIA_URL": settings.MEDIA_URL,
+                    "book": {
+                        "title": circ.bookcatalog.title if circ.bookcatalog else "-",
+                        "author": circ.bookcatalog.author if circ.bookcatalog else "-",
+                        "isbn_issn": circ.bookcatalog.isbn_issn if circ.bookcatalog else "-",
+                        "pages": circ.bookcatalog.pages if circ.bookcatalog else "-",
+                        "language": circ.bookcatalog.language if circ.bookcatalog else "-",
+                        "front_page_photo": circ.bookcatalog.front_page_photo if circ.bookcatalog else "",
+                        "location_name": circ.shelf_location.location_name if circ.shelf_location else "-",
+                        "status_name": circ.current_status.status_name if circ.current_status else "Unknown",
+                        "status_color": circ.current_status.status_color if circ.current_status else "#999",
+                    },
+                }
+                return JsonResponse(data)
+            
+            else:   
+                
                 barcode_id = dec(barcode_id)
-            except Exception:
-                # If not encrypted, just use it as-is
-                pass
+                
+                try:
+                    circ = CirculationTransaction.objects.select_related(
+                        "catalog", "member", "circulation", "return_condition"
+                    ).get(barcode=barcode_id)
 
-            # --- Fetch Book Details ---
-            circ = (
-                CirculationCopyStatus.objects
-                .select_related("bookcatalog", "shelf_location", "current_status")
-                .get(barcode=barcode_id)  # <--- match by barcode
-            )
+                    book = circ.catalog
+                    member = circ.member
+                    today = timezone.now().date()
 
-            data = {
-                "success": True,
-                "MEDIA_URL": settings.MEDIA_URL,
-                "book": {
-                    "title": circ.bookcatalog.title if circ.bookcatalog else "-",
-                    "author": circ.bookcatalog.author if circ.bookcatalog else "-",
-                    "isbn_issn": circ.bookcatalog.isbn_issn if circ.bookcatalog else "-",
-                    "pages": circ.bookcatalog.pages if circ.bookcatalog else "-",
-                    "language": circ.bookcatalog.language if circ.bookcatalog else "-",
-                    "front_page_photo": circ.bookcatalog.front_page_photo if circ.bookcatalog else "",
-                    "location_name": circ.shelf_location.location_name if circ.shelf_location else "-",
-                    "status_name": circ.current_status.status_name if circ.current_status else "Unknown",
-                    "status_color": circ.current_status.status_color if circ.current_status else "#999",
-                },
-            }
-            return JsonResponse(data)
+                    # Format due date nicely (e.g., 10 Jan 2025)
+                    due_date_str = (
+                        circ.due_date.strftime("%d %b %Y") if circ.due_date else "-"
+                    )
 
-        except CirculationCopyStatus.DoesNotExist:
-            return JsonResponse({"success": False, "message": "No book found with this barcode."}, status=404)
+                    # Calculate overdue days
+                    days_overdue = 0
+                    status_name = (
+                        circ.return_condition.status_name if circ.circulation else "Unknown"
+                    )
+
+                    if circ.due_date and today > circ.due_date:
+                        days_overdue = (today - circ.due_date).days
+                        status_name = "Overdue"
+
+                    # Fetch member profile photo (Document ID = 1)
+                    profile_doc = (
+                        DocumentDetails.objects.filter(
+                            membership=member, document_id=1, isactive=1
+                        )
+                        .order_by("-created_at")
+                        .first()
+                    )
+                    profile_photo = profile_doc.file_path if profile_doc else ""
+
+                    # Member full name
+                    member_name = " ".join(
+                        filter(None, [member.first_name, member.middle_name, member.last_name])
+                    )
+
+                    # Construct return data
+                    data = {
+                        "success": True,
+                        "MEDIA_URL": settings.MEDIA_URL,
+                        "book": {
+                            "title": book.title if book else "-",
+                            "author": book.author if book else "-",
+                            "isbn_issn": book.isbn_issn if book else "-",
+                            "front_page_photo": book.front_page_photo if book else "",
+                            "status_name": status_name,
+                            "due_date": due_date_str,
+                            "issue_date": (
+                                circ.issue_date.strftime("%d %b %Y")
+                                if circ.issue_date
+                                else "-"
+                            ),
+                            "days_overdue": days_overdue,
+                        },
+                        "member": {
+                            "member_name": member_name,
+                            "member_code": member.membership_code or "-",
+                            "profile_photo": profile_photo,
+                            "mobile_no": member.mobile_no or "-",
+                        },
+                    }
+
+                    return JsonResponse(data)
+                
+                except ObjectDoesNotExist:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "No circulation transaction found for this barcode."
+                    })
 
         except Exception as e:
             tb = traceback.extract_tb(e.__traceback__)
@@ -2752,12 +2836,10 @@ def user_view(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:user_master_index")
 
-
 def view_catalogue(request):
     return render(request, "L01/view_catalogue.html", {
         "MEDIA_URL": settings.MEDIA_URL
     })
-
 
 @csrf_exempt
 def bookcatalog_search(request):
