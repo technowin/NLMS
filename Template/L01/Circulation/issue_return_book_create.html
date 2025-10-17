@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-
+       
         .swal2-border-radius {
             border-radius: 15px !important;
             font-family: 'Merriweather', serif;
@@ -85,13 +85,21 @@
         .member-card {
             display: flex;
             flex-direction: row;
-            background: linear-gradient(145deg, #f0f4ff, #d9e4ff);
+            background: #f5f8ff; /* light neutral background */
             border-radius: 15px;
             width: 90%;
             max-width: 650px;
             padding: 12px;
-            border: 1px solid #007BFF;
-            gap: 15px; /* space between photo and info */
+            border: 2px solid #007bff; /* normal blue border */
+            gap: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            transition: 0.3s ease;
+        }
+
+        /* When validation fails — red border and light pink background */
+        .member-card.invalid {
+            border-color: #dc3545;
+            background: #ffe6e6;
         }
 
         .member-photo {
@@ -116,10 +124,11 @@
             justify-content: center;
         }
 
+        /* Member name and text */
         .member-info h4.member-name {
             margin: 0 0 8px;
             font-size: 1.2rem;
-            color: #003366;
+            color: #002147;
             font-weight: 700;
         }
 
@@ -131,12 +140,19 @@
             line-height: 1.3;
         }
 
+        .text-danger.fw-bold {
+            color: #dc3545 !important;
+        }
+
+        .text-success.fw-bold {
+            color: #007bff !important; /* changed from green to blue */
+        }
+
         .membership-row span {
             padding: 3px 6px;
             border-radius: 5px;
-            color: #003366;
+            color: #002147;
             font-weight: 500;
-            letter-spacing: 0.4px;
         }
 
         @media (max-width: 768px) {
@@ -283,6 +299,18 @@
     </style>
 
     <style>
+
+        .transaction-table th {
+            background-color: #007bff;
+            color: #fff;
+            text-align: center;
+        }
+
+        .transaction-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
         .help-icon {
             font-size: 1.5rem;       /* Bigger and visible */
             color: #0d6efd;          /* Bootstrap primary blue */
@@ -361,9 +389,10 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form id="issueBookForm">
+                        <form id="issueBookForm" method="POST" action="{% url 'L01:issue_return_book_create' %}">
+                            {% csrf_token %}
 
-                            {% comment %} Member ID / सदस्य आयडी {% endcomment %}
+                            <input type="hidden" name="issue" id="issueHidden" value="0">
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-secondary">
@@ -371,7 +400,7 @@
                                 </label>
                                 <div class="custom-dropdown">
                                     <input type="text" id="memberSearch" class="dropdown-input form-control shadow-sm"
-                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off">
+                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off" required>
                                     <ul id="memberOptions" class="dropdown-options">
                                         {% for m in members %}
                                             <li data-value="{{ m.member_encrypted_id }}">
@@ -398,7 +427,7 @@
                                 </div>
                                 <div class="custom-dropdown">
                                     <input type="text" id="barcodeSearch" class="dropdown-input form-control shadow-sm"
-                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off">
+                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off" required>
                                     <ul id="barcodeOptions" class="dropdown-options">
                                         {% for circ in circulation %}
                                             <li data-value="{{ circ.circ_encrypted_barcode }}">
@@ -451,6 +480,26 @@
                                 </div>
                             </div>
 
+                            {% comment %} show data from circulation transaction in model {% endcomment %}
+
+                            <div class="modal fade" id="circulationDetailsModal" tabindex="-1" aria-labelledby="circulationDetailsModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-xl modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="circulationDetailsModalLabel">पुस्तक इश्यू तपशील</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="text-center text-muted">लोड होत आहे...</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">बंद करा</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
                             <!-- Container where details will appear -->
                             <div id="barcodeDetails" class="mt-3"></div>
 
@@ -459,19 +508,19 @@
                                 <label class="form-label">
                                     Issue Date / निर्गम दिनांक <span class="text-danger">*</span>
                                 </label>
-                                <input type="date" id="issueDate" name="issue_date" class="form-control">
+                                <input type="date" id="issueDate" name="issue_date" class="form-control" required>
                             </div>
 
                             <!-- Due Date -->
                             <div class="mb-3">
                                 <label class="form-label">Due Date / परतावा अंतिम दिनांक <span class="text-danger">*</span></label>
-                                <input type="date" name="due_date" class="form-control">
+                                <input type="date" name="due_date" class="form-control" required>
                             </div>
 
                             <!-- Notes -->
                             <div class="mb-3">
                                 <label class="form-label">Notes / टिप्पण्या (Optional)</label>
-                                <textarea name="notes" class="form-control" rows="3" placeholder="Enter any notes if required"></textarea>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Enter any notes if required" required></textarea>
                             </div>
 
                             <div class="text-end">
@@ -543,7 +592,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <!-- Bootstrap Bundle (includes Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% comment %} <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> {% endcomment %}
 
     {% comment %} back to top {% endcomment %}
     <script>
@@ -702,6 +751,7 @@
                     },
                     dataType: "json",
                     success: function(data) {
+                        debugger;
                         const container = $("#memberDetails");
                         container.empty();
 
@@ -711,6 +761,7 @@
 
                         if (data.success && data.documents.length > 0) {
                             data.documents.forEach(member => {
+                                debugger;
                                 const fromDate = new Date(member.membership_fromDate);
                                 const toDate = new Date(member.membership_toDate);
 
@@ -726,13 +777,21 @@
                                 const formattedDueDate = dueDate.toISOString().split('T')[0];
                                 dueDateValue = formattedDueDate;
 
+                                 // 🔹 Get book counts
+                                const issuedBooks = data.issued_books_count || 0;
+                                const maxBooks = parseInt(member.membership_item) || 0;
+
+                                // 🔹 Check if limit reached
+                                const isLimitReached = issuedBooks >= maxBooks && maxBooks > 0;
+
                                 // If any member is expired, disable the submit button
-                                if (isExpired) {
-                                    disableSubmit = true;
-                                }
+                                if (isExpired || isLimitReached) disableSubmit = true;
+
+                                const isInvalid = isExpired || isLimitReached;
+                                const cardClass = isInvalid ? "member-card invalid" : "member-card";
 
                                 container.append(`
-                                    <div class="member-card">
+                                    <div class="${cardClass}">
                                         <div class="member-photo">
                                             <img src="${member.file_path ? data.MEDIA_URL + member.file_path : '/static/images/default-user.png'}" alt="Member Photo">
                                         </div>
@@ -743,8 +802,19 @@
                                                 <span><strong>From → To:</strong> ${member.membership_fromDate || '-'} to ${member.membership_toDate || '-'}</span>
                                                 <span><strong>Duration:</strong> ${member.membership_duration ? member.membership_duration + ' Month' : '-'}</span>
                                             </div>
+                                            <div class="membership-row mt-2">
+                                                <span>
+                                                    <strong>Books Issued:</strong> 
+                                                    <a href="javascript:void(0);" 
+                                                    class="issued-count-link ${isLimitReached ? 'text-danger fw-bold' : 'text-success fw-bold'}" 
+                                                    data-member-id="${member.membership_id}">
+                                                    ${issuedBooks}/${maxBooks}
+                                                    </a>
+                                                </span>
 
+                                            </div>
                                             ${isExpired ? `<small class="text-danger mt-1 d-block">Membership expired. Cannot issue book.</small>` : ''}
+                                            ${isLimitReached ? `<small class="text-danger mt-1 d-block">Book issue limit reached.</small>` : ''}
                                         </div>
                                     </div>
                                 `);
@@ -784,6 +854,57 @@
             }
 
         });
+
+        {% comment %} render data of members from circulation transaction {% endcomment %}
+        $(document).on("click", ".issued-count-link", function () {
+            const memberId = $(this).data("member-id");
+
+            $.ajax({
+                url: "{% url 'L01:circulation_transaction_details' %}",
+                type: "GET",
+                data: { member_id: memberId },
+                beforeSend: function () {
+                    $("#circulationDetailsModal .modal-body").html("<p class='text-center text-muted'>लोड होत आहे... कृपया थांबा ⏳</p>");
+                    $("#circulationDetailsModal").modal("show");
+                },
+                success: function (response) {
+                    if (response.success && response.transactions.length > 0) {
+                        let html = `
+                            <table class="table table-bordered table-striped transaction-table">
+                                <thead>
+                                    <tr>
+                                        <th>पुस्तकाचे नाव</th>
+                                        <th>दालन क्र.</th>
+                                        <th>जारी दिनांक</th>
+                                        <th>परत दिनांक</th>
+                                        <th>स्थिती</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        response.transactions.forEach(tr => {
+                            html += `
+                                <tr>
+                                    <td>${tr.title || '-'}</td>
+                                    <td>${tr.accession_no || '-'}</td>
+                                    <td>${tr.issue_date || '-'}</td>
+                                    <td>${tr.due_date || '-'}</td>
+                                    <td>${tr.status_name || '-'}</td>
+                                </tr>
+                            `;
+                        });
+                        html += `</tbody></table>`;
+                        $("#circulationDetailsModal .modal-body").html(html);
+                    } else {
+                        $("#circulationDetailsModal .modal-body").html("<p class='text-danger text-center'>कोणतेही व्यवहार सापडले नाहीत.</p>");
+                    }
+                },
+                error: function () {
+                    $("#circulationDetailsModal .modal-body").html("<p class='text-danger text-center'>त्रुटी आली. पुन्हा प्रयत्न करा.</p>");
+                }
+            });
+        });
+
     </script>
 
     {% comment %} barcode search {% endcomment %}
@@ -896,6 +1017,7 @@
                     dataType: "json",
                     success: function(data) {
                         const container = $("#barcodeDetails");
+                        const issueBtn = $("#issueBookBtn");
                         container.empty();
 
                         if (data.success) {
@@ -904,6 +1026,9 @@
                             books.forEach(book => {
                                 // Determine status-based colors
                                 const isOnShelf = book.status_name === 'On-Shelf';
+                                if (!isOnShelf) {
+                                    allOnShelf = false; // found at least one not on shelf
+                                }
                                 const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
                                 const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
                                 const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
@@ -920,7 +1045,11 @@
                                             <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
                                             <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
                                             <p> 
-                                                <span class="status-badge" style="background-color: ${badgeBg}; color: ${textColor};">
+                                                <span 
+                                                    class="status-badge"
+                                                    style="background-color: ${badgeBg}; color: ${textColor};"
+                                                    ${book.status_name === "Issued" ? `onclick="viewCirculationDetails('${barcodeId}')"` : ''}
+                                                >
                                                     ${book.status_name || 'Unknown'}
                                                 </span>
                                             </p>
@@ -928,13 +1057,109 @@
                                     </div>
                                 `);
                             });
+                            // Disable or enable Issue button based on status
+                            if (!allOnShelf) {
+                                issueBtn.prop('disabled', true)
+                                        .addClass('btn-secondary')
+                                        .removeClass('btn-success')
+                                        .html('<i class="uil uil-ban"></i> Cannot Issue');
+                            } else {
+                                issueBtn.prop('disabled', false)
+                                        .addClass('btn-success')
+                                        .removeClass('btn-secondary')
+                                        .html('<i class="uil uil-check-circle"></i> Issue Book');
+                            }
                         } else {
                             container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
+                            $("#issueBookBtn").prop("disabled", true)
+                                .addClass('btn-secondary')
+                                .removeClass('btn-success')
+                                .html('<i class="uil uil-ban"></i> Cannot Issue');
                         }
                     }
                 });
             }
         });
+
+        function viewCirculationDetails(barcode) {
+            debugger;
+            if (!barcode) return;
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('circulationDetailsModal'));
+            modal.show();
+
+            // Show loading text
+            const modalBody = document.querySelector('#circulationDetailsModal .modal-body');
+            modalBody.innerHTML = `<p class="text-center text-muted">लोड होत आहे...</p>`;
+
+            // AJAX call
+            $.ajax({
+                url: "{% url 'L01:circulation_transaction_details' %}", // adjust URL to your endpoint
+                type: 'GET',
+                data: { barcode: barcode },
+                success: function(data) {
+                    debugger;
+                    if (data.success) {
+                        if (data.transactions.length === 0) {
+                            modalBody.innerHTML = `<p class="text-center text-muted">कोणतेही रेकॉर्ड नाहीत</p>`;
+                            return;
+                        }
+
+                        // Member info
+                        const memberName = data.transactions[0].member_name || '-';
+                        const membershipCode = data.transactions[0].membership_code || '-';
+                        let html = `
+                            <div class="mb-3 p-2 bg-light rounded">
+                                <p><strong>सदस्याचे नाव:</strong> ${memberName}</p>
+                                <p><strong>सदस्य क्रमांक:</strong> ${membershipCode}</p>
+                            </div>
+                        `;
+
+                        // Table header
+                        html += `
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>पुस्तकाचे नाव</th>
+                                        <th>दालन क्र.</th>
+                                        <th>जारी दिनांक</th>
+                                        <th>देय दिनांक</th>
+                                        <th>स्थिती</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        // Table rows
+                        data.transactions.forEach(t => {
+                            html += `
+                                <tr>
+                                    <td>${t.title || '-'}</td>
+                                    <td>${t.accession_no || '-'}</td>
+                                    <td>${t.issue_date || '-'}</td>
+                                    <td>${t.due_date || '-'}</td>
+                                    <td>${t.status_name || '-'}</td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `</tbody></table>`;
+
+                        // Set modal content
+                        modalBody.innerHTML = html;
+
+                    } else {
+                        modalBody.innerHTML = `<p class="text-center text-danger">${data.error || "त्रुटी आली"}</p>`;
+                    }
+                },
+                error: function(err) {
+                    modalBody.innerHTML = `<p class="text-center text-danger">AJAX त्रुटी झाली</p>`;
+                    console.error(err);
+                }
+
+            });
+        }
     </script>
 
     {% comment %} open model for Book Catalog Search / पुस्तक सूची शोध{% endcomment %}
@@ -1006,6 +1231,7 @@
             function renderCirculationData(data) {
                 // 🧹 Always clear container before adding new table
                 $("#bookCatalogTableContainer").empty();
+                $("#issuedDetailsContainer").remove(); // remove old issued table if any
 
                 if (!data || data.length === 0) {
                     $("#bookCatalogTableContainer").html(`
@@ -1014,19 +1240,20 @@
                     return;
                 }
 
+                // Main book circulation table
                 let html = `
                     <div class="table-responsive mt-3">
                         <table class="table table-bordered table-striped align-middle shadow-sm">
                             <thead class="table-primary text-center">
                                 <tr>
-                                    <th>Accession No</th>
-                                    <th>Barcode</th>
-                                    <th>Ref Num</th>
-                                    <th>Title</th>
-                                    <th>Author</th>
-                                    <th>Classification</th>
-                                    <th>Status</th>
-                                </tr>
+                                <th>दालन क्र.</th>
+                                <th>बारकोड</th>
+                                <th>संदर्भ क्र.</th>
+                                <th>पुस्तकाचे नाव</th>
+                                <th>लेखक</th>
+                                <th>वर्गीकरण</th>
+                                <th>स्थिती</th>
+                            </tr>
                             </thead>
                             <tbody>
                                 ${data.map(row => `
@@ -1046,6 +1273,67 @@
                 `;
 
                 $("#bookCatalogTableContainer").html(html);
+
+                // 🔹 Check if any book is Issued
+                
+                const issuedBooks = data.filter(row => row.current_status__status_name === "Issued");
+
+                if (issuedBooks.length > 0) {
+                    const ajaxCalls = issuedBooks.map(book => {
+                        return $.ajax({
+                            url: "{% url 'L01:circulation_transaction_details' %}",
+                            type: "GET",
+                            data: { 
+                                barcode: book.barcode,
+                                barcodeName: 'sendByBookDropdown'
+                            }
+                        });
+                    });
+
+                    Promise.all(ajaxCalls).then(responses => {
+                        // Merge all transactions from all responses
+                        const allTransactions = responses.flatMap(resp => resp.transactions || []);
+
+                        if (allTransactions.length > 0) {
+                            let issuedHtml = `
+                                <div id="issuedDetailsContainer" class="table-responsive mt-4">
+                                    <h5>हे पुस्तक कोणत्या सदस्याला दिले गेले आहे</h5>
+                                    <table class="table table-bordered table-striped shadow-sm">
+                                        <thead class="table-secondary text-center">
+                                            <tr>
+                                                <th>सदस्याचे नाव</th>
+                                                <th>सदस्य क्रमांक</th>
+                                                <th>पुस्तकाचे नाव</th>
+                                                <th>दालन क्र.</th>
+                                                <th>जारी दिनांक</th>
+                                                <th>देय दिनांक</th>
+                                                <th>स्थिती</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${allTransactions.map(t => `
+                                                <tr>
+                                                    <td>${t.member_name || "-"}</td>
+                                                    <td>${t.membership_code || "-"}</td>
+                                                    <td>${t.title || "-"}</td>
+                                                    <td>${t.accession_no || "-"}</td>
+                                                    <td>${t.issue_date || "-"}</td>
+                                                    <td>${t.due_date || "-"}</td>
+                                                    <td>${t.status_name || "-"}</td>
+                                                </tr>
+                                            `).join("")}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                            $("#bookCatalogTableContainer").append(issuedHtml);
+                        }
+                    }).catch(err => {
+                        console.error("Error fetching issued details:", err);
+                    });
+                }
+
+
             }
         });
     </script>
@@ -1064,6 +1352,55 @@
 
             // Set minimum date (disables past dates)
             issueDateInput.min = formattedDate;
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            debugger;
+            const form = document.getElementById("issueBookForm");
+            const issueBtn = document.getElementById("issueBookBtn");
+            const issueHidden = document.getElementById("issueHidden");
+
+            issueBtn.addEventListener("click", function(e) {
+                debugger;
+                e.preventDefault(); // prevent default submit
+
+                // Get all required values
+                const member = document.getElementById("memberCodeInput").value.trim();
+                const barcode = document.getElementById("barcodeCodeInput").value.trim();
+                const issueDate = document.getElementById("issueDate").value.trim();
+                const dueDate = form.querySelector("input[name='due_date']").value.trim();
+                const notes = form.querySelector("textarea[name='notes']").value.trim();
+
+                // Validation
+                if (!member || !barcode || !issueDate || !dueDate || !notes) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'सावधगिरी!',
+                        text: 'कृपया सर्व आवश्यक फील्ड भरा!',
+                        confirmButtonText: 'ठीक आहे'
+                    });
+                    return; // stop form submission
+                }
+
+                // Confirmation
+                Swal.fire({
+                    title: 'तुम्हाला खात्री आहे का?',
+                    text: "ही पुस्तके निर्गम करायची आहे?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'हो, पुस्तके निर्गम करा!',
+                    cancelButtonText: 'रद्द करा'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        issueHidden.value = "1";
+                        form.submit();
+                    }
+                });
+            });
         });
     </script>
 

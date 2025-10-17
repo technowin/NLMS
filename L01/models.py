@@ -353,3 +353,69 @@ class CirculationCopyStatus(models.Model):
     
     def __str__(self):
         return f"{self.barcode or 'No Barcode'} ({self.current_status or 'Unknown'})"
+    
+class CirculationTransaction(models.Model):
+    id = models.AutoField(primary_key=True)
+    
+    catalog = models.ForeignKey(
+        BookCatalog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="cat_ref_num",
+        related_name="transactions"  # All transactions for this catalog/book title
+    )
+    
+    accession = models.ForeignKey(
+        BookAccession,
+        on_delete=models.CASCADE,
+        db_column="accession_id",
+        related_name="transactions" 
+    )
+    
+    circulation = models.ForeignKey(
+        CirculationCopyStatus,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="copy_status_id",
+        related_name="transactions"  # All transactions linked to a particular copy status
+    )
+    
+    member = models.ForeignKey(
+        MembershipDetails,
+        on_delete=models.CASCADE,
+        db_column="member_id",
+        related_name="transactions" 
+    )
+    
+    barcode = models.CharField(max_length=50, blank=True, null=True)
+    
+    issue_date = models.DateField(blank=True, null=True)
+    due_date = models.DateField(blank=True, null=True)
+    return_date = models.DateField(blank=True, null=True)
+    renewal_count = models.IntegerField(default=0)
+    fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    fine_status = models.CharField(max_length=20, blank=True, null=True)
+    fine_paid_date = models.DateField(blank=True, null=True)
+    transaction_type = models.CharField(max_length=20, blank=True, null=True)
+    transaction_status = models.CharField(max_length=20, blank=True, null=True)
+    issued_by = models.TextField(null=True, blank=True)
+    received_by = models.TextField(null=True, blank=True)
+    membership_code = models.TextField(blank=True, null=True)
+    return_condition = models.ForeignKey(
+        status_master,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions_with_condition"
+    )
+    
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_circulation_transaction"

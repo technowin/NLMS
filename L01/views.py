@@ -11,6 +11,11 @@ from django.http import HttpResponse, JsonResponse
 from NLMS.encryption import *
 from Account.db_utils import callproc
 import re
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
+import json
+from .models import BookCatalog
 from django.shortcuts import render, redirect
 from django.db import transaction
 import os
@@ -1820,10 +1825,13 @@ def issue_return_book_create(request):
             for m in members:
                 m.member_encrypted_id = enc(str(m.id))
                 
-            circulation = CirculationCopyStatus.objects.all()
+            # circulation = CirculationCopyStatus.objects.all()
+            circulation = CirculationCopyStatus.objects.filter(shelf_location__isnull=False)
             
             for circ in circulation:
                 circ.circ_encrypted_barcode = enc(str(circ.barcode))
+                circ.circ_encrypted_id = enc(str(circ.id))
+                circ.circ_encrypted_accession_id = enc(str(circ.accession.accession_id))
                 
             bookcatelog = BookCatalog.objects.all()
             
@@ -1840,7 +1848,58 @@ def issue_return_book_create(request):
                     "bookcatelog": bookcatelog,
                 }
             )
+        
+        if request.method == "POST":
+            issue = request.POST.get("issue")
             
+            # Decrypt member and barcode
+            member_id = dec(str(request.POST.get("member_id")))
+            barcode_encrypted = request.POST.get("barcode_id")
+            barcode_id = dec(str(barcode_encrypted))
+            
+            # Fetch related objects
+            circ = CirculationCopyStatus.objects.select_related('accession', 'bookcatalog').get(barcode=barcode_id)
+            member = MembershipDetails.objects.get(id=member_id)
+            accession = circ.accession
+            circulation = circ
+            bookcatalog = circ.bookcatalog
+            accession_no = circ.accession_no
+            membercode = member.membership_code
+            
+            # Get form fields
+            issue_date = request.POST.get("issue_date")
+            due_date = request.POST.get("due_date")
+            notes = request.POST.get("notes")
+            
+            # Fetch return_condition status
+            return_condition_status = status_master.objects.get(status_id=14)
+            
+            # Save transaction
+            transaction = CirculationTransaction.objects.create(
+                catalog=bookcatalog,
+                accession=accession,
+                circulation=circulation,
+                member=member,
+                barcode=circ.barcode,
+                issue_date=issue_date,
+                due_date=due_date,
+                remarks=notes,
+                membership_code=membercode,
+                return_condition=return_condition_status,
+                issued_by=user_id,
+                created_by=user_id
+            )
+            
+            # Optional: mark the copy as issued
+            circ.current_status = status_master.objects.get(status_id=14)  
+            circ.save()
+            
+            # Success message in Marathi
+            messages.success(request, "ग्रंथ यशस्वीरित्या निर्गम केला गेला आहे!")
+
+            # Redirect back to the same view
+            return redirect('L01:issue_return_book_create')
+        
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else "library_list"
@@ -1895,6 +1954,7 @@ def get_member_details(request):
                 "mobile_no": membership.mobile_no,
                 "membership_code": membership_master.membership_code if membership_master else '',
                 "membership_type": membership_master.membership_type_en if membership_master else '',
+                "membership_item": membership_master.item if membership_master else '',
                 "membership_days": membership_master.days if membership_master else '',
                 "member_type_name": member_type_param.parameter_name if member_type_param else '',
                 "membership_fromDate": from_date,
@@ -1905,11 +1965,17 @@ def get_member_details(request):
                 "file_name": doc.file_name,
                 "file_path": doc.file_path,
             })
+            
+        issued_books_count = CirculationTransaction.objects.filter(
+            member_id=member_id,
+            return_condition_id=14
+        ).count()
 
         return JsonResponse({
             "success": True,
             "documents": document_list,
-            "MEDIA_URL": settings.MEDIA_URL
+            "MEDIA_URL": settings.MEDIA_URL,
+            "issued_books_count":issued_books_count,
         })
 
     except Exception as e:
@@ -2012,6 +2078,96 @@ def get_book_circulation_status(request):
         )
 
         return JsonResponse(list(records), safe=False)
+
+@csrf_exempt
+def circulation_transaction_details(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session.get("user_id")
+        role_id = request.session.get("role_id")
+        
+        member_id = request.GET.get("member_id")
+        
+        barcodeName = request.GET.get("barcodeName")
+        
+        if not member_id:
+            if barcodeName:
+                barcode = request.GET.get("barcode")
+            else:
+                barcode = dec(str(request.GET.get("barcode")))
+        
+        
+        if member_id:
+
+            transactions = (
+                CirculationTransaction.objects
+                .select_related("catalog", "accession", "return_condition")
+                .filter(member_id=member_id)
+                .values(
+                    "catalog__title",
+                    "accession__accession_no",
+                    "issue_date",
+                    "due_date",
+                    "return_condition__status_name"
+                )
+            )
+
+            transaction_list = [
+                {
+                    "title": t["catalog__title"],
+                    "accession_no": t["accession__accession_no"],
+                    "issue_date": t["issue_date"].strftime("%Y-%m-%d") if t["issue_date"] else None,
+                    "due_date": t["due_date"].strftime("%Y-%m-%d") if t["due_date"] else None,
+                    "status_name": t["return_condition__status_name"],
+                }
+                for t in transactions
+            ]
+
+            return JsonResponse({"success": True, "transactions": transaction_list})
+        
+        if barcode:
+            
+            transactions = (
+                CirculationTransaction.objects
+                .select_related("catalog", "accession", "member", "return_condition")
+                .filter(barcode=barcode)
+                .values(
+                    "catalog__title",
+                    "accession__accession_no",
+                    "issue_date",
+                    "due_date",
+                    "return_condition__status_name",
+                    "member__first_name",
+                    "member__last_name",
+                    "member__membership_code"
+                )
+            )
+
+            transaction_list = [
+                {
+                    "title": t["catalog__title"],
+                    "accession_no": t["accession__accession_no"],
+                    "issue_date": t["issue_date"].strftime("%Y-%m-%d") if t["issue_date"] else None,
+                    "due_date": t["due_date"].strftime("%Y-%m-%d") if t["due_date"] else None,
+                    "status_name": t["return_condition__status_name"],
+                    "member_name": f"{t['member__first_name']} {t['member__last_name']}",
+                    "membership_code": t["member__membership_code"]
+                }
+                for t in transactions
+            ]
+
+            return JsonResponse({"success": True, "transactions": transaction_list})
+        
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
     
 # Palavees work
 @login_required
@@ -2595,3 +2751,76 @@ def user_view(request):
         callproc("stp_error_log", [fun, str(e), user_id])
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:user_master_index")
+
+
+def view_catalogue(request):
+    return render(request, "L01/view_catalogue.html", {
+        "MEDIA_URL": settings.MEDIA_URL
+    })
+
+
+@csrf_exempt
+def bookcatalog_search(request):
+    try:
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+
+        query = request.POST.get("query", "").strip()
+        search_type = request.POST.get("searchType", "").strip().lower()
+
+        results = BookCatalog.objects.all()
+
+        if query:
+            if search_type in ["books", "title"]:
+                results = results.filter(title__icontains=query)
+            elif search_type == "author":
+                results = results.filter(author__icontains=query)
+            elif search_type == "keyword":
+                results = results.filter(keywords__icontains=query)
+            elif search_type == "language":
+                results = results.filter(language__icontains=query)
+            elif search_type == "publisher":
+                results = results.filter(publisher__icontains=query)
+            elif search_type == "year":
+                if query.isdigit():
+                    results = results.filter(year_of_publication=int(query))
+                else:
+                    return JsonResponse({"error": "Invalid year format."}, status=400)
+            else:
+                results = results.filter(
+                    Q(title__icontains=query) |
+                    Q(author__icontains=query) |
+                    Q(keywords__icontains=query) |
+                    Q(publisher__icontains=query) |
+                    Q(language__icontains=query)
+                )
+
+        results = results.values(
+            "title",
+            "author",
+            "publisher",
+            "language",
+            "year_of_publication",
+            "front_page_photo",
+        )[:50]
+
+        # ✅ Convert image path to full URL
+        updated_results = []
+        for r in results:
+            image_path = r.get("front_page_photo")
+            if image_path:
+                # Builds complete URL from MEDIA_URL or MEDIA_ROOT
+                full_image_url = request.build_absolute_uri(f"/media/{image_path}")
+            else:
+                full_image_url = ""  # Fallback if no image
+
+            r["front_page_photo"] = full_image_url
+            updated_results.append(r)
+
+        return JsonResponse(updated_results, safe=False)
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )

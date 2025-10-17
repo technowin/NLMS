@@ -1,0 +1,460 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+
+<!-- ================= Search Section ================= -->
+<div class="search-section" style="background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%); padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0); max-width: 1200px; margin: 20px auto;">
+
+    <!-- ================= Basic Search Form ================= -->
+    <div class="basic-search-wrapper" style="text-align: center; margin-bottom: 20px;">
+
+        <!-- ================= Advanced Search ================= -->
+       <p style="background: linear-gradient(90deg, #fff8e1, #fff3c4); border-left: 5px solid #f59e0b; padding: 16px 20px; border-radius: 12px; color: #374151; font-size: 15px; line-height: 1.7; margin-bottom: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; box-shadow: 0 4px 8px rgba(0,0,0,0.08);">
+            <strong style="color:#b45309;">Note:</strong> Please enter the <strong style="color:#b45309;">entire book title</strong> to search.<br>
+            <span style="color:#4b5563; font-style:italic;">टीप: कृपया शोधण्यासाठी <strong>संपूर्ण पुस्तकाचे</strong> शीर्षक भरा.</span>
+        </p>
+
+        <div class="advanced-search" style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; background: #fff; border-radius: 12px; padding: 15px 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+
+            <label for="searchType" style="font-weight: 600; color: #002850; white-space: nowrap;">
+                अ‍ॅडव्हान्स्ड शोध / Advanced Search:
+            </label>
+
+          <select id="searchType" onchange="clearResults(); validateInput();" 
+    style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; background: #f8fafc; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <option value="">Select Type</option>
+    <option value="books">पुस्तके / Books</option>
+    <option value="title">शीर्षक / Title</option>
+    <option value="author">लेखक / Author</option>
+    <option value="keyword">कीवर्ड / Keyword</option>
+    <option value="language">भाषा / Language</option>
+    <option value="publisher">प्रकाशक / Publisher</option>
+    <option value="year">प्रकाशन वर्ष / Year of Publication</option>
+</select>
+
+<input
+    type="text"
+    id="advancedSearchInput"
+    placeholder="Type to search..."
+    oninput="validateInput()"
+    style="padding: 10px 12px; width: 240px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-size: 15px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+/>
+
+<p id="errorMsg" style="color:red; margin-top: 5px;"></p>
+
+            <!-- ================= Buttons in Single Row ================= -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <button type="button" id="advancedSearchBtn" onclick="performSearch()" 
+                    style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; font-weight: 600; border: none; border-radius: 25px; padding: 10px 22px; cursor: pointer; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 6px;">
+                    <i class="fa fa-search"></i> शोध / Search
+                </button>
+
+                <!-- Index Search Button -->
+            <button type="button" id="indexSearchBtn" onclick="toggleKeywordSection()" 
+                style="background: linear-gradient(135deg, #1d4ed8, #0f172a); color: white; font-weight: 600; border: none; border-radius: 25px; padding: 10px 22px; cursor: pointer; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 6px;">
+                <i class="fa fa-list"></i> सूची शोध / Index Search
+            </button>
+            </div>
+
+        </div>
+
+        <!-- Results -->
+        <div id="searchResults" style="margin-top: 25px;"></div>
+    </div>
+
+    <!-- ================= Keyword Buttons Section ================= -->
+    <!-- Keyword Buttons Section -->
+<div class="keyword-buttons" id="keywordSection" style="display: none; background: #fff; border-radius: 12px; padding: 20px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0);">
+    <!-- English A–Z -->
+    <div class="keyword-row" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 15px;">
+        {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+            <button type="button" class="keyword-btn" onclick="selectKeyword('{{ letter }}')" 
+                style="background: #00f7ffff; color: black; box-shadow: 0 2px 8px rgba(0,0,0); border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.3s;">
+                {{ letter }}
+            </button>
+        {% endfor %}
+    </div>
+
+    <!-- Marathi Letters -->
+    <div class="keyword-row marathi" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+        {% for letter in "अआइईउऊएऐओऔअंअःकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळक्षज्ञ" %}
+            <button type="button" class="keyword-btn" onclick="selectKeyword('{{ letter }}')" 
+                style="background: #015296; color: white; border: none; box-shadow: 0 2px 8px rgba(0,0,0); padding: 8px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.3s;">
+                {{ letter }}
+            </button>
+        {% endfor %}
+    </div>
+</div>
+
+    <!-- Advanced Search Results -->
+    <div id="searchResults" style="margin-top: 20px;"></div>
+</div>
+
+
+
+    <script>
+        // Open modal
+        document.querySelectorAll('.rule-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-modal');
+                document.querySelector(modalId).style.display = 'block';
+            });
+        });
+
+        // Close modal
+        document.querySelectorAll('.modal .close').forEach(span => {
+            span.addEventListener('click', () => {
+                span.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // Close modal on outside click
+        window.addEventListener('click', (e) => {
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (e.target == modal) modal.style.display = 'none';
+            });
+        });
+    </script>
+
+<script>
+    // Flip Book
+    function flipBook(flipId) {
+        const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
+        flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
+    }
+</script>
+
+<script>
+    function zoomImage(img) {
+        const modal = document.getElementById("zoomModal");
+        const modalImg = document.getElementById("zoomedImage");
+
+        // Core fields
+        const modalAuthor = document.getElementById("zoomBookAuthor");
+        const modalTitle = document.getElementById("zoomBookTitle");
+        const modalSubtitle = document.getElementById("zoomBookSubtitle");
+        const modalPublisher = document.getElementById("zoomBookPublisher");
+        const modalISBN = document.getElementById("zoomBookISBN");
+        const modalEdition = document.getElementById("zoomBookEdition");
+        const modalSubject = document.getElementById("zoomBookSubject");
+        const modalLanguage = document.getElementById("zoomBookLanguage");
+        const modalPlace = document.getElementById("zoomBookPlace");
+        const modalYear = document.getElementById("zoomBookYear");
+        const modalPages = document.getElementById("zoomBookPages");
+        const modalRemarks = document.getElementById("zoomBookRemarks");
+        const modalDescription = document.getElementById("zoomBookDescription");
+
+        // Show modal
+        modal.style.display = "flex";
+        modal.classList.add("show");
+
+        // Assign values safely
+        modalImg.src = img.src;
+        modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
+        modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
+        modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
+        modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
+        modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
+        modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
+        modalSubject.textContent = img.getAttribute('data-subject') || "N/A";
+        modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
+        modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
+        modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
+        modalPages.textContent = img.getAttribute('data-pages') || "N/A";
+        modalRemarks.textContent = img.getAttribute('data-remarks') || "";
+        modalDescription.textContent = img.getAttribute('data-description') || "";
+    }
+
+    function closeZoom() {
+        const modal = document.getElementById("zoomModal");
+        modal.style.display = "none";
+        modal.classList.remove("show");
+    }
+
+    // Close modal on click outside image
+    document.getElementById("zoomModal").addEventListener("click", function (e) {
+        if (e.target.id === "zoomModal") {
+            closeZoom();
+        }
+    });
+</script>
+
+<!-- AJAX Script -->
+{% comment %} <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> {% endcomment %}
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+<!-- ================= JS Section ================= -->
+<script>
+let currentPage = 1;
+const itemsPerPage = 6;
+let currentData = []; // Stores last search results
+
+function performSearch(page = 1) {
+    const type = document.getElementById("searchType").value;
+    const query = document.getElementById("advancedSearchInput").value.trim();
+    const resultsDiv = document.getElementById("searchResults");
+
+    if (!type || !query) {
+        resultsDiv.innerHTML =
+            "<p style='color:red;'>Please select a type and enter a search term.</p>";
+        return;
+    }
+
+    const tableName = (type === "books") ? "tbl_bookcatalog" : "tbl_authormaster";
+
+    Swal.fire({
+        title: "Confirm Search",
+        text: `Search for "${query}"?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Search",
+        cancelButtonText: "Cancel"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            resultsDiv.innerHTML =
+                `<p>Searching for "<strong>${query}</strong>" in <strong>${tableName}</strong>...</p>`;
+
+            $.ajax({
+                url: "{% url 'L01:bookcatalog_search' %}",
+                type: "POST",
+                data: {
+                    searchType: type,
+                    query: query
+                },
+                dataType: "json",
+                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                success: function(data) {
+                    if (!data || data.length === 0) {
+                        resultsDiv.innerHTML = "<p style='color:orange;'>No records found.</p>";
+                        Swal.fire("No Results", "No matching records found.", "info");
+                        return;
+                    }
+
+                    currentData = data; // Save data globally
+                    currentPage = page; // Set current page
+                    renderPage(currentPage);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching data:", error);
+                    resultsDiv.innerHTML =
+                        "<p style='color:red;'>An error occurred while searching.</p>";
+                    Swal.fire("Error!", "An error occurred while fetching search results.", "error");
+                }
+            });
+        }
+    });
+}
+
+// Render a specific page
+function renderPage(page) {
+    const resultsDiv = document.getElementById("searchResults");
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageData = currentData.slice(startIndex, endIndex);
+
+    let html = `<div class='show' style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">`;
+
+    pageData.forEach((item, index) => {
+        const globalIndex = startIndex + index;
+        const imageUrl = item.front_page_photo || "/static/images/no_image_available.png";
+
+        html += `
+            <div class="flip-card" style="width:300px; height:400px; perspective:1000px;">
+                <div class="flip-card-inner" id="flipCard${globalIndex}" style="
+                    position: relative;
+                    width:100%;
+                    height:100%;
+                    text-align:center;
+                    transition: transform 0.8s;
+                    transform-style: preserve-3d;
+                    transform: rotateY(0deg);
+                ">
+                    <div class="flip-card-front" style="
+                        position:absolute;
+                        width:100%;
+                        height:100%;
+                        backface-visibility:hidden;
+                        background:white;
+                        border:1px solid #cbd5e1;
+                        border-radius:8px;
+                        box-shadow:0 2px 6px rgba(0,0,0);
+                        display:flex;
+                        flex-direction:column;
+                        justify-content:center;
+                        align-items:center;
+                        padding:10px;
+                    ">
+                        <img src="${imageUrl}" alt="Book Image" style="width:100%; height:85%; border-radius:6px;">
+                        <button onclick="flipCard(${globalIndex})" style="margin-top:8px; background:#0d9488; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Flip</button>
+                    </div>
+                    <div class="flip-card-back" style="
+                        position:absolute;
+                        width:100%;
+                        height:100%;
+                        backface-visibility:hidden;
+                        background:white;
+                        border:1px solid #cbd5e1;
+                        border-radius:8px;
+                        box-shadow:0 2px 6px rgba(0,0,0);
+                        transform:rotateY(180deg);
+                        overflow:auto;
+                        padding:12px;
+                        justify-content:center;
+                        align-items:center;
+                        text-align:center;
+                    ">
+                        <h4 style="font-size:16px; color:#0f172a; margin-bottom:8px;">${item.title || "Untitled Book"}</h4>
+                        <p><strong>लेखक / Author:</strong> ${item.author || "N/A"}</p>
+                        <p><strong>प्रकाशक / Publisher:</strong> ${item.publisher || "N/A"}</p>
+                        <p><strong>भाषा / Language:</strong> ${item.language || "N/A"}</p>
+                        <p><strong>प्रकाशन वर्ष / Year:</strong> ${item.year_of_publication || "N/A"}</p>
+                        <div style="text-align:center; margin-top:12px;">
+                            <button onclick="flipCard(${globalIndex})" style="background:#0d9488; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Back</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+
+    // Pagination buttons
+    const totalPages = Math.ceil(currentData.length / itemsPerPage);
+    if(totalPages > 1){
+        html += `<div style="margin-top:15px; text-align:center;">`;
+        for(let i = 1; i <= totalPages; i++){
+            html += `<button onclick="renderPage(${i})" style="
+                        margin:2px; padding:6px 12px; border-radius:6px; border:1px solid #cbd5e1;
+                        background:${i === page ? '#2563eb' : '#f8fafc'}; color:${i===page?'white':'#1e293b'}; cursor:pointer;">
+                        ${i}
+                     </button>`;
+        }
+        html += `</div>`;
+    }
+
+    resultsDiv.innerHTML = html;
+}
+
+// Flip card logic
+function flipCard(index) {
+    const card = document.getElementById(`flipCard${index}`);
+    if (card.style.transform === "rotateY(180deg)") {
+        card.style.transform = "rotateY(0deg)";
+    } else {
+        card.style.transform = "rotateY(180deg)";
+    }
+}
+</script>
+
+<script>
+function toggleYearInputs() {
+    const searchType = document.getElementById('searchType').value;
+    const yearFrom = document.getElementById('yearFrom');
+    const yearTo = document.getElementById('yearTo');
+
+    if(searchType === 'year') {
+        yearFrom.style.display = 'inline-block';
+        yearTo.style.display = 'inline-block';
+    } else {
+        yearFrom.style.display = 'none';
+        yearTo.style.display = 'none';
+    }
+}
+
+</script>
+
+<script>
+function toggleKeywordSection() {
+    debugger;
+    const keywordSection = document.getElementById("keywordSection");
+    const indexBtn = document.getElementById("indexSearchBtn");
+
+    if (keywordSection.style.display === "none" || keywordSection.style.display === "") {
+        keywordSection.style.display = "block";
+        indexBtn.innerHTML = '<i class="fa fa-times"></i> Close Index';
+    } else {
+        keywordSection.style.display = "none";
+        indexBtn.innerHTML = '<i class="fa fa-list"></i> Index Search';
+    }
+}
+</script>
+
+<script>
+function validateInput() {
+    const type = document.getElementById('searchType').value;
+    const input = document.getElementById('advancedSearchInput');
+    const errorMsg = document.getElementById('errorMsg');
+    const value = input.value.trim();
+
+    errorMsg.textContent = '';
+
+    // Check if type is selected
+    if (!type) {
+        if (value) {
+            errorMsg.textContent = "Please select a search type first.";
+        }
+        return;
+    }
+
+    // Text-type validations
+    if (['books','title','author','keyword','language','publisher'].includes(type)) {
+        // Allow letters, numbers, -, ', ;, , and minimum 2 chars
+        const pattern = /^[a-zA-Z0-9\-\';,]{2,}(\s*[a-zA-Z0-9\-\';,]+)*$/;
+        if (!pattern.test(value)) {
+            errorMsg.textContent = "Please enter valid text (letters, numbers, '-', ''', ';', ','), minimum 2 characters.";
+        }
+    } 
+    // Year validation
+    else if (type === 'year') {
+        const yearPattern = /^\d{4}$/;
+        if (!yearPattern.test(value)) {
+            errorMsg.textContent = "Please enter a valid 4-digit year (e.g., 2000).";
+        }
+    }
+}
+
+// Optional: clear input & error
+function clearResults() {
+    document.getElementById('advancedSearchInput').value = '';
+    document.getElementById('errorMsg').textContent = '';
+}
+</script>
+
+
+
+{% endblock %}
+
+
+
+
+{% block extra_javascript %}
+
+{% include "bootstrap/partials/syntax-highlight.html" %}
+
+<!-- Third party js -->
+<script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
+<script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
+<script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
+<!-- Third party js ends -->
+
+<script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
+
+<!-- Init js -->
+<script src="{% static 'js/pages/demo.typehead.js' %}"></script>
+<script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
+<!-- Init js end -->
+
+<!-- Selectize.js JS -->
+<script src="{% static 'js/selectize.min.js' %}"></script>
+<script src="{% static 'js/vendor/select2.min.js' %}"></script>
+{% endblock %}

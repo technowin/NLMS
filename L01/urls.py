@@ -3,6 +3,8 @@ from L01.views import *
 
 urlpatterns = [
     path("index",index,name='index'),
+    path("view_catalogue",view_catalogue,name='view_catalogue'),
+    path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
     path("registration",registration,name='registration'),
     path("check_user_id", check_user_id, name="check_user_id"),
     path("check_aadhar", check_aadhar, name="check_aadhar"),
@@ -31,6 +33,7 @@ urlpatterns = [
     path("get_member_details", get_member_details, name="get_member_details"),
     path("get_book_details", get_book_details, name="get_book_details"),
     path("get_book_circulation_status", get_book_circulation_status, name="get_book_circulation_status"),
+    path("circulation_transaction_details", circulation_transaction_details, name="circulation_transaction_details"),
     
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
