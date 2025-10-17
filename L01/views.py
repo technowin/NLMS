@@ -1832,16 +1832,32 @@ def issue_return_book_create(request):
                 circ.circ_encrypted_barcode = enc(str(circ.barcode))
                 circ.circ_encrypted_id = enc(str(circ.id))
                 circ.circ_encrypted_accession_id = enc(str(circ.accession.accession_id))
-                
-            circulationTran = CirculationTransaction.objects.filter(return_condition_id=14)
             
-            for circT in circulationTran:
-                circT.circT_encrypted_barcode = enc(str(circT.barcode))
-                
+            # barcode for returned books
+            
+            barcodes_qs = CirculationCopyStatus.objects.filter(current_status=14).values_list('barcode', flat=True)
+            circulationTran = CirculationTransaction.objects.select_related(
+                'catalog', 'member', 'circulation', 'return_condition'
+            ).filter(
+                barcode__in=barcodes_qs,
+                return_condition_id=14  # assuming 14 is the PK for return_condition
+            )
+            
+            for tran in circulationTran:
+                tran.circulation_encrypted_barcode = enc(str(tran.barcode))
+            
+            # book Info
+            
             bookcatelog = BookCatalog.objects.all()
             
             for bc in bookcatelog:
                 bc.bc_encryp_id = enc(str(bc.cat_ref_num))
+                
+            # status dropdown for return condition
+            
+            status = status_master.objects.filter(status_type='circulation transaction', is_active=1)
+            for st in status:
+                st.status_encrypted_id = enc(str(st.status_id))
                 
             return render(
                 request,
@@ -1852,6 +1868,7 @@ def issue_return_book_create(request):
                     "circulation": circulation,
                     "bookcatelog": bookcatelog,
                     "circulationTran": circulationTran,
+                    "status_list": status,
                 }
             )
         
@@ -2053,6 +2070,7 @@ def get_book_details(request):
 
                     book = circ.catalog
                     member = circ.member
+                    membership_master = member.membership
                     today = timezone.now().date()
 
                     # Format due date nicely (e.g., 10 Jan 2025)
@@ -2069,6 +2087,10 @@ def get_book_details(request):
                     if circ.due_date and today > circ.due_date:
                         days_overdue = (today - circ.due_date).days
                         status_name = "Overdue"
+                        
+                    # Calculate fine amount
+                    fine_per_day = float(membership_master.fine or 0)  # default 0 if None
+                    total_fine = days_overdue * fine_per_day
 
                     # Fetch member profile photo (Document ID = 1)
                     profile_doc = (
@@ -2102,6 +2124,7 @@ def get_book_details(request):
                                 else "-"
                             ),
                             "days_overdue": days_overdue,
+                            "fine_amount": total_fine,  # ✅ calculated fine
                         },
                         "member": {
                             "member_name": member_name,

@@ -194,6 +194,14 @@
             font-family: 'Merriweather', serif;
         }
 
+        #barcodeDetailsReturn{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            font-family: 'Merriweather', serif;
+        }
+
         .book-card {
             display: flex;
             flex-direction: row;
@@ -561,16 +569,11 @@
                                     <input type="text" id="barcodeSearchReturn" class="dropdown-input form-control shadow-sm"
                                         placeholder="Select Member / सदस्य निवडा..." autocomplete="off" required>
                                     <ul id="barcodeOptionsReturn" class="dropdown-options">
-                                        {% for circ in circulation %}
-                                            <li data-value="{{ circ.circ_encrypted_barcode }}">
-                                                {{ circ.barcode }}
-                                            </li>
-                                        {% endfor %}
-                                        {% comment %} {% for circT in circulationTran %}
-                                            <li data-value="{{ circT.circT_encrypted_barcode }}">
+                                        {% for circT in circulationTran %}
+                                            <li data-value="{{ circT.circulation_encrypted_barcode }}">
                                                 {{ circT.barcode }}
                                             </li>
-                                        {% endfor %} {% endcomment %}
+                                        {% endfor %}
                                     </ul>
                                     <input type="hidden" name="barcode_id" id="barcodeCodeInputReturn">
                                 </div>
@@ -578,6 +581,23 @@
 
                             <!-- Container where details will appear -->
                             <div id="barcodeDetailsReturn" class="mt-3"></div>
+
+                            <div class="mb-3">
+                                <div class="mb-2 d-flex align-items-center">
+                                    <label class="form-label fw-semibold text-secondary mb-0">
+                                        Book Condition / पुस्तक स्थिती<span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                                <div class="custom-dropdown">
+                                    <select name="book_condition" id="bookConditionSelect" class="dropdown-input form-control shadow-sm" required>
+                                        <option value="" selected disabled>Select / निवडा</option>
+                                        {% for st in status_list %}
+                                            <option value="{{ st.status_encrypted_id }}">{{ st.status_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                </div>
+                            </div>
 
                             <!-- Notes -->
                             <div class="mt-2 mb-3">
@@ -1359,6 +1379,27 @@
                                     </div>
                                 </div>
                             `);
+
+                            const fineAmount = book.fine_amount || 0;
+                            const finePerDay = fineAmount && daysOverdue > 0 ? (fineAmount / daysOverdue).toFixed(2) : 0;
+
+                            if (daysOverdue > 0 && fineAmount > 0) {
+                                const fineBorderColor = '#dc3545'; // red
+                                const fineBg = '#ffe6e6';          // light red background
+                                const fineTextColor = '#dc3545';   // red text
+
+                                container.append(`
+                                    <div class="fine-card mt-3" style="border: 1px solid ${fineBorderColor}; background-color: ${fineBg}; border-radius: 10px; padding: 15px; width:90%;">
+                                        <h5 style="color:${fineTextColor}; font-weight:600; margin-bottom:10px;">Fine Calculation</h5>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; color:${fineTextColor}; font-weight:500;">
+                                            <div>${daysOverdue} days overdue × ₹${finePerDay}/day</div>
+                                            <div style="font-size:1.2rem;">₹${fineAmount.toFixed(2)}</div>
+                                        </div>
+                                        <hr style="margin:8px 0;">
+                                        <div style="text-align:right; font-weight:600; color:${fineTextColor};">Total Fine: ₹${fineAmount.toFixed(2)}</div>
+                                    </div>
+                                `);
+                            }
 
                             // --- RETURN BUTTON ENABLE/DISABLE ---
                             if (isIssued) {
