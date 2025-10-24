@@ -56,6 +56,7 @@ from io import BytesIO
 import base64
 from django.core.exceptions import ObjectDoesNotExist
 logger = logging.getLogger(__name__)
+from django.db import transaction as db_transaction
 
 # Part First While Filling Membership Form
 
@@ -1873,54 +1874,137 @@ def issue_return_book_create(request):
             )
         
         if request.method == "POST":
-            issue = request.POST.get("issue")
-            
-            # Decrypt member and barcode
-            member_id = dec(str(request.POST.get("member_id")))
-            barcode_encrypted = request.POST.get("barcode_id")
-            barcode_id = dec(str(barcode_encrypted))
-            
-            # Fetch related objects
-            circ = CirculationCopyStatus.objects.select_related('accession', 'bookcatalog').get(barcode=barcode_id)
-            member = MembershipDetails.objects.get(id=member_id)
-            accession = circ.accession
-            circulation = circ
-            bookcatalog = circ.bookcatalog
-            accession_no = circ.accession_no
-            membercode = member.membership_code
-            
-            # Get form fields
-            issue_date = request.POST.get("issue_date")
-            due_date = request.POST.get("due_date")
-            notes = request.POST.get("notes")
-            
-            # Fetch return_condition status
-            return_condition_status = status_master.objects.get(status_id=14)
-            
-            # Save transaction
-            transaction = CirculationTransaction.objects.create(
-                catalog=bookcatalog,
-                accession=accession,
-                circulation=circulation,
-                member=member,
-                barcode=circ.barcode,
-                issue_date=issue_date,
-                due_date=due_date,
-                remarks=notes,
-                membership_code=membercode,
-                return_condition=return_condition_status,
-                issued_by=user_id,
-                created_by=user_id
-            )
-            
-            # Optional: mark the copy as issued
-            circ.current_status = status_master.objects.get(status_id=14)  
-            circ.save()
-            
-            # Success message in Marathi
-            messages.success(request, "ग्रंथ यशस्वीरित्या निर्गम केला गेला आहे!")
 
-            # Redirect back to the same view
+            # Check if it is issue or return
+            if request.POST.get("issue") == "1":
+                # ------------------- ISSUE LOGIC -------------------
+                member_id = dec(str(request.POST.get("member_id")))
+                barcode_id = dec(str(request.POST.get("barcode_id")))
+
+                circ = CirculationCopyStatus.objects.select_related('accession', 'bookcatalog').get(barcode=barcode_id)
+                member = MembershipDetails.objects.get(id=member_id)
+
+                accession = circ.accession
+                circulation = circ
+                bookcatalog = circ.bookcatalog
+                membercode = member.membership_code
+
+                issue_date = request.POST.get("issue_date")
+                due_date = request.POST.get("due_date")
+                notes = request.POST.get("notes")
+
+                return_condition_status = status_master.objects.get(status_id=14)  # default issued condition
+
+                # Save transaction
+                transaction = CirculationTransaction.objects.create(
+                    catalog=bookcatalog,
+                    accession=accession,
+                    circulation=circulation,
+                    member=member,
+                    barcode=circ.barcode,
+                    issue_date=issue_date,
+                    due_date=due_date,
+                    remarks=notes,
+                    membership_code=membercode,
+                    return_condition=return_condition_status,
+                    issued_by=user_id,
+                    created_by=user_id
+                )
+
+                # Update copy status
+                circ.current_status = return_condition_status
+                circ.save()
+
+                messages.success(request, "ग्रंथ यशस्वीरित्या निर्गम केला गेला आहे!")
+
+            elif request.POST.get("return") == "1":
+                barcode_id = dec(str(request.POST.get("barcode_id")))
+
+                trans_obj = CirculationTransaction.objects.filter(
+                    barcode=barcode_id,
+                    return_date__isnull=True
+                ).first()
+
+                if not trans_obj:
+                    messages.error(request, "सक्षम पुस्तके परत करण्यासाठी रेकॉर्ड सापडले नाही!")
+                    return redirect('L01:issue_return_book_create')
+
+                # Book condition and fine
+                condition_name = request.POST.get("book_condition")
+                fine_amount = float(request.POST.get("fine_amount", 0) or 0)
+                book_price_amount = float(request.POST.get("book_price_amount", 0) or 0)
+                total_amount = float(request.POST.get("total_amount", 0))
+                fine_Breakdown = float(request.POST.get("fine_Breakdown", 0))
+                notes = request.POST.get("notes", "")
+                payment_method = request.POST.get("payment_method", "Cash")
+
+                # Determine new circulation status
+                if condition_name == '17':  # Good
+                    new_copy_status = status_master.objects.get(status_id=13)
+                elif condition_name in ['18', '19']:  # Torn or Lost
+                    new_copy_status = status_master.objects.get(status_id=19)
+                else:
+                    new_copy_status = status_master.objects.get(status_id=13)
+
+                # Wrap all DB operations in a transaction
+                try:
+                    with db_transaction.atomic():
+                        # Update CirculationTransaction
+                        trans_obj.return_date = timezone.now().date()
+                        trans_obj.return_condition = new_copy_status
+                        trans_obj.fine_amount = fine_amount
+                        trans_obj.book_fine_amount = book_price_amount
+                        trans_obj.total_fine = total_amount
+                        trans_obj.days_overdue_count = fine_Breakdown
+                        trans_obj.fine_status = "Paid" if fine_amount > 0 else "None"
+                        trans_obj.fine_paid_date = timezone.now().date()
+                        trans_obj.transaction_status = "Success"
+                        trans_obj.transaction_type = "Offline"
+                        trans_obj.received_by = user_id
+                        trans_obj.remarks = notes
+                        trans_obj.updated_by = user_id
+                        trans_obj.save()
+
+                        # Update book copy status
+                        circ = trans_obj.circulation
+                        circ.current_status = new_copy_status
+                        circ.save()
+
+                        # Payment logic
+                        fine_nonzero = fine_amount > 0.001
+                        book_nonzero = book_price_amount > 0.001
+
+                        if fine_nonzero and not book_nonzero:
+                            payment_type = "Fine"
+                        elif fine_nonzero and book_nonzero:
+                            payment_type = "Fine and Book Price"
+                        elif not fine_nonzero and book_nonzero:
+                            payment_type = "Loss"
+                        else:
+                            payment_type = None
+
+                        if total_amount > 0 and payment_type:
+                            PaymentDetails.objects.create(
+                                membership=trans_obj.member,
+                                circulation_transaction=trans_obj,
+                                payment_mode="Offline",
+                                payment_method=payment_method,
+                                payment_type=payment_type,
+                                user_id=trans_obj.member.user_id,
+                                membership_code=trans_obj.membership_code,
+                                payment_date=timezone.now().date(),
+                                created_by=user_id,
+                                updated_by=user_id,
+                                status=StatusMaster.objects.get(id=5),
+                            )
+
+                    messages.success(request, "पुस्तक यशस्वीरित्या परत झाले आहे!")
+
+                except Exception as e:
+                    # Rollback automatically on any error
+                    messages.error(request, f"त्रुटी: {str(e)}. कृपया पुन्हा प्रयत्न करा!")
+                    return redirect('L01:issue_return_book_create')
+            
             return redirect('L01:issue_return_book_create')
         
     except Exception as e:
@@ -2065,12 +2149,13 @@ def get_book_details(request):
                 
                 try:
                     circ = CirculationTransaction.objects.select_related(
-                        "catalog", "member", "circulation", "return_condition"
+                        "catalog", "member", "circulation", "return_condition","accession"
                     ).get(barcode=barcode_id)
 
                     book = circ.catalog
                     member = circ.member
                     membership_master = member.membership
+                    price = circ.accession.price if circ.accession else 0
                     today = timezone.now().date()
 
                     # Format due date nicely (e.g., 10 Jan 2025)
@@ -2125,6 +2210,7 @@ def get_book_details(request):
                             ),
                             "days_overdue": days_overdue,
                             "fine_amount": total_fine,  # ✅ calculated fine
+                            "price": price,
                         },
                         "member": {
                             "member_name": member_name,
@@ -2213,7 +2299,10 @@ def circulation_transaction_details(request):
             transactions = (
                 CirculationTransaction.objects
                 .select_related("catalog", "accession", "return_condition")
-                .filter(member_id=member_id)
+                .filter(
+                    member_id=member_id,
+                    return_condition__status_id=14
+                )
                 .values(
                     "catalog__title",
                     "accession__accession_no",

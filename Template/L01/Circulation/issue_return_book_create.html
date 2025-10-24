@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-       
+
         .swal2-border-radius {
             border-radius: 15px !important;
             font-family: 'Merriweather', serif;
@@ -198,7 +198,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 20px 0;
+            {% comment %} margin: 20px 0; {% endcomment %}
             font-family: 'Merriweather', serif;
         }
 
@@ -362,6 +362,18 @@
 
     </style>
 
+    <style>
+        .card-header i {
+            transition: transform 0.25s ease, color 0.25s ease;
+        }
+
+        .card-header:hover i {
+            transform: scale(1.1);
+            color: #ffd54f; /* golden tint */
+        }
+
+    </style>
+
 {% endblock %}
 
 {% block page_title %}
@@ -371,29 +383,36 @@
 {% block content %}
 
     <div class="est-info-wrapper">
-        <div class="my-4">
-            <h2 class="fw-bold">
-                Book Issue & Return / पुस्तक निर्गम आणि परतावा
-            </h2>
-            <p class="text-muted fs-5">
-                Manage book transactions efficiently. / पुस्तकांचे निर्गमन आणि परतावा कार्यक्षमपणे व्यवस्थापित करा.
-            </p>
+        <div class="d-flex align-items-center" style="min-height: 100px;">
+            <i class="bi bi-journal-bookmark-fill fs-1 me-2 text-primary" style="font-weight:700;"></i>
+            <div class="d-flex flex-column justify-content-center">
+                <h2 class="fw-bold mb-1">
+                    Book Issue & Return / पुस्तक निर्गम आणि परतावा
+                </h2>
+                <p class="text-muted fs-5 mb-0">
+                    Manage book transactions efficiently. / पुस्तकांचे निर्गमन आणि परतावा कार्यक्षमपणे व्यवस्थापित करा.
+                </p>
+            </div>
         </div>
         
         <div class="row mt-4">
             <!-- Issue Book Card -->
             <div class="col-md-6 mb-4">
+
                 <div class="card shadow-lg border-0 rounded-4 h-100">
+
                     <div class="card-header bg-primary text-white fw-bold rounded-top-4">
-                        <div class="d-flex flex-column">
-                            <div class="d-flex align-items-center">
-                                <span>Issue Book / पुस्तक निर्गम</span>
-                            </div>
-                            <small class="text-light">
+                        <div class="d-flex align-items-center" style="min-height: 70px;">
+                            <i class="bi bi-journal-bookmark-fill fs-2 me-3"></i>
+                            <div class="d-flex flex-column justify-content-center">
+                            <span class="fs-5 fw-semibold mb-1">Issue Book / पुस्तक निर्गम</span>
+                            <small class="text-light opacity-75">
                                 Issue books to library members / ग्रंथालय सदस्यांना पुस्तके निर्गम करा
                             </small>
+                            </div>
                         </div>
                     </div>
+
                     <div class="card-body">
                         <form id="issueBookForm" method="POST" action="{% url 'L01:issue_return_book_create' %}">
                             {% csrf_token %}
@@ -433,7 +452,7 @@
                                 </div>
                                 <div class="custom-dropdown">
                                     <input type="text" id="barcodeSearch" class="dropdown-input form-control shadow-sm"
-                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off" required>
+                                        placeholder="Select Member / सदस्य निवडा..." autocomplete="off" required disabled>
                                     <ul id="barcodeOptions" class="dropdown-options">
                                         {% for circ in circulation %}
                                             <li data-value="{{ circ.circ_encrypted_barcode }}">
@@ -536,24 +555,38 @@
                             </div>
                         </form>
                     </div>
+
                 </div>
+
             </div>
 
             <!-- Return Book Card -->
             <div class="col-md-6 mb-4">
+
                 <div class="card shadow-lg border-0 rounded-4 h-100">
+
                     <div class="card-header bg-success text-white fw-bold rounded-top-4">
-                        <div class="d-flex flex-column">
-                            <div class="d-flex align-items-center">
-                                <span>Return Book / पुस्तक परतावा</span>
-                            </div>
-                            <small class="text-light">
+                        <div class="d-flex align-items-center" style="min-height: 70px;">
+                            <i class="bi bi-journal-check fs-2 me-3"></i>
+                            <div class="d-flex flex-column justify-content-center">
+                            <span class="fs-5 fw-semibold mb-1">Return Book / पुस्तक परतावा</span>
+                            <small class="text-light opacity-75">
                                 Process book returns and calculate fines / पुस्तके परत करा आणि दंड गणना करा
                             </small>
+                            </div>
                         </div>
                     </div>
+
                     <div class="card-body">
-                        <form id="returnBookForm">
+                        <form id="returnBookForm" method="POST" action="{% url 'L01:issue_return_book_create' %}">
+                            {% csrf_token %}
+
+                            <!-- Hidden field for confirmation -->
+                            <input type="hidden" name="return" id="returnHidden" value="0">
+                            <input type="hidden" name="fine_amount" id="fineAmountHidden" value="0">
+                            <input type="hidden" name="book_price_amount" id="bookPriceAmountHidden" value="0">
+                            <input type="hidden" name="total_amount" id="totalAmountHidden" value="0">
+                            <input type="hidden" name="fine_Breakdown" id="fineBreakdownHidden" value="0">
                             
                             {% comment %} Barcode / बारकोड {% endcomment %}
 
@@ -582,17 +615,48 @@
                             <!-- Container where details will appear -->
                             <div id="barcodeDetailsReturn" class="mt-3"></div>
 
-                            <div class="mb-3">
+                            <!-- Fine Card (hidden initially) -->
+
+                            <div class="d-flex justify-content-center mb-3">
+                                <div id="fineCard" class="fine-card mt-3" 
+                                    style="display:none; border: 1px solid #dc3545; background-color: #ffe6e6; 
+                                            border-radius: 10px; padding: 15px; width:90%;">
+                                    <h5 style="color:#dc3545; font-weight:600; margin-bottom:10px;">Fine Calculation</h5>
+                                    <div id="fineDetails" 
+                                        style="display:flex; justify-content:space-between; align-items:center; color:#dc3545; font-weight:500;">
+                                        <div id="fineBreakdown">0 days overdue × ₹0/day</div>
+                                        <div id="fineAmount" style="font-size:1.2rem;">₹0.00</div>
+                                    </div>
+                                    <hr style="margin:8px 0; border:0; border-top:1px solid rgba(220,53,69,0.5);">
+
+
+                                    <!-- 🆕 Book Price Row -->
+                                    <div id="bookPriceRow" 
+                                        style="display:none; justify-content:space-between; align-items:center; color:#dc3545; font-weight:500;">
+                                        <div>Book Price</div>
+                                        <div id="bookPriceAmount" style="font-size:1.1rem;">₹0.00</div>
+                                    </div>
+
+                                    <hr id="bookPriceHR" style="margin:8px 0; border:0; border-top:1px solid #dc3545; display:none;">
+
+                                    <div id="fineTotal" style="text-align:right; font-weight:600; color:#dc3545;">Total Fine: ₹0.00</div>
+                                </div>
+                            </div>
+
+                            {% comment %} Book Condition / पुस्तक स्थिती {% endcomment %}
+
+                            <div class="">
                                 <div class="mb-2 d-flex align-items-center">
                                     <label class="form-label fw-semibold text-secondary mb-0">
                                         Book Condition / पुस्तक स्थिती<span class="text-danger">*</span>
                                     </label>
                                 </div>
                                 <div class="custom-dropdown">
-                                    <select name="book_condition" id="bookConditionSelect" class="dropdown-input form-control shadow-sm" required>
+                                    <select name="book_condition" id="bookConditionSelect" class="dropdown-input form-control shadow-sm" required disabled>
                                         <option value="" selected disabled>Select / निवडा</option>
                                         {% for st in status_list %}
-                                            <option value="{{ st.status_encrypted_id }}">{{ st.status_name }}</option>
+                                            {% comment %} <option value="{{ st.status_name }}">{{ st.status_name }}</option> {% endcomment %}
+                                            <option value="{{ st.status_id }}">{{ st.status_name }}</option>
                                         {% endfor %}
                                     </select>
                                     
@@ -606,13 +670,18 @@
                             </div>
 
                             <div class="text-end">
-                                <button type="submit" class="btn btn-primary">
+                                {% comment %} <button type="submit" class="btn btn-primary">
+                                    <i class="uil uil-corner-up-left-alt"></i> Return Book
+                                </button> {% endcomment %}
+                                <button type="submit" id="returnBookBtn" class="btn btn-primary">
                                     <i class="uil uil-corner-up-left-alt"></i> Return Book
                                 </button>
                             </div>
+                            
                         </form>
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -880,11 +949,16 @@
                                     .prop("disabled", true)
                                     .removeClass("btn-success btn-secondary")
                                     .addClass("btn-danger"); // red color when disabled
+
+                                $("#barcodeSearch").prop("disabled", true);
+                                
                             } else {
                                 $("#issueBookBtn")
                                     .prop("disabled", false)
                                     .removeClass("btn-danger btn-secondary")
                                     .addClass("btn-success"); // green color when enabled
+
+                                $("#barcodeSearch").prop("disabled", false);
                             }
 
                         } else {
@@ -893,6 +967,8 @@
                                 .prop("disabled", true)
                                 .removeClass("btn-success btn-danger")
                                 .addClass("btn-secondary"); // neutral color if no members
+
+                            $("#barcodeSearch").prop("disabled", true);
                         }
                     },
                 });
@@ -1061,12 +1137,14 @@
                     },
                     dataType: "json",
                     success: function(data) {
+                        debugger;
                         const container = $("#barcodeDetails");
                         const issueBtn = $("#issueBookBtn");
                         container.empty();
 
                         if (data.success) {
                             const books = Array.isArray(data.book) ? data.book : [data.book];
+                            allOnShelf = true;
 
                             books.forEach(book => {
                                 // Determine status-based colors
@@ -1325,6 +1403,12 @@
                             const book = data.book;
                             const member = data.member;
 
+                            // Enable Book Condition dropdown
+                            $("#bookConditionSelect").prop("disabled", false);
+
+                            // Reset dropdown value
+                            $("#bookConditionSelect").val("");
+
                             // --- BOOK CARD ---
                             const isIssued = book.status_name === 'Issued';
                             const borderColor = isIssued ? '#ffc107' : '#6c757d'; // yellow or gray
@@ -1382,39 +1466,101 @@
 
                             const fineAmount = book.fine_amount || 0;
                             const finePerDay = fineAmount && daysOverdue > 0 ? (fineAmount / daysOverdue).toFixed(2) : 0;
+                            const fineCard = $("#fineCard");
 
+                            // ✅ Show fine info if overdue
                             if (daysOverdue > 0 && fineAmount > 0) {
-                                const fineBorderColor = '#dc3545'; // red
-                                const fineBg = '#ffe6e6';          // light red background
-                                const fineTextColor = '#dc3545';   // red text
-
-                                container.append(`
-                                    <div class="fine-card mt-3" style="border: 1px solid ${fineBorderColor}; background-color: ${fineBg}; border-radius: 10px; padding: 15px; width:90%;">
-                                        <h5 style="color:${fineTextColor}; font-weight:600; margin-bottom:10px;">Fine Calculation</h5>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; color:${fineTextColor}; font-weight:500;">
-                                            <div>${daysOverdue} days overdue × ₹${finePerDay}/day</div>
-                                            <div style="font-size:1.2rem;">₹${fineAmount.toFixed(2)}</div>
-                                        </div>
-                                        <hr style="margin:8px 0;">
-                                        <div style="text-align:right; font-weight:600; color:${fineTextColor};">Total Fine: ₹${fineAmount.toFixed(2)}</div>
-                                    </div>
-                                `);
-                            }
-
-                            // --- RETURN BUTTON ENABLE/DISABLE ---
-                            if (isIssued) {
-                                returnBtn.prop('disabled', false)
-                                    .removeClass('btn-secondary')
-                                    .addClass('btn-primary')
-                                    .html('<i class="uil uil-corner-up-left-alt"></i> Return Book');
+                                const finePerDay = (fineAmount / daysOverdue).toFixed(2);
+                                $("#fineBreakdown").text(`${daysOverdue} days overdue × ₹${finePerDay}/day`);
+                                $("#fineAmount").text(`₹${fineAmount.toFixed(2)}`);
+                                $("#fineTotal").text(`Total Fine: ₹${fineAmount.toFixed(2)}`);
+                                fineCard.show();
+                                fineAmountHidden.value = fineAmount.toFixed(2);
+                                fineBreakdownHidden.value = daysOverdue.toFixed(2);
                             } else {
-                                returnBtn.prop('disabled', true)
-                                    .removeClass('btn-primary')
-                                    .addClass('btn-secondary')
-                                    .html('<i class="uil uil-ban"></i> Cannot Return');
+                                fineCard.hide();
                             }
+
+                            // ✅ Store data globally for dropdown usage
+                            window.bookData = {
+                                days_overdue: book.days_overdue || 0,
+                                fine_per_day: parseFloat(finePerDay) || 0,
+                                price: parseFloat(book.price || 0)
+                            };
+
+                            console.log("✅ Book Data Loaded:", window.bookData);
+
+                            // --- Dropdown logic ---
+                            document.getElementById("bookConditionSelect").addEventListener("change", function () {
+                                debugger;
+                                const condition = this.value;
+                                const fineCard = document.getElementById("fineCard");
+                                const fineAmountEl = document.getElementById("fineAmount");
+                                const fineTotalEl = document.getElementById("fineTotal");
+                                const fineBreakdownEl = document.getElementById("fineBreakdown");
+                                const bookPriceRow = document.getElementById("bookPriceRow");
+                                const bookPriceAmount = document.getElementById("bookPriceAmount");
+                                const bookPriceHR = document.getElementById("bookPriceHR");
+
+                                const overdueDays = parseFloat(window.bookData.days_overdue) || 0;
+                                const finePerDay = parseFloat(window.bookData.fine_per_day) || 0;
+                                const bookPrice = parseFloat(window.bookData.price) || 0;
+
+                                // --- Case 1: Condition = "Good"
+                                if (condition === "17") {
+                                    if (overdueDays > 0 && finePerDay > 0) {
+                                        fineCard.style.display = "block";
+                                        bookPriceRow.style.display = "none";
+                                        const fineAmount = overdueDays * finePerDay;
+                                        fineBreakdownEl.innerText = `${overdueDays} days overdue × ₹${finePerDay}/day`;
+                                        fineAmountEl.innerText = `₹${fineAmount.toFixed(2)}`;
+                                        fineTotalEl.innerText = `Total Fine: ₹${fineAmount.toFixed(2)}`;
+
+                                        bookPriceHR.style.display = "none";
+                                    } else {
+                                        fineCard.style.display = "none";
+                                    }
+                                    return;
+                                }
+
+                                let fineAmount = overdueDays * finePerDay;
+                                let totalFine = fineAmount;
+
+                                if (condition === "18" || condition === "19") {
+                                    totalFine += bookPrice;
+                                    bookPriceRow.style.display = "flex";
+                                    bookPriceAmount.innerText = `₹${bookPrice.toFixed(2)}`;
+                                    bookPriceHR.style.display = "block";
+                                } else {
+                                    bookPriceRow.style.display = "none";
+                                    bookPriceHR.style.display = "none"; // ✅ hide HR too
+                                }
+
+                                // --- Update text values ---
+                                fineBreakdownEl.innerText =
+                                    overdueDays > 0
+                                        ? `${overdueDays} days overdue × ₹${finePerDay}/day`
+                                        : "No overdue fine";
+
+                                fineAmountEl.innerText = `₹${fineAmount.toFixed(2)}`;
+                                fineAmountHidden.value = fineAmount.toFixed(2);
+                                bookPriceAmountHidden.value = bookPrice.toFixed(2);
+                                totalAmountHidden.value = totalFine.toFixed(2);
+                                fineTotalEl.innerText = `Total Fine: ₹${totalFine.toFixed(2)}`;
+
+                                // --- Always show the card for Torn/Lost/Other ---
+                                fineCard.style.display = "block";
+                            });
+
+                            // 🧽 Reset Book Condition dropdown & Fine card when new book is selected
+                            $("#bookConditionSelect").val(""); // Reset dropdown to default
+                            $("#bookPriceAmount").text("₹0.00");
+                            //$("#fineCard").hide(); // Hide fine section initially
+                            $("#bookPriceRow").hide(); // Hide price row
+                            $("#bookPriceHR").hide(); // Hide price row
                         } else {
                             // ✅ if no record or error — just show message and clear UI
+                            $("#bookConditionSelect").prop("disabled", true);
                             container.html(`
                                 <div class="alert alert-warning text-center mt-3" role="alert">
                                     ${data.error || "No book details found for this barcode."}
@@ -1706,6 +1852,7 @@
     </script>
 
     <script>
+        
         document.addEventListener("DOMContentLoaded", function() {
             debugger;
             const form = document.getElementById("issueBookForm");
@@ -1750,6 +1897,67 @@
                         form.submit();
                     }
                 });
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            const form = document.getElementById("returnBookForm");
+            const returnBtn = document.getElementById("returnBookBtn");
+            const returnHidden = document.getElementById("returnHidden");
+            const bookConditionSelect = document.getElementById("bookConditionSelect");
+            const fineAmountHidden = document.getElementById("fineAmountHidden");
+            const bookPriceAmountHidden = document.getElementById("bookPriceAmountHidden");
+            const totalAmountHidden = document.getElementById("totalAmountHidden");
+
+            returnBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                
+                const barcode = document.getElementById("barcodeCodeInputReturn").value.trim();
+                const condition = bookConditionSelect.value;
+                const notes = form.querySelector("textarea[name='notes']").value.trim();
+                const fineAmount = parseFloat(fineAmountHidden.value) || 0;
+                const bookPriceAmount = parseFloat(bookPriceAmountHidden.value) || 0;
+                const totalAmount = parseFloat(totalAmountHidden.value) || 0;
+
+                if ( !barcode || !condition || !notes) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'सावधगिरी!',
+                        text: 'कृपया सर्व आवश्यक फील्ड भरा!',
+                        confirmButtonText: 'ठीक आहे'
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'तुम्हाला खात्री आहे का?',
+                    text: "ही पुस्तके परत करायची आहे?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'हो, पुस्तके परत करा!',
+                    cancelButtonText: 'रद्द करा'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        returnHidden.value = "1";
+                        form.submit();
+                    }
+                });
+            });
+
+            // Enable Book Condition dropdown only after barcode is selected
+            document.getElementById("barcodeCodeInputReturn").addEventListener("change", function() {
+                if (this.value) {
+                    bookConditionSelect.disabled = false;
+                    returnBtn.disabled = false;
+                } else {
+                    bookConditionSelect.disabled = true;
+                    returnBtn.disabled = true;
+                }
             });
         });
     </script>

@@ -216,6 +216,7 @@ class PaymentDetails(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.CharField(max_length=50, null=True, blank=True)
     payment_date = models.DateField(null=True, blank=True) 
+    circulation_transaction = models.ForeignKey('CirculationTransaction', on_delete=models.SET_NULL, null=True, blank=True, db_column="circulation_transaction_id", related_name="payments")
 
     class Meta:
         db_table = "tbl_paymentdetails"
@@ -394,7 +395,9 @@ class CirculationTransaction(models.Model):
     issue_date = models.DateField(blank=True, null=True)
     due_date = models.DateField(blank=True, null=True)
     return_date = models.DateField(blank=True, null=True)
-    renewal_count = models.IntegerField(default=0)
+    days_overdue_count = models.IntegerField(default=0)
+    book_fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    total_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fine_status = models.CharField(max_length=20, blank=True, null=True)
     fine_paid_date = models.DateField(blank=True, null=True)
