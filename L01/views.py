@@ -52,11 +52,15 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 import barcode
 from barcode.writer import ImageWriter
-from io import BytesIO
 import base64
 from django.core.exceptions import ObjectDoesNotExist
 logger = logging.getLogger(__name__)
 from django.db import transaction as db_transaction
+from PIL import Image, ImageDraw, ImageFont
+from barcode import Code128
+from reportlab.lib.utils import ImageReader
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 
 # Part First While Filling Membership Form
 
@@ -1624,6 +1628,21 @@ def bar_code_index(request):
             
             for a in accessions:
                 a.encrypted_id = enc(str(a.accession_id))
+            
+            # barcode for bulk download
+            
+            circulation_accessions = list(
+                CirculationCopyStatus.objects
+                .filter(accession_no__isnull=False)
+                .values('id', 'accession_no', 'accession_id')
+            )
+
+            for circ in circulation_accessions:
+                circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
+                
+            subjectNames = SubjectTypeMaster.objects.filter(is_active=1)
+            for sub in subjectNames:
+                sub.subjectIdEnc = enc(str(sub.id))
         
             return render(
                 request,
@@ -1632,9 +1651,188 @@ def bar_code_index(request):
                     "MEDIA_URL": settings.MEDIA_URL,
                     "library_code": library_code,
                     "accessions": accessions,
+                    "circulation_accessions": circulation_accessions,
+                    "subjectNames": subjectNames,
                 }
             )
+        
+        if request.method == "POST":
             
+            if library_code: 
+                    library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first() 
+                    library_location = library_details.location 
+            else:
+                library_location = None
+                return HttpResponseBadRequest("Invalid library code")
+                
+            from_acc = dec(str(request.POST.get("from_accession")))
+            to_acc = dec(str(request.POST.get("to_accession")))
+            subject_id = request.POST.get("subject_id")  # optional
+
+            if subject_id:
+                subject_id = dec(str(subject_id))
+
+            if not from_acc or not to_acc:
+                return JsonResponse({"error": "Missing fields"}, status=400)
+
+            # 🔹 Get matching circulation records
+            circulation_qs = (
+                CirculationCopyStatus.objects
+                .select_related("bookcatalog", "bookcatalog__subject")
+                .annotate(barcode_int=Cast("barcode", IntegerField()))
+                .filter(barcode_int__range=(int(from_acc), int(to_acc)))
+                .order_by("barcode_int")  # 👈 numeric order, ascending
+            )
+
+            if subject_id:
+                circulation_qs = circulation_qs.filter(bookcatalog__subject_id=subject_id)
+
+            if not circulation_qs.exists():
+                return JsonResponse({"error": "No matching records found"}, status=404)
+
+            # ✅ Create PDF buffer
+            pdf_buffer = BytesIO()
+            p = canvas.Canvas(pdf_buffer, pagesize=A4)
+            width, height = A4
+
+            # ✅ Font setup for Marathi
+            # font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
+            font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSerifDevanagari-Bold.ttf")
+            p.setFont("Helvetica", 10)
+
+            # ✅ Page layout variables
+            x_margin = 10 * mm           # tighter left margin
+            y_position = height - 15 * mm  # start closer to top
+            y_gap = 30 * mm              # reduce gap between barcodes
+
+            for idx, record in enumerate(circulation_qs):
+                accession_no = record.accession_no or "UNKNOWN"
+                subject_marathi = ""
+                if record.bookcatalog and record.bookcatalog.subject:
+                    subject_marathi = record.bookcatalog.subject.subjectNameMarathi or ""
+
+                # ✅ Generate barcode image
+                CODE = Code128
+
+                writer_options = {
+                    "module_width": 0.32,   # was 0.4
+                    "module_height": 8,     # keep same
+                    "quiet_zone": 1.5,      # was 2
+                    "font_size": 6,
+                    "text_distance": 2.5,
+                    "write_text": False,
+                }
+
+                buffer = BytesIO()
+                CODE(accession_no, writer=ImageWriter()).write(buffer, options=writer_options)
+                buffer.seek(0)
+                barcode_img = Image.open(buffer)
+
+                # ✅ Add Marathi text using PIL
+                
+                marathi_text = "नवी मुंबई महानगरपालिका"
+                location_text = f"{library_location} - {library_code}"
+                number_text = f"{accession_no} - {subject_marathi}"
+
+                try:
+                    marathi_font = ImageFont.truetype(font_path, 24)
+                    english_font = ImageFont.truetype(font_path, 22)
+                    number_font = ImageFont.truetype(font_path, 22)
+                except:
+                    marathi_font = ImageFont.load_default()
+                    english_font = ImageFont.load_default()
+                    number_font = ImageFont.load_default()
+
+                draw_temp = ImageDraw.Draw(barcode_img)
+                marathi_width = draw_temp.textlength(marathi_text, font=marathi_font)
+                location_width = draw_temp.textlength(location_text, font=english_font)
+                number_width = draw_temp.textlength(number_text, font=number_font)
+
+                # Layout and spacing
+                top_margin = 10
+                gap_between_texts = 3
+                gap_above_barcode = 8
+                gap_below_barcode = 8
+                border_padding = 10
+
+                # Calculate total image height
+                new_height = (
+                    top_margin
+                    + marathi_font.size
+                    + gap_between_texts
+                    + english_font.size
+                    + gap_above_barcode
+                    + barcode_img.height
+                    + gap_below_barcode
+                    + number_font.size
+                    + border_padding * 2
+                )
+
+                # Create new white image with border area
+                new_img = Image.new("RGB", (barcode_img.width + border_padding * 2, new_height), "white")
+                draw = ImageDraw.Draw(new_img)
+
+                # --- Draw border ---
+                border_color = "black"
+                border_thickness = 3
+                draw.rectangle(
+                    [0, 0, new_img.width - 1, new_img.height - 1],
+                    outline=border_color,
+                    width=border_thickness
+                )
+
+                # --- Draw texts ---
+                text_x = new_img.width // 2
+                text_y = top_margin + border_padding
+
+                # Marathi line
+                draw.text((text_x - marathi_width // 2, text_y), marathi_text, fill="black", font=marathi_font)
+
+                # English line
+                text_y += marathi_font.size + gap_between_texts
+                draw.text((text_x - location_width // 2, text_y), location_text, fill="black", font=english_font)
+
+                # Barcode
+                barcode_y = text_y + english_font.size + gap_above_barcode
+                new_img.paste(barcode_img, (border_padding, barcode_y))
+
+                # Accession number + subject
+                number_y = barcode_y + barcode_img.height + gap_below_barcode
+                draw.text(
+                    (text_x - number_width // 2, number_y),
+                    number_text,
+                    fill="black",
+                    font=number_font
+                )
+
+                # ✅ Save temporary image for ReportLab
+                temp_img = BytesIO()
+                new_img.save(temp_img, format="PNG")
+                temp_img.seek(0)
+
+                # ✅ Draw image in PDF
+                p.drawImage(ImageReader(temp_img), x_margin, y_position - barcode_img.height, width=80 * mm, height=25 * mm)
+
+                y_position -= y_gap
+
+                # Add new page if needed
+                if y_position < 50 * mm:
+                    p.showPage()
+                    y_position = height - 30 * mm
+
+            # ✅ Save PDF
+            p.save()
+            pdf_buffer.seek(0)
+
+            # ✅ Create file name like “1_to_10_barcodes.pdf”
+            filename = f"{from_acc}_to_{to_acc}_barcodes.pdf"
+
+            # ✅ Return response
+            response = HttpResponse(pdf_buffer, content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+            response.set_cookie("fileDownload", "true", max_age=10)
+            return response
+             
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else "library_list"
@@ -1679,6 +1877,14 @@ def generate_barcode(request):
                 return JsonResponse({'books': books, 'locations': locations})
             
             else:
+                
+                if library_code: 
+                    library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first() 
+                    library_location = library_details.location 
+                else:
+                    library_location = None
+                    return HttpResponseBadRequest("Invalid library code")
+                
                 accession_id = request.GET.get("accessionid")
                 if not accession_id:
                     return HttpResponseBadRequest("Missing accession ID")
@@ -1690,8 +1896,9 @@ def generate_barcode(request):
 
                 accession = get_object_or_404(BookAccession, accession_id=decrypted_id)
                 accession_number = accession.accession_no or "UNKNOWN"
+                subject_name = accession.catalogue.subject.subjectNameMarathi or ""
 
-                # Generate barcode
+                # ✅ Generate barcode
                 CODE = barcode.get_barcode_class('code128')
                 writer_options = {
                     "module_width": 0.4,
@@ -1699,15 +1906,68 @@ def generate_barcode(request):
                     "quiet_zone": 2,
                     "font_size": 6,
                     "text_distance": 2.5,
-                    "write_text": True
+                    "write_text": False,  # we’ll handle text manually
                 }
+
                 buffer = BytesIO()
                 CODE(accession_number, writer=ImageWriter()).write(buffer, options=writer_options)
-                barcode_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                buffer.seek(0)
+                barcode_image = Image.open(buffer)
+
+                # ✅ Font path
+                font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
+
+                # ✅ Load fonts with proper sizes
+                try:
+                    marathi_font = ImageFont.truetype(font_path, 18)
+                    number_font = ImageFont.truetype(font_path, 16)
+                except:
+                    marathi_font = ImageFont.load_default()
+                    number_font = ImageFont.load_default()
+
+                # ✅ Text setup
+                marathi_text = "नवी मुंबई महानगरपालिका"
+                marathi_text = f"{marathi_text} - {library_location}"
+                
+                number_text = f"{accession_number} - {subject_name}"
+
+                # ✅ Measure text widths
+                draw_temp = ImageDraw.Draw(barcode_image)
+                marathi_width = draw_temp.textlength(marathi_text, font=marathi_font)
+                number_width = draw_temp.textlength(number_text, font=number_font)
+
+                # ✅ Calculate total height (Marathi + small gap + barcode + small gap + number)
+                top_margin = 5
+                gap_above_barcode = 6
+                gap_below_barcode = 6
+                new_height = top_margin + marathi_font.size + gap_above_barcode + barcode_image.height + gap_below_barcode + number_font.size
+
+                new_image = Image.new("RGB", (barcode_image.width, new_height), "white")
+                draw = ImageDraw.Draw(new_image)
+
+                # ✅ Marathi text (top)
+                text_x = (barcode_image.width - marathi_width) // 2
+                text_y = top_margin
+                draw.text((text_x, text_y), marathi_text, fill="black", font=marathi_font)
+
+                # ✅ Barcode (middle)
+                barcode_y = text_y + marathi_font.size + gap_above_barcode
+                new_image.paste(barcode_image, (0, barcode_y))
+
+                # ✅ Accession number + subject (bottom)
+                number_x = (barcode_image.width - number_width) // 2
+                number_y = barcode_y + barcode_image.height + gap_below_barcode
+                draw.text((number_x, number_y), number_text, fill="black", font=number_font)
+
+                # ✅ Encode to Base64
+                output = BytesIO()
+                new_image.save(output, format="PNG")
+                barcode_image_b64 = base64.b64encode(output.getvalue()).decode("utf-8")
 
                 return JsonResponse({
                     "accession_no": accession_number,
-                    "barcode_image": barcode_image,
+                    "subject_name": subject_name,
+                    "barcode_image": barcode_image_b64,
                 })
 
         # 🔹 POST: Save barcode
