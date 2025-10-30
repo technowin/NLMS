@@ -138,6 +138,9 @@ urlpatterns = [
     path('circulation_master_view/', circulation_master_view, name='circulation_master_view'),
 
     #Reports 
+    path('payment_report', payment_report, name='payment_report'),
+    path('get_payment_preview/', get_payment_preview, name='get_payment_preview'),
+    # Reports previously defined paths
     path('common_html', common_html, name='common_html'),
     path('get_filter', get_filter, name='get_filter'),
     path('get_sub_filter', get_sub_filter, name='get_sub_filter'),

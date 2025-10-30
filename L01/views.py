@@ -419,7 +419,14 @@ def membership_approval(request):
         print("Membership Approval Page Accessed")
         library_code = request.session.get('library_db', None)
 
-        memberships = (MembershipDetails.objects.select_related("status").all().order_by("-created_at"))
+        # memberships = (MembershipDetails.objects.select_related("status").all().order_by("-created_at"))
+        memberships = (
+            MembershipDetails.objects
+            .select_related("status")
+            .all()
+            .order_by("-updated_at")
+        )
+
         library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
         library_name_mar = library.library_name_mar if library else ""
         # Encrypt membership IDs
@@ -2250,6 +2257,8 @@ def issue_return_book_create(request):
                                 payment_mode="Offline",
                                 payment_method=payment_method,
                                 payment_type=payment_type,
+                                fine_amount=fine_amount,                  
+                                book_fine_amount=book_price_amount,  
                                 user_id=trans_obj.member.user_id,
                                 membership_code=trans_obj.membership_code,
                                 payment_date=timezone.now().date(),
@@ -2410,7 +2419,8 @@ def get_book_details(request):
                 try:
                     circ = CirculationTransaction.objects.select_related(
                         "catalog", "member", "circulation", "return_condition","accession"
-                    ).get(barcode=barcode_id)
+                    ).get(barcode=barcode_id,
+                          return_condition__status_id=14)
 
                     book = circ.catalog
                     member = circ.member
@@ -2590,7 +2600,8 @@ def circulation_transaction_details(request):
             transactions = (
                 CirculationTransaction.objects
                 .select_related("catalog", "accession", "member", "return_condition")
-                .filter(barcode=barcode)
+                .filter(barcode=barcode,
+                        return_condition__status_id=14)
                 .values(
                     "catalog__title",
                     "accession__accession_no",

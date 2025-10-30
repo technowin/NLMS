@@ -1,0 +1,926 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}भरणा अहवाल{% endblock title %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+
+        .swal2-border-radius {
+            border-radius: 15px !important;
+            font-family: 'Merriweather', serif;
+        }
+
+        .zoom-wrapper {
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .main-image {
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        /* Thumbnail */
+        .thumb-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s ease, border 0.2s ease;
+        }
+
+        .thumb-img:hover {
+            transform: scale(1.1);
+        }
+
+        .thumb-img.active {
+            border: 2px solid #0d6efd;
+        }
+
+        .custom-dropdown {
+            position: relative;
+        }
+        .dropdown-options {
+            position: absolute;
+            z-index: 999;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: none;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .dropdown-options li {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        .dropdown-options li:hover {
+            background: #f0f0f0;
+        }
+
+        #memberDetails {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            font-family: 'Merriweather', serif;
+            gap: 15px; /* space between cards */
+        }
+
+        .member-card {
+            display: flex;
+            flex-direction: row;
+            background: #f5f8ff; /* light neutral background */
+            border-radius: 15px;
+            width: 90%;
+            max-width: 650px;
+            padding: 12px;
+            border: 2px solid #007bff; /* normal blue border */
+            gap: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            transition: 0.3s ease;
+        }
+
+        /* When validation fails — red border and light pink background */
+        .member-card.invalid {
+            border-color: #dc3545;
+            background: #ffe6e6;
+        }
+
+        .member-photo {
+            flex: 0 0 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .member-photo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #0056b3;
+            object-fit: cover;
+        }
+
+        .member-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Member name and text */
+        .member-info h4.member-name {
+            margin: 0 0 8px;
+            font-size: 1.2rem;
+            color: #002147;
+            font-weight: 700;
+        }
+
+        .membership-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; /* space between fields */
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .text-danger.fw-bold {
+            color: #dc3545 !important;
+        }
+
+        .text-success.fw-bold {
+            color: #007bff !important; /* changed from green to blue */
+        }
+
+        .membership-row span {
+            padding: 3px 6px;
+            border-radius: 5px;
+            color: #002147;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .member-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 10px;
+            }
+
+            .member-photo {
+                margin-bottom: 10px;
+            }
+
+            .membership-row {
+                justify-content: center;
+            }
+        }
+
+        .date-label {
+            display: inline-block;
+            color: #003366;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 0.4px;
+            margin-left: 3px;
+        }
+        
+        {% comment %} barcode{% endcomment %}
+
+        #barcodeDetails {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            gap: 15px;
+            font-family: 'Merriweather', serif;
+        }
+
+        #barcodeDetailsReturn{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            {% comment %} margin: 20px 0; {% endcomment %}
+            font-family: 'Merriweather', serif;
+        }
+
+        .book-card {
+            display: flex;
+            flex-direction: row;
+            width: 90%;
+            max-width: 650px;
+            border-radius: 12px;
+            {% comment %} padding: 12px; {% endcomment %}
+            padding: 8px;
+            gap: 15px;
+            border: 2px solid; /* dynamic color via inline style */
+            background-color: #f0fff4; /* default light background */
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .book-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+        }
+
+        .book-photo {
+            flex: 0 0 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .book-photo img {
+            width: 90px;
+            {% comment %} width: 100px;
+            height: 140px; {% endcomment %}
+            height: 120px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #ccc;
+        }
+
+        .book-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .book-info h5 {
+            {% comment %} margin: 0 0 6px; {% endcomment %}
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #28A745;
+            margin-bottom: 4px;  /* was 6px */
+        }
+
+        .book-info p {
+            {% comment %} margin: 3px 0;
+            font-size: 0.9rem; {% endcomment %}
+            margin: 2px 0;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+
+        .book-info p strong {
+            color: #28A745; /* label color */
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .book-info p span {
+            color: #28A745; /* value color */
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px; /* pill style */
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.4px;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); /* subtle shadow */
+        }
+
+
+        @media (max-width: 768px) {
+            .book-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .book-photo {
+                margin-bottom: 10px;
+            }
+
+            .book-info p {
+                font-size: 0.85rem;
+                
+            }
+        }
+
+    </style>
+
+    <style>
+
+        .transaction-table th {
+            background-color: #007bff;
+            color: #fff;
+            text-align: center;
+        }
+
+        .transaction-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .help-icon {
+            font-size: 1.5rem;       /* Bigger and visible */
+            color: #0d6efd;          /* Bootstrap primary blue */
+            cursor: pointer;          /* Pointer on hover */
+            transition: transform 0.2s, color 0.2s;
+            margin-left:2%;
+        }
+
+        .help-icon:hover {
+            color: #0a58ca;
+            transform: scale(1.2);   /* Slight zoom effect */
+        }
+
+        #bookCatalogModal .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        #bookCatalogModal .modal-header {
+         border-bottom: none;
+        }
+
+        #bookCatalogModal .dropdown-options {
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        #bookCatalogTableContainer table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #bookCatalogTableContainer thead th {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        #bookCatalogTableContainer tbody td {
+          font-size: 0.9rem;
+        }
+
+
+    </style>
+
+    <style>
+        .card-header i {
+            transition: transform 0.25s ease, color 0.25s ease;
+        }
+
+        .card-header:hover i {
+            transform: scale(1.1);
+            color: #ffd54f; /* golden tint */
+        }
+
+    </style>
+
+    <style>
+        #paymentReportModal .modal-content {
+            border: none;
+            overflow: hidden;
+        }
+        #paymentReportModal .form-label {
+            color: #333;
+        }
+        #paymentReportModal .btn-info {
+            background: linear-gradient(45deg, #17a2b8, #0dcaf0);
+            border: none;
+            transition: 0.2s;
+        }
+        #paymentReportModal .btn-info:hover {
+            background: linear-gradient(45deg, #0dcaf0, #17a2b8);
+        }
+    </style>
+
+    <style>
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+        }
+        .modal-footer .btn {
+            min-width: 160px;
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='भरणा अहवाल' sub_title='' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+        <div class="d-flex align-items-center" style="min-height: 100px;">
+            <i class="bi bi-cash-stack fs-1 me-2 text-success" style="font-weight:700;"></i>
+            <div class="d-flex flex-column justify-content-center">
+                <h2 class="fw-bold mb-1">
+                    Payment Report / भरणा अहवाल
+                </h2>
+                <p class="text-muted fs-5 mb-0">
+                    Track and manage received or pending payments efficiently. / प्राप्त किंवा प्रलंबित भरणे कार्यक्षमपणे नोंदवा आणि व्यवस्थापित करा.
+                </p>
+                
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h2 class="fw-bold"></h2>
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#paymentReportModal">
+                    <i class="bi bi-plus-circle"></i> भरणा अहवाल
+                </button>
+            </div>
+        </div>
+
+        <!-- Payment Report Modal -->
+        <div class="modal fade" id="paymentReportModal" tabindex="-1" aria-labelledby="paymentReportLabel" aria-hidden="true">
+            <div class="modal-dialog modal-md modal-dialog-centered">
+                <div class="modal-content shadow-lg border-0 rounded-4">
+
+                <!-- Header -->
+                <div class="modal-header bg-success text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="paymentReportLabel">
+                    <i class="bi bi-file-earmark-bar-graph"></i> भरणा अहवाल तयार करा
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body bg-light">
+                    <form id="paymentReportForm">
+                    <div class="row g-3">
+
+                        <!-- From Date -->
+                        <div class="col-md-6">
+                        <label class="form-label fw-semibold">From Date / दिनांक पासून</label>
+                        <input type="date" id="fromDate" name="from_date" class="form-control shadow-sm" required>
+                        </div>
+
+                        <!-- To Date -->
+                        <div class="col-md-6">
+                        <label class="form-label fw-semibold">To Date / दिनांक पर्यंत</label>
+                        <input type="date" id="toDate" name="to_date" class="form-control shadow-sm" required disabled>
+                        </div>
+
+                        <!-- Preview Button -->
+                        <div class="col-12 text-center mt-3">
+                        <button type="button" id="previewBtn" class="btn btn-info px-4">
+                            <i class="bi bi-eye"></i> Preview / पूर्वावलोकन
+                        </button>
+                        </div>
+
+                    </div>
+                    </form>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> बंद करा
+                    </button>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div class="modal fade" id="paymentSummaryModal" tabindex="-1" aria-labelledby="paymentSummaryLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content rounded-4 shadow">
+                    <div class="modal-header bg-info text-white rounded-top-4">
+                        <h5 class="modal-title fw-bold" id="paymentSummaryLabel">
+                        <i class="bi bi-cash-stack"></i> भरणा अहवाल (Payment Summary)
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body fs-5">
+                        <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center">
+                            <thead class="table-light fw-semibold">
+                            <tr>
+                                <th>विभाग / प्रकार</th>
+                                <th>रक्कम (₹)</th>
+                            </tr>
+                            </thead>
+                            <tbody id="paymentSummaryBody">
+                            <!-- Dynamic rows will come here -->
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <!-- Left: Close button -->
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> बंद करा
+                        </button>
+
+                        <!-- Right: Generate form -->
+                        <form id="generateReportForm" method="POST" action="{% url 'payment_report' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="from_date" id="hiddenFromDate">
+                            <input type="hidden" name="to_date" id="hiddenToDate">
+                            <input type="hidden" name="total_amount" id="hiddenTotalamount">
+                            <button type="button" id="generateBtn" class="btn btn-success px-4">
+                                <i class="bi bi-file-earmark-text"></i> Generate Report / अहवाल तयार करा
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% comment %} payment report content table here {% endcomment %}
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive mt-4">
+                    <table id="paymentReportTable" class="table table-striped table-bordered align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sr No.</th>
+                                <th>Receipt No.</th>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Total Amount</th>
+                                <th>Deposit Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in payment_reports %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ report.receipt_no }}</td>
+                                <td>{{ report.from_date }}</td>
+                                <td>{{ report.to_date }}</td>
+                                <td>{{ report.total_amount }}</td>
+                                <td>{{ report.deposit_amount }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary">View</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>   
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- SweetAlert2 (only once) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+    <!-- jQuery -->
+
+    <!-- DataTables JS -->
+
+    <!-- Include DataTables -->
+
+    <script>
+        $(document).ready(function () {
+            // Clone the header row for filters
+            $('#paymentReportTable thead tr')
+                .clone(true)
+                .addClass('filters')
+                .appendTo('#paymentReportTable thead');
+
+            var table = $('#paymentReportTable').DataTable({
+                orderCellsTop: true,
+                fixedHeader: true,
+                pageLength: 10,
+                initComplete: function () {
+                    var api = this.api();
+
+                    // For each column, add a text input to the cloned header
+                    api.columns().eq(0).each(function (colIdx) {
+                        var cell = $('.filters th').eq($(api.column(colIdx).header()).index());
+                        var title = $(cell).text();
+                        $(cell).html('<input type="text" placeholder="Search ' + title + '" />');
+
+                        // Event listener for search input
+                        $('input', cell)
+                            .off('keyup change')
+                            .on('keyup change', function (e) {
+                                e.stopPropagation();
+                                api.column(colIdx)
+                                    .search(this.value ? this.value : '', true, false)
+                                    .draw();
+                            });
+                    });
+                }
+            });
+        });
+    </script>
+
+    {% comment %} back to top {% endcomment %}
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{{ message.tags|title }}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{{ message.tags }}",
+                        confirmButtonText: "OK",
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const fromDate = document.getElementById("fromDate");
+            const toDate = document.getElementById("toDate");
+            const previewBtn = document.getElementById("previewBtn");
+            const generateBtn = document.getElementById("generateBtn");
+
+            // Disable "to date" until "from date" selected
+            fromDate.addEventListener("change", function() {
+                toDate.disabled = !fromDate.value;
+
+                // Reset toDate when fromDate changes
+                toDate.value = "";
+                toDate.min = fromDate.value;
+            });
+
+            // Validate To Date (must be greater than From Date)
+            /*toDate.addEventListener("change", function() {
+                if (toDate.value <= fromDate.value) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "अवैध दिनांक!",
+                        text: "‘दिनांक पर्यंत’ हा ‘दिनांक पासून’ पेक्षा नंतरचा असावा.",
+                        confirmButtonText: "ठीक आहे",
+                        confirmButtonColor: "#3085d6"
+                    });
+                    toDate.value = "";
+                }
+            });*/
+
+            // Common validation function
+            function validateDates() {
+                if (!fromDate.value) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "दिनांक निवडा!",
+                        text: "कृपया ‘दिनांक पासून’ निवडा.",
+                        confirmButtonText: "ठीक आहे",
+                        confirmButtonColor: "#3085d6"
+                    });
+                    return false;
+                }
+                if (!toDate.value) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "दिनांक निवडा!",
+                        text: "कृपया ‘दिनांक पर्यंत’ निवडा.",
+                        confirmButtonText: "ठीक आहे",
+                        confirmButtonColor: "#3085d6"
+                    });
+                    return false;
+                }
+                return true;
+            }
+            
+            // Generate Report Button
+            generateBtn.addEventListener("click", function() {
+                if (validateDates()) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "अहवाल तयार करत आहे...",
+                        text: `कालावधी: ${fromDate.value} ते ${toDate.value}`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    // 🔹 Add form submission or AJAX logic here
+                }
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            $("#previewBtn").click(function () {
+                const fromDate = $("#fromDate").val();
+                const toDate = $("#toDate").val();
+
+                if (!fromDate || !toDate) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "दिनांक निवडा!",
+                        text: "कृपया 'पासून' आणि 'पर्यंत' दिनांक निवडा.",
+                        confirmButtonText: "ठीक आहे",
+                    });
+                    return;
+                }
+
+                $.ajax({
+                    url: "{% url 'get_payment_preview' %}",  // Django URL
+                    type: "POST",
+                    data: {
+                        from: fromDate,
+                        to: toDate,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    beforeSend: function () {
+                        $("#previewBtn").prop("disabled", true).html("Loading...");
+                    },
+                    success: function (data) {
+                        $("#previewBtn").prop("disabled", false).html('<i class="bi bi-eye"></i> Preview / पूर्वावलोकन');
+
+                        if (data.error || data.message) {
+                            Swal.fire({
+                                icon: "info",
+                                text: data.error || data.message
+                            });
+                            return;
+                        }
+
+                        // 🔹 Build membership summary rows
+                        let rows = "";
+                        let grandTotal = 0;
+                        const summaryData = [];
+
+                        data.membership_summary.forEach(item => {
+                            rows += `
+                                <tr>
+                                    <td>${item.membership_type}</td>
+                                    <td>${item.total_amount.toFixed(2)}</td>
+                                </tr>
+                            `;
+                            grandTotal += item.total_amount;
+
+                            // Push to summary array
+                            summaryData.push({
+                                key: item.membership_type,
+                                value: item.total_amount.toFixed(2)
+                            });
+                            
+                        });
+
+                        // 🔹 Add deposit & fine rows
+                        rows += `
+                            <tr class="table-warning fw-bold">
+                                <td>एकूण ठेव (Total Deposit)</td>
+                                <td>${data.deposit_total.toFixed(2)}</td>
+                            </tr>
+                            <tr class="table-warning fw-bold">
+                                <td>दंड रक्कम (Fine Amount)</td>
+                                <td>${data.fine_total.toFixed(2)}</td>
+                            </tr>
+                        `;
+
+                        summaryData.push({ key: "एकूण ठेव (Total Deposit)", value: data.deposit_total.toFixed(2) });
+                        summaryData.push({ key: "दंड रक्कम (Fine Amount)", value: data.fine_total.toFixed(2) });
+
+                        // 🔹 Add final total row
+                        const overall = grandTotal + data.deposit_total + data.fine_total;
+                        rows += `
+                            <tr class="table-success fw-bold">
+                                <td>एकूण रक्कम (Grand Total)</td>
+                                <td>${overall.toFixed(2)}</td>
+                            </tr>
+                        `;
+
+                        summaryData.push({ key: "एकूण रक्कम (Grand Total)", value: overall.toFixed(2) });
+
+                        // Fill hidden form fields
+                        $("#hiddenFromDate").val(fromDate);
+                        $("#hiddenToDate").val(toDate);
+                        $("#hiddenTotalamount").val(overall.toFixed(2));
+
+                        // ✅ Store dynamic summary JSON
+                        $("#generateReportForm input[name='summary_data']").remove(); // remove previous if any
+                        $("#generateReportForm").append(
+                            `<input type="hidden" name="summary_data" value='${JSON.stringify(summaryData)}'>`
+                        );
+
+                        // Inject into modal body
+                        $("#paymentSummaryBody").html(rows);
+
+                        // Show modal
+                        const modal = new bootstrap.Modal(document.getElementById("paymentSummaryModal"));
+                        modal.show();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error:", error);
+                        $("#previewBtn").prop("disabled", false).html('<i class="bi bi-eye"></i> Preview / पूर्वावलोकन');
+                        Swal.fire({
+                            icon: "error",
+                            title: "त्रुटी!",
+                            text: "डेटा लोड करण्यात अडचण आली.",
+                            confirmButtonText: "ठीक आहे",
+                        });
+                    }
+                });
+            });
+
+            // --- When Generate button clicked inside modal ---
+            $("#generateBtn").click(function () {
+                Swal.fire({
+                    title: "तुम्हाला खात्री आहे का?",
+                    text: "या दिनांक श्रेणीसाठी अहवाल तयार केल्यानंतर पुन्हा तयार करता येणार नाही.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#28a745",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "होय, तयार करा!",
+                    cancelButtonText: "रद्द करा"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $("#generateReportForm").submit();
+                    }
+                });
+            });
+            
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            $("#fromDate").on("change", function() {
+                $("#toDate").prop("disabled", false).attr("min", $(this).val());
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Reset the Payment Report modal when closed
+            $('#paymentReportModal').on('hidden.bs.modal', function() {
+                const form = $(this).find('form')[0];
+                if (form) form.reset();
+
+                // Also disable To Date again
+                $('#toDate').prop('disabled', true);
+            });
+
+            // Reset the Payment Summary modal when closed
+            $('#paymentSummaryModal').on('hidden.bs.modal', function() {
+                // Clear dynamic rows and hidden fields
+                $('#paymentSummaryBody').empty();
+                $('#hiddenFromDate').val('');
+                $('#hiddenToDate').val('');
+                $('#hiddenTotalamount').val('');
+            });
+        });
+    </script>
+
+
+{% endblock %}

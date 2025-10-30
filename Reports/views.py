@@ -33,7 +33,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from flask import Flask, render_template
 from django.shortcuts import render
-
+from django.db import transaction
 from NLMS.settings import MEDIA_ROOT
 app = Flask(__name__)
 # Create your views here.
@@ -55,7 +55,154 @@ import traceback
 from Account.db_utils import callproc
 from django.utils import timezone
 from NLMS.encryption import *
-# Report section
+from L01.models import *
+from django.db.models import *
+
+@login_required
+def payment_report(request):
+    try:
+        if request.user.is_authenticated ==True:                
+            global user
+            user = request.user.id
+            library_code = request.session.get('library_db', None)
+            username = request.session.get('username', None)
+            user_id = request.session["user_id"]
+            role_id = request.session["role_id"]
+            
+        if request.method == "GET":
+            
+            library_name = tbl_librarymasterL01.objects.using(library_code).filter(is_active=True).first()
+            
+            library_name_mar = library_name.library_name_mar if library_name else ''
+            
+            reports = PaymentReport.objects.all().order_by('-generated_date')
+            return render(request,'Reports/payment_report.html', {'payment_reports':reports, 'library_name_mar':library_name_mar})
+            
+        if request.method == "POST":
+            from_date = request.POST.get("from_date")
+            to_date = request.POST.get("to_date")
+            total_amount = request.POST.get("total_amount")
+            summary_data_json = request.POST.get("summary_data")
+
+            # Convert to Python date objects
+            from datetime import datetime
+            from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
+            to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
+
+            # Check for overlap
+            overlap_exists = PaymentReport.objects.filter(
+                from_date__lte=to_date_obj,
+                to_date__gte=from_date_obj
+            ).exists()
+
+            if overlap_exists:
+                messages.error(request, "A report already exists for this date range! कृपया दुसरी दिनांक निवडा.")
+                return redirect("payment_report")
+
+            try:
+                with transaction.atomic():  # 👈 Ensures all or nothing
+
+                    # Create main report
+                    report = PaymentReport.objects.create(
+                        from_date=from_date_obj,
+                        to_date=to_date_obj,
+                        generated_date=timezone.now(),
+                        total_amount=total_amount,
+                        created_by=user_id,
+                        updated_by=user_id
+                    )
+
+                    # Parse and insert key-value pairs
+                    if summary_data_json:
+                        summary_data = json.loads(summary_data_json)
+                        for item in summary_data:
+                            PaymentReportKeyValue.objects.create(
+                                payment_report=report,
+                                key=item.get("key"),
+                                value=item.get("value")
+                            )
+
+                messages.success(request, "Payment summary generated successfully!")
+
+            except Exception as e:
+                transaction.set_rollback(True)
+                messages.error(request, f"Error while generating report: {str(e)}")
+
+            messages.success(request, "Payment summary generated successfully!")
+            return redirect("payment_report")
+            
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log",[fun,str(e),request.user.id])  
+        messages.error(request, 'Oops...! Something went wrong!')
+
+@login_required
+def get_payment_preview(request):
+    try:
+        from_date = request.POST.get("from")
+        to_date = request.POST.get("to")
+
+        if not from_date or not to_date:
+            return JsonResponse({"error": "Missing date range"}, status=400)
+
+        # Step 1️⃣ - Get payments in selected date range
+        payments = PaymentDetails.objects.filter(payment_date__range=[from_date, to_date])
+
+        # Step 2️⃣ - Get all membership types from master (so we show all even if count = 0)
+        all_memberships = MembershipMaster.objects.all().values("membership_type_en", "membership_type")
+
+        # Step 3️⃣ - Initialize dictionary with all membership types (English + Marathi)
+        membership_summary = {
+            f"{m['membership_type_en']} ({m['membership_type']})": {"count": 0, "total": 0}
+            for m in all_memberships
+        }
+
+        # Step 4️⃣ - Add totals from payments if available
+        for pay in payments.select_related("membership__membership"):
+            mem = pay.membership
+            if mem and mem.membership:
+                mtype_en = mem.membership.membership_type_en
+                mtype_mr = mem.membership.membership_type
+                label = f"{mtype_en} ({mtype_mr})"
+
+                if label in membership_summary:
+                    membership_summary[label]["count"] += 1
+                    membership_summary[label]["total"] += float(pay.total_subscription_amount or 0)
+
+        # Step 5️⃣ - Overall totals
+        total_deposit = payments.aggregate(total=Sum("deposit_amount")).get("total") or 0
+        total_fine = payments.aggregate(total=Sum("fine_amount")).get("total") or 0
+        total_subscription = sum(v["total"] for v in membership_summary.values())
+
+        # Step 6️⃣ - Convert to list for frontend
+        membership_list = [
+            {
+                "membership_type": k,
+                "total_amount": round(v["total"], 2),
+                "count": v["count"]
+            }
+            for k, v in membership_summary.items()
+        ]
+
+        # Step 7️⃣ - Final data
+        data = {
+            "deposit_total": round(total_deposit, 2),
+            "fine_total": round(total_fine, 2),
+            "total_subscription_amount": round(total_subscription, 2),
+            "membership_summary": membership_list
+        }
+
+        return JsonResponse(data)
+    
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[-1].name if tb else "get_payment_preview"
+        callproc("stp_error_log", [fun, str(e), request.user.id])
+        messages.error(request, "Oops...! Something went wrong!")
+        return JsonResponse({"error": "Something went wrong. Please try again later."}, status=500)
+
+# Report section Previous
 @login_required
 def common_html(request):
     title,note ='',''
@@ -118,8 +265,6 @@ def get_filter(request):
         messages.error(request, 'Oops...! Something went wrong!')
     finally:
         return JsonResponse(drop_down, safe=False)
-    
-
     
 def common_dict(unit):
     return {
@@ -423,7 +568,6 @@ def preprocess_data_list(result_data, is_export):
         data_list.append(processed_row)
     return data_list
 
-
 def render_to_pdf(html):
     result = BytesIO()
     pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
@@ -559,84 +703,6 @@ def report_xlsx(request):
         messages.error(request, f'Oops...! Something went wrong! {str(e)}')
     finally:
         return response
-        
-# @login_required
-# def report_xlsx(request):
-#     response = ''
-#     try:
-#         if request.user.is_authenticated ==True:                
-#             global user
-#             user = request.user.id
-#             if request.method == "POST":
-#                 columnName =str(request.POST.get('columnName', ''))
-#                 filterid =str(request.POST.get('filterid', ''))
-#                 subFilterId =str(request.POST.get('subFilterId', ''))
-#                 sft =str(request.POST.get('sft', ''))
-#                 entity =str(request.POST.get('entity', ''))
-#                 filterid1 = filterid.split(',')
-#                 SubFilterId1 = subFilterId.split(',')
-#                 sft1 = sft.split(',')
-#                 data = common_fun(columnName,filterid1,SubFilterId1,sft1,entity,user,'1')
-
-#                 headers = data['headers']
-#                 emptycheck = data['emptycheck']
-#                 data_list = data['data_list']
-#                 column_list = data['display_name_list']
-
-#                 result_data = callproc("stp_get_report_title", [entity])
-#                 title = ''
-#                 if result_data and result_data[0]:
-#                     for items in result_data:  
-#                         title = items[0]
-
-#                 output = io.BytesIO()
-#                 workbook = xlsxwriter.Workbook(output)
-#                 worksheet = workbook.add_worksheet(str(entity))
-            
-#                 # Inserting the logo with a reduced size, ensuring it doesn't overlap
-#                 worksheet.insert_image('A1', 'static/images/technologo.png', {'x_offset': 1, 'y_offset': 1, 'x_scale': 0.04, 'y_scale': 0.04})  # Reduced size
-            
-#                 # Header Format
-#                 header_format = workbook.add_format({'align': 'center', 'bold': True, 'font_size': 14})
-                
-#                 # Data Format
-#                 data_format = workbook.add_format({'border': 1})
-            
-#                 # Merge header cell for the title
-#                 worksheet.merge_range('A4:{}'.format(chr(65 + len(column_list) - 1) + '2'), title, header_format)
-            
-#                 # Add the header row
-#                 filter_format = workbook.add_format({'bold': True})
-#                 worksheet.write(5, 0, headers, filter_format)
-            
-#                 # Header Row Format (Column Names)
-#                 header_format = workbook.add_format({'bold': True, 'bg_color': '#7f9cf0', 'font_color': 'black'})
-#                 for i, column_name in enumerate(column_list):
-#                     worksheet.write(6, i, column_name, header_format)
-            
-#                 # Write the data rows
-#                 for row_num, row_data in enumerate(data_list, start=7):
-#                     for col_num, col_data in enumerate(row_data):
-#                         worksheet.write(row_num, col_num, str(col_data), data_format)
-            
-#                 # Auto-adjust columns based on content length (Auto width)
-#                 for col_num in range(len(column_list)):
-#                     worksheet.set_column(col_num, col_num, max(len(str(cell)) for cell in [row[col_num] for row in data_list] + [column_list[col_num]]))
-            
-#                 workbook.close()
-            
-#                 # Prepare the response to send the generated Excel file
-#                 response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#                 response['Content-Disposition'] = f'attachment; filename="{title}.xlsx"'
-#                 output.seek(0)
-#                 response.write(output.read())
-#     except Exception as e:
-#         tb = traceback.extract_tb(e.__traceback__)
-#         fun = tb[0].name
-#         callproc("stp_error_log",[fun,str(e),request.user.id])  
-#         messages.error(request, 'Oops...! Something went wrong!')
-#     finally:
-#         return response
     
 def add_page_number(canvas, doc):
     canvas.saveState()

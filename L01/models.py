@@ -204,6 +204,8 @@ class PaymentDetails(models.Model):
     entry_fee_amount = models.FloatField(null=True, blank=True)
     monthly_subscription_amount = models.FloatField(null=True, blank=True)
     total_subscription_amount = models.FloatField(null=True, blank=True)
+    fine_amount = models.FloatField(null=True, blank=True)
+    book_fine_amount = models.FloatField(null=True, blank=True)
     subscription_from = models.DateField(null=True, blank=True)
     subscription_to = models.DateField(null=True, blank=True)
     status = models.ForeignKey(StatusMaster,on_delete=models.SET_NULL,null=True,blank=True,db_column="status_id",related_name="payment_statuses")
@@ -422,3 +424,43 @@ class CirculationTransaction(models.Model):
 
     class Meta:
         db_table = "tbl_circulation_transaction"
+
+class PaymentReport(models.Model):
+    id = models.AutoField(primary_key=True)
+    from_date = models.DateField()
+    to_date = models.DateField()
+    generated_date = models.DateTimeField(auto_now_add=True)
+    receipt_no = models.CharField(max_length=500, blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    receipt_upload = models.TextField(blank=True, null=True)  # storing folder/file path
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_payment_report"
+
+    def __str__(self):
+        return f"Receipt #{self.receipt_no or self.id} ({self.from_date} - {self.to_date})"
+    
+class PaymentReportKeyValue(models.Model):
+    id = models.AutoField(primary_key=True)
+    payment_report = models.ForeignKey(
+        PaymentReport,
+        on_delete=models.CASCADE,
+        related_name="key_values",
+        db_column="payment_report_id"
+    )
+    key = models.CharField(max_length=255)
+    value = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "tbl_payment_report_keyvalue"
+
+    def __str__(self):
+        return f"{self.key}: {self.value}"
