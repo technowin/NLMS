@@ -262,11 +262,18 @@ def payment_report(request):
                     # ✅ FIX: Use TemporaryDirectory to avoid Windows permission lock
                     with tempfile.TemporaryDirectory() as tmpdirname:
                         pdf_path = os.path.join(tmpdirname, "payment_report.pdf")
+                        
+                        font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
 
                         # 🔹 Generate PDF using WeasyPrint
                         HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf(
                             pdf_path,
                             stylesheets=[CSS(string=f"""
+                                             
+                                @font-face {{
+                                    font-family: 'Noto Sans Devanagari';
+                                    src: url('file://{font_path}');
+                                }}
                                 @page {{
                                     size: A4 landscape;
                                     margin: 1cm;
