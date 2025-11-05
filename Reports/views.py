@@ -192,7 +192,9 @@ def payment_report(request):
                 all_keys = PaymentReportKeyValue.objects.values_list('key', flat=True).distinct()
 
                 # ✅ Build header (added Deposit Amount)
-                header = ["Receipt No", "Generated Date", "Deposit Date"] + list(all_keys) + ["Deposit Amount"]
+                # header = ["Receipt No", "Generated Date", "Deposit Date"] + list(all_keys) + ["Deposit Amount"]
+                # data = [header]
+                header = ["पावती क्रमांक", "अहवाल दिनांक", "ठेव दिनांक"] + list(all_keys) + ["ठेव रक्कम"]
                 data = [header]
 
                 for report in reports:
@@ -237,7 +239,6 @@ def payment_report(request):
                 # ==================== PDF Export ====================
                 
                 if report_type == "pdf":
-                    from django.template.loader import render_to_string
                     from weasyprint import HTML, CSS
                     from django.http import HttpResponse
                     import tempfile, os
@@ -247,109 +248,105 @@ def payment_report(request):
                     library_name = library.library_name_mar if library else "ग्रंथालयाचे नाव उपलब्ध नाही"
 
                     # 🔹 Build Marathi title data
-                    context = {
-                        "municipal_name": "नवी मुंबई महानगरपालिका",
-                        "library_name": library_name,
-                        "report_title": "भरणा अहवाल",
-                        "data": data,
-                        "report_range": report_range,
-                        "generated_date": datetime.now().strftime("%d-%m-%Y"),
-                    }
+                    today_str = datetime.now().strftime("%d-%m-%Y")
+                    report_title = "भरणा अहवाल"
+                    file_name = f"Payment_Report_{today_str}.pdf"
 
-                    # 🔹 Render HTML with context
-                    html_string = render_to_string("Reports/payment_report_template.html", context)
+                    # ✅ Font path (your local/static font file)
+                    font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
 
-                    # ✅ FIX: Use TemporaryDirectory to avoid Windows permission lock
-                    with tempfile.TemporaryDirectory() as tmpdirname:
-                        pdf_path = os.path.join(tmpdirname, "payment_report.pdf")
-                        
-                        font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
-
-                        # 🔹 Generate PDF using WeasyPrint
-                        HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf(
-                            pdf_path,
-                            stylesheets=[CSS(string=f"""
-                                             
+                    # ✅ Build HTML dynamically
+                    html_content = f"""
+                    <!DOCTYPE html>
+                    <html lang="mr">
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>{report_title}</title>
+                            <style>
                                 @font-face {{
                                     font-family: 'MarathiFont';
-                                    src: url('file://{font_path}');
+                                    src: url('file://{font_path}') format('truetype');
                                 }}
                                 @page {{
                                     size: A4 landscape;
                                     margin: 1cm;
-                                    border: none;
-
-                                    /* Footer date on every page */
                                     @bottom-right {{
-                                        content: "अहवाल तयार दिनांक : {context['generated_date']}";
+                                        content: "अहवाल तयार दिनांक : {today_str}";
                                         font-size: 10px;
                                         color: #444;
                                         font-family: 'MarathiFont', sans-serif;
                                     }}
                                 }}
-
                                 body {{
                                     font-family: 'MarathiFont', sans-serif;
                                     font-size: 11px;
-                                    line-height: 1.4;
+                                    line-height: 1.5;
                                     color: #000;
-                                    border: 1px solid #bbb;  /* full border around page */
-                                    padding: 10px;
+                                    border: 1px solid #bbb;
+                                    padding: 15px;
+                                    background: #fff;
                                 }}
-
-                                h1 {{
+                                h1, h2, h3 {{
                                     text-align: center;
-                                    font-size: 18px;
                                     margin: 0;
                                 }}
-                                h2 {{
-                                    text-align: center;
-                                    font-size: 14px;
-                                    margin: 4px 0;
-                                }}
-                                h3 {{
-                                    text-align: center;
-                                    font-size: 13px;
-                                    margin: 4px 0 10px 0;
-                                }}
-
+                                h1 {{ font-size: 18px; }}
+                                h2 {{ font-size: 15px; margin-top: 3px; }}
+                                h3 {{ font-size: 13px; margin: 4px 0 10px 0; }}
                                 table {{
                                     width: 100%;
                                     border-collapse: collapse;
-                                    table-layout: auto;
-                                    word-wrap: break-word;
+                                    table-layout: fixed;
+                                    margin-top: 10px;
                                 }}
-
-                                th {{
-                                    background-color: #727cf5;
-                                    color: white;
-                                    text-align: center;
-                                    padding: 6px;
-                                    border: 0.5px solid #ccc;
-                                    font-weight: 600;
-                                }}
-
-                                td {{
+                                th, td {{
                                     border: 0.5px solid #ccc;
                                     padding: 6px;
                                     text-align: center;
                                     vertical-align: middle;
                                     word-wrap: break-word;
                                     white-space: normal;
+                                    font-size: 11px;
                                 }}
-                            """)]
-                        )
+                                th {{
+                                    background-color: #727cf5;
+                                    color: white;
+                                    font-weight: 600;
+                                }}
+                                tr:nth-child(even) {{
+                                    background: #f9f9f9;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <h1>नवी मुंबई महानगरपालिका</h1>
+                            <h2>{library_name}</h2>
+                            <h3>{report_title} कालावधी: {report_range}</h3>
 
-                        # 🔹 Read the generated PDF safely
-                        with open(pdf_path, "rb") as f:
-                            pdf_content = f.read()
+                            <table>
+                                <thead>
+                                    <tr>
+                                        {''.join(f'<th>{h}</th>' for h in data[0])}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {''.join('<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>' for row in data[1:])}
+                                </tbody>
+                            </table>
+                        </body>
+                    </html>
+                    """
 
-                    # 🔹 Return PDF as HTTP response
-                    filename = f"Payment_Report_{datetime.now().strftime('%Y%m%d')}.pdf"
-                    response = HttpResponse(pdf_content, content_type="application/pdf")
-                    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    # ✅ Generate PDF (direct, no temp file needed)
+                    pdf_file = HTML(string=html_content).write_pdf(
+                        stylesheets=[CSS(string="@page { size: A4 landscape; margin: 1cm; }")]
+                    )
+
+                    # ✅ Return PDF as download
+                    response = HttpResponse(pdf_file, content_type="application/pdf")
+                    response["Content-Disposition"] = f'attachment; filename="{file_name}"'
                     return response
-           
+                
                 # ==================== Excel Export ====================
                 elif report_type == "excel":
                     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
