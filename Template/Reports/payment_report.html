@@ -404,6 +404,100 @@
         }
     </style>
 
+    {% comment %} Download button style {% endcomment %}
+    <style>
+        .Btn {
+        width: 50px;
+        height: 50px;
+        border: none;
+        border-radius: 50%;
+        background-color: rgb(27, 27, 27);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        transition-duration: .3s;
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.11);
+        }
+
+        .svgIcon {
+        fill: rgb(214, 178, 255);
+        }
+
+        .icon2 {
+        width: 18px;
+        height: 5px;
+        border-bottom: 2px solid rgb(182, 143, 255);
+        border-left: 2px solid rgb(182, 143, 255);
+        border-right: 2px solid rgb(182, 143, 255);
+        }
+
+        .tooltip {
+            position: absolute;
+            right: -205px;
+            opacity: 0;
+            background-color: rgb(12, 12, 12);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition-duration: .2s;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+
+        .tooltip::before {
+        position: absolute;
+        content: "";
+        width: 10px;
+        height: 10px;
+        background-color: rgb(12, 12, 12);
+        background-size: 1000%;
+        background-position: center;
+        transform: rotate(45deg);
+        left: -5%;
+        transition-duration: .3s;
+        }
+
+        .Btn:hover .tooltip {
+        opacity: 1;
+        transition-duration: .3s;
+        }
+
+        .Btn:hover {
+        background-color: rgb(150, 94, 255);
+        transition-duration: .3s;
+        }
+
+        .Btn:hover .icon2 {
+        border-bottom: 2px solid rgb(235, 235, 235);
+        border-left: 2px solid rgb(235, 235, 235);
+        border-right: 2px solid rgb(235, 235, 235);
+        }
+
+        .Btn:hover .svgIcon {
+        fill: rgb(255, 255, 255);
+        animation: slide-in-top 0.6s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        }
+
+        @keyframes slide-in-top {
+        0% {
+            transform: translateY(-10px);
+            opacity: 0;
+        }
+
+        100% {
+            transform: translateY(0px);
+            opacity: 1;
+        }
+        }
+
+    </style>
+
 {% endblock %}
 
 {% block page_title %}
@@ -428,7 +522,16 @@
         
         <div class="row mb-3">
             <div class="col-md-6">
-                <h2 class="fw-bold"></h2>
+                <button class="Btn" id="openDownloadModal">
+                    <svg class="svgIcon" viewBox="0 0 384 512" height="1em" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 
+                                12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8V64
+                                c0-17.7-14.3-32-32-32s-32 14.3-32 32v306.7L54.6 265.4
+                                c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path>
+                    </svg>
+                    <span class="icon2"></span>
+                    <span class="tooltip">Download Payment Report</span>
+                </button>
             </div>
             <div class="col-md-6 text-end">
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#paymentReportModal">
@@ -544,7 +647,7 @@
                     <table id="paymentReportTable" class="table table-striped table-bordered align-middle text-center">
                         <thead class="table-light">
                             <tr>
-                                <th>Sr No.</th>
+                                {% comment %} <th>Sr No.</th> {% endcomment %}
                                 <th>Receipt No.</th>
                                 <th>From Date</th>
                                 <th>To Date</th>
@@ -556,19 +659,95 @@
                         <tbody>
                             {% for report in payment_reports %}
                             <tr>
-                                <td>{{ forloop.counter }}</td>
+                                {% comment %} <td>{{ forloop.counter }}</td> {% endcomment %}
                                 <td>{{ report.receipt_no }}</td>
                                 <td>{{ report.from_date }}</td>
                                 <td>{{ report.to_date }}</td>
                                 <td>{{ report.total_amount }}</td>
                                 <td>{{ report.deposit_amount }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary">View</button>
+                                    <div class="btn-group" role="group">
+                                        
+                                        <a href="{% url 'view_payment_report' %}?report_encrypted_id={{ report.report_encrypted_id }}" 
+                                            class="btn btn-sm btn-info" title="View">
+                                                <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        {% if report.can_edit %}
+                                            <a href="{% url 'edit_payment_report' %}?report_encrypted_id={{ report.report_encrypted_id }}" 
+                                            class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        {% endif %}
+
+                                        <a href="{% url 'download_secure_receipt' %}?report_encrypted_id={{ report.report_encrypted_id }}" 
+                                            class="btn btn-sm btn-success" title="Download">
+                                                <i class="bi bi-download"></i>
+                                        </a>
+                                        
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Report Modal -->
+        <div class="modal fade" id="paymentReportModalForSecondReport" tabindex="-1" aria-labelledby="paymentReportModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content" style="border-radius:15px; overflow:hidden;">
+
+                    <!-- Header -->
+                    <div class="modal-header text-white" style="background:#727cf5;">
+                        <h5 class="modal-title fw-semibold" id="paymentReportModalLabel">भरणा अहवाल</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Form -->
+                    <form id="paymentReportFormSecondReport" method="POST" action="{% url 'payment_report' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="from_month" id="formFromMonth">
+                        <input type="hidden" name="to_month" id="formToMonth">
+                        <input type="hidden" name="report_type" id="reportType">
+
+                        <div class="modal-body" style="font-size:1.05rem; color:#333;">
+                        <div class="row g-4">
+                            <!-- From Month -->
+                            <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">
+                                पासून महिना आणि वर्ष <span class="text-danger">*</span>
+                            </label>
+                            <input type="month" id="fromMonth" name="from_month" class="form-control shadow-sm"
+                                    required>
+                            </div>
+
+                            <!-- To Month -->
+                            <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">
+                                पर्यंत महिना आणि वर्ष <span class="text-danger">*</span>
+                            </label>
+                            <input type="month" id="toMonth" name="to_month" class="form-control shadow-sm"
+                                    required>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- Footer Buttons -->
+                        <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn text-white px-4" style="background:#28a745;" id="generatePdfBtn" disabled>
+                            <i class="bi bi-file-earmark-pdf"></i> PDF तयार करा
+                        </button>
+                        <button type="button" class="btn text-white px-4" style="background:#198754;" id="generateExcelBtn" disabled>
+                            <i class="bi bi-file-earmark-excel"></i> Excel तयार करा
+                        </button>
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal" id="goBackBtn">
+                            मागे जा
+                        </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -595,11 +774,14 @@
 
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
-    <!-- jQuery -->
-
-    <!-- DataTables JS -->
-
-    <!-- Include DataTables -->
+    {% comment %} download Payment Report range modal script {% endcomment %}
+    <script>
+        $(document).ready(function() {
+            $("#openDownloadModal").on("click", function() {
+                $("#paymentReportModalForSecondReport").modal("show");
+            });
+        });
+    </script>
 
     <script>
         $(document).ready(function () {
@@ -811,7 +993,6 @@
                                 key: item.membership_type,
                                 value: item.total_amount.toFixed(2)
                             });
-                            
                         });
 
                         // 🔹 Add deposit & fine rows
@@ -922,5 +1103,232 @@
         });
     </script>
 
+    <script>
+        $(document).ready(function() {
+            const pdfBtn = $("#generatePdfBtn");
+            const excelBtn = $("#generateExcelBtn");
+            const fromInput = $("#fromMonth");
+            const toInput = $("#toMonth");
+
+            // Enable/Disable Buttons
+            function toggleButtons() {
+                const fromVal = fromInput.val().trim();
+                pdfBtn.prop("disabled", fromVal === "");
+                excelBtn.prop("disabled", fromVal === "");
+            }
+
+            // Clear modal inputs
+            function clearModalFields() {
+                fromInput.val("");
+                toInput.val("");
+                pdfBtn.prop("disabled", true);
+                excelBtn.prop("disabled", true);
+            }
+
+            fromInput.on("change input", toggleButtons);
+
+            // Validate months before submission
+            function validateMonths() {
+                const fromVal = fromInput.val().trim();
+                const toVal = toInput.val().trim();
+
+                if (fromVal === "" || toVal === "") {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "सूचना",
+                        text: "कृपया दोन्ही - पासून आणि पर्यंत महिने निवडा!",
+                        confirmButtonText: "ठीक आहे",
+                        confirmButtonColor: "#727cf5"
+                    });
+                    return false;
+                }
+                if (toVal < fromVal) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "अवैध श्रेणी",
+                        text: "‘पर्यंत’ महिना ‘पासून’ महिन्यापेक्षा आधी असू शकत नाही!",
+                        confirmButtonText: "ठीक आहे",
+                        confirmButtonColor: "#727cf5"
+                    });
+                    return false;
+                }
+                return true;
+            }
+
+            // Unified handler
+            function handleReportSubmit(type) {
+                if (!validateMonths()) return;
+
+                $("#formFromMonth").val(fromInput.val());
+                $("#formToMonth").val(toInput.val());
+                $("#reportType").val(type);
+
+                Swal.fire({
+                    icon: "question",
+                    title: "तुम्ही खात्री आहात?",
+                    text: type === "pdf" ? "PDF तयार करायचा आहे?" : "Excel तयार करायचा आहे?",
+                    showCancelButton: true,
+                    confirmButtonText: "होय, पुढे जा",
+                    cancelButtonText: "रद्द करा",
+                    confirmButtonColor: "#727cf5"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        console.log("✅ Submitting form with type:", type);
+                        $("#paymentReportFormSecondReport")[0].submit(); // submit native form
+                        setTimeout(() => {
+                            $("#paymentReportModalForSecondReport").modal("hide");
+                        }, 300);
+                    }
+                });
+            }
+
+            // Button Clicks
+            pdfBtn.on("click", (e) => { e.preventDefault(); handleReportSubmit("pdf"); });
+            excelBtn.on("click", (e) => { e.preventDefault(); handleReportSubmit("excel"); });
+
+            // Clear when modal closes
+            $(document).on("hidden.bs.modal", "#paymentReportModalForSecondReport", clearModalFields);
+
+            // Clear when "मागे जा" clicked
+            $("#goBackBtn").on("click", clearModalFields);
+        });
+    </script>
+
+    <!-- jQuery + SweetAlert Script -->
+    {% comment %} <script>
+        $(document).ready(function() {
+            const pdfBtn = $("#generatePdfBtn");
+            const excelBtn = $("#generateExcelBtn");
+            const fromInput = $("#fromMonth");
+            const toInput = $("#toMonth");
+
+            // ✅ Function to enable/disable buttons
+            function toggleButtons() {
+                const fromVal = fromInput.val().trim();
+                pdfBtn.prop("disabled", fromVal === "");
+                excelBtn.prop("disabled", fromVal === "");
+            }
+
+            // ✅ Function to clear modal inputs + disable buttons
+            function clearModalFields() {
+                fromInput.val("");
+                toInput.val("");
+                pdfBtn.prop("disabled", true);
+                excelBtn.prop("disabled", true);
+            }
+
+            // ✅ Watch for input change
+            fromInput.on("change input", toggleButtons);
+
+            // ✅ Validate months
+            function validateMonths() {
+                const fromVal = fromInput.val().trim();
+                const toVal = toInput.val().trim();
+
+                if (fromVal === "" || toVal === "") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "सूचना",
+                    text: "कृपया दोन्ही - पासून आणि पर्यंत महिने निवडा!",
+                    confirmButtonText: "ठीक आहे",
+                    confirmButtonColor: "#727cf5"
+                });
+                return false;
+                }
+                if (toVal < fromVal) {
+                Swal.fire({
+                    icon: "error",
+                    title: "अवैध श्रेणी",
+                    text: "‘पर्यंत’ महिना ‘पासून’ महिन्यापेक्षा आधी असू शकत नाही!",
+                    confirmButtonText: "ठीक आहे",
+                    confirmButtonColor: "#727cf5"
+                });
+                return false;
+                }
+                return true;
+            }
+
+            // ✅ PDF Button
+            $("#generatePdfBtn").on("click", function(e) {
+                e.preventDefault();
+                if (!validateMonths()) return;
+
+                Swal.fire({
+                icon: "info",
+                title: "सूचना",
+                text: "PDF तयार करण्याची प्रक्रिया सुरू झाली आहे!",
+                confirmButtonText: "ठीक आहे",
+                confirmButtonColor: "#727cf5"
+                }).then(() => {
+                $("#paymentReportModal").modal("hide");
+                });
+            });
+
+            // ✅ Excel Button
+            $("#generateExcelBtn").on("click", function(e) {
+                e.preventDefault();
+                if (!validateMonths()) return;
+
+                Swal.fire({
+                icon: "success",
+                title: "यशस्वी",
+                text: "Excel तयार करण्याची प्रक्रिया सुरू झाली आहे!",
+                confirmButtonText: "ठीक आहे",
+                confirmButtonColor: "#727cf5"
+                }).then(() => {
+                $("#paymentReportModal").modal("hide");
+                });
+            });
+
+            // ✅ Clear on modal close (no matter how it's closed)
+            $(document).on("hidden.bs.modal", "#paymentReportModal", function () {
+                clearModalFields();
+            });
+
+            // ✅ Also clear when "मागे जा" clicked
+            $("#goBackBtn").on("click", function() {
+                clearModalFields();
+            });
+        });
+
+        // ✅ PDF Button
+        $("#generatePdfBtn").on("click", function (e) {
+            e.preventDefault();
+            if (!validateMonths()) return;
+
+            // Set hidden inputs
+            $("#formFromMonth").val($("#fromMonth").val());
+            $("#formToMonth").val($("#toMonth").val());
+
+            // Add type
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'report_type',
+                value: 'pdf'
+            }).appendTo('#paymentReportForm');
+
+            $("#paymentReportForm").attr("action", "{% url 'payment_report' %}");
+            $("#paymentReportForm").submit();
+        });
+
+            // ✅ Excel Button
+        $("#generateExcelBtn").on("click", function (e) {
+            e.preventDefault();
+            if (!validateMonths()) return;
+
+            $("#formFromMonth").val($("#fromMonth").val());
+            $("#formToMonth").val($("#toMonth").val());
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'report_type',
+                value: 'excel'
+            }).appendTo('#paymentReportForm');
+
+            $("#paymentReportForm").attr("action", "{% url 'payment_report' %}");
+            $("#paymentReportForm").submit();
+        });
+
+    </script> {% endcomment %}
 
 {% endblock %}

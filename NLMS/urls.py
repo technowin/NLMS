@@ -140,6 +140,11 @@ urlpatterns = [
     #Reports 
     path('payment_report', payment_report, name='payment_report'),
     path('get_payment_preview/', get_payment_preview, name='get_payment_preview'),
+    path('view_payment_report', view_payment_report, name='view_payment_report'),
+    path('edit_payment_report', edit_payment_report, name='edit_payment_report'),
+    path('view_secure_receipt/<str:enc_id>/', view_secure_receipt, name='view_secure_receipt'),
+    path('download_secure_receipt/', download_secure_receipt, name='download_secure_receipt'),
+
     # Reports previously defined paths
     path('common_html', common_html, name='common_html'),
     path('get_filter', get_filter, name='get_filter'),

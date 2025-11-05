@@ -429,10 +429,11 @@ class PaymentReport(models.Model):
     id = models.AutoField(primary_key=True)
     from_date = models.DateField()
     to_date = models.DateField()
-    generated_date = models.DateTimeField(auto_now_add=True)
+    generated_date = models.DateField(auto_now_add=True)
     receipt_no = models.CharField(max_length=500, blank=True, null=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deposit_date = models.DateTimeField(blank=True, null=True)
     receipt_upload = models.TextField(blank=True, null=True)  # storing folder/file path
     remarks = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)

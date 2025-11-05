@@ -73,95 +73,95 @@
         }
 
         /* Author dropdown styling */
-.author-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-.author-suggestions div {
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.author-suggestions div:hover {
-    background: #f2f2f2;
-}
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
 
-        /* Author dropdown styling */
-.author-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+                /* Author dropdown styling */
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-.author-suggestions div {
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.author-suggestions div:hover {
-    background: #f2f2f2;
-}
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
 
-/* Author Field Styling */
-#author {
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    padding: 8px 12px;
-    transition: all 0.2s ease-in-out;
-    box-shadow: none;
-}
+        /* Author Field Styling */
+        #author {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: none;
+        }
 
-#author:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
-}
+        #author:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+        }
 
-/* Dropdown Box */
-#authorDropdown {
-    width: 35%;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    background-color: #fff;
-    margin-top: 4px;
-}
+        /* Dropdown Box */
+        #authorDropdown {
+            width: 35%;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            margin-top: 4px;
+        }
 
-/* Dropdown Items */
-#authorDropdown .author-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-size: 0.95rem;
-}
+        /* Dropdown Items */
+        #authorDropdown .author-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.95rem;
+        }
 
-#authorDropdown .author-item:hover {
-    background-color: #f1f5ff;
-}
+        #authorDropdown .author-item:hover {
+            background-color: #f1f5ff;
+        }
 
-/* Text Helper */
-.form-text.text-muted {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 4px;
-}
+        /* Text Helper */
+        .form-text.text-muted {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
 
 
     </style>
@@ -675,45 +675,45 @@
     </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const languageSelect = document.getElementById('language_id');
-    const languageHidden = document.getElementById('language_id_hidden');
-    const authorSelect = document.getElementById('author');
+    document.addEventListener('DOMContentLoaded', function() {
+        const languageSelect = document.getElementById('language_id');
+        const languageHidden = document.getElementById('language_id_hidden');
+        const authorSelect = document.getElementById('author');
 
-    languageSelect.addEventListener('change', function() {
-        debugger;
-        const selectedLang = this.value;
-        languageHidden.value = selectedLang; // update hidden field
+        languageSelect.addEventListener('change', function() {
+            debugger;
+            const selectedLang = this.value;
+            languageHidden.value = selectedLang; // update hidden field
 
-        if (!selectedLang) {
-            authorSelect.innerHTML = '<option value="">Select Author</option>';
-            return;
-        }
-
-        // AJAX request to fetch authors based on selected language
-        fetch("{% url 'book_catalog_create' %}?language_id=" + selectedLang, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+            if (!selectedLang) {
+                authorSelect.innerHTML = '<option value="">Select Author</option>';
+                return;
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            authorSelect.innerHTML = '<option value="">Select Author</option>'; // reset
-            data.authors.forEach(author => {
-                const option = document.createElement('option');
-                option.value = author;
-                option.text = author;
-                authorSelect.appendChild(option);
-            });
-        })
-        .catch(err => console.error('Error fetching authors:', err));
-    });
 
-    // Set hidden field on page load
-    if (languageSelect.value) {
-        languageHidden.value = languageSelect.value;
-    }
-});
+            // AJAX request to fetch authors based on selected language
+            fetch("{% url 'book_catalog_create' %}?language_id=" + selectedLang, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                authorSelect.innerHTML = '<option value="">Select Author</option>'; // reset
+                data.authors.forEach(author => {
+                    const option = document.createElement('option');
+                    option.value = author;
+                    option.text = author;
+                    authorSelect.appendChild(option);
+                });
+            })
+            .catch(err => console.error('Error fetching authors:', err));
+        });
+
+        // Set hidden field on page load
+        if (languageSelect.value) {
+            languageHidden.value = languageSelect.value;
+        }
+    });
 </script>
 
 <script>
@@ -775,33 +775,32 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 </script>
 
-
 <!-- Script for Translation -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const languageSelect = document.getElementById('language_id');
-    const authorLabel = document.querySelector('label[for="author"]');
-    const authorInput = document.getElementById('author');
-    const authorHelpText = document.querySelector('#author + small');
+    document.addEventListener('DOMContentLoaded', function () {
+        const languageSelect = document.getElementById('language_id');
+        const authorLabel = document.querySelector('label[for="author"]');
+        const authorInput = document.getElementById('author');
+        const authorHelpText = document.querySelector('#author + small');
 
-    if (languageSelect && authorLabel && authorHelpText && authorInput) {
-        languageSelect.addEventListener('change', function () {
-            const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
+        if (languageSelect && authorLabel && authorHelpText && authorInput) {
+            languageSelect.addEventListener('change', function () {
+                const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
 
-            if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
-                // Convert to Marathi
-                authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
-                authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
-                authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
-            } else {
-                // Revert to English
-                authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
-                authorInput.placeholder = 'Type or select author';
-                authorHelpText.textContent = 'Select an author from the list or type a new one.';
-            }
-        });
-    }
-});
+                if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
+                    // Convert to Marathi
+                    authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
+                    authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
+                    authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
+                } else {
+                    // Revert to English
+                    authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
+                    authorInput.placeholder = 'Type or select author';
+                    authorHelpText.textContent = 'Select an author from the list or type a new one.';
+                }
+            });
+        }
+    });
 </script>
 
 {% endblock %}

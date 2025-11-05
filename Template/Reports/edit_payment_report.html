@@ -1,0 +1,219 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}भरणा अहवाल संपादन / Edit Payment Report{% endblock title %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+{% endblock extra_css %}
+
+{% block page_title %}
+    {% include "bootstrap/partials/page-title.html" with page_title='भरणा अहवाल संपादन' sub_title='भरणा अहवाल तपशील संपादन' %}
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Edit Payment Report / भरणा अहवाल संपादन</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <!-- 🔹 Left Side: Editable Form -->
+                    <div class="col-md-5 border-end">
+                        <form id="editReportForm" method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="report_encrypted_id" value="{{ report_encrypted_id }}">
+
+                            <div class="row g-3">
+                                <!-- Readonly Fields -->
+                                <div class="col-12">
+                                    <label class="form-label">From Date / पासून दिनांक</label>
+                                    <input type="text" class="form-control" value="{{ report.from_date|date:'d-m-Y' }}" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">To Date / पर्यंत दिनांक</label>
+                                    <input type="text" class="form-control" value="{{ report.to_date|date:'d-m-Y' }}" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Total Amount / एकूण रक्कम</label>
+                                    <input type="text" class="form-control" value="₹{{ report.total_amount }}" readonly>
+                                </div>
+
+                                <!-- Editable Fields -->
+                                <div class="col-12">
+                                    <label class="form-label">Receipt No / पावती क्रमांक</label>
+                                    <input type="text" name="receipt_no" class="form-control" value="{{ report.receipt_no }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Deposit Amount / ठेव रक्कम</label>
+                                    <input type="number" name="deposit_amount" class="form-control" value="{{ report.deposit_amount }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="deposit_date" class="form-label fw-bold">Deposit Date / ठेव दिनांक</label>
+                                    <input type="date" name="deposit_date" id="deposit_date" 
+                                        class="form-control" 
+                                        value="{{ report.deposit_date|date:'Y-m-d' }}">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Receipt Upload / पावती अपलोड</label>
+                                    <input type="file" name="receipt_upload" accept=".jpg,.jpeg,.png,.pdf,.xls,.xlsx" class="form-control" required>
+                                    {% if report.receipt_upload %}
+                                        <small class="text-muted mt-1 d-block">
+                                            सध्याची फाईल: 
+                                            <a href="{{ report.receipt_upload.url }}" target="_blank">
+                                                View / Download
+                                            </a>
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Remarks / टिप्पणी</label>
+                                    <textarea name="remarks" class="form-control transliterate" rows="3" required>{{ report.remarks }}</textarea>
+                                </div>
+
+                                <div class="mt-3 text-end">
+                                    <button type="submit" class="btn btn-success px-4" id="submitBtn">
+                                        <i class="bi bi-save"></i> जतन करा / Save
+                                    </button>
+                                    <a href="{% url 'payment_report' %}" class="btn btn-secondary px-4">
+                                        <i class="bi bi-arrow-left"></i> मागे जा / Back
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 🔹 Right Side: Key-Value Table -->
+                    <div class="col-md-7 ps-md-4 mt-4 mt-md-0">
+                        <h6 class="fw-bold mb-3 text-secondary">Report Details / अहवाल तपशील</h6>
+                        <div class="table-scroll">
+                            <table class="table table-bordered table-striped align-middle text-center">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sr No / अनुक्रमांक</th>
+                                        <th>Key / की</th>
+                                        <th>Value / मूल्य</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if key_values %}
+                                        {% for kv in key_values %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ kv.key }}</td>
+                                            <td>{{ kv.value }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="3" class="text-muted">No details available / तपशील उपलब्ध नाहीत</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_javascript %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            console.log("Transliteration script loaded!");
+
+            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+            function containsDevanagari(text) {
+                return /[\u0900-\u097F]/.test(text);
+            }
+
+            // 🔹 Translate only the last word
+            function translateLastWord($field) {
+                let value = $field.val().trimEnd();
+                if (!value) return;
+
+                let words = value.split(/\s+/);
+                let lastWord = words[words.length - 1];
+
+                // Don't re-translate if it's already Marathi
+                if (containsDevanagari(lastWord) || !lastWord) return;
+
+                $.ajax({
+                    url: '{% url "translate_word" %}',
+                    type: 'GET',
+                    data: { q: lastWord },
+                    headers: { 'X-CSRFToken': csrfToken },
+                    success: function (data) {
+                        if (data.translated) {
+                            words[words.length - 1] = data.translated;
+                            $field.val(words.join(" ") + " ");
+                        }
+                    },
+                    error: function () {
+                        console.error("Translation error");
+                    }
+                });
+            }
+
+            // 🔹 When typing and pressing space / tab / enter
+            $(document).on('keydown', '.transliterate', function (e) {
+                const $field = $(this);
+                if (e.key === " " || e.key === "Tab" || e.key === "Enter") {
+                    e.preventDefault(); // prevent default space/tab behavior if needed
+                    translateLastWord($field);
+                }
+            });
+
+            // 🔹 Optional: translate full field on blur
+            $(document).on('blur', '.transliterate', function () {
+                const $field = $(this);
+                let value = $field.val().trim();
+                if (!value) return;
+
+                let words = value.split(/\s+/);
+                let translatedWords = [];
+                let pending = words.length;
+
+                words.forEach((word, index) => {
+                    if (containsDevanagari(word) || word.trim() === "") {
+                        translatedWords[index] = word;
+                        pending--;
+                        if (pending === 0) $field.val(translatedWords.join(" "));
+                    } else {
+                        $.ajax({
+                            url: '{% url "translate_word" %}',
+                            type: 'GET',
+                            data: { q: word },
+                            headers: { 'X-CSRFToken': csrfToken },
+                            success: function (data) {
+                                translatedWords[index] = data.translated || word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            },
+                            error: function () {
+                                translatedWords[index] = word;
+                                pending--;
+                                if (pending === 0) $field.val(translatedWords.join(" "));
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+
+{% endblock %}

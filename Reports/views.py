@@ -11,7 +11,6 @@ from Reports.models import *
 from Account.models import *
 import Db 
 import json
-from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
 from mysql.connector.errors import InterfaceError
@@ -37,12 +36,10 @@ from django.db import transaction
 from NLMS.settings import MEDIA_ROOT
 app = Flask(__name__)
 # Create your views here.
-
 from io import BytesIO
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
 from rest_framework import serializers
 from rest_framework import status
 from rest_framework.response import Response
@@ -57,6 +54,13 @@ from django.utils import timezone
 from NLMS.encryption import *
 from L01.models import *
 from django.db.models import *
+from django.core.files.storage import default_storage
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+import openpyxl
+from openpyxl.utils import get_column_letter
+from datetime import datetime
+import calendar
 
 @login_required
 def payment_report(request):
@@ -70,67 +74,358 @@ def payment_report(request):
             role_id = request.session["role_id"]
             
         if request.method == "GET":
-            
             library_name = tbl_librarymasterL01.objects.using(library_code).filter(is_active=True).first()
-            
             library_name_mar = library_name.library_name_mar if library_name else ''
-            
+
             reports = PaymentReport.objects.all().order_by('-generated_date')
-            return render(request,'Reports/payment_report.html', {'payment_reports':reports, 'library_name_mar':library_name_mar})
+
+            for rep in reports:
+                # encrypted id for links
+                rep.report_encrypted_id = enc(str(rep.id))
+
+                # Determine if the record is "filled" for the four fields. notepad 387
+                # Consider a field filled if:
+                #  - receipt_no: not None and not empty string
+                #  - deposit_amount: not None and not zero (Decimal('0') considered empty)
+                #  - receipt_upload: not None and not empty string
+                #  - deposit_date: not None
+                receipt_no_filled = bool(rep.receipt_no and str(rep.receipt_no).strip() != "")
+                
+                # deposit_amount is DecimalField default 0. Treat 0 as NOT filled.
+                try:
+                    deposit_amount_val = rep.deposit_amount if rep.deposit_amount is not None else Decimal('0')
+                except Exception:
+                    deposit_amount_val = Decimal('0')
+                deposit_amount_filled = (deposit_amount_val is not None) and (Decimal(str(deposit_amount_val)) != Decimal('0'))
+
+                receipt_upload_filled = bool(rep.receipt_upload and str(rep.receipt_upload).strip() != "")
+                deposit_date_filled = bool(rep.deposit_date is not None)
+
+                # If ALL are filled => do NOT allow edit (can_edit = False)
+                rep.can_edit = not (receipt_no_filled and deposit_amount_filled and receipt_upload_filled and deposit_date_filled)
+
+            return render(request, 'Reports/payment_report.html', {
+                'payment_reports': reports,
+                'library_name_mar': library_name_mar
+            })
             
         if request.method == "POST":
-            from_date = request.POST.get("from_date")
-            to_date = request.POST.get("to_date")
-            total_amount = request.POST.get("total_amount")
-            summary_data_json = request.POST.get("summary_data")
+            
+            report_type = request.POST.get("report_type")
+            from_month = request.POST.get("from_month")
+            to_month = request.POST.get("to_month")
 
-            # Convert to Python date objects
-            from datetime import datetime
-            from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
-            to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
+            # 🛑 Guard clause: Proceed only if both months are provided and type is valid
+            if report_type not in ["pdf", "excel"] or not from_month or not to_month:
+                # create post
+                from_date = request.POST.get("from_date")
+                to_date = request.POST.get("to_date")
+                total_amount = request.POST.get("total_amount")
+                summary_data_json = request.POST.get("summary_data")
 
-            # Check for overlap
-            overlap_exists = PaymentReport.objects.filter(
-                from_date__lte=to_date_obj,
-                to_date__gte=from_date_obj
-            ).exists()
+                # Convert to Python date objects
+                from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
+                to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
 
-            if overlap_exists:
-                messages.error(request, "A report already exists for this date range! कृपया दुसरी दिनांक निवडा.")
-                return redirect("payment_report")
+                # Check for overlap
+                overlap_exists = PaymentReport.objects.filter(
+                    from_date__lte=to_date_obj,
+                    to_date__gte=from_date_obj
+                ).exists()
 
-            try:
-                with transaction.atomic():  # 👈 Ensures all or nothing
+                if overlap_exists:
+                    messages.error(request, "A report already exists for this date range! कृपया दुसरी दिनांक निवडा.")
+                    return redirect("payment_report")
 
-                    # Create main report
-                    report = PaymentReport.objects.create(
-                        from_date=from_date_obj,
-                        to_date=to_date_obj,
-                        generated_date=timezone.now(),
-                        total_amount=total_amount,
-                        created_by=user_id,
-                        updated_by=user_id
-                    )
+                try:
+                    with transaction.atomic():  # 👈 Ensures all or nothing
 
-                    # Parse and insert key-value pairs
-                    if summary_data_json:
-                        summary_data = json.loads(summary_data_json)
-                        for item in summary_data:
-                            PaymentReportKeyValue.objects.create(
-                                payment_report=report,
-                                key=item.get("key"),
-                                value=item.get("value")
-                            )
+                        # Create main report
+                        report = PaymentReport.objects.create(
+                            from_date=from_date_obj,
+                            to_date=to_date_obj,
+                            generated_date=timezone.now().date(),
+                            total_amount=total_amount,
+                            created_by=user_id,
+                            updated_by=user_id
+                        )
+
+                        # Parse and insert key-value pairs
+                        if summary_data_json:
+                            summary_data = json.loads(summary_data_json)
+                            for item in summary_data:
+                                PaymentReportKeyValue.objects.create(
+                                    payment_report=report,
+                                    key=item.get("key"),
+                                    value=item.get("value")
+                                )
+
+                    messages.success(request, "Payment summary generated successfully!")
+
+                except Exception as e:
+                    transaction.set_rollback(True)
+                    messages.error(request, f"Error while generating report: {str(e)}")
 
                 messages.success(request, "Payment summary generated successfully!")
+                
+                return redirect("payment_report")
 
-            except Exception as e:
-                transaction.set_rollback(True)
-                messages.error(request, f"Error while generating report: {str(e)}")
+            else:
+                # ✅ Parse months safely
+                try:
+                    from_date = datetime.strptime(from_month + "-01", "%Y-%m-%d")
+                    year, month = map(int, to_month.split("-"))
+                    to_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
+                except Exception as e:
+                    return HttpResponse("Invalid date format received.", content_type="text/plain")
 
-            messages.success(request, "Payment summary generated successfully!")
-            return redirect("payment_report")
-            
+                # ✅ Fetch reports between date range
+                reports = PaymentReport.objects.filter(
+                    generated_date__gte=from_date,
+                    generated_date__lt=to_date
+                )
+
+                if not reports.exists():
+                    return HttpResponse("No reports found for the selected months.", content_type="text/plain")
+
+                # ✅ Collect all distinct keys for dynamic columns
+                all_keys = PaymentReportKeyValue.objects.values_list('key', flat=True).distinct()
+
+                # ✅ Build header (added Deposit Amount)
+                header = ["Receipt No", "Generated Date", "Deposit Date"] + list(all_keys) + ["Deposit Amount"]
+                data = [header]
+
+                for report in reports:
+                    key_value_map = {kv.key: kv.value for kv in report.key_values.all()}
+
+                    # ✅ Show only date part (no time)
+                    generated_date = report.generated_date.strftime("%Y-%m-%d") if report.generated_date else "-"
+                    deposit_date = report.deposit_date.strftime("%Y-%m-%d") if report.deposit_date else "-"
+
+                    # ✅ Build row with deposit amount
+                    row = [
+                        report.receipt_no or "-",
+                        generated_date,
+                        deposit_date,
+                    ]
+
+                    for key in all_keys:
+                        row.append(key_value_map.get(key, "0.00"))
+
+                    # ✅ Add deposit amount at end
+                    row.append(f"{report.deposit_amount:.2f}" if report.deposit_amount else "0.00")
+
+                    data.append(row)
+                    
+                from_year, from_month_num = map(int, from_month.split("-"))
+                to_year, to_month_num = map(int, to_month.split("-"))
+
+                from_month_name = calendar.month_name[from_month_num]
+                to_month_name = calendar.month_name[to_month_num]
+
+                # Optional: Marathi month names (if you want them instead of English)
+                marathi_months = {
+                    1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल", 5: "मे", 6: "जून",
+                    7: "जुलै", 8: "ऑगस्ट", 9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
+                }
+                from_month_name_mar = marathi_months.get(from_month_num, from_month_name)
+                to_month_name_mar = marathi_months.get(to_month_num, to_month_name)
+
+                # Create report range string
+                report_range = f"{from_month_name_mar} {from_year} ते {to_month_name_mar} {to_year}"
+
+                # ==================== PDF Export ====================
+                
+                if report_type == "pdf":
+                    from django.template.loader import render_to_string
+                    from weasyprint import HTML, CSS
+                    from django.http import HttpResponse
+                    import tempfile, os
+
+                    # 🔹 Fetch library info
+                    library = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+                    library_name = library.library_name_mar if library else "ग्रंथालयाचे नाव उपलब्ध नाही"
+
+                    # 🔹 Build Marathi title data
+                    context = {
+                        "municipal_name": "नवी मुंबई महानगरपालिका",
+                        "library_name": library_name,
+                        "report_title": "भरणा अहवाल",
+                        "data": data,
+                        "report_range": report_range,
+                        "generated_date": datetime.now().strftime("%d-%m-%Y"),
+                    }
+
+                    # 🔹 Render HTML with context
+                    html_string = render_to_string("Reports/payment_report_template.html", context)
+
+                    # ✅ FIX: Use TemporaryDirectory to avoid Windows permission lock
+                    with tempfile.TemporaryDirectory() as tmpdirname:
+                        pdf_path = os.path.join(tmpdirname, "payment_report.pdf")
+
+                        # 🔹 Generate PDF using WeasyPrint
+                        HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf(
+                            pdf_path,
+                            stylesheets=[CSS(string=f"""
+                                @page {{
+                                    size: A4 landscape;
+                                    margin: 1cm;
+                                    border: none;
+
+                                    /* Footer date on every page */
+                                    @bottom-right {{
+                                        content: "अहवाल तयार दिनांक : {context['generated_date']}";
+                                        font-size: 10px;
+                                        color: #444;
+                                        font-family: 'Noto Sans Devanagari', sans-serif;
+                                    }}
+                                }}
+
+                                body {{
+                                    font-family: 'Noto Sans Devanagari', sans-serif;
+                                    font-size: 11px;
+                                    line-height: 1.4;
+                                    color: #000;
+                                    border: 1px solid #bbb;  /* full border around page */
+                                    padding: 10px;
+                                }}
+
+                                h1 {{
+                                    text-align: center;
+                                    font-size: 18px;
+                                    margin: 0;
+                                }}
+                                h2 {{
+                                    text-align: center;
+                                    font-size: 14px;
+                                    margin: 4px 0;
+                                }}
+                                h3 {{
+                                    text-align: center;
+                                    font-size: 13px;
+                                    margin: 4px 0 10px 0;
+                                }}
+
+                                table {{
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    table-layout: auto;
+                                    word-wrap: break-word;
+                                }}
+
+                                th {{
+                                    background-color: #727cf5;
+                                    color: white;
+                                    text-align: center;
+                                    padding: 6px;
+                                    border: 0.5px solid #ccc;
+                                    font-weight: 600;
+                                }}
+
+                                td {{
+                                    border: 0.5px solid #ccc;
+                                    padding: 6px;
+                                    text-align: center;
+                                    vertical-align: middle;
+                                    word-wrap: break-word;
+                                    white-space: normal;
+                                }}
+                            """)]
+                        )
+
+                        # 🔹 Read the generated PDF safely
+                        with open(pdf_path, "rb") as f:
+                            pdf_content = f.read()
+
+                    # 🔹 Return PDF as HTTP response
+                    filename = f"Payment_Report_{datetime.now().strftime('%Y%m%d')}.pdf"
+                    response = HttpResponse(pdf_content, content_type="application/pdf")
+                    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    return response
+           
+                # ==================== Excel Export ====================
+                elif report_type == "excel":
+                    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+                    # 🔹 Fetch library info
+                    library = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+                    library_name = library.library_name_mar if library else "ग्रंथालयाचे नाव उपलब्ध नाही"
+
+                    # 🔹 Build workbook and sheet
+                    wb = openpyxl.Workbook()
+                    ws = wb.active
+                    ws.title = "Payment Report"
+
+                    # ================= HEADER SECTION ==================
+                    # Titles at the top
+                    ws.merge_cells("A1:{}1".format(get_column_letter(len(header))))
+                    ws["A1"] = "नवी मुंबई महानगरपालिका"
+                    ws["A1"].font = Font(size=16, bold=True)
+                    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+
+                    ws.merge_cells("A2:{}2".format(get_column_letter(len(header))))
+                    ws["A2"] = library_name
+                    ws["A2"].font = Font(size=13, bold=True)
+                    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+                    
+                    from datetime import timedelta
+
+                    ws.merge_cells("A3:{}3".format(get_column_letter(len(header))))
+                    ws["A3"] = f"भरणा अहवाल ({from_date.strftime('%B %Y')} ते {to_date.replace(day=1) - timedelta(days=1):%B %Y})"
+                    ws["A3"].font = Font(size=12, bold=True)
+                    ws["A3"].alignment = Alignment(horizontal="center", vertical="center")
+
+                    ws.append([])  # Empty row before table
+
+                    # ================= TABLE HEADER ==================
+                    start_row = ws.max_row + 1
+                    header_fill = PatternFill(start_color="727cf5", end_color="727cf5", fill_type="solid")
+                    border_style = Border(
+                        left=Side(border_style="thin", color="000000"),
+                        right=Side(border_style="thin", color="000000"),
+                        top=Side(border_style="thin", color="000000"),
+                        bottom=Side(border_style="thin", color="000000"),
+                    )
+
+                    for col_num, col_name in enumerate(header, 1):
+                        cell = ws.cell(row=start_row, column=col_num, value=col_name)
+                        cell.font = Font(bold=True, color="FFFFFF")
+                        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                        cell.fill = header_fill
+                        cell.border = border_style
+                        ws.column_dimensions[get_column_letter(col_num)].width = 20
+
+                    ws.row_dimensions[start_row].height = 25
+
+                    # ================= TABLE DATA ==================
+                    for row_num, row_data in enumerate(data[1:], start_row + 1):
+                        for col_num, value in enumerate(row_data, 1):
+                            cell = ws.cell(row=row_num, column=col_num, value=value)
+                            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                            cell.border = border_style
+
+                    # ================= FOOTER ==================
+                    footer_row = ws.max_row + 2
+                    ws.merge_cells(f"A{footer_row}:{get_column_letter(len(header))}{footer_row}")
+                    ws[f"A{footer_row}"] = f"अहवाल तयार दिनांक : {datetime.now().strftime('%d-%m-%Y')}"
+                    ws[f"A{footer_row}"].alignment = Alignment(horizontal="right", vertical="center")
+                    ws[f"A{footer_row}"].font = Font(size=10, italic=True, color="555555")
+
+                    # ================= SAVE & RETURN ==================
+                    buffer = io.BytesIO()
+                    wb.save(buffer)
+                    buffer.seek(0)
+                    
+                    from django.http import HttpResponse
+
+                    filename = f"Payment_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                    response = HttpResponse(
+                        buffer,
+                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    )
+                    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+                    return response
+
+        
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
@@ -201,6 +496,259 @@ def get_payment_preview(request):
         callproc("stp_error_log", [fun, str(e), request.user.id])
         messages.error(request, "Oops...! Something went wrong!")
         return JsonResponse({"error": "Something went wrong. Please try again later."}, status=500)
+
+@login_required
+def view_payment_report(request):
+    try:
+        report_encrypted_id = request.GET.get("report_encrypted_id")
+        report_id = dec(report_encrypted_id)
+        report = get_object_or_404(PaymentReport, id=report_id)
+        key_values = PaymentReportKeyValue.objects.filter(payment_report=report)
+       
+        if report.receipt_upload:
+            report.report_encrypted_receipt_upload = enc(str(report.receipt_upload))
+
+        return render(request, 'Reports/view_payment_report.html', {
+            'report': report,
+            'key_values': key_values,
+            "MEDIA_URL": settings.MEDIA_URL,
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log",[fun,str(e),request.user.id])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("payment_report")
+
+@login_required
+def edit_payment_report(request):
+    try:
+        
+        if request.user.is_authenticated ==True:                
+            global user
+            user = request.user.id
+            library_code = request.session.get('library_db', None)
+            username = request.session.get('username', None)
+            user_id = request.session["user_id"]
+            role_id = request.session["role_id"]
+            
+        if request.method == "GET":
+            
+            report_encrypted_id = request.GET.get("report_encrypted_id")
+            report_id = dec(report_encrypted_id)
+            report = get_object_or_404(PaymentReport, id=report_id)
+            key_values = PaymentReportKeyValue.objects.filter(payment_report=report)
+
+            return render(request, 'Reports/edit_payment_report.html', {
+                'report': report,
+                'key_values': key_values,
+                'report_encrypted_id': report_encrypted_id
+            })
+
+        # --- POST Method: Save updates ---
+        elif request.method == "POST":
+            report_encrypted_id = request.POST.get("report_encrypted_id")
+            report_id = dec(report_encrypted_id)
+            report = get_object_or_404(PaymentReport, id=report_id)
+
+            receipt_no = request.POST.get("receipt_no")
+            deposit_amount = request.POST.get("deposit_amount")
+            remarks = request.POST.get("remarks")
+            deposit_date = request.POST.get("deposit_date")
+
+            report.receipt_no = receipt_no
+            report.deposit_amount = deposit_amount
+            report.remarks = remarks
+
+            # Parse and store deposit date
+            if deposit_date:
+                from datetime import datetime
+                report.deposit_date = datetime.strptime(deposit_date, "%Y-%m-%d")
+
+            # --- Handle File Upload (Receipt PDF/Image/Excel) ---
+            receipt_file = request.FILES.get("receipt_upload")
+            if receipt_file:
+                from django.core.files.storage import default_storage
+                import os
+
+                # Base path for receipts
+                base_folder = os.path.join(settings.MEDIA_ROOT, library_code, "Receipts", "PaymentReceipts")
+
+                # Create subfolder for this receipt_no
+                receipt_folder = os.path.join(base_folder, str(receipt_no))
+                os.makedirs(receipt_folder, exist_ok=True)
+
+                # Extract filename + extension
+                original_name, ext = os.path.splitext(receipt_file.name)
+
+                # Use deposit_date or fallback to today’s date
+                date_suffix = deposit_date.replace("-", "") if deposit_date else datetime.now().strftime("%Y%m%d")
+
+                # Construct full file name (include receipt_no + date)
+                file_name = f"{original_name}_{receipt_no}{ext}"
+                file_path = os.path.join(receipt_folder, file_name)
+
+                # Save file
+                with default_storage.open(file_path, "wb+") as destination:
+                    for chunk in receipt_file.chunks():
+                        destination.write(chunk)
+
+                # Store relative path for DB
+                relative_path = os.path.relpath(file_path, settings.MEDIA_ROOT)
+                report.receipt_upload = relative_path
+
+            report.updated_by = user_id
+            report.save()
+
+            messages.success(request, "पावती अहवाल यशस्वीपणे अद्ययावत केला गेला आहे!")
+            return redirect("payment_report")
+        
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), request.user.id])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("payment_report")
+
+@login_required
+def view_secure_receipt(request, enc_id):
+    try:
+        # decrypt the relative file path
+        relative_path = dec(enc_id)
+        file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+
+        # verify file actually exists
+        if not os.path.exists(file_path):
+            raise Http404("File not found.")
+
+        # Optional: Add permission check — e.g. only admins or creator can view
+        # if not request.user.is_staff:
+        #     return HttpResponseForbidden("You are not allowed to access this file.")
+
+        # Serve securely without exposing path
+        return FileResponse(open(file_path, "rb"))
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log",[fun,str(e),request.user.id])  
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("payment_report")
+   
+# pdf marathi download payment    
+def to_marathi_digits(date_obj):
+    if not date_obj:
+        return ""
+    text = str(date_obj)
+    return text.translate(str.maketrans("0123456789", "०१२३४५६७८९"))
+
+from weasyprint import HTML, CSS
+
+@login_required
+def download_secure_receipt(request):
+    try:
+        report_encrypted_id = request.GET.get("report_encrypted_id")
+        report_id = dec(report_encrypted_id)
+        report = PaymentReport.objects.get(id=report_id)
+        key_values = PaymentReportKeyValue.objects.filter(payment_report=report).order_by("id")
+
+        library_code = request.session.get("library_db")
+        library = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+
+        today_str = datetime.now().strftime("%d-%m-%Y")
+        period = f"{report.from_date.strftime('%d-%m-%Y')} ते {report.to_date.strftime('%d-%m-%Y')}"
+        file_name = f"{report.from_date.strftime('%d-%m-%Y')} ते {report.to_date.strftime('%d-%m-%Y')}.pdf"
+
+        # Path to your Marathi font
+        font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="mr">
+            <head>
+                <meta charset="UTF-8">
+                <title>भरणा अहवाल</title>
+                <style>
+                    @font-face {{
+                        font-family: 'MarathiFont';
+                        src: url('file://{font_path}') format('truetype');
+                    }}
+                    body {{
+                        font-family: 'MarathiFont', sans-serif;
+                        background: #f8f9fa;
+                        padding: 40px;
+                    }}
+                    h1, h2, h3 {{
+                        text-align: center;
+                        margin: 0;
+                    }}
+                    p {{
+                        font-size: 18px;
+                        margin: 5px 0;
+                    }}
+                    table {{
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 25px;
+                    }}
+                    th, td {{
+                        border: 1px solid #ccc;
+                        padding: 8px 10px;
+                        font-size: 18px;
+                        text-align: left;
+                    }}
+                    th {{
+                        background: #d7e3fc;
+                        text-align: center;
+                    }}
+                    tr:nth-child(even) {{
+                        background: #f8fafd;
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>नवी मुंबई महानगरपालिका</h1>
+                <h2>{library.library_name_mar or library.library_name} - {library.location}</h2>
+                <h3>भरणा अहवाल</h3>
+                <p>दिनांक: {today_str}</p>
+                <p>कालावधी: {period}</p>
+
+                <table>
+                    <tr>
+                        <th>क्र.</th>
+                        <th>माहिती</th>
+                        <th>तपशील</th>
+                    </tr>
+            """
+
+        for idx, kv in enumerate(key_values, start=1):
+            html_content += f"""
+                <tr>
+                    <td style="text-align:center;">{idx}</td>
+                    <td>{kv.key or '-'}</td>
+                    <td>{kv.value or '-'}</td>
+                </tr>
+            """
+
+        html_content += """
+            </table>
+        </body>
+        </html>
+        """
+
+        pdf_file = HTML(string=html_content).write_pdf(
+            stylesheets=[CSS(string="@page { size: A4; margin: 1in; }")]
+        )
+
+        response = HttpResponse(pdf_file, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{file_name}"'
+        return response
+
+    except Exception as e:
+        print("PDF Error:", e)
+        messages.error(request, "Something went wrong generating the PDF.")
+        return redirect("payment_report")
 
 # Report section Previous
 @login_required
