@@ -271,7 +271,7 @@ def payment_report(request):
                             stylesheets=[CSS(string=f"""
                                              
                                 @font-face {{
-                                    font-family: 'Noto Sans Devanagari';
+                                    font-family: 'MarathiFont';
                                     src: url('file://{font_path}');
                                 }}
                                 @page {{
@@ -284,12 +284,12 @@ def payment_report(request):
                                         content: "अहवाल तयार दिनांक : {context['generated_date']}";
                                         font-size: 10px;
                                         color: #444;
-                                        font-family: 'Noto Sans Devanagari', sans-serif;
+                                        font-family: 'MarathiFont', sans-serif;
                                     }}
                                 }}
 
                                 body {{
-                                    font-family: 'Noto Sans Devanagari', sans-serif;
+                                    font-family: 'MarathiFont', sans-serif;
                                     font-size: 11px;
                                     line-height: 1.4;
                                     color: #000;
