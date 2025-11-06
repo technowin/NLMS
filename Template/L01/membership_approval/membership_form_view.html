@@ -285,55 +285,57 @@
                 </div>
             </div>
 
-            <!-- Months + Date Fields -->
-            <div id="membershipDuration" style="margin-top: 20px;">
-                <div class="mb-3 row">
-                    <!-- Number of Months -->
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label">
-                            Membership Duration (Months) / सदस्यत्व कालावधी
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="number" id="months" name="months" class="form-control" 
-                            min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}" disabled>
-                    </div>
+            {% if membership.membership_id != 5 and membership.membership_id != 6 %}
+                <!-- Months + Date Fields -->
+                <div id="membershipDuration" style="margin-top: 20px;">
+                    <div class="mb-3 row">
+                        <!-- Number of Months -->
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">
+                                Membership Duration (Months) / सदस्यत्व कालावधी
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" id="months" name="months" class="form-control" 
+                                min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}" disabled>
+                        </div>
 
-                    <!-- From Date -->
-                    <div class="col-md-6">
-                        <label class="form-label">
-                            Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                        </label>
-                        <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" readonly>
-                    </div>
+                        <!-- From Date -->
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" readonly>
+                        </div>
 
-                    <!-- To Date -->
-                    <div class="col-md-6">
-                        <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
-                        <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
+                        <!-- To Date -->
+                        <div class="col-md-6">
+                            <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
+                            <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Amount Fields -->
-            <div id="amountFields" style="margin-top: 15px;">
-                <div class="mb-3 row">
-                    <div class="col-md-4">
-                        <label class="form-label">Deposit / ठेव</label>
-                        <input type="text" id="depositInput"class="form-control" readonly>
-                        <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                        <input type="text" id="entryFeesInput"class="form-control" readonly>
-                        <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Subscription / सभासद फी</label>
-                        <input type="text" id="subscriptionInput"class="form-control" readonly>
-                        <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                <!-- Amount Fields -->
+                <div id="amountFields" style="margin-top: 15px;">
+                    <div class="mb-3 row">
+                        <div class="col-md-4">
+                            <label class="form-label">Deposit / ठेव</label>
+                            <input type="text" id="depositInput"class="form-control" readonly>
+                            <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
+                            <input type="text" id="entryFeesInput"class="form-control" readonly>
+                            <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Subscription / सभासद फी</label>
+                            <input type="text" id="subscriptionInput"class="form-control" readonly>
+                            <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% endif %}
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 

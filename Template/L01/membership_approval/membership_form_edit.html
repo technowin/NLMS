@@ -297,7 +297,7 @@
                             <span class="text-danger">*</span>
                         </label>
                         <input type="number" id="months" name="months" class="form-control" 
-                            min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}">
+                            min="1" max="12"  placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}">
                     </div>
 
                     <!-- From Date -->
@@ -305,7 +305,7 @@
                         <label class="form-label">
                             Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
                         </label>
-                        <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" required>
+                        <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" >
                     </div>
 
                     <!-- To Date -->
@@ -985,9 +985,27 @@
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
                             $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
-                            $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+                            // Check for Lifetime (5) or Patron (6)
+                            if (encId == "5" || encId == "6") {
+                                // Show only membership details + amount fields
+                                $("#membershipDetails, #amountFields").fadeIn();
+                                $("#membershipDuration").hide();
 
-                            updateAmountFields(); // update initial amounts
+                                // Set subscription directly (no month multiplier)
+                                $("#depositInput").val(baseDeposit);
+                                $("#entryFeesInput").val(baseEntryFees);
+                                $("#subscriptionInput").val(baseSubscription);
+
+                                $("#depositHidden").val(baseDeposit);
+                                $("#entryFeesHidden").val(baseEntryFees);
+                                $("#subscriptionHidden").val(baseSubscription);
+                                
+                            } else {
+                                // Show everything
+                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+
+                                updateAmountFields(); // update initial amounts
+                            }
                         } else {
                             $("#membershipDetails, #membershipDuration, #amountFields").hide();
                             alert("Membership not found");
@@ -1216,6 +1234,36 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 e.target.submit(); // now submit
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const memberType = document.getElementById("membershipType");
+        if (!memberType) return;
+
+        const monthsField = document.getElementById("months");
+        const fromDateField = document.getElementById("fromDate");
+        const toDateField = document.getElementById("toDate");
+        const membershipDuration = document.getElementById("membershipDuration");
+
+        memberType.addEventListener("change", function() {
+            const selectedValue = parseInt(this.value);
+
+            if (selectedValue === 5 || selectedValue === 6) {
+                // Hide duration + remove required
+                membershipDuration.style.display = "none";
+                monthsField.removeAttribute("required");
+                fromDateField.removeAttribute("required");
+                toDateField.removeAttribute("required");
+            } else {
+                // Show + add required
+                membershipDuration.style.display = "block";
+                monthsField.setAttribute("required", "required");
+                fromDateField.setAttribute("required", "required");
+                toDateField.setAttribute("required", "required");
             }
         });
     });

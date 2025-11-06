@@ -260,7 +260,7 @@
                         <span class="text-danger">*</span>
                     </label>
                     <input type="number" id="months" name="months" class="form-control" 
-                        min="1" max="12" required placeholder="Enter months (1-12)">
+                        min="1" max="12"  placeholder="Enter months (1-12)">
                 </div>
 
                 <!-- From Date -->
@@ -268,7 +268,7 @@
                     <label class="form-label">
                         Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
                     </label>
-                    <input type="date" id="fromDate" name="fromDate" class="form-control" required>
+                    <input type="date" id="fromDate" name="fromDate" class="form-control" >
                 </div>
 
                 <!-- To Date -->
@@ -822,6 +822,10 @@
 
         $("#membershiptype").change(function () {
             var encId = $(this).val();
+
+            // Always reset everything first
+            resetMembershipForm();
+
             if (encId) {
                 $.ajax({
                     url: "{% url 'L01:get_membership_details' %}",
@@ -837,9 +841,29 @@
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
                             $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
-                            $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+                            // Check for Lifetime (5) or Patron (6)
+                            if (encId == "5" || encId == "6") {
+                                // Show only membership details + amount fields
+                                $("#membershipDetails, #amountFields").fadeIn();
+                                $("#membershipDuration").hide();
 
-                            updateAmountFields(); // update initial amounts
+                                // Set subscription directly (no month multiplier)
+                                $("#depositInput").val(baseDeposit);
+                                $("#entryFeesInput").val(baseEntryFees);
+                                $("#subscriptionInput").val(baseSubscription);
+
+                                $("#depositHidden").val(baseDeposit);
+                                $("#entryFeesHidden").val(baseEntryFees);
+                                $("#subscriptionHidden").val(baseSubscription);
+                                
+                            } else {
+                                // Show everything
+                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+
+                                updateAmountFields(); // update initial amounts
+                            }
+
+                            // updateAmountFields(); // update initial amounts
                         } else {
                             $("#membershipDetails, #membershipDuration, #amountFields").hide();
                             alert("Membership not found");
@@ -897,6 +921,27 @@
             $("#subscriptionHidden").val(subscription);
 
             updateToDate();
+        }
+
+        function resetMembershipForm() {
+            // Hide all initially
+            $("#membershipDetails, #membershipDuration, #amountFields").hide();
+
+            // Reset text inside the table
+            $("#depositCell, #entryFeesCell, #subscriptionCell").text("");
+
+            // Reset input fields
+            $("#months").val("");
+            $("#fromDate").val("");
+            $("#toDate").val("");
+
+            $("#depositInput, #entryFeesInput, #subscriptionInput").val("");
+            $("#depositHidden, #entryFeesHidden, #subscriptionHidden").val("");
+
+            // Reset base values
+            baseDeposit = 0;
+            baseEntryFees = 0;
+            baseSubscription = 0;
         }
 
 
@@ -1054,6 +1099,36 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 e.target.submit(); // now submit
+            }
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const memberType = document.getElementById("membershipType");
+        if (!memberType) return;
+
+        const monthsField = document.getElementById("months");
+        const fromDateField = document.getElementById("fromDate");
+        const toDateField = document.getElementById("toDate");
+        const membershipDuration = document.getElementById("membershipDuration");
+
+        memberType.addEventListener("change", function() {
+            const selectedValue = parseInt(this.value);
+
+            if (selectedValue === 5 || selectedValue === 6) {
+                // Hide duration + remove required
+                membershipDuration.style.display = "none";
+                monthsField.removeAttribute("required");
+                fromDateField.removeAttribute("required");
+                toDateField.removeAttribute("required");
+            } else {
+                // Show + add required
+                membershipDuration.style.display = "block";
+                monthsField.setAttribute("required", "required");
+                fromDateField.setAttribute("required", "required");
+                toDateField.setAttribute("required", "required");
             }
         });
     });

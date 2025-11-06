@@ -47,7 +47,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
-from datetime import datetime
+from datetime import datetime, date
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 import barcode
@@ -61,7 +61,6 @@ from barcode import Code128
 from reportlab.lib.utils import ImageReader
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-
 # Part First While Filling Membership Form
 
 def index(request):
@@ -749,25 +748,43 @@ def membership_form_edit(request):
                     "fromDate": "from_date",
                     "dob": "dob",
                 }
+                
+                date_fields = ["dob", "from_date", "to_date"]
 
                 for form_field, model_field in field_map.items():
                     new_value = request.POST.get(form_field)
                     old_value = getattr(membership, model_field, None)
 
-                    # Convert boolean-like fields
+                    # --- Boolean-like fields ---
                     if model_field in ["is_resident_of_nmmc", "address_same_as_aadhar"]:
                         if new_value is not None:
-                            new_value = 1 if new_value.lower() in ["1", "yes", "true", "on"] else 0
+                            new_value = 1 if str(new_value).lower() in ["1", "yes", "true", "on"] else 0
                         else:
                             new_value = None
 
-                    # Convert integer fields
-                    if model_field == "membership_duration":
+                    # --- Integer fields ---
+                    elif model_field == "membership_duration":
                         new_value = int(new_value) if new_value else None
 
-                    # Convert FK fields
-                    if model_field in ["membership_id", "member_type_id"]:
+                    # --- ForeignKey fields ---
+                    elif model_field in ["membership_id", "member_type_id"]:
                         new_value = int(new_value) if new_value else None
+
+                    # --- Date fields ---
+                    elif model_field in date_fields:
+                        if new_value:
+                            try:
+                                # Ensure we only keep date part
+                                new_value = datetime.strptime(new_value.split(" ")[0], "%Y-%m-%d").date()
+                            except Exception as e:
+                                print("❌ Date parse error for", form_field, ":", new_value, "->", e)
+                                new_value = None
+                        else:
+                            new_value = None
+
+                    # --- Default ---
+                    else:
+                        new_value = new_value.strip() if isinstance(new_value, str) else new_value
 
                     if new_value != old_value:
                         setattr(membership, model_field, new_value)
