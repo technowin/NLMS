@@ -104,10 +104,10 @@
                                 </a>
                                 
                                 {% comment %} Renewal Button {% endcomment %}
-                                {% if m.status.status_code not in "APP_RENEW" %}
+                                {% if m.show_renew_button %}
                                     <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ m.membership_id_enc }}" 
-                                        class="btn btn-warning btn-sm ms-2">
-                                        सदस्यत्व नूतनीकरण करा
+                                    class="btn btn-warning btn-sm ms-2">
+                                    सदस्यत्व नूतनीकरण करा
                                     </a>
                                 {% endif %}
 

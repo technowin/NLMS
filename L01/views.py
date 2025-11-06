@@ -966,35 +966,39 @@ def membership_form_view(request):
             # Step 2: Get the membership object
             membership = get_object_or_404(MembershipDetails, id=membership_id, isactive=1)
 
-            if action == 'payment_received':
-                
+            if action == "payment_received":
                 try:
-                    # Step 1: Update MembershipDetails status
-                    status_received = StatusMaster.objects.get(id=5)  # status_id = 5
-                    membership.status = status_received
-                    membership.updated_by = user_code
-                    membership.save()
-                    
-                    membership_master = membership.membership    
-                    # Step 2: Insert a row in PaymentDetails
-                    PaymentDetails.objects.create(
-                        membership=membership,
-                        payment_mode="Offline",
-                        payment_method="Cash/Cheque/Other",  # choose dynamically if needed
-                        payment_type="Membership",  # choose dynamically if needed
-                        deposit_amount=membership.deposit,
-                        entry_fee_amount=membership.entry_fees,
-                        monthly_subscription_amount=membership_master.subscription_fees,
-                        total_subscription_amount=(membership.subscription),
-                        subscription_from=membership.from_date,
-                        subscription_to=membership.to_date,
-                        status=status_received,
-                        membership_code=membership.membership_code,
-                        user_id=user_id,
-                        created_by=user_code,
-                        updated_by=user_code,
-                        payment_date=timezone.now().date(),
-                    )
+                    with transaction.atomic():
+                        payment_type = "Membership Renewed" if membership.membership_renew == 1 else "Membership"
+
+                        status_received = StatusMaster.objects.get(id=5)
+                        membership_master = membership.membership
+
+                        # Step 1: Create PaymentDetails
+                        PaymentDetails.objects.create(
+                            membership=membership,
+                            payment_mode="Offline",
+                            payment_method="Cash/Cheque/Other",
+                            payment_type=payment_type,
+                            deposit_amount=membership.deposit,
+                            entry_fee_amount=membership.entry_fees,
+                            monthly_subscription_amount=membership_master.subscription_fees,
+                            total_subscription_amount=membership.subscription,
+                            subscription_from=membership.from_date,
+                            subscription_to=membership.to_date,
+                            status=status_received,
+                            membership_code=membership.membership_code,
+                            user_id=user_id,
+                            created_by=user_code,
+                            updated_by=user_code,
+                            payment_date=timezone.now().date(),
+                        )
+
+                        # Step 2: Update MembershipDetails
+                        membership.status = status_received
+                        membership.membership_renew = 0
+                        membership.updated_by = user_code
+                        membership.save()
 
                     messages.success(request, "Payment marked as received successfully!")
                     return redirect("L01:membership_approval")
@@ -1135,6 +1139,9 @@ def membership_payment_index(request):
         role_id = request.session["role_id"]
 
         if request.method == "GET":
+            
+            today = date.today()
+            
             # member's membershp details
             memberships = (
                 MembershipDetails.objects
@@ -1144,6 +1151,10 @@ def membership_payment_index(request):
             for mem in memberships:
                 mem.membership_id_enc = enc(str(mem.id))        
                 mem.per_month_subscription = mem.membership.subscription_fees if mem.membership else 0
+                
+                mem.show_renew_button = (
+                    mem.to_date is not None and mem.to_date == today
+                )
                 
             # Library Name
             library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
@@ -1399,88 +1410,55 @@ def membership_form_renew(request):
         if request.method == "POST":
             with transaction.atomic():
                 membership_id = request.POST.get("membership_id")
-                user_id = request.POST.get("user_id")
                 membership = get_object_or_404(MembershipDetails, id=membership_id)
 
-                updated = False  # Flag to track if any changes happened
+                updated = False
 
-                # ------------------------------
-                # 1. Mapping form fields to model fields
-                # ------------------------------
+                # 1️⃣ Field map (only relevant fields)
                 field_map = {
-                    "occupation_details": "occupation",
-                    "phone_number": "office_phone",
-                    "education": "education",
-                    "institution_name": "institute_name",
-                    "referrer_details": "recommender_details",
-                    "membershiptype": "membership_id",  # FK to MembershipMaster
-                    "membertype": "member_type_id",     # FK to parameter_master_L01
+                    "membershiptype": "membership_id",
                     "months": "membership_duration",
                     "fromDate": "from_date",
                     "toDate": "to_date",
                 }
 
-                # ------------------------------
-                # 2. Check if any field changed (before updating)
-                # ------------------------------
+                # 2️⃣ Detect field changes
                 for form_field, model_field in field_map.items():
                     new_value = request.POST.get(form_field)
 
-                    # Normalize string 'None' or empty strings to Python None
                     if new_value in ["", "None", None]:
                         new_value = None
 
-                    # Convert integer fields
-                    if model_field == "membership_duration" and new_value is not None:
+                    if model_field == "membership_duration" and new_value:
                         new_value = int(new_value)
 
-                    # Convert FK fields
-                    if model_field in ["membership_id", "member_type_id"] and new_value is not None:
+                    if model_field == "membership_id" and new_value:
                         new_value = int(new_value)
 
-                    # Convert date fields
-                    if model_field in ["from_date", "to_date"] and new_value is not None:
+                    if model_field in ["from_date", "to_date"] and new_value:
                         new_value = datetime.strptime(new_value, "%Y-%m-%d").date()
 
                     old_value = getattr(membership, model_field, None)
-                    if old_value in ["", "None", None]:
-                        old_value = None
-
                     if new_value != old_value:
+                        setattr(membership, model_field, new_value)
                         updated = True
-                        break
 
-                # ------------------------------
-                # 3. Check monetary fields
-                # ------------------------------
+                # 3️⃣ Monetary fields
                 money_fields = ["deposit", "entry_fees", "subscription"]
                 for field in money_fields:
                     new_value = request.POST.get(field)
                     new_value = float(new_value) if new_value else 0.0
                     old_value = getattr(membership, field, 0.0)
                     if new_value != old_value:
+                        setattr(membership, field, new_value)
                         updated = True
-                        break
-
-                # ------------------------------
-                # 4. Check if any files uploaded
-                # ------------------------------
-                file_fields = ["photo_upload", "id_upload", "employee_letter", "nagarsevak_letter", "agreement_copy"]
-                for field in file_fields:
-                    if request.FILES.get(field):
-                        updated = True
-                        break
-
-                # ------------------------------
-                # 5. Save current membership state to history (only if updates detected)
-                # ------------------------------
-                
+                        
                 if updated:
                     MembershipDetailsHistory.objects.create(
                         membership=membership,
-                        membershipmaster=membership.membership,
+                        membershipmaster=membership.membership,  # ✅ FIXED
                         status=membership.status,
-                        member_type=membership.member_type,  
+                        member_type=membership.member_type,
                         first_name=membership.first_name,
                         middle_name=membership.middle_name,
                         last_name=membership.last_name,
@@ -1511,10 +1489,12 @@ def membership_form_renew(request):
                         email=membership.email,
                         is_resident_of_nmmc=membership.is_resident_of_nmmc,
                         address_same_as_aadhar=membership.address_same_as_aadhar,
-                        actionperformed = membership.actionperformed,
-                        reviewed = membership.reviewed,
-                        reviewed_at = membership.reviewed_at,
+                        actionperformed=membership.actionperformed,
+                        reviewed=membership.reviewed,
+                        reviewed_at=membership.reviewed_at,
+                        isactive=membership.isactive,
                         membership_code=membership.membership_code,
+                        membership_renew=1,  # ✅ history flag
                         created_at=membership.created_at,
                         created_by=membership.created_by,
                         updated_at=membership.updated_at,
@@ -1522,96 +1502,11 @@ def membership_form_renew(request):
                         changed_by=user_code,
                     )
 
-                # ------------------------------
-                # 6. Update normal fields if changed
-                # ------------------------------
-                for form_field, model_field in field_map.items():
-                    new_value = request.POST.get(form_field)
-
-                    if model_field == "membership_duration":
-                        new_value = int(new_value) if new_value else None
-                    if model_field in ["membership_id", "member_type_id"]:
-                        new_value = int(new_value) if new_value else None
-
-                    old_value = getattr(membership, model_field, None)
-                    if new_value != old_value:
-                        setattr(membership, model_field, new_value)
-
-                # ------------------------------
-                # 7. Update monetary fields
-                # ------------------------------
-                for field in money_fields:
-                    new_value = request.POST.get(field)
-                    new_value = float(new_value) if new_value else 0.0
-                    old_value = getattr(membership, field, 0.0)
-                    if new_value != old_value:
-                        setattr(membership, field, new_value)
-
-                # ------------------------------
-                # 8. Handle file uploads
-                # ------------------------------
-                file_map = {
-                    "photo_upload": 1,
-                    "id_upload": 2,
-                    "employee_letter": 3,
-                    "nagarsevak_letter": 4,
-                    "agreement_copy": 5
-                }
-
-                for field_name, doc_type in file_map.items():
-                    uploaded_file = request.FILES.get(field_name)
-                    if uploaded_file:
-                        # 1️⃣ Save old file in history if exists
-                        old_doc = DocumentDetails.objects.filter(
-                            membership=membership, document_id=doc_type
-                        ).first()
-                        if old_doc:
-                            DocumentDetailsHistory.objects.create(
-                                original_document=old_doc,
-                                membership=membership,
-                                document=old_doc.document,
-                                file_name=old_doc.file_name,
-                                file_path=old_doc.file_path,
-                                uploaded_by=old_doc.updated_by or old_doc.created_by
-                            )
-
-                        # 2️⃣ Save new file in DocumentDetails
-                        user_folder = f"{library_code}/{user_id}"
-                        doc_type_folder = f"Document - {doc_type}"
-                        save_dir = os.path.join(settings.MEDIA_ROOT, user_folder, doc_type_folder)
-                        os.makedirs(save_dir, exist_ok=True)
-
-                        timestamp = timezone.now().strftime("%Y%m%dT%H%M%S")
-                        filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_{timestamp}.{uploaded_file.name.rsplit('.', 1)[1]}"
-                        save_path = os.path.join(save_dir, filename)
-
-                        with open(save_path, 'wb+') as destination:
-                            for chunk in uploaded_file.chunks():
-                                destination.write(chunk)
-
-                        relative_path = os.path.relpath(save_path, settings.MEDIA_ROOT)
-
-                        if old_doc:
-                            # Update existing record
-                            old_doc.file_name = filename
-                            old_doc.file_path = relative_path
-                            old_doc.updated_by = user_code
-                            old_doc.save()
-                        else:
-                            DocumentDetails.objects.create(
-                                membership=membership,
-                                document_id=doc_type,
-                                file_name=filename,
-                                file_path=relative_path,
-                                created_by=user_code,
-                            )
-
-                # ------------------------------
-                # 9. Save membership if updated
-                # ------------------------------
+                # 4️⃣ Save if updated
                 if updated:
                     membership.updated_by = user_code
                     membership.status_id = 9
+                    membership.membership_renew = 1
                     membership.actionperformed = None
                     membership.reviewed = None
                     membership.reviewed_at = None
@@ -1620,8 +1515,8 @@ def membership_form_renew(request):
                 else:
                     messages.info(request, "No changes detected. Membership not updated.")
 
-                return redirect("L01:membership_payment_index")
-       
+                return redirect("L01:membership_payment_index")     
+   
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else "library_list"

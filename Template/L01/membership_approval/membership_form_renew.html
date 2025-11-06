@@ -24,261 +24,101 @@
         <form id="membershipForm" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="membership_id" value="{{ membership.id }}">
-            <!-- USER ID -->
-            <div class="mb-3 mt-3 row">
-                <div class="col-md-6 position-relative">
-                    <label class="form-label" for="userIdInput">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
-                    <input type="text" id="" name="user_id" class="form-control" placeholder="Enter User ID" value="{{ membership.user_id|default:'' }}" readonly>
-                    <small id="userIdHelp" class="form-text text-muted">
-                        User ID must be 5–20 characters. Letters, numbers, and underscore only (no spaces).
-                    </small>
-                    <small id="userIdError" class="text-danger d-none"></small>
-                    <span id="userIdStatus"></span>
-                </div>
-                
-                <div class="col-md-6">
-                    <label class="form-label" for="aadharInput">Aadhar Number / आधार क्रमांक <span class="text-danger">*</span></label>
-                    <input type="text" id="" name="aadhar_no" class="form-control" placeholder="Enter Aadhar Number" value="{{ membership.aadhar_no|default:'' }}" readonly>
-                    <small id="aadharHelp" class="form-text text-muted">
-                        Aadhar Number must be exactly 12 digits (no spaces or dashes).
-                    </small>
-                    <small id="aadharError" class="text-danger d-none"></small>
-                    <span id="aadharStatus"></span>
-                </div>
-            </div>
 
-            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-            <!-- LIBRARY NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Library Name <span class="text-danger">*</span></label>
-                    {% if library_details %}
-                        <input type="text" name="library_name" class="form-control"
-                            value="{{ library_details.0.library_name }}" 
-                            placeholder="Library Name" readonly>
-                    {% endif %}
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">ग्रंथालयाचे नाव (मराठी) <span class="text-danger">*</span></label>
-                    {% if library_details %}
-                        <input type="text" name="library_name_mar" class="form-control"
-                            value="{{ library_details.0.library_name_mar }}" 
-                            placeholder="ग्रंथालयाचे नाव" readonly>
-                    {% endif %}
-                </div>
-            </div>
-
-            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-            <!-- Member Type -->
-            
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
-                    <select name="membertype" class="form-control" id="membertype" required>
-                        <option value="">Select Membership</option>
-                        {% for option in membership_options %}
-                            <option value="{{ option.parameter_id }}" 
-                                {% if option.parameter_id == membership.member_type_id %}selected{% endif %}>
-                                {{ option.parameter_value }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- Occupation & Office Location -->
-            <div class="mb-3 row" id="occupation_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="occupation_details">Occupation & Office Location / व्यवसाय, हुद्दा व व्यवसायाचे ठिकाण <span class="text-danger">*</span></label>
-                    <input type="text" id="occupation_details" name="occupation_details" class="form-control" placeholder="e.g. Software Developer, Vashi, Navi Mumbai" value="{{ membership.occupation }}" required>
-                </div>
-
-                <div class="col-md-6" id="phone_row">
-                    <label class="form-label" for="phone_number">Phone Number (Office) / दूरध्वनी क्रमांक (व्यवसाय) <span class="text-danger">*</span></label>
-                    <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. 022-12345678" value="{{ membership.office_phone }}" required>
-                </div>
-            </div>
-
-            <!-- Educational Institution -->
-            <div class="mb-3 row" id="education_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
-                    <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." value="{{ membership.education }}" required>
-                </div>
-
-                <div class="col-md-6" id="institution_row">
-                    <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
-                    <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" value="{{ membership.institute_name }}" required>
-                </div>
-            </div>
-
-            <!-- REFERRER DETAILS -->
-            <div class="mb-3 row" id="referrer_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
-                    <input type="text" id="referrer_details" name="referrer_details" class="form-control" placeholder="e.g. Mr. ABC, Teacher, Vashi" value="{{ membership.recommender_details }}" required>
-                </div>
-            </div>
-
-            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-            <!-- Membership Type -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
-                    <select name="membershiptype" class="form-control" id="membershiptype" required>
-                        <option value="">Select Membership Type</option>
-                        {% for membership_option in membership_Master %}
-                            <option value="{{ membership_option.id }}" 
-                                {% if membership_option.id == membership.membership_id %}selected{% endif %}>
-                                {{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- membership Details Table will be rendered here -->
-            <div id="membershipDetails">
-                <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
-                    {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
-                </h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered text-center">
-                        <thead>
-                            <tr>
-                                <th >Deposit<br><small>(ठेव)</small></th>
-                                <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
-                                <th >Subscription<br><small>(सभासद फी)</small></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td id="depositCell"></td>
-                                <td id="entryFeesCell"></td>
-                                <td id="subscriptionCell"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Months + Date Fields -->
-            <div id="membershipDuration" style="margin-top: 20px;">
+            <div class="form-section mt-4">
+                <!-- Membership Type -->
                 <div class="mb-3 row">
-                    <!-- Number of Months -->
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label">
-                            Membership Duration (Months) / सदस्यत्व कालावधी
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="number" id="months" name="months" class="form-control" 
-                            min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}">
-                    </div>
-
-                    <!-- From Date -->
                     <div class="col-md-6">
-                        <label class="form-label">
-                            Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                        </label>
-                        <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" required>
-                    </div>
+                        <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
+                        <select name="membershiptype_display" class="form-control" id="membershiptype" disabled>
+                            <option value="">Select Membership Type</option>
+                            {% for membership_option in membership_Master %}
+                                <option value="{{ membership_option.id }}" 
+                                    {% if membership_option.id == membership.membership_id %}selected{% endif %}>
+                                    {{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}
+                                </option>
+                            {% endfor %}
+                        </select>
 
-                    <!-- To Date -->
-                    <div class="col-md-6">
-                        <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
-                        <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
+                        <!-- Hidden input that actually submits the value -->
+                        <input type="hidden" name="membershiptype" value="{{ membership.membership_id }}">
+
                     </div>
                 </div>
-            </div>
 
-            <!-- Amount Fields -->
-            <div id="amountFields" style="margin-top: 15px;">
-                <div class="mb-3 row">
-                    <div class="col-md-4">
-                        <label class="form-label">Deposit / ठेव</label>
-                        <input type="text" id="depositInput"class="form-control" readonly>
-                        <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                        <input type="text" id="entryFeesInput"class="form-control" readonly>
-                        <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Subscription / सभासद फी</label>
-                        <input type="text" id="subscriptionInput"class="form-control" readonly>
-                        <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                <!-- membership Details Table will be rendered here -->
+                <div id="membershipDetails">
+                    <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
+                        {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead>
+                                <tr>
+                                    <th >Deposit<br><small>(ठेव)</small></th>
+                                    <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
+                                    <th >Subscription<br><small>(सभासद फी)</small></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="depositCell"></td>
+                                    <td id="entryFeesCell"></td>
+                                    <td id="subscriptionCell"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
 
-            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
-            <!-- Photo Upload & ID Document (Scanned) -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label" for="photo_upload">
-                        Photo / फोटो 
-                        {% if not documents_map.1 %}<span class="text-danger">*</span>{% endif %}
-                    </label>
-                    {% comment %} <input type="file" id="photo_upload" name="photo_upload" class="form-control" accept="image/*"
-                        {% if not documents_map.1 %}required{% endif %}> {% endcomment %}
-                    <small id="photoError" class="text-danger d-none"></small>    
-                    {% if documents_map.1 %}
-                        <div class="mt-2">
-                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.1.doc_id_enc %}" target="_blank">
-                                View Existing File
-                            </a>
-                            {% comment %} <small class="text-muted d-block">Upload only if you want to replace it.</small> {% endcomment %}
+                <!-- Months + Date Fields -->
+                <div id="membershipDuration" style="margin-top: 20px;">
+                    <div class="mb-3 row">
+                        <!-- Number of Months -->
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">
+                                Membership Duration (Months) / सदस्यत्व कालावधी
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" id="months" name="months" class="form-control" 
+                                min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}">
                         </div>
-                    {% endif %}
+
+                        <!-- From Date -->
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" required>
+                        </div>
+
+                        <!-- To Date -->
+                        <div class="col-md-6">
+                            <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
+                            <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label" for="id_upload">
-                        ID Document (Scanned) / ओळखपत्र छायांकित 
-                        {% if not documents_map.2 %}<span class="text-danger">*</span>{% endif %}
-                    </label>
-                    {% comment %} <input type="file" id="id_upload" name="id_upload" class="form-control" accept="image/*,.pdf"
-                        {% if not documents_map.2 %}required{% endif %}> {% endcomment %}
-                    <small id="idError" class="text-danger d-none"></small>
-                    {% if documents_map.2 %}
-                        <div class="mt-2">
-                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.2.doc_id_enc %}" target="_blank">
-                                View Existing Document
-                            </a>
-                            {% comment %} <small class="text-muted d-block">Upload only if you want to replace it.</small> {% endcomment %}
+                <!-- Amount Fields -->
+                <div id="amountFields" style="margin-top: 15px;">
+                    <div class="mb-3 row">
+                        <div class="col-md-4">
+                            <label class="form-label">Deposit / ठेव</label>
+                            <input type="text" id="depositInput"class="form-control" readonly>
+                            <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
                         </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Employee Letter -->
-            <div class="mb-3 row d-none" id="employee_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="employee_letter">
-                        Employee ID / कर्मचारी ओळखपत्र 
-                        {% if not documents_map.3 %}<span class="text-danger">*</span>{% endif %}
-                    </label>
-                    <input type="file" id="employee_letter" name="employee_letter" class="form-control" accept="image/*,.pdf"
-                        {% if not documents_map.3 %}required{% endif %}>
-                    <input type="hidden" name="document_employee_letter" value="3">
-                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
-                    <small id="employeeError" class="text-danger d-none"></small>   
-                    {% if documents_map.3 %}
-                        <div id="employeePreview" class="mt-2">
-                            <a href="{% url 'L01:secure_document_view' doc_id_enc=documents_map.3.doc_id_enc %}" target="_blank">
-                                View Existing Document
-                            </a>
-                            <small class="text-muted d-block">Upload only if you want to replace it.</small>
+                        <div class="col-md-4">
+                            <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
+                            <input type="text" id="entryFeesInput"class="form-control" readonly>
+                            <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
                         </div>
-                    {% else %}
-                        <div id="employeePreview" class="mt-2"></div>
-                    {% endif %}
+                        <div class="col-md-4">
+                            <label class="form-label">Subscription / सभासद फी</label>
+                            <input type="text" id="subscriptionInput"class="form-control" readonly>
+                            <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                        </div>
+                    </div>
                 </div>
             </div>
 

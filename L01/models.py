@@ -159,6 +159,7 @@ class MembershipDetails(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     updated_by = models.CharField(max_length=50, null=True, blank=True)
     membership_code = models.TextField(null=True, blank=True)
+    membership_renew = models.IntegerField(default=0)
 
     class Meta: db_table = "tbl_membershipdetails"
 
@@ -268,6 +269,7 @@ class MembershipDetailsHistory(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     isactive = models.IntegerField(default=1)
     membership_code = models.TextField(null=True, blank=True)
+    membership_renew = models.IntegerField(default=0)
     created_at = models.DateTimeField(null=True, blank=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)
     updated_at = models.DateTimeField(null=True, blank=True)

@@ -669,3 +669,21 @@ body[data-bs-theme="dark"] .card.no-shadow-dark {
         body.dark-mode .back-to-top:hover {
             background-color: #5a52d6;
         }
+
+/* Change Form Sections */
+
+.form-section {
+    background-color: #F5F8FF; /* very light gray */
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    border: 2px solid #727CF5;
+}
+.form-section h5 {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #727cf5; /* accent color */
+    display: inline-block;
+    padding-bottom: 4px;
+}
