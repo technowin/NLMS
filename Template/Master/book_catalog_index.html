@@ -52,6 +52,7 @@
                         <th>भाषा</th>
                         <th>स्थिती</th>
                         <th>नोंदणी दिनांक</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,6 +70,14 @@
                         <td>{{ catalog.language }}</td>
                         <td>{{ catalog.status_obj.status_name|default:"-" }}</td>
                         <td>{{ catalog.date_of_registration }}</td>
+                      <td>
+                        <a href="{% url 'book_catalog_edit' %}?cat_ref_num={{ catalog.encrypted_id }}" 
+                            class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        </td>
+
+                        {% comment %} <td><a href="{% url 'book_catalog_edit' %}">Edit</a></td> {% endcomment %}
                         {% comment %} <a href="{% url 'book_catalog_edit' catalog.encrypted_id %}">Edit</a> {% endcomment %}
                     </tr>
                     {% endfor %}

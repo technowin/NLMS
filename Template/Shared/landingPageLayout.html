@@ -29,7 +29,7 @@
                 <div class="govLinkContainer">
                     <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                         aria-label="Welcome to NMMC Library official website">
-                            Navi Mumbai Municipal Corporation
+                            NMMC, Library Department
                         <span class="underlineHover"></span>
                     </a>
                 </div>
@@ -46,7 +46,7 @@
                 <div class="govLinkContainer">
                     <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                         aria-label="नवी मुंबई महानगरपालिका ग्रंथालयाच्या अधिकृत वेबसाइटवर आपले स्वागत आहे">
-                        नवी मुंबई महानगरपालिका
+                        नवी मुंबई महानगरपालिका, ग्रंथालय विभाग 
                         <span class="underlineHover"></span>
                     </a>
                 </div>
@@ -63,15 +63,26 @@
                 <!-- Left: logo + title -->
                 <div class="brand-left" id="brand-english" style="display: none;">
                     <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="NMMC Logo" class="logo">
-                    <h1 class="header-title">NMMC Library</h1>
+                    {% comment %} <h1 class="header-title">NMMC Library</h1> {% endcomment %}
+                    <div class="brand-text">
+                        <h1 class="header-title">Navi Mumbai Muncipal Corporation</h1>
+                        <h2 class="sub-title">Public Library</h2>
+                    </div>
                 </div> 
 
                 <!-- Marathi Brand (default visible) -->
-                <div class="brand-left" id="brand-marathi">
+                {% comment %} <div class="brand-left" id="brand-marathi">
                     <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo">
                     <h1 class="header-title">नवी मुंबई महानगरपालिका ग्रंथालय</h1>
-                </div>
+                </div> {% endcomment %}
 
+                <div class="brand-left" id="brand-marathi">
+                    <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo">
+                    <div class="brand-text">
+                        <h1 class="header-title">नवी मुंबई महानगरपालिका</h1>
+                        <h2 class="sub-title">सार्वजनिक ग्रंथालय</h2>
+                    </div>
+                </div>
 
                 <!-- Right logo -->
                 <img src="{% static 'images/administrative/layout_img.png' %}" alt="NMMC Logo" class="logo right-logo">

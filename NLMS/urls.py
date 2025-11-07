@@ -76,6 +76,7 @@ urlpatterns = [
     path('LMS_Dashboard/', LMS_Dashboard, name='LMS_Dashboard'),
     path('book_catalog_index/', book_catalog_index, name='book_catalog_index'),
     path('book_catalog_create/', book_catalog_create, name='book_catalog_create'),
+    path('book_catalog_edit/', book_catalog_edit, name='book_catalog_edit'),
     path('book_accession_index/', book_accession_index, name='book_accession_index'),
     path('book_accession_create/', book_accession_create, name='book_accession_create'),
     path('material_type_master_index/', material_type_master_index, name='material_type_master_index'),
