@@ -23,7 +23,7 @@
 
         
             <!-- USER ID -->
-            <div class="mb-3 mt-3 row">
+            <div class="form-section mb-3 mt-3 row">
                 <div class="col-md-6 position-relative">
                     <label class="form-label" for="userIdInput">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
                     <input type="text" id="" name="user_id" class="form-control" placeholder="Enter User ID" value="{{ membership.user_id|default:'' }}" readonly>
@@ -48,45 +48,47 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- FIRST NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">First Name (English) <span class="text-danger">*</span></label>
-                    <input type="text" name="first_name" class="form-control translate-marathi-input" placeholder="e.g. Pruthvi" value="{{ membership.first_name|default:'' }}" readonly>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name (English) <span class="text-danger">*</span></label>
+                        <input type="text" name="first_name" class="form-control translate-marathi-input" placeholder="e.g. Pruthvi" value="{{ membership.first_name|default:'' }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">पहिले नाव (Marathi) <span class="text-danger">*</span></label>
+                        <input type="text" name="first_name_mar" class="form-control translate-marathi-output" placeholder="उदा. पृथ्वी" value="{{ membership.first_name_mar|default:'' }}" readonly>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">पहिले नाव (Marathi) <span class="text-danger">*</span></label>
-                    <input type="text" name="first_name_mar" class="form-control translate-marathi-output" placeholder="उदा. पृथ्वी" value="{{ membership.first_name_mar|default:'' }}" readonly>
-                </div>
-            </div>
 
-            <!-- MIDDLE NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Middle Name (English)</label>
-                    <input type="text" name="middle_name" class="form-control translate-marathi-input" placeholder="e.g. Narendra" value="{{ membership.middle_name|default:'' }}" readonly>
+                <!-- MIDDLE NAME -->
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Middle Name (English)</label>
+                        <input type="text" name="middle_name" class="form-control translate-marathi-input" placeholder="e.g. Narendra" value="{{ membership.middle_name|default:'' }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">मधले नाव (Marathi)</label>
+                        <input type="text" name="middle_name_mar" class="form-control translate-marathi-output" placeholder="उदा. नरेंद्र" value="{{ membership.middle_name_mar|default:'' }}" readonly>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">मधले नाव (Marathi)</label>
-                    <input type="text" name="middle_name_mar" class="form-control translate-marathi-output" placeholder="उदा. नरेंद्र" value="{{ membership.middle_name_mar|default:'' }}" readonly>
-                </div>
-            </div>
 
-            <!-- LAST NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Last Name (English) <span class="text-danger">*</span></label>
-                    <input type="text" name="last_name" class="form-control translate-marathi-input" placeholder="e.g. Hajare" value="{{ membership.last_name|default:'' }}" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">आडनाव (Marathi) <span class="text-danger">*</span></label>
-                    <input type="text" name="last_name_mar" class="form-control translate-marathi-output" placeholder="उदा. हजारे" value="{{ membership.last_name_mar|default:'' }}" readonly>
+                <!-- LAST NAME -->
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name (English) <span class="text-danger">*</span></label>
+                        <input type="text" name="last_name" class="form-control translate-marathi-input" placeholder="e.g. Hajare" value="{{ membership.last_name|default:'' }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">आडनाव (Marathi) <span class="text-danger">*</span></label>
+                        <input type="text" name="last_name_mar" class="form-control translate-marathi-output" placeholder="उदा. हजारे" value="{{ membership.last_name_mar|default:'' }}" readonly>
+                    </div>
                 </div>
             </div>
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- WARD NAME -->
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="col-md-6">
                     <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
                     <select name="ward_name" id="ward_name" class="form-control" disabled>
@@ -117,7 +119,7 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- LIBRARY NAME -->
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="col-md-6">
                     <label class="form-label">Library Name <span class="text-danger">*</span></label>
                     {% if library_details %}
@@ -141,103 +143,121 @@
 
             <!-- Member Type -->
             
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
-                    <select name="membertype" class="form-control" id="membertype" disabled>
-                        <option value="">Select Membership</option>
-                        {% for option in membership_options %}
-                            <option value="{{ option.parameter_id }}" 
-                                {% if option.parameter_id == membership.member_type_id %}selected{% endif %}>
-                                {{ option.parameter_value }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- Occupation & Office Location -->
-            <div class="mb-3 row" id="occupation_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="occupation_details">Occupation & Office Location / व्यवसाय, हुद्दा व व्यवसायाचे ठिकाण <span class="text-danger">*</span></label>
-                    <input type="text" id="occupation_details" name="occupation_details" class="form-control" placeholder="e.g. Software Developer, Vashi, Navi Mumbai" value="{{ membership.occupation }}" readonly>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
+                        <select name="membertype" class="form-control" id="membertype" disabled>
+                            <option value="">Select Membership</option>
+                            {% for option in membership_options %}
+                                <option value="{{ option.parameter_id }}" 
+                                    {% if option.parameter_id == membership.member_type_id %}selected{% endif %}>
+                                    {{ option.parameter_value }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
 
-                <div class="col-md-6" id="phone_row">
-                    <label class="form-label" for="phone_number">Phone Number (Office) / दूरध्वनी क्रमांक (व्यवसाय) <span class="text-danger">*</span></label>
-                    <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. 022-12345678" value="{{ membership.office_phone }}" readonly>
-                </div>
-            </div>
+                <!-- Occupation & Office Location -->
+                <div class="mb-3 row" id="occupation_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="occupation_details">Occupation & Office Location / व्यवसाय, हुद्दा व व्यवसायाचे ठिकाण <span class="text-danger">*</span></label>
+                        <input type="text" id="occupation_details" name="occupation_details" class="form-control" placeholder="e.g. Software Developer, Vashi, Navi Mumbai" value="{{ membership.occupation }}" readonly>
+                    </div>
 
-            <!-- Educational Institution -->
-            <div class="mb-3 row" id="education_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
-                    <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." value="{{ membership.education }}" readonly>
+                    <div class="col-md-6" id="phone_row">
+                        <label class="form-label" for="phone_number">Phone Number (Office) / दूरध्वनी क्रमांक (व्यवसाय) <span class="text-danger">*</span></label>
+                        <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. 022-12345678" value="{{ membership.office_phone }}" readonly>
+                    </div>
                 </div>
 
-                <div class="col-md-6" id="institution_row">
-                    <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
-                    <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" value="{{ membership.institute_name }}" readonly>
-                </div>
-            </div>
+                <!-- Educational Institution -->
+                <div class="mb-3 row" id="education_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
+                        <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." value="{{ membership.education }}" readonly>
+                    </div>
 
-            <!-- REFERRER DETAILS -->
-            <div class="mb-3 row" id="referrer_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
-                    <input type="text" id="referrer_details" name="referrer_details" class="form-control" placeholder="e.g. Mr. ABC, Teacher, Vashi" value="{{ membership.recommender_details }}" readonly>
+                    <div class="col-md-6" id="institution_row">
+                        <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
+                        <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" value="{{ membership.institute_name }}" readonly>
+                    </div>
+                </div>
+
+                <!-- REFERRER DETAILS -->
+                <div class="mb-3 row" id="referrer_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
+                        <input type="text" id="referrer_details" name="referrer_details" class="form-control" placeholder="e.g. Mr. ABC, Teacher, Vashi" value="{{ membership.recommender_details }}" readonly>
+                    </div>
+                </div>
+
+                <!-- PRACTITIONER DETAILS -->
+                <div class="mb-3 row" id="practitioner_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="practitioner_details">
+                            Practitioner Details / अभ्यासिकेचे तपशील <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="practitioner_details" name="practitioner_details" 
+                            class="form-control" placeholder="e.g. MPSC, UPSC, Banking Exam" value="{{ membership.education }}" required>
+                        <small class="form-text text-muted">
+                            Enter the name of the examination or course (e.g. MPSC, UPSC, Banking).
+                        </small>
+                    </div>
                 </div>
             </div>
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Are you from NMMC -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">
-                        Are you a resident of Navi Mumbai Municipal Corporation (NMMC)? /
-                        आपण नवी मुंबई महानगरपालिका (NMMC) मधील रहिवासी आहात का? 
-                        <span class="text-danger">*</span>
-                    </label><br>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Are you a resident of Navi Mumbai Municipal Corporation (NMMC)? /
+                            आपण नवी मुंबई महानगरपालिका (NMMC) मधील रहिवासी आहात का? 
+                            <span class="text-danger">*</span>
+                        </label><br>
 
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_yes" 
-                            value="yes" {% if membership.is_resident_of_nmmc == 1 %}checked{% endif %} disabled>
-                        <label class="form-check-label" for="nmmc_yes">Yes / होय</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_no" 
-                            value="no" {% if membership.is_resident_of_nmmc == 0 %}checked{% endif %} disabled>
-                        <label class="form-check-label" for="nmmc_no">No / नाही</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_yes" 
+                                value="yes" {% if membership.is_resident_of_nmmc == 1 %}checked{% endif %} disabled>
+                            <label class="form-check-label" for="nmmc_yes">Yes / होय</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_no" 
+                                value="no" {% if membership.is_resident_of_nmmc == 0 %}checked{% endif %} disabled>
+                            <label class="form-check-label" for="nmmc_no">No / नाही</label>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Local Address -->
-            <div class="mb-3 row d-none" id="local_address_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="local_address">Local Address / स्थानिक पत्ता <span class="text-danger">*</span></label>
-                    <input type="text" id="local_address" name="local_address" class="form-control"
-                        value="{{ membership.local_address }}"
-                        placeholder="Enter your local address" readonly>
-                </div>
-
-                <!-- Only for Yes option -->
-                <div class="col-md-6 d-none" id="same_aadhar_row">
-                    <label class="form-label">
-                        Is this address same as Aadhar? / हा पत्ता आधार प्रमाणपत्राशी सारखाच आहे का?
-                        <span class="text-danger">*</span>
-                    </label><br>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_yes" 
-                            value="yes" {% if membership.address_same_as_aadhar == 1 %}checked{% endif %} disabled>
-                        <label class="form-check-label" for="same_aadhar_yes">Yes / होय</label>
+                <!-- Local Address -->
+                <div class="mb-3 row d-none" id="local_address_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="local_address">Local Address / स्थानिक पत्ता <span class="text-danger">*</span></label>
+                        <input type="text" id="local_address" name="local_address" class="form-control"
+                            value="{{ membership.local_address }}"
+                            placeholder="Enter your local address" readonly>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_no" 
-                            value="no" {% if membership.address_same_as_aadhar == 0 %}checked{% endif %} disabled>
-                        <label class="form-check-label" for="same_aadhar_no">No / नाही</label>
+
+                    <!-- Only for Yes option -->
+                    <div class="col-md-6 d-none" id="same_aadhar_row">
+                        <label class="form-label">
+                            Is this address same as Aadhar? / हा पत्ता आधार प्रमाणपत्राशी सारखाच आहे का?
+                            <span class="text-danger">*</span>
+                        </label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_yes" 
+                                value="yes" {% if membership.address_same_as_aadhar == 1 %}checked{% endif %} disabled>
+                            <label class="form-check-label" for="same_aadhar_yes">Yes / होय</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_no" 
+                                value="no" {% if membership.address_same_as_aadhar == 0 %}checked{% endif %} disabled>
+                            <label class="form-check-label" for="same_aadhar_no">No / नाही</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -245,102 +265,119 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Membership Type -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
-                    <select name="membershiptype" class="form-control" id="membershiptype" disabled>
-                        <option value="">Select Membership Type</option>
-                        {% for membership_option in membership_Master %}
-                            <option value="{{ membership_option.id }}" 
-                                {% if membership_option.id == membership.membership_id %}selected{% endif %}>
-                                {{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}
-                            </option>
-                        {% endfor %}
-                    </select>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
+                        <select name="membershiptype" class="form-control" id="membershiptype" disabled>
+                            <option value="">Select Membership Type</option>
+                            {% for membership_option in membership_Master %}
+                                <option value="{{ membership_option.id }}" 
+                                    {% if membership_option.id == membership.membership_id %}selected{% endif %}>
+                                    {{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            <!-- membership Details Table will be rendered here -->
-            <div id="membershipDetails">
-                <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
-                    {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
-                </h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered text-center">
-                        <thead>
-                            <tr>
-                                <th >Deposit<br><small>(ठेव)</small></th>
-                                <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
-                                <th >Subscription<br><small>(सभासद फी)</small></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td id="depositCell"></td>
-                                <td id="entryFeesCell"></td>
-                                <td id="subscriptionCell"></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- membership Details Table will be rendered here -->
+                <div id="membershipDetails">
+                    <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
+                        {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead>
+                                <tr>
+                                    <th >Deposit<br><small>(ठेव)</small></th>
+                                    <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
+                                    <th >Subscription<br><small>(सभासद फी)</small></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="depositCell"></td>
+                                    <td id="entryFeesCell"></td>
+                                    <td id="subscriptionCell"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            {% if membership.membership_id != 5 and membership.membership_id != 6 %}
+                {% if membership.membership_id != 5 and membership.membership_id != 6 %}
+                    <!-- Months + Date Fields -->
+                    <div id="membershipDuration" style="margin-top: 20px;">
+                        <div class="mb-3 row">
+                            <!-- Number of Months -->
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">
+                                    Membership Duration (Months) / सदस्यत्व कालावधी
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" id="months" name="months" class="form-control" 
+                                    min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}" disabled>
+                            </div>
+
+                            <!-- From Date -->
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" readonly>
+                            </div>
+
+                            <!-- To Date -->
+                            <div class="col-md-6">
+                                <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
+                                <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amount Fields -->
+                    <div id="amountFields" style="margin-top: 15px;">
+                        <div class="mb-3 row">
+                            <div class="col-md-4">
+                                <label class="form-label">Deposit / ठेव</label>
+                                <input type="text" id="depositInput"class="form-control" readonly>
+                                <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
+                                <input type="text" id="entryFeesInput"class="form-control" readonly>
+                                <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Subscription / सभासद फी</label>
+                                <input type="text" id="subscriptionInput"class="form-control" readonly>
+                                <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
                 <!-- Months + Date Fields -->
-                <div id="membershipDuration" style="margin-top: 20px;">
-                    <div class="mb-3 row">
-                        <!-- Number of Months -->
-                        <div class="mb-3 col-md-6">
-                            <label class="form-label">
-                                Membership Duration (Months) / सदस्यत्व कालावधी
-                                <span class="text-danger">*</span>
-                            </label>
-                            <input type="number" id="months" name="months" class="form-control" 
-                                min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}" disabled>
-                        </div>
+                    <div id="membershipDuration" style="margin-top: 20px;">
+                        <div class="mb-3 row">
+                           
+                            <!-- From Date -->
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" readonly>
+                            </div>
 
-                        <!-- From Date -->
-                        <div class="col-md-6">
-                            <label class="form-label">
-                                Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" readonly>
-                        </div>
-
-                        <!-- To Date -->
-                        <div class="col-md-6">
-                            <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
-                            <input type="date" id="toDate" name="toDate" class="form-control" value="{{ membership.to_date|date:'Y-m-d' }}" readonly>
                         </div>
                     </div>
-                </div>
-
-                <!-- Amount Fields -->
-                <div id="amountFields" style="margin-top: 15px;">
-                    <div class="mb-3 row">
-                        <div class="col-md-4">
-                            <label class="form-label">Deposit / ठेव</label>
-                            <input type="text" id="depositInput"class="form-control" readonly>
-                            <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                            <input type="text" id="entryFeesInput"class="form-control" readonly>
-                            <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Subscription / सभासद फी</label>
-                            <input type="text" id="subscriptionInput"class="form-control" readonly>
-                            <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Email And Phone Number -->
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="mb-3 col-md-6">
                     <label class="form-label" for="email">Email / ईमेल <span class="text-danger">*</span></label>        
                     <input type="email" id="" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" value="{{ membership.email }}" readonly>
@@ -372,7 +409,7 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Uploaded Documents Table -->
-            <div class="mb-3">
+            <div class="form-section mb-3">
                 <label class="form-label">Uploaded Documents / अपलोड केलेली कागदपत्रे</label>
                 <div class="table-responsive">
                     <table class="table table-bordered">
@@ -704,11 +741,11 @@
 
     $(document).ready(function () {
         // Hide all rows initially
-        $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row').hide();
+        $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row, #practitioner_row').hide();
 
         function toggleMemberFields(val) {
             // Hide all first
-            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row')
+            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row, #practitioner_row')
                 .hide()
                 .find('input, select').prop('required', false);
 
@@ -720,6 +757,9 @@
                     .find('input').prop('required', true);
             } else if (val === '4') { // Retired / Senior Citizen
                 $('#referrer_row').show()
+                    .find('input').prop('required', true);
+            } else if (val === '5') { // Retired / Senior Citizen
+                $('#practitioner_row').show()
                     .find('input').prop('required', true);
             }
         }

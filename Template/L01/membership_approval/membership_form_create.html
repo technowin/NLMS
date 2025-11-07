@@ -24,7 +24,7 @@
             {% csrf_token %}
 
             <!-- USER ID -->
-            <div class="mb-3 mt-3 row">
+            <div class="form-section mb-3 mt-3 row">
                 <div class="col-md-6 position-relative">
                     <label class="form-label" for="userIdInput">User ID / वापरकर्ता आयडी <span class="text-danger">*</span></label>
                     <input type="text" id="userIdInput" name="user_id" class="form-control" placeholder="Enter User ID">
@@ -49,45 +49,47 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- FIRST NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">First Name (English) <span class="text-danger">*</span></label>
-                    <input type="text" name="first_name" class="form-control translate-marathi-input" placeholder="e.g. Pruthvi" required>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name (English) <span class="text-danger">*</span></label>
+                        <input type="text" name="first_name" class="form-control translate-marathi-input" placeholder="e.g. Pruthvi" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">पहिले नाव (Marathi) <span class="text-danger">*</span></label>
+                        <input type="text" name="first_name_mar" class="form-control translate-marathi-output" placeholder="उदा. पृथ्वी" required>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">पहिले नाव (Marathi) <span class="text-danger">*</span></label>
-                    <input type="text" name="first_name_mar" class="form-control translate-marathi-output" placeholder="उदा. पृथ्वी" required>
-                </div>
-            </div>
 
-            <!-- MIDDLE NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Middle Name (English)</label>
-                    <input type="text" name="middle_name" class="form-control translate-marathi-input" placeholder="e.g. Narendra">
+                <!-- MIDDLE NAME -->
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Middle Name (English)</label>
+                        <input type="text" name="middle_name" class="form-control translate-marathi-input" placeholder="e.g. Narendra">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">मधले नाव (Marathi)</label>
+                        <input type="text" name="middle_name_mar" class="form-control translate-marathi-output" placeholder="उदा. नरेंद्र">
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">मधले नाव (Marathi)</label>
-                    <input type="text" name="middle_name_mar" class="form-control translate-marathi-output" placeholder="उदा. नरेंद्र">
-                </div>
-            </div>
 
-            <!-- LAST NAME -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Last Name (English) <span class="text-danger">*</span></label>
-                    <input type="text" name="last_name" class="form-control translate-marathi-input" placeholder="e.g. Hajare" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">आडनाव (Marathi) <span class="text-danger">*</span></label>
-                    <input type="text" name="last_name_mar" class="form-control translate-marathi-output" placeholder="उदा. हजारे" required>
+                <!-- LAST NAME -->
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name (English) <span class="text-danger">*</span></label>
+                        <input type="text" name="last_name" class="form-control translate-marathi-input" placeholder="e.g. Hajare" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">आडनाव (Marathi) <span class="text-danger">*</span></label>
+                        <input type="text" name="last_name_mar" class="form-control translate-marathi-output" placeholder="उदा. हजारे" required>
+                    </div>
                 </div>
             </div>
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- WARD NAME -->
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="col-md-6">
                     <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
                     <select name="ward_name" id="ward_name" class="form-control" required>
@@ -111,7 +113,7 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- LIBRARY NAME -->
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="col-md-6">
                     <label class="form-label">Library Name <span class="text-danger">*</span></label>
                     {% if library_details %}
@@ -135,91 +137,109 @@
 
             <!-- Member Type -->
             
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
-                    <select name="membertype" class="form-control" id="membertype" required>
-                        <option value="">Select Membership</option>
-                        {% for option in membership_options %}
-                            {% comment %} <option value="{{ option.parameter_value }}">{{ option.parameter_value }}</option> {% endcomment %}
-                            <option value="{{ option.parameter_id }}">{{ option.parameter_value }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- Occupation & Office Location -->
-            <div class="mb-3 row" id="occupation_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="occupation_details">Occupation & Office Location / व्यवसाय, हुद्दा व व्यवसायाचे ठिकाण <span class="text-danger">*</span></label>
-                    <input type="text" id="occupation_details" name="occupation_details" class="form-control" placeholder="e.g. Software Developer, Vashi, Navi Mumbai" required>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">Member Type / सदस्य प्रकार<span class="text-danger">*</span></label>
+                        <select name="membertype" class="form-control" id="membertype" required>
+                            <option value="">Select Membership</option>
+                            {% for option in membership_options %}
+                                {% comment %} <option value="{{ option.parameter_value }}">{{ option.parameter_value }}</option> {% endcomment %}
+                                <option value="{{ option.parameter_id }}">{{ option.parameter_value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
 
-                <div class="col-md-6" id="phone_row">
-                    <label class="form-label" for="phone_number">Phone Number (Office) / दूरध्वनी क्रमांक (व्यवसाय) <span class="text-danger">*</span></label>
-                    <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. 022-12345678" required>
-                </div>
-            </div>
+                <!-- Occupation & Office Location -->
+                <div class="mb-3 row" id="occupation_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="occupation_details">Occupation & Office Location / व्यवसाय, हुद्दा व व्यवसायाचे ठिकाण <span class="text-danger">*</span></label>
+                        <input type="text" id="occupation_details" name="occupation_details" class="form-control" placeholder="e.g. Software Developer, Vashi, Navi Mumbai" required>
+                    </div>
 
-            <!-- Educational Institution -->
-            <div class="mb-3 row" id="education_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
-                    <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." required>
+                    <div class="col-md-6" id="phone_row">
+                        <label class="form-label" for="phone_number">Phone Number (Office) / दूरध्वनी क्रमांक (व्यवसाय) <span class="text-danger">*</span></label>
+                        <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. 022-12345678" required>
+                    </div>
                 </div>
 
-                <div class="col-md-6" id="institution_row">
-                    <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
-                    <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" required>
-                </div>
-            </div>
+                <!-- Educational Institution -->
+                <div class="mb-3 row" id="education_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
+                        <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." required>
+                    </div>
 
-            <!-- REFERRER DETAILS -->
-            <div class="mb-3 row" id="referrer_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
-                    <input type="text" id="referrer_details" name="referrer_details" class="form-control" placeholder="e.g. Mr. ABC, Teacher, Vashi" required>
+                    <div class="col-md-6" id="institution_row">
+                        <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
+                        <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" required>
+                    </div>
+                </div>
+
+                <!-- REFERRER DETAILS -->
+                <div class="mb-3 row" id="referrer_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="referrer_details">Referrer Details / शिफारस करणाऱ्याचे नाव, व्यवसाय व पत्ता <span class="text-danger">*</span></label>
+                        <input type="text" id="referrer_details" name="referrer_details" class="form-control" placeholder="e.g. Mr. ABC, Teacher, Vashi" required>
+                    </div>
+                </div>
+
+                <!-- PRACTITIONER DETAILS -->
+                <div class="mb-3 row" id="practitioner_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="practitioner_details">
+                            Practitioner Details / अभ्यासिकेचे तपशील <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" id="practitioner_details" name="practitioner_details" 
+                            class="form-control" placeholder="e.g. MPSC, UPSC, Banking Exam" required>
+                        <small class="form-text text-muted">
+                            Enter the name of the examination or course (e.g. MPSC, UPSC, Banking).
+                        </small>
+                    </div>
                 </div>
             </div>
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Are you from NMMC -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">
-                        Are you a resident of Navi Mumbai Municipal Corporation (NMMC)? / आपण नवी मुंबई महानगरपालिका (NMMC) मधील रहिवासी आहात का? 
-                        <span class="text-danger">*</span>
-                    </label><br>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Are you a resident of Navi Mumbai Municipal Corporation (NMMC)? / आपण नवी मुंबई महानगरपालिका (NMMC) मधील रहिवासी आहात का? 
+                            <span class="text-danger">*</span>
+                        </label><br>
 
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_yes" value="yes" required>
-                        <label class="form-check-label" for="nmmc_yes">Yes / होय</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_no" value="no">
-                        <label class="form-check-label" for="nmmc_no">No / नाही</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_yes" value="yes" required>
+                            <label class="form-check-label" for="nmmc_yes">Yes / होय</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="is_nmmc" id="nmmc_no" value="no">
+                            <label class="form-check-label" for="nmmc_no">No / नाही</label>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Local Address -->
-            <div class="mb-3 row d-none" id="local_address_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="local_address">Local Address / स्थानिक पत्ता <span class="text-danger">*</span></label>
-                    <input type="text" id="local_address" name="local_address" class="form-control" placeholder="Enter your local address">
-                </div>
-
-                <!-- Only for Yes option -->
-                <div class="col-md-6 d-none" id="same_aadhar_row">
-                    <label class="form-label">Is this address same as Aadhar? / हा पत्ता आधार प्रमाणपत्राशी सारखाच आहे का? <span class="text-danger">*</span></label><br>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_yes" value="yes">
-                        <label class="form-check-label" for="same_aadhar_yes">Yes / होय</label>
+                <!-- Local Address -->
+                <div class="mb-3 row d-none" id="local_address_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="local_address">Local Address / स्थानिक पत्ता <span class="text-danger">*</span></label>
+                        <input type="text" id="local_address" name="local_address" class="form-control" placeholder="Enter your local address">
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_no" value="no">
-                        <label class="form-check-label" for="same_aadhar_no">No / नाही</label>
+
+                    <!-- Only for Yes option -->
+                    <div class="col-md-6 d-none" id="same_aadhar_row">
+                        <label class="form-label">Is this address same as Aadhar? / हा पत्ता आधार प्रमाणपत्राशी सारखाच आहे का? <span class="text-danger">*</span></label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_yes" value="yes">
+                            <label class="form-check-label" for="same_aadhar_yes">Yes / होय</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="same_aadhar" id="same_aadhar_no" value="no">
+                            <label class="form-check-label" for="same_aadhar_no">No / नाही</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -227,89 +247,100 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Membership Type -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
-                    <select name="membershiptype" class="form-control" id="membershiptype" required>
-                        <option value="">Select Membership Type</option>
-                        {% for membership_option in membership_Master %}
-                            <option value="{{ membership_option.id }}">{{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- membership Details Table will be rendered here -->
-            <div id="membershipDetails" style="display:none;">
-                <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
-                    {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
-                </h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered text-center">
-                        <thead>
-                            <tr>
-                                <th >Deposit<br><small>(ठेव)</small></th>
-                                <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
-                                <th >Subscription<br><small>(सभासद फी)</small></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td id="depositCell"></td>
-                                <td id="entryFeesCell"></td>
-                                <td id="subscriptionCell"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Months + Date Fields -->
-            <div id="membershipDuration" style="display:none; margin-top: 20px;">
+            <div class="form-section mb-3 row">
                 <div class="mb-3 row">
-                    <!-- Number of Months -->
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label">
-                            Membership Duration (Months) / सदस्यत्व कालावधी
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="number" id="months" name="months" class="form-control" 
-                            min="1" max="12"  placeholder="Enter months (1-12)">
-                    </div>
-
-                    <!-- From Date -->
                     <div class="col-md-6">
-                        <label class="form-label">
-                            Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                        </label>
-                        <input type="date" id="fromDate" name="fromDate" class="form-control" >
-                    </div>
-
-                    <!-- To Date -->
-                    <div class="col-md-6">
-                        <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
-                        <input type="date" id="toDate" name="toDate" class="form-control" readonly>
+                        <label class="form-label">Membership Type / सदस्यत्व प्रकार<span class="text-danger">*</span></label>
+                        <select name="membershiptype" class="form-control" id="membershiptype" required>
+                            <option value="">Select Membership Type</option>
+                            {% for membership_option in membership_Master %}
+                                <option value="{{ membership_option.id }}">{{ membership_option.membership_type_en }} - {{ membership_option.membership_type }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
-            </div>
 
-            <!-- Amount Fields -->
-            <div id="amountFields" style="display:none; margin-top: 15px;">
-                <div class="mb-3 row">
-                    <div class="col-md-4">
-                        <label class="form-label">Deposit / ठेव</label>
-                        <input type="text" id="depositInput"class="form-control" readonly>
-                        <input type="hidden" id="depositHidden" name="deposit">
+                <!-- membership Details Table will be rendered here -->
+                <div id="membershipDetails" style="display:none;">
+                    <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
+                        {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead>
+                                <tr>
+                                    <th >Deposit<br><small>(ठेव)</small></th>
+                                    <th >Entry Fees<br><small>(प्रवेश शुल्क)</small></th>
+                                    <th >Subscription<br><small>(सभासद फी)</small></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="depositCell"></td>
+                                    <td id="entryFeesCell"></td>
+                                    <td id="subscriptionCell"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                        <input type="text" id="entryFeesInput"class="form-control" readonly>
-                        <input type="hidden" id="entryFeesHidden" name="entry_fees">
+                </div>
+
+                <!-- Months + Date Fields -->
+                <div id="membershipDuration" style="display:none; margin-top: 20px;">
+                    <div class="mb-3 row">
+                        <!-- Number of Months -->
+                        <div class="mb-3 col-md-6">
+                            <label class="form-label">
+                                Membership Duration (Months) / सदस्यत्व कालावधी
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" id="months" name="months" class="form-control" 
+                                min="1" max="12"  placeholder="Enter months (1-12)">
+                        </div>
+
+                        <!-- From Date -->
+                        {% comment %} <div class="col-md-6">
+                            <label class="form-label">
+                                Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control" >
+                        </div> {% endcomment %}
+
+                        <!-- From Date -->
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control">
+                            <div id="durationNote" style="display:none; color:red; font-weight:bold; margin-top:5px;"></div>
+                        </div>
+
+                        <!-- To Date -->
+                        <div class="col-md-6">
+                            <label class="form-label">Membership Duration To Date / सदस्यत्व कालावधी पर्यंत तारीख</label>
+                            <input type="date" id="toDate" name="toDate" class="form-control" readonly>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Subscription / सभासद फी</label>
-                        <input type="text" id="subscriptionInput"class="form-control" readonly>
-                        <input type="hidden" id="subscriptionHidden" name="subscription">
+                </div>
+
+                <!-- Amount Fields -->
+                <div id="amountFields" style="display:none; margin-top: 15px;">
+                    <div class="mb-3 row">
+                        <div class="col-md-4">
+                            <label class="form-label">Deposit / ठेव</label>
+                            <input type="text" id="depositInput"class="form-control" readonly>
+                            <input type="hidden" id="depositHidden" name="deposit">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
+                            <input type="text" id="entryFeesInput"class="form-control" readonly>
+                            <input type="hidden" id="entryFeesHidden" name="entry_fees">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Subscription / सभासद फी</label>
+                            <input type="text" id="subscriptionInput"class="form-control" readonly>
+                            <input type="hidden" id="subscriptionHidden" name="subscription">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -317,7 +348,7 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Email And Phone Number -->
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="mb-3 col-md-6">
                     <label class="form-label" for="email">Email / ईमेल <span class="text-danger">*</span></label>        
                     <input type="email" id="email" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" required>
@@ -348,7 +379,7 @@
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
-            <div class="mb-3 row">
+            <div class="form-section mb-3 row">
                 <div class="col-md-6">
                     <label class="form-label" for="new_password">New Password / नवीन पासवर्ड <span class="text-danger">*</span></label>
                     <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Enter new password" required>
@@ -366,58 +397,60 @@
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
             <!-- Photo Upload & ID Document (Scanned) -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label" for="photo_upload">Photo / फोटो <span class="text-danger">*</span></label>
-                    <input type="file" id="photo_upload" name="photo_upload" class="form-control" accept="image/*" required>
-                    <input type="hidden" name="document_photo_upload" value="1">
-                    <small class="form-text text-muted">Max file size: 4 MB. Only images allowed.</small>
-                    <small id="photoError" class="text-danger d-none"></small>
-                    <div id="photoPreview" class="mt-2"></div>
+            <div class="form-section mb-3 row">
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="photo_upload">Photo / फोटो <span class="text-danger">*</span></label>
+                        <input type="file" id="photo_upload" name="photo_upload" class="form-control" accept="image/*" required>
+                        <input type="hidden" name="document_photo_upload" value="1">
+                        <small class="form-text text-muted">Max file size: 4 MB. Only images allowed.</small>
+                        <small id="photoError" class="text-danger d-none"></small>
+                        <div id="photoPreview" class="mt-2"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="id_upload">ID Document (Scanned) / ओळखपत्र छायांकित <span class="text-danger">*</span></label>
+                        <input type="file" id="id_upload" name="id_upload" class="form-control" accept="image/*,.pdf" required>
+                        <input type="hidden" name="document_id_upload" value="2">
+                        <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                        <small id="idError" class="text-danger d-none"></small>
+                        <div id="idPreview" class="mt-2"></div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label" for="id_upload">ID Document (Scanned) / ओळखपत्र छायांकित <span class="text-danger">*</span></label>
-                    <input type="file" id="id_upload" name="id_upload" class="form-control" accept="image/*,.pdf" required>
-                    <input type="hidden" name="document_id_upload" value="2">
-                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
-                    <small id="idError" class="text-danger d-none"></small>
-                    <div id="idPreview" class="mt-2"></div>
+                <!-- Agreement Copy (NMMC Yes + Same Aadhar No) -->
+                <div class="mb-3 row d-none" id="agreement_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="agreement_copy">Agreement Copy / करार प्रत <span class="text-danger agreement-required-star">*</span></label>
+                        <input type="file" id="agreement_copy" name="agreement_copy" class="form-control" accept="image/*,.pdf">
+                        <input type="hidden" name="document_agreement_copy" value="5">
+                        <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                        <small id="agreementError" class="text-danger d-none"></small>
+                        <div id="agreementPreview" class="mt-2"></div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Agreement Copy (NMMC Yes + Same Aadhar No) -->
-            <div class="mb-3 row d-none" id="agreement_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="agreement_copy">Agreement Copy / करार प्रत <span class="text-danger agreement-required-star">*</span></label>
-                    <input type="file" id="agreement_copy" name="agreement_copy" class="form-control" accept="image/*,.pdf">
-                    <input type="hidden" name="document_agreement_copy" value="5">
-                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
-                    <small id="agreementError" class="text-danger d-none"></small>
-                    <div id="agreementPreview" class="mt-2"></div>
+                <!-- Nagarsevak Letter (NMMC No) -->
+                <div class="mb-3 row d-none" id="nagarsevak_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="nagarsevak_letter">Nagarsevak Letter / नगरसेवकाचे पत्र <span class="text-danger">*</span></label>
+                        <input type="file" id="nagarsevak_letter" name="nagarsevak_letter" class="form-control" accept="image/*,.pdf">
+                        <input type="hidden" name="document_nagarsevak_letter" value="4">
+                        <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                        <small id="nagarsevakError" class="text-danger d-none"></small>
+                        <div id="nagarsevakPreview" class="mt-2"></div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Nagarsevak Letter (NMMC No) -->
-            <div class="mb-3 row d-none" id="nagarsevak_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="nagarsevak_letter">Nagarsevak Letter / नगरसेवकाचे पत्र <span class="text-danger">*</span></label>
-                    <input type="file" id="nagarsevak_letter" name="nagarsevak_letter" class="form-control" accept="image/*,.pdf">
-                    <input type="hidden" name="document_nagarsevak_letter" value="4">
-                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
-                    <small id="nagarsevakError" class="text-danger d-none"></small>
-                    <div id="nagarsevakPreview" class="mt-2"></div>
-                </div>
-            </div>
-
-            <div class="mb-3 row d-none" id="employee_row">
-                <div class="col-md-6">
-                    <label class="form-label" for="employee_letter">Employee ID / कर्मचारी ओळखपत्र <span class="text-danger">*</span></label>
-                    <input type="file" id="employee_letter" name="employee_letter" class="form-control" accept="image/*,.pdf">
-                    <input type="hidden" name="employee_letter" value="3">
-                    <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
-                    <small id="employeeError" class="text-danger d-none"></small>
-                    <div id="employeePreview" class="mt-2"></div>
+                <div class="mb-3 row d-none" id="employee_row">
+                    <div class="col-md-6">
+                        <label class="form-label" for="employee_letter">Employee ID / कर्मचारी ओळखपत्र <span class="text-danger">*</span></label>
+                        <input type="file" id="employee_letter" name="employee_letter" class="form-control" accept="image/*,.pdf">
+                        <input type="hidden" name="employee_letter" value="3">
+                        <small class="form-text text-muted">Max file size: 4 MB. Only images or PDF allowed.</small>
+                        <small id="employeeError" class="text-danger d-none"></small>
+                        <div id="employeePreview" class="mt-2"></div>
+                    </div>
                 </div>
             </div>
 
@@ -660,13 +693,13 @@
 
     $(document).ready(function() {
         // Hide all rows initially
-        $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row').hide();
+        $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row, #practitioner_row').hide();
 
         $('#membertype').change(function() {
             var val = $(this).val();
 
             // First, hide all
-            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row')
+            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row, #practitioner_row')
             .hide()
             .find('input, select').prop('required', false);
 
@@ -676,6 +709,8 @@
                 $('#occupation_row, #phone_row').show();
             } else if(val === '4') {
                 $('#referrer_row').show();
+            } else if(val === '5') {
+                $('#practitioner_row').show();
             }
         });
     });
@@ -887,7 +922,7 @@
                             $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
                             // Check for Lifetime (5) or Patron (6)
-                            if (encId == "5" || encId == "6") {
+                            /*if (encId == "5" || encId == "6") {
                                 // Show only membership details + amount fields
                                 $("#membershipDetails, #amountFields").fadeIn();
                                 $("#membershipDuration").hide();
@@ -905,6 +940,38 @@
                                 // Show everything
                                 $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
 
+                                updateAmountFields(); // update initial amounts
+                            }*/
+                            if (encId == "5" || encId == "6") {
+                                // Show only membership details + amount fields
+                                $("#membershipDetails, #amountFields").fadeIn();
+                                $("#membershipDuration").show(); // keep the container visible
+                                $("#months, #toDate").closest(".col-md-6").hide(); // hide these fields
+                                $("#fromDate").closest(".col-md-6").show(); // ensure From Date is visible
+
+                                // Set subscription directly (no month multiplier)
+                                $("#depositInput").val(baseDeposit);
+                                $("#entryFeesInput").val(baseEntryFees);
+                                $("#subscriptionInput").val(baseSubscription);
+
+                                $("#depositHidden").val(baseDeposit);
+                                $("#entryFeesHidden").val(baseEntryFees);
+                                $("#subscriptionHidden").val(baseSubscription);
+
+                                // Add a red bold note dynamically
+                                let noteText = "";
+                                if (encId == "5") {
+                                    noteText = "Note: For Lifetime Branch (आजीव शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
+                                } else if (encId == "6") {
+                                    noteText = "Note: For Patron Branch (आश्रयदाते शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
+                                }
+                                $("#durationNote").html(noteText).fadeIn();
+
+                            } else {
+                                // Show everything for other memberships
+                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+                                $("#months, #toDate").closest(".col-md-6").show();
+                                $("#durationNote").hide(); // hide note if previously shown
                                 updateAmountFields(); // update initial amounts
                             }
                         } else {

@@ -171,7 +171,8 @@ def get_pincodes(request):
     pincodes = []
     if wardname:
         try:
-            ward = WardMaster.objects.using('default').get(ward_name=wardname, is_active=1)
+            # ward = WardMaster.objects.using('default').get(ward_name=wardname, is_active=1)
+            ward = WardMaster.objects.get(ward_name=wardname, is_active=1)
             if ward.pincode:
                 pincodes = ward.pincode.split(",")  # split comma-separated
                 pincodes = [p.strip() for p in pincodes]  # remove extra spaces
@@ -228,7 +229,8 @@ def registration(request):
                 
                     membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
                     
-                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    # ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    ward_details = WardMaster.objects.filter(is_active=1)
                     
                     membership_Master = MembershipMaster.objects.filter(isactive=1)
                     if membership_Master.exists():
@@ -251,6 +253,15 @@ def registration(request):
         elif request.method == "POST":
             try:
                 with transaction.atomic():
+                    
+                    membertype = request.POST.get("membertype")
+
+                    # Default education field
+                    education_value = request.POST.get("education") or None
+
+                    # Override if membertype == 5
+                    if membertype == "5":
+                        education_value = request.POST.get("practitioner_details") or None
                     # === Collect Membership Data ===
                     data = {
                         "user_id": request.POST.get("user_id") or None,
@@ -269,10 +280,10 @@ def registration(request):
                         "mobile_no": request.POST.get("mobile_number") or None,
                         "occupation": request.POST.get("occupation_details") or None,
                         "office_phone": request.POST.get("phone_number") or None,
-                        "education": request.POST.get("education") or None,
+                        "education": education_value,  # ✅ dynamic based on membertype
                         "institute_name": request.POST.get("institution_name") or None,
                         "recommender_details": request.POST.get("referrer_details") or None,
-                        "member_type_id": request.POST.get("membertype") or None,
+                        "member_type_id": membertype or None,
                         "is_resident_of_nmmc": 1 if request.POST.get("is_nmmc") == "yes" else 0,
                         "address_same_as_aadhar": 1 if request.POST.get("same_aadhar") == "yes" else 0,
                         "membership_duration": request.POST.get("months") or None,
@@ -284,8 +295,8 @@ def registration(request):
                         "email": request.POST.get("email") or None,
                         "dob": request.POST.get("dob") or None,
                         "membership_id": request.POST.get("membershiptype") or None,
-                        "created_by": request.POST.get("user_id"), 
-                        "created_at": timezone.now(), 
+                        "created_by": request.POST.get("user_id"),
+                        "created_at": timezone.now(),
                         "status_id": 1,   # pending
                         "isactive": 1,
                     }
@@ -356,8 +367,8 @@ def registration(request):
                         print(d)
                         
                     # === Check for duplicate email or user_id before creating user ===
-                    if CustomUser.objects.filter(email=data.get("email")).exists():
-                        raise ValueError(f"❌ Email '{data.get('email')}' already exists!")
+                    # if CustomUser.objects.filter(email=data.get("email")).exists():
+                    #     raise ValueError(f"❌ Email '{data.get('email')}' already exists!")
 
                     if CustomUser.objects.filter(username=data.get("user_id")).exists():
                         raise ValueError(f"❌ User ID '{data.get('user_id')}' already exists!")
@@ -471,7 +482,8 @@ def membership_form_create(request):
                 
                     membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
                     
-                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    # ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    ward_details = WardMaster.objects.filter(is_active=1)
                     
                     membership_Master = MembershipMaster.objects.filter(isactive=1)
                     if membership_Master.exists():
@@ -495,6 +507,16 @@ def membership_form_create(request):
         elif request.method == "POST":
             try:
                 with transaction.atomic():
+                    
+                    membertype = request.POST.get("membertype")
+
+                    # Default education field
+                    education_value = request.POST.get("education") or None
+
+                    # Override if membertype == 5
+                    if membertype == "5":
+                        education_value = request.POST.get("practitioner_details") or None
+                        
                     # === Collect Membership Data ===
                     data = {
                         "user_id": request.POST.get("user_id") or None,
@@ -513,10 +535,10 @@ def membership_form_create(request):
                         "mobile_no": request.POST.get("mobile_number") or None,
                         "occupation": request.POST.get("occupation_details") or None,
                         "office_phone": request.POST.get("phone_number") or None,
-                        "education": request.POST.get("education") or None,
+                        "education": education_value,  # ✅ dynamic based on membertype
                         "institute_name": request.POST.get("institution_name") or None,
                         "recommender_details": request.POST.get("referrer_details") or None,
-                        "member_type_id": request.POST.get("membertype") or None,
+                        "member_type_id": membertype or None,
                         "is_resident_of_nmmc": 1 if request.POST.get("is_nmmc") == "yes" else 0,
                         "address_same_as_aadhar": 1 if request.POST.get("same_aadhar") == "yes" else 0,
                         "membership_duration": request.POST.get("months") or None,
@@ -528,8 +550,8 @@ def membership_form_create(request):
                         "email": request.POST.get("email") or None,
                         "dob": request.POST.get("dob") or None,
                         "membership_id": request.POST.get("membershiptype") or None,
-                        "created_by": user_code, 
-                        "created_at": timezone.now(), 
+                        "created_by": request.POST.get("user_id"),
+                        "created_at": timezone.now(),
                         "status_id": 1,   # pending
                         "isactive": 1,
                     }
@@ -542,9 +564,9 @@ def membership_form_create(request):
                         print(f"{k}: {v}")
                     print(f"Password (future use): {raw_password}")
                     
-                    if MembershipDetails.objects.filter(email=data.get("email")).exists():
-                        messages.error(request, f"❌ ई-मेल '{data.get('email')}' आधी अस्तित्वात आहे!")
-                        return redirect('L01:membership_form_create')
+                    # if MembershipDetails.objects.filter(email=data.get("email")).exists():
+                    #     messages.error(request, f"❌ ई-मेल '{data.get('email')}' आधी अस्तित्वात आहे!")
+                    #     return redirect('L01:membership_form_create')
 
                     # === Save Membership ===
                     membership = MembershipDetails.objects.create(**data)
@@ -606,9 +628,9 @@ def membership_form_create(request):
                         
                     # === Check for duplicate email or user_id before creating user ===
                     
-                    if CustomUser.objects.filter(email=data.get("email")).exists():
-                        messages.error(request, f"❌ ई-मेल '{data.get('email')}' आधी अस्तित्वात आहे!")
-                        return redirect('L01:membership_form_create')  # go back to the form
+                    # if CustomUser.objects.filter(email=data.get("email")).exists():
+                    #     messages.error(request, f"❌ ई-मेल '{data.get('email')}' आधी अस्तित्वात आहे!")
+                    #     return redirect('L01:membership_form_create')  # go back to the form
 
                     if CustomUser.objects.filter(username=data.get("user_id")).exists():
                         messages.error(request, f"❌ User ID '{data.get('user_id')}' आधी अस्तित्वात आहे!")
@@ -680,7 +702,8 @@ def membership_form_edit(request):
                 
                     membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
                     
-                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    # ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    ward_details = WardMaster.objects.filter(is_active=1)
                     
                     membership_Master = MembershipMaster.objects.filter(isactive=1)
                     if membership_Master.exists():
@@ -720,6 +743,16 @@ def membership_form_edit(request):
             with transaction.atomic():
                 membership_id = request.POST.get("membership_id")
                 user_id = request.POST.get("user_id")
+                
+                membertype = request.POST.get("membertype")
+
+                # Default: get education value
+                education_value = request.POST.get("education") or None
+
+                # Override education if membertype == 5
+                if membertype == "5":
+                    education_value = request.POST.get("practitioner_details") or None
+                    
                 membership = get_object_or_404(MembershipDetails, id=membership_id)
 
                 updated = False  # flag to track changes
@@ -752,7 +785,12 @@ def membership_form_edit(request):
                 date_fields = ["dob", "from_date", "to_date"]
 
                 for form_field, model_field in field_map.items():
-                    new_value = request.POST.get(form_field)
+                    # new_value = request.POST.get(form_field)
+                    if form_field == "education":
+                        new_value = education_value
+                    else:
+                        new_value = request.POST.get(form_field)
+                        
                     old_value = getattr(membership, model_field, None)
 
                     # --- Boolean-like fields ---
@@ -921,7 +959,8 @@ def membership_form_view(request):
                 
                     membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
                     
-                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    # ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    ward_details = WardMaster.objects.filter(is_active=1)
                     
                     membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)    
                     
@@ -1373,7 +1412,8 @@ def membership_form_renew(request):
                 
                     membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
                     
-                    ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    # ward_details = WardMaster.objects.using('default').filter(is_active=1)
+                    ward_details = WardMaster.objects.filter(is_active=1)
                     
                     membership_Master = MembershipMaster.objects.filter(isactive=1)
                     if membership_Master.exists():

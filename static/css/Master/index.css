@@ -687,3 +687,11 @@ body[data-bs-theme="dark"] .card.no-shadow-dark {
     display: inline-block;
     padding-bottom: 4px;
 }
+
+#durationNote {
+            background: #ffe5e5;
+            border-left: 4px solid red;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
