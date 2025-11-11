@@ -76,7 +76,8 @@
                         {% comment %} <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="library-img"> {% endcomment %}
                         <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="library-img">
                         <div class="library-content">
-                            <h3>{{ library.library_name }}{% if library.location %} - {{ library.location.location_name }}{% endif %}</h3>
+                            {% comment %} <h3>{{ library.library_name }}{% if library.location %} - {{ library.location.location_name }}{% endif %}</h3> {% endcomment %}
+                            <h3>{{ library.library_name_mar }}{% if library.location %} - {{ library.location.location_name }}{% endif %}</h3>
                             <h4>Established: {{ library.est_year }}</h4>
                             <p>{{ library.about_library }}</p>
                             

@@ -22,6 +22,7 @@ urlpatterns = [
     path("membership_payment_index", membership_payment_index, name="membership_payment_index"),
     path("membership_paymentreceipt_download", membership_paymentreceipt_download, name="membership_paymentreceipt_download"),
     path("membership_form_renew", membership_form_renew, name="membership_form_renew"),
+    path("membership_form_cancellation", membership_form_cancellation, name="membership_form_cancellation"),
     
     # barcode
     

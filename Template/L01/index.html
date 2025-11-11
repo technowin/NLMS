@@ -24,9 +24,9 @@
     }
 
     .library-books-section h4::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
+        content: "";
+        position: absolute;
+        bottom: 0;
         left: 50%;
         width: 60px;  /* Shorter line than the width of the text */
         height: 3px;
@@ -228,9 +228,9 @@
 
     .close-zoom {
         position: absolute;
-        top: 10px;
-        right: calc(15% - 20px);
-        color: white;
+        top: 110px;
+        right: calc(26% - 20px);
+        color: black;
         font-size: 36px;
         font-weight: bold;
         cursor: pointer;
@@ -239,6 +239,7 @@
     }
 
     .close-zoom:hover {
+        color: red;
         transform: rotate(90deg);
     }
 
@@ -247,7 +248,89 @@
         100% { opacity: 1; transform: scale(1); }
     }
 
+    /* ================= Media Queries for Mobile Responsiveness ================= */
 
+    @media screen and (max-width: 768px) {
+        /* For tablets and smaller screens */
+        .zoom-modal-content-wrapper {
+            width: 90%;  /* Adjust width for smaller screens */
+            height: 80%; /* Adjust height */
+        }
+
+        /* Left (Image) Section */
+        .zoom-modal-left {
+            padding: 10px;  /* Less padding for mobile/tablets */
+        }
+
+        /* Right (Text Info) Section */
+        .zoom-modal-right {
+            padding: 15px;  /* Less padding for mobile/tablets */
+        }
+
+        .zoom-modal-right h2 {
+            font-size: 1.5rem;  /* Smaller font size for mobile */
+        }
+
+        .zoom-modal-right p {
+            font-size: 0.9rem;  /* Smaller text for mobile */
+        }
+
+        .login-btn {
+            padding: 8px 20px;  /* Smaller button for mobile */
+            font-size: 0.9rem;  /* Adjust button text size */
+        }
+
+        /* Close Button */
+        .close-zoom {
+            font-size: 28px;  /* Smaller close button for mobile */
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        /* For mobile screens */
+
+        .zoom-modal-content-wrapper {
+            width: 95%;  /* Take up almost the whole screen width */
+            height: 85%; /* Adjust height */
+            flex-direction: column; /* Stack image above text */
+        }
+
+        /* Left (Image) Section */
+        .zoom-modal-left {
+            padding: 5px;  /* Less padding for mobile */
+            width: 100%;  /* Full width */
+            height: 48%; /* 2 items per row with some gap */
+        }
+
+        .zoom-modal-left img {
+            width: 60%;
+            height: 93%!important;
+        }
+
+        /* Right (Text Info) Section */
+        .zoom-modal-right {
+            padding: 10px;  /* Less padding for mobile */
+            width: 100%;  /* Full width */
+        }
+
+        .zoom-modal-right h2 {
+            font-size: 1.3rem;  /* Smaller font size for mobile */
+        }
+
+        .zoom-modal-right p {
+            font-size: 0.85rem;  /* Smaller text for mobile */
+        }
+
+        .login-btn {
+            padding: 6px 18px;  /* Smaller button for mobile */
+            font-size: 0.85rem;  /* Adjust button text size */
+        }
+
+        /* Close Button */
+        .close-zoom {
+            font-size: 24px;  /* Smaller close button */
+        }
+    }
 
     @keyframes fadeIn {
         from {opacity: 0;}
@@ -267,6 +350,7 @@
         /* Book item settings */
         .book-item {
             width: 48%; /* 2 items per row with some gap */
+            height: 48%; /* 2 items per row with some gap */
             font-size: 0.9rem;
             margin-bottom: 20px; /* Add space between rows */
             position: relative;
@@ -275,7 +359,7 @@
         /* Adjust flip card container */
         .book-flip {
             width: 100%; /* Full width of the .book-item */
-            height: 220px; /* Adjust the height to fit mobile screens */
+            height: 250px; /* Adjust the height to fit mobile screens */
         }
 
         /* Book item title */
@@ -374,12 +458,21 @@
 
             <!-- Content -->
             <div class="oz-library-content">
-                <h3>{{ library.library_name }}</h3>
+                <h3>{{ library.library_name_mar }}</h3>
                 {% if library.establishedYear %}
                     <h4>Since {{ library.est_year }}</h4>
                 {% endif %}
 
-                <p class="library-description">{{ library.about_library }}</p>
+               <p id="libraryDescription"
+                style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; transition:all 0.3s ease; font-size:15px; line-height:1.6; color:#333;">
+                {{ library.about_library }}
+                </p>
+
+                <span id="readMoreBtn"
+                    style="color:red; cursor:pointer; font-weight:600; margin-top:6px; display:inline-block; transition:color 0.3s ease;"
+                    onclick="toggleDescription(this)">
+                Read More
+                </span>
 
                 {% if library.librarian_name %}
                     <p><strong>Librarian:</strong> {{ library.librarian_name }}</p>
@@ -459,17 +552,24 @@
                     {% endif %}
                 </div>
 
+            
                 {% if library.membership_page_link %}
                     <div class="library-cta">
                         <div class="cta-inline">
                             <span>Want to be a member of this library?</span>
-                            <button type="button" class="join-link" onclick="window.location.href='{% url 'Login' %}'">
-                                Click here
+                            <button type="button" class="join-link"
+                                    style="margin-left:10px; background:linear-gradient(135deg, #3b82f6, #1e40af); color:#fff; border:none; border-radius:30px; padding:8px 18px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 10px rgba(30,64,175,0.3); transition:all 0.3s ease; letter-spacing:0.3px; text-decoration:none; outline:none;"
+                                    onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.boxShadow='0 6px 14px rgba(30,64,175,0.5)'; this.style.transform='translateY(-2px) scale(1.05)';"
+                                    onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #1e40af)'; this.style.boxShadow='0 4px 10px rgba(30,64,175,0.3)'; this.style.transform='translateY(0) scale(1)';"
+                                    onclick="window.location.href='{% url 'Login' %}'">
+                                    🚀 Click Here
                             </button>
+
                         </div>
                     </div>
                 {% endif %}
             </div>
+
         </div>
 
         {% if library.books %}
@@ -477,70 +577,85 @@
                 <h4>Books Available in {{ library.library_name }}</h4>
                 <div class="book-gallery">
                     {% for book in library.books %}
-                    <div class="book-item">
-                        <div class="book-flip" id="book-flip-{{ forloop.counter }}">
-                            <div class="book-flip-inner">
+                        <div class="book-item">
+                            <div class="book-flip" id="book-flip-{{ forloop.counter }}">
+                                <div class="book-flip-inner">
 
-                                {% if book.front_page_photo %}
-                                <div class="book-flip-front">
-                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
-                                        alt="{{ book.title }} Front Cover"
-                                        class="book-image"
-                                        onclick="zoomImage(this)"
-                                        data-author="{{ book.author }}"
-                                        data-title="{{ book.title }}"
-                                        data-subtitle="{{ book.subtitle }}"
-                                        data-publisher="{{ book.publisher }}"
-                                        data-isbn_issn="{{ book.isbn_issn }}"
-                                        data-edition="{{ book.edition }}"
-                                        {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
-                                        data-publication_place="{{ book.publication_place }}"
-                                        data-year_of_publication="{{ book.year_of_publication }}"
-                                        data-pages="{{ book.pages }}"
-                                        data-remarks="{{ book.remarks }}"
-                                        data-language="{{ book.language }}"
-                                        data-description="{{ book.description }}">
-                                </div>
-                                {% endif %}
+                                    {% if book.front_page_photo %}
+                                    <div class="book-flip-front">
+                                        <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
+                                            alt="{{ book.title }} Front Cover"
+                                            class="book-image"
+                                            onclick="zoomImage(this)"
+                                            data-author="{{ book.author }}"
+                                            data-title="{{ book.title }}"
+                                            data-subtitle="{{ book.subtitle }}"
+                                            data-publisher="{{ book.publisher }}"
+                                            data-isbn_issn="{{ book.isbn_issn }}"
+                                            data-edition="{{ book.edition }}"
+                                            {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
+                                            data-publication_place="{{ book.publication_place }}"
+                                            data-year_of_publication="{{ book.year_of_publication }}"
+                                            data-pages="{{ book.pages }}"
+                                            data-remarks="{{ book.remarks }}"
+                                            data-language="{{ book.language }}"
+                                            data-description="{{ book.description }}">
+                                    </div>
+                                    {% endif %}
 
-                                {% if book.last_page_photo %}
-                                <div class="book-flip-back">
-                                    <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
-                                        alt="{{ book.title }} Back Cover"
-                                        class="book-image"
-                                        onclick="zoomImage(this)"
-                                        data-author="{{ book.author }}"
-                                        data-title="{{ book.title }}"
-                                        data-subtitle="{{ book.subtitle }}"
-                                        data-publisher="{{ book.publisher }}"
-                                        data-isbn_issn="{{ book.isbn_issn }}"
-                                        data-edition="{{ book.edition }}"
-                                        {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
-                                        data-publication_place="{{ book.publication_place }}"
-                                        data-year_of_publication="{{ book.year_of_publication }}"
-                                        data-pages="{{ book.pages }}"
-                                        data-remarks="{{ book.remarks }}"
-                                        data-language="{{ book.language }}"
-                                        data-description="{{ book.description }}">
+                                    {% if book.last_page_photo %}
+                                    <div class="book-flip-back">
+                                        <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
+                                            alt="{{ book.title }} Back Cover"
+                                            class="book-image"
+                                            onclick="zoomImage(this)"
+                                            data-author="{{ book.author }}"
+                                            data-title="{{ book.title }}"
+                                            data-subtitle="{{ book.subtitle }}"
+                                            data-publisher="{{ book.publisher }}"
+                                            data-isbn_issn="{{ book.isbn_issn }}"
+                                            data-edition="{{ book.edition }}"
+                                            {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
+                                            data-publication_place="{{ book.publication_place }}"
+                                            data-year_of_publication="{{ book.year_of_publication }}"
+                                            data-pages="{{ book.pages }}"
+                                            data-remarks="{{ book.remarks }}"
+                                            data-language="{{ book.language }}"
+                                            data-description="{{ book.description }}">
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                             </div>
-                        </div>
 
-                        <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
-                            <i class="fas fa-sync-alt"></i> Flip
-                        </button>
-                        <p class="book-title">{{ book.title }}</p>
-                    </div>
+                                <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
+                                    <i class="fas fa-sync-alt"></i> Flip
+                                </button>
+                                <p class="book-title">{{ book.title }}</p>
+                        </div>
                     {% endfor %}
                 </div>
 
-                 <!-- View More Button -->
-        <div class="view-more-btn-container">
-            <a href="{% url 'L01:view_catalogue' %}" class="view-more-btn">
-                <i class="fas fa-arrow-down"></i> View More
-            </a>
-        </div>
+                <!-- View More Button -->
+                <div class="view-more-btn-container" style="display:flex; justify-content:center; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+
+                <!-- View More Button -->
+                <a href="{% url 'L01:view_catalogue' %}"
+                    style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
+                    onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.transform='translateY(-2px) scale(1.05)';"
+                    onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)'; this.style.transform='translateY(0) scale(1)';">
+                    <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
+                </a>
+
+                <!-- Login Button -->
+                <a href="{% url 'Login' %}"
+                    style="background:linear-gradient(135deg, #10b981, #047857); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
+                    onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)'; this.style.transform='translateY(-2px) scale(1.05)';"
+                    onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)'; this.style.transform='translateY(0) scale(1)';">
+                    <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
+                </a>
+
+            </div>
+            <br>
             </div>
         {% endif %}
 
@@ -576,7 +691,6 @@
 
     {% endfor %}
 
-
     <script>
         // Open modal
         document.querySelectorAll('.rule-btn').forEach(btn => {
@@ -607,43 +721,6 @@
             const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
             flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
         }
-    </script>
-
-    <script>
-        function zoomImage(img) {
-            const modal = document.getElementById("zoomModal");
-            const modalImg = document.getElementById("zoomedImage");
-            const modalAuthor = document.getElementById("zoomBookAuthor");
-            const modalTitle = document.getElementById("zoomBookTitle");
-            const modalYear = document.getElementById("zoomBookYear");
-            const modalLanguage = document.getElementById("zoomBookLanguage");
-            const modalDescription = document.getElementById("zoomBookDescription");
-
-            modal.style.display = "flex";
-            modal.classList.add("show");   // trigger animation
-
-            // Set the image source and details for the zoom modal
-            modalImg.src = img.src;
-            modalAuthor.textContent = img.getAttribute('data-author');
-            modalTitle.textContent = img.getAttribute('data-title');
-            modalYear.textContent = img.getAttribute('data-year');
-            modalLanguage.textContent = img.getAttribute('data-language');
-            modalDescription.textContent = img.getAttribute('data-description');
-        }
-
-        function closeZoom() {
-            const modal = document.getElementById("zoomModal");
-            modal.style.display = "none";
-            modal.classList.remove("show");
-        }
-
-        // Close modal on click outside the image
-        document.getElementById("zoomModal").addEventListener("click", function(e) {
-            if (e.target.id === "zoomModal") {
-                closeZoom();
-            }
-        });
-
     </script>
 
     <script>
@@ -698,6 +775,29 @@
                 closeZoom();
             }
         });
+    </script>
+
+    <script>
+        function toggleDescription(btn) {
+            const desc = document.getElementById("libraryDescription");
+            const expanded = desc.getAttribute("data-expanded") === "true";
+
+            if (expanded) {
+                // Collapse text
+                desc.style.display = "-webkit-box";
+                desc.style.webkitLineClamp = "2";
+                desc.style.overflow = "hidden";
+                btn.textContent = "Read More";
+                desc.setAttribute("data-expanded", "false");
+            } else {
+                // Expand text
+                desc.style.webkitLineClamp = "unset";
+                desc.style.overflow = "visible";
+                desc.style.display = "block";
+                btn.textContent = "Read Less";
+                desc.setAttribute("data-expanded", "true");
+            }
+        }
     </script>
 
 {% endblock %}

@@ -1565,6 +1565,87 @@ def membership_form_renew(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_payment_index")
 
+@login_required
+def membership_form_cancellation(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        library_code = request.session.get('library_db', None)
+        user_id = request.session.get("user_id")
+        
+        if request.method == "GET":
+            try:
+                membership_id_enc = request.GET.get("membership_id")
+                membership_id = dec(membership_id_enc)
+
+                membership = MembershipDetails.objects.select_related("membership", "status").get(id=membership_id)
+
+                data = {
+                    "id": membership.id,
+                    "full_name": f"{membership.first_name or ''} {membership.middle_name or ''} {membership.last_name or ''}".strip(),
+                    "membership_type": membership.membership.membership_type,
+                    "membership_type_en": membership.membership.membership_type_en,
+                    "deposit": membership.deposit,
+                    "entry_fees": membership.entry_fees,
+                    "subscription": membership.subscription,
+                    "duration": membership.membership_duration,
+                    "from_date": membership.from_date.strftime("%d-%m-%Y") if membership.from_date else None,
+                    "to_date": membership.to_date.strftime("%d-%m-%Y") if membership.to_date else None,
+                    "status_name": membership.status.status_name,
+                }
+                return JsonResponse({"success": True, "data": data})
+
+            except MembershipDetails.DoesNotExist:
+                return JsonResponse({"success": False, "message": "सदस्य माहिती सापडली नाही."})
+            except Exception as e:
+                print("Error fetching membership details:", e)
+                return JsonResponse({"success": False, "message": "सर्व्हर त्रुटी आली."})
+
+            return JsonResponse({"success": False, "message": "Invalid request method."})
+        
+        if request.method == "POST":
+            
+            membership_id = dec(request.POST.get("membership_id"))
+            membership = get_object_or_404(MembershipDetails, id=membership_id)
+            
+            action_by = request.POST.get("action_by")  # 'member' or 'librarian'
+
+            if action_by == "member":
+                # ✅ Step 1: Member requests cancellation
+                cancelled_status = StatusMaster.objects.filter(status_name__iexact="Application Cancelled").first()
+                if not cancelled_status:
+                    raise Exception("Cancelled status not found in StatusMaster.")
+
+                membership.status = cancelled_status
+                membership.updated_by = user_id
+                membership.remarks = "Cancelled by Member (Pending Librarian Approval)"
+                # membership.save()
+                return redirect("L01:membership_payment_index")
+
+            elif action_by == "librarian":
+                # ✅ Step 2: Librarian confirms cancellation & deactivates user + membership
+                membership.updated_by = user_id  # librarian’s ID (for audit)
+                membership.remarks = "Cancellation Approved by Librarian"
+                membership.isactive = 0  # deactivate membership record
+                # membership.save()
+
+                # Deactivate the member's user account (not librarian’s)
+                member_user = CustomUser.objects.filter(username=membership.user_id).first()
+                if member_user:
+                    member_user.is_active = False
+                    # member_user.save()
+
+                return JsonResponse({"success": True, "message": "सदस्यत्व रद्द प्रक्रिया यशस्वीपणे पूर्ण झाली आहे."})
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "membership_form_cancellation"
+        cursor.callproc("stp_error_log", [fun, str(e), library_code])
+        print(f"Error: {e}")
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("L01:membership_payment_index")
+
 # circulation
 @login_required
 def bar_code_index(request):

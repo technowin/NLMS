@@ -73,95 +73,95 @@
         }
 
         /* Author dropdown styling */
-.author-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-.author-suggestions div {
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.author-suggestions div:hover {
-    background: #f2f2f2;
-}
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
 
-        /* Author dropdown styling */
-.author-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+                /* Author dropdown styling */
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-.author-suggestions div {
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.author-suggestions div:hover {
-    background: #f2f2f2;
-}
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
 
-/* Author Field Styling */
-#author {
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    padding: 8px 12px;
-    transition: all 0.2s ease-in-out;
-    box-shadow: none;
-}
+        /* Author Field Styling */
+        #author {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: none;
+        }
 
-#author:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
-}
+        #author:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+        }
 
-/* Dropdown Box */
-#authorDropdown {
-    width: 35%;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    background-color: #fff;
-    margin-top: 4px;
-}
+        /* Dropdown Box */
+        #authorDropdown {
+            width: 35%;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            margin-top: 4px;
+        }
 
-/* Dropdown Items */
-#authorDropdown .author-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-size: 0.95rem;
-}
+        /* Dropdown Items */
+        #authorDropdown .author-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.95rem;
+        }
 
-#authorDropdown .author-item:hover {
-    background-color: #f1f5ff;
-}
+        #authorDropdown .author-item:hover {
+            background-color: #f1f5ff;
+        }
 
-/* Text Helper */
-.form-text.text-muted {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 4px;
-}
+        /* Text Helper */
+        .form-text.text-muted {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
 
 
     </style>
@@ -176,206 +176,209 @@
 
     <div class="est-info-wrapper">
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-      <input type="hidden" name="cat_ref_num" value="{{ catalog.encrypted_id }}">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="cat_ref_num" value="{{ catalog.encrypted_id }}">
 
-       <!-- ==================== Book Catalog Edit Form ==================== -->
+             <!-- ==================== Book Catalog Edit Form ==================== -->
 
-<!-- Language -->
-    <div class="mb-3 row">
-       <div class="col-md-6">
-    <label class="form-label">भाषा / Language <span class="text-danger">*</span></label>
-    <input type="text" 
-           id="language" 
-           name="language" 
-           class="form-control" 
-           value="{{ obj.language }}" 
-           disabled>
-    <input type="hidden" 
-           name="language" 
-           value="{{ obj.language }}">
-</div>
-
-    </div>
-
-    <!-- Title & Subtitle -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">पुस्तकाचे नाव / Title</label>
-            <input type="text" name="title" id="title" class="form-control transliterate"
-                   placeholder="Book Title" value="{{ obj.title }}">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">उपशिर्षक / Subtitle</label>
-            <input type="text" name="subtitle" id="subtitle" class="form-control transliterate"
-                   placeholder="Optional subtitle" value="{{ obj.subtitle }}">
-        </div>
-    </div>
-
-    <!-- Author & Other Authors -->
-    <div class="mb-3 row">
-        <div class="col-md-6 position-relative">
-            <label class="form-label fw-semibold">Author <span class="text-danger">*</span></label>
-            <input type="text" id="author" name="author" class="form-control transliterate"
-                   placeholder="Type or select author" autocomplete="off" value="{{ obj.author }}" required>
-            <div id="authorDropdown" class="border rounded mt-1 d-none"
-                 style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
-                {% for author in authors %}
-                    <div class="dropdown-item author-item" onclick="selectAuthor('{{ author }}')">{{ author }}</div>
-                {% endfor %}
+            <!-- Language -->
+                <div class="mb-3 row">
+                <div class="col-md-6">
+                <label class="form-label">भाषा / Language <span class="text-danger">*</span></label>
+                <input type="text" 
+                    id="language" 
+                    name="language" 
+                    class="form-control" 
+                    value="{{ obj.language }}" 
+                    disabled>
+                <input type="hidden" 
+                    name="language" 
+                    value="{{ obj.language }}">
             </div>
-        </div>
 
-        <div class="col-md-6">
-            <label class="form-label">सह-लेखक / Other Authors</label>
-            <input type="text" name="other_authors" id="other_authors" class="form-control transliterate"
-                   placeholder="Co-authors / Editors" value="{{ obj.other_authors }}">
-        </div>
-    </div>
+            </div>
 
-    <!-- Publisher & Year -->
-    <div class="mb-3 row">
- <div class="col-md-6">
-    <label class="form-label">प्रकाशक / Publisher <span class="text-danger">*</span></label>
-    <select name="publisher" id="publisher" class="form-control transliterate" required>
-        <option value="">Select Publisher</option>
-        {% for pub in publishers %}
-            <option value="{{ pub.publisher_name }}" {% if obj.publisher == pub.publisher_name %}selected{% endif %}>
-                {{ pub.publisher_name }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
-
-
-
-        <div class="col-md-6">
-            <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
-            <input type="number" name="year_of_publication" class="form-control"
-                   placeholder="e.g. 2024" value="{{ obj.year_of_publication }}">
-        </div>
-    </div>
-
-    <!-- Edition & ISBN -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">आवृत्ती / Edition</label>
-            <input type="text" name="edition" class="form-control transliterate"
-                   placeholder="Edition info" value="{{ obj.edition }}">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">ISBN</label>
-            <input type="text" name="isbn" class="form-control" placeholder="ISBN number" value="{{ obj.isbn_issn }}">
-        </div>
-    </div>
-
-    <!-- Subject & Place -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">विषय / Subject</label>
-            <select name="subject_id" id="subject_id" class="form-control" required>
-                <option value="">Select Subject</option>
-                {% for sub in subjects %}
-                    <option value="{{ sub.encrypted_id }}" {% if obj.subject_id == sub.id %}selected{% endif %}>
-                        {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        
-      <div class="col-md-6">
-    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
-    <select name="publication_place" id="publication_place" class="form-control transliterate">
-        <option value="">Select Place</option>
-        {% for place in places %}
-            <option value="{{ place.place_name }}" {% if obj.publication_place == place.place_name %}selected{% endif %}>
-                {{ place.place_name }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
-
-    </div>
-
-    <!-- Material Type & Page Nos -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">साहित्य प्रकार / Material Type</label>
-            <select name="material_id" id="material_id" class="form-control" required>
-                <option value="">Select Material Type</option>
-                {% for mat in materials %}
-                    <option value="{{ mat.encrypted_id }}" {% if obj.material_id == mat.id %}selected{% endif %}>
-                        {{ mat.materialNameEnglish }} - {{ mat.materialNameMarathi }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">पृष्ठे / Page Nos</label>
-            <input type="text" name="page_nos" class="form-control"
-                   placeholder="Number of pages" value="{{ obj.page_nos }}">
-        </div>
-    </div>
-
-    <!-- Keywords & Front Page -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">कीवर्ड्स / Keywords</label>
-            <input type="text" name="keywords" class="form-control transliterate"
-                   placeholder="Search tags / keywords" value="{{ obj.keywords }}">
-        </div>
-       <div class="col-md-6">
-    <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
-    <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'front_page_preview')">
-
-    {% if obj.front_page_photo %}
-        <div class="mt-2">
-            <img id="front_page_preview" src="{{ MEDIA_URL }}{{ obj.front_page_photo }}" alt="Front Page Image"
-                 class="img-thumbnail shadow-sm" style="max-height: 120px;">
-        </div>
-    {% else %}
-        <div class="mt-2">
-            <img id="front_page_preview" src="" alt="Front Page Preview"
-                 class="img-thumbnail shadow-sm d-none" style="max-height: 120px;">
-        </div>
-    {% endif %}
-</div>
-
-    </div>
-
-    <!-- Last Page & Remarks -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
-            <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*">
-            {% if obj.last_page_photo %}
-                <div class="mt-2">
-                    <img src="{{ MEDIA_URL }}{{ obj.last_page_photo }}" alt="Last Page Image"
-                         class="img-thumbnail shadow-sm" style="max-height: 120px;">
+            <!-- Title & Subtitle -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">पुस्तकाचे नाव / Title</label>
+                    <input type="text" name="title" id="title" class="form-control transliterate"
+                        placeholder="Book Title" value="{{ obj.title }}">
                 </div>
-            {% endif %}
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">टीप / Remarks</label>
-            <textarea name="remarks" class="form-control transliterate" rows="3"
-                      placeholder="Notes, e.g. Donated by XYZ">{{ obj.remarks }}</textarea>
-        </div>
+                <div class="col-md-6">
+                    <label class="form-label">उपशिर्षक / Subtitle</label>
+                    <input type="text" name="subtitle" id="subtitle" class="form-control transliterate"
+                        placeholder="Optional subtitle" value="{{ obj.subtitle }}">
+                </div>
+            </div>
+
+                <!-- Author & Other Authors -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">लेखक / Author <span class="text-danger">*</span></label>
+                    <select name="author" id="author" class="form-control transliterate" required>
+                        <option value="">Select Author</option>
+
+                        {# ✅ If obj.author exists and is NOT in the authors list, show it first #}
+                        {% if obj.author and obj.author not in authors %}
+                            <option value="{{ obj.author }}" selected>{{ obj.author }}</option>
+                        {% endif %}
+
+                        {# ✅ Loop through authors list #}
+                        {% for author in authors %}
+                            <option value="{{ author }}" {% if obj.author == author %}selected{% endif %}>
+                                {{ author }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">सह-लेखक / Other Authors</label>
+                    <input type="text" name="other_authors" id="other_authors" class="form-control transliterate"
+                        placeholder="Co-authors / Editors" value="{{ obj.other_authors }}">
+                </div>
+            </div>
+
+            <!-- Publisher & Year -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशक / Publisher <span class="text-danger">*</span></label>
+                    <select name="publisher" id="publisher" class="form-control transliterate" required>
+                        <option value="">Select Publisher</option>
+                        {% for pub in publishers %}
+                            <option value="{{ pub.publisher_name }}" {% if obj.publisher == pub.publisher_name %}selected{% endif %}>
+                                {{ pub.publisher_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
+                    <input type="number" name="year_of_publication" class="form-control"
+                        placeholder="e.g. 2024" value="{{ obj.year_of_publication }}">
+                </div>
+            </div>
+
+            <!-- Edition & ISBN -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">आवृत्ती / Edition</label>
+                    <input type="text" name="edition" class="form-control transliterate"
+                        placeholder="Edition info" value="{{ obj.edition }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">ISBN</label>
+                    <input type="text" name="isbn" class="form-control" placeholder="ISBN number" value="{{ obj.isbn_issn }}">
+                </div>
+            </div>
+
+            <!-- Subject & Place -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">विषय / Subject</label>
+                    <select name="subject_id" id="subject_id" class="form-control" required>
+                        <option value="">Select Subject</option>
+                        {% for sub in subjects %}
+                            <option value="{{ sub.encrypted_id }}" {% if obj.subject_id == sub.id %}selected{% endif %}>
+                                {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>  
+            
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                    <select name="publication_place" id="publication_place" class="form-control transliterate">
+                        <option value="">Select Place</option>
+                        {% for place in places %}
+                            <option value="{{ place.place_name }}" {% if obj.publication_place == place.place_name %}selected{% endif %}>
+                                {{ place.place_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Material Type & Page Nos -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">साहित्य प्रकार / Material Type</label>
+                    <select name="material_id" id="material_id" class="form-control" required>
+                        <option value="">Select Material Type</option>
+                        {% for mat in materials %}
+                            <option value="{{ mat.encrypted_id }}" {% if obj.material_id == mat.id %}selected{% endif %}>
+                                {{ mat.materialNameEnglish }} - {{ mat.materialNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">पृष्ठे / Page Nos</label>
+                    <input type="text" name="page_nos" class="form-control"
+                        placeholder="Number of pages" value="{{ obj.page_nos }}">
+                </div>
+            </div>
+
+            <!-- Keywords & Front Page -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">कीवर्ड्स / Keywords</label>
+                    <input type="text" name="keywords" class="form-control transliterate"
+                        placeholder="Search tags / keywords" value="{{ obj.keywords }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
+                    <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'front_page_preview')">
+
+                    {% if obj.front_page_photo %}
+                        <div class="mt-2">
+                            <img id="front_page_preview" src="{{ MEDIA_URL }}{{ obj.front_page_photo }}" alt="Front Page Image"
+                                class="img-thumbnail shadow-sm" style="max-height: 120px;">
+                        </div>
+                    {% else %}
+                        <div class="mt-2">
+                            <img id="front_page_preview" src="" alt="Front Page Preview"
+                                class="img-thumbnail shadow-sm d-none" style="max-height: 120px;">
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Last Page & Remarks -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
+                    <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*">
+                    {% if obj.last_page_photo %}
+                        <div class="mt-2">
+                            <img src="{{ MEDIA_URL }}{{ obj.last_page_photo }}" alt="Last Page Image"
+                                class="img-thumbnail shadow-sm" style="max-height: 120px;">
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">टीप / Remarks</label>
+                    <textarea name="remarks" class="form-control transliterate" rows="3"
+                            placeholder="Notes, e.g. Donated by XYZ">{{ obj.remarks }}</textarea>
+                </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Update / अपडेट करा
+                </button>
+                <a href="{% url 'book_catalog_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                </a>
+            </div>
+        </form>
+
     </div>
-
-
-        <!-- BUTTONS -->
-        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
-            <button type="submit" class="btn btn-submit">
-                <i class="fa-solid fa-paper-plane"></i> Update / अपडेट करा
-            </button>
-            <a href="{% url 'book_catalog_index' %}" class="btn-go-back">
-                <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
-            </a>
-        </div>
-    </form>
-
-</div>
 
     <!-- Back to Top Button -->
     <a href="#" class="back-to-top" id="backToTop">
@@ -389,7 +392,6 @@
     <!-- Keeping only SweetAlert and optional message popup -->
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
@@ -839,5 +841,44 @@ function previewImage(input, previewId) {
 }
 </script>
 
+<script>
+    const authorInput = document.getElementById("author");
+    const authorDropdown = document.getElementById("authorDropdown");
+
+    // Show dropdown when typing
+    authorInput.addEventListener("input", function() {
+        const filter = this.value.toLowerCase();
+        const items = authorDropdown.querySelectorAll(".author-item");
+        let visible = false;
+
+        items.forEach(item => {
+            if (item.textContent.toLowerCase().includes(filter)) {
+                item.style.display = "block";
+                visible = true;
+            } else {
+                item.style.display = "none";
+            }
+        });
+
+        if (filter && visible) {
+            authorDropdown.classList.remove("d-none");
+        } else {
+            authorDropdown.classList.add("d-none");
+        }
+    });
+
+    // Select author from dropdown
+    function selectAuthor(name) {
+        authorInput.value = name;
+        authorDropdown.classList.add("d-none");
+    }
+
+    // Hide dropdown when clicking outside
+    document.addEventListener("click", function(e) {
+        if (!authorInput.contains(e.target) && !authorDropdown.contains(e.target)) {
+            authorDropdown.classList.add("d-none");
+        }
+    });
+</script>
 
 {% endblock %}

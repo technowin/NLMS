@@ -499,8 +499,6 @@ def book_catalog_create(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
 
-
-
 @login_required
 def book_catalog_edit(request):
     try:
@@ -518,30 +516,67 @@ def book_catalog_edit(request):
                 messages.warning(request, f"Could not load existing record: {str(e)}")
 
         # ---------- AJAX endpoint for fetching authors ----------
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            language_id_encrypted = request.GET.get('language_id', '').strip()
-            authors = []
+        lang_name = obj.language
+        authors = []
+        if lang_name:
+            try:
+                if lang_name == "Marathi":
+                    authors = AuthorMaster.objects.filter(is_active=True) \
+                        .exclude(author_name_marathi__isnull=True) \
+                        .exclude(author_name_marathi__exact="") \
+                        .values_list('author_name_marathi', flat=True) \
+                        .distinct().order_by('author_name_marathi')
+                else:
+                    authors = AuthorMaster.objects.filter(is_active=True) \
+                        .exclude(author_name_english__isnull=True) \
+                        .exclude(author_name_english__exact="") \
+                        .values_list('author_name_english', flat=True) \
+                        .distinct().order_by('author_name_english')
+            except Exception:
+                authors = []
+                
+        # ---------- Dropdown Data ----------
+        
 
-            if language_id_encrypted:
-                try:
-                    language_id = dec(language_id_encrypted)
-                    lang_obj = LanguageMaster.objects.filter(id=language_id).first()
-                    lang_name = lang_obj.language_name.lower() if lang_obj else ""
+        subjects = SubjectTypeMaster.objects.filter(is_active=True)
+        for sub in subjects:
+            sub.encrypted_id = enc(str(sub.id))
 
-                    if lang_name == "marathi":
-                        authors = AuthorMaster.objects.filter(is_active=True) \
-                            .exclude(author_name_marathi__isnull=True) \
-                            .values_list('author_name_marathi', flat=True) \
-                            .distinct().order_by('author_name_marathi')
-                    else:
-                        authors = AuthorMaster.objects.filter(is_active=True) \
-                            .exclude(author_name_english__isnull=True) \
-                            .values_list('author_name_english', flat=True) \
-                            .distinct().order_by('author_name_english')
-                except Exception:
-                    authors = []
+        materials = MaterialTypeMaster.objects.filter(is_active=True)
+        for mat in materials:
+            mat.encrypted_id = enc(str(mat.id))
 
-            return JsonResponse({"authors": list(authors)})
+        # ✅ Updated: Preload authors based on selected language (if obj exists)
+        
+
+        publishers = BookCatalog.objects.values('publisher') \
+            .exclude(publisher__isnull=True).exclude(publisher__exact='') \
+            .distinct().order_by('publisher')
+        for pub in publishers:
+            pub['publisher_name'] = pub.pop('publisher')
+
+        places = BookCatalog.objects.values('publication_place') \
+            .exclude(publication_place__isnull=True).exclude(publication_place__exact='') \
+            .distinct().order_by('publication_place')
+        for place in places:
+            place['place_name'] = place.pop('publication_place')
+
+        current_year = timezone.now().year
+        years = list(range(current_year, 1899, -1))
+
+        context = {
+            # 'languages': languages,
+            'subjects': subjects,
+            'materials': materials,
+            'authors': authors,
+            'publishers': publishers,
+            'places': places,
+            'years': years,
+            'obj': obj,
+            'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
 
         # ---------- POST: Update book details ----------
         if request.method == "POST":
@@ -568,7 +603,6 @@ def book_catalog_edit(request):
                 messages.error(request, f"Please fill in all required fields: {', '.join(missing)}")
             else:
                 if obj:
-                    # ✅ Update text fields
                     obj.title = form_data["title"]
                     obj.subtitle = form_data["subtitle"]
                     obj.author = form_data["author"]
@@ -592,12 +626,10 @@ def book_catalog_edit(request):
 
                     if front_photo or last_photo:
                         BASE_DIR = Path(__file__).resolve().parent.parent
-                        # Use your absolute directory path for storage
                         MEDIA_FOLDER = os.path.join(BASE_DIR, 'D:/Python Project/Documents/L01/')
                         book_folder = os.path.join(MEDIA_FOLDER, str(obj.cat_ref_num))
                         os.makedirs(book_folder, exist_ok=True)
 
-                        # ✅ Save Front Page Image
                         if front_photo:
                             front_filename = f"{obj.cat_ref_num}_front_{front_photo.name}"
                             front_path = os.path.join(book_folder, front_filename)
@@ -606,7 +638,6 @@ def book_catalog_edit(request):
                                     destination.write(chunk)
                             obj.front_page_photo = f"L01/{obj.cat_ref_num}/{front_filename}"
 
-                        # ✅ Save Last Page Image
                         if last_photo:
                             last_filename = f"{obj.cat_ref_num}_back_{last_photo.name}"
                             last_path = os.path.join(book_folder, last_filename)
@@ -618,49 +649,7 @@ def book_catalog_edit(request):
                     obj.save()
                     messages.success(request, "Book catalog updated successfully!")
 
-        # ---------- Dropdown Data ----------
-        languages = LanguageMaster.objects.filter(is_active=True)
-        for lang in languages:
-            lang.encrypted_id = enc(str(lang.id))
-
-        subjects = SubjectTypeMaster.objects.filter(is_active=True)
-        for sub in subjects:
-            sub.encrypted_id = enc(str(sub.id))
-
-        materials = MaterialTypeMaster.objects.filter(is_active=True)
-        for mat in materials:
-            mat.encrypted_id = enc(str(mat.id))
-
-        authors = AuthorMaster.objects.filter(is_active=True) \
-            .values_list('author_name_english', flat=True).distinct().order_by('author_name_english')
-
-        publishers = BookCatalog.objects.values('publisher') \
-            .exclude(publisher__isnull=True).exclude(publisher__exact='') \
-            .distinct().order_by('publisher')
-        for pub in publishers:
-            pub['publisher_name'] = pub.pop('publisher')
-
-        places = BookCatalog.objects.values('publication_place') \
-            .exclude(publication_place__isnull=True).exclude(publication_place__exact='') \
-            .distinct().order_by('publication_place')
-        for place in places:
-            place['place_name'] = place.pop('publication_place')
-
-        current_year = timezone.now().year
-        years = list(range(current_year, 1899, -1))
-
-        context = {
-            'languages': languages,
-            'subjects': subjects,
-            'materials': materials,
-            'authors': authors,
-            'publishers': publishers,
-            'places': places,
-            'years': years,
-            'obj': obj,
-            'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
-            'MEDIA_URL': settings.MEDIA_URL,
-        }
+        
 
         return render(request, 'Master/book_catalog_edit.html', context)
 

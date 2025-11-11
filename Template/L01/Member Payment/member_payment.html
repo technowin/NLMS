@@ -67,6 +67,8 @@
                                     <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% elif m.status.status_code == "APP_RENEW" %}
                                     <span class="badge bg-success text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
+                                {% elif m.status.status_code == "APP_CANCEL" %}
+                                    <span class="badge bg-dark text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% else %}
                                     <span class="badge bg-light text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% endif %}
@@ -106,11 +108,19 @@
                                 {% comment %} Renewal Button {% endcomment %}
                                 {% if m.show_renew_button %}
                                     <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ m.membership_id_enc }}" 
-                                    class="btn btn-warning btn-sm ms-2">
-                                    सदस्यत्व नूतनीकरण करा
+                                        class="btn btn-warning btn-sm ms-2">
+                                        सदस्यत्व नूतनीकरण करा
                                     </a>
                                 {% endif %}
 
+                                {% if m.status.status_code in 'APP_SUB,APPROVED,PAY_SUCCESS' %}
+                                    <a href="#"
+                                        class="btn btn-danger btn-sm ms-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#cancelMembershipModal{{ m.membership_id_enc }}">
+                                        सदस्यत्व रद्द करा
+                                    </a>
+                                {% endif %}
                                 <!-- Bootstrap Modal -->
 
                                 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
@@ -133,7 +143,7 @@
                                                 ऑफलाइन देयक
                                             </button>
                                             <button type="button" class="btn btn-success px-4 py-2">
-                                            ऑनलाइन देयक
+                                                ऑनलाइन देयक
                                             </button>
                                         </div>
                                         </div>
@@ -204,6 +214,104 @@
                                         </div>
                                     </div>
                                 </form>
+                                
+                                {% comment %} Cancel Membership Modal {% endcomment %}
+                                <form id="cancelMembershipForm{{ m.membership_id_enc }}" method="post" action="{% url 'L01:membership_form_cancellation' %}">
+                                    {% csrf_token %}
+
+                                    <!-- Hidden fields -->
+                                    <input type="hidden" name="membership_id" value="{{ m.membership_id_enc }}">
+                                    <input type="hidden" name="action_by" value="member">
+
+                                    <div class="modal fade" id="cancelMembershipModal{{ m.membership_id_enc }}" tabindex="-1" aria-labelledby="cancelMembershipLabel{{ m.membership_id_enc }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-content rounded-3 shadow-lg">
+
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title fw-bold" id="cancelMembershipLabel{{ m.membership_id_enc }}">
+                                                        सदस्यत्व रद्द करण्याची पुष्टी
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+
+                                                <div class="modal-body">
+                                                    <table class="table table-bordered table-striped">
+                                                        <thead class="table-danger">
+                                                            <tr>
+                                                                <th colspan="2" class="text-center fw-bold">
+                                                                    {{ m.membership.membership_type }} / {{ m.membership.membership_type_en }}
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <th>ठेव</th>
+                                                                <td>{{ m.deposit }} ₹</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>प्रवेश शुल्क</th>
+                                                                <td>{{ m.entry_fees }} ₹</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>मासिक सभासद शुल्क</th>
+                                                                <td>{{ m.per_month_subscription }} ₹</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>एकूण सभासद शुल्क</th>
+                                                                <td>{{ m.subscription }} ₹</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>कालावधी</th>
+                                                                <td>{{ m.membership_duration }} महिने</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>पासून - पर्यंत</th>
+                                                                <td>
+                                                                    {% if m.from_date and m.to_date %}
+                                                                        {{ m.from_date|date:"d-m-Y" }} ते {{ m.to_date|date:"d-m-Y" }}
+                                                                    {% else %}
+                                                                        -
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+
+                                                    <!-- Marathi & English notice -->
+                                                    <div class="alert alert-warning text-center mt-4 fw-bold" id="refundNotice">
+                                                        <div class="notice-marathi">
+                                                            <strong>महत्वाची सूचना:</strong><br>
+                                                            जर आपण सभासदत्व रद्द केले, तर फक्त <strong>ठेव</strong> रक्कमच परत मिळेल.<br>
+                                                            इतर शुल्क जसे की <strong>प्रवेश शुल्क</strong>, <strong>मासिक सभासद शुल्क</strong> किंवा <strong>एकूण सभासद शुल्क</strong> परत मिळणार नाहीत.<br>
+                                                            कृपया हे लक्षात घेऊनच पुढे कार्यवाही करा.
+                                                        </div>
+
+                                                        <div class="notice-english" style="display:none;">
+                                                            <strong>Important Notice:</strong><br>
+                                                            If you cancel the membership, only the <strong>deposit</strong> amount will be refunded.<br>
+                                                            Other fees such as <strong>entry fee</strong>, <strong>monthly membership fee</strong>, or <strong>total subscription fee</strong> will not be refunded.<br>
+                                                            Please proceed only after understanding this condition.
+                                                        </div>
+
+                                                        <button type="button" class="btn btn-sm btn-outline-dark mt-3" onclick="toggleNoticeLanguage(this)">
+                                                            इंग्रजी भाषांतर दाखवा
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer d-flex justify-content-between">
+                                                    <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">
+                                                        मागे जा
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger px-4 py-2"
+                                                            onclick="confirmCancel('{{ m.membership_id_enc }}')">
+                                                        सदस्यत्व रद्द करा
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     {% empty %}
@@ -250,6 +358,7 @@
     {% endif %}
 
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% comment %} offline payment submission confirmation script {% endcomment %}
     <script>
         function submitOfflineForm(encId) {
             Swal.fire({
@@ -267,7 +376,7 @@
         }
     </script>
 
-
+    {% comment %} table script {% endcomment %}
     <script>
         $(document).ready(function () {
             $('#membershipTable').DataTable({
@@ -278,6 +387,46 @@
                 "info": true,        // shows "Showing 1 to 10 of X entries"
             });
         });
+    </script>
+
+    {% comment %} membership cancellation confirmation script {% endcomment %}
+    <script>
+        function confirmCancel(membershipId) {
+            Swal.fire({
+                title: "आपण खात्रीने रद्द करू इच्छिता?",
+                text: "एकदा रद्द केल्यावर पुन्हा परत आणता येणार नाही.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "हो, रद्द करा!",
+                cancelButtonText: "नाही, मागे जा",
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#6c757d"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById("cancelMembershipForm" + membershipId).submit();
+                }
+            });
+        }
+    </script>
+    
+    {% comment %} membership cancellation notice language toggle script {% endcomment %}
+    <script>
+        function toggleNoticeLanguage(btn) {
+            
+            const marathi = document.querySelector('#refundNotice .notice-marathi');
+            const english = document.querySelector('#refundNotice .notice-english');
+            const showingEnglish = english.style.display === 'block';
+            
+            if (showingEnglish) {
+                english.style.display = 'none';
+                marathi.style.display = 'block';
+                btn.textContent = 'इंग्रजी भाषांतर दाखवा';
+            } else {
+                marathi.style.display = 'none';
+                english.style.display = 'block';
+                btn.textContent = 'मराठी भाषांतर दाखवा';
+            }
+        }
     </script>
 
 {% endblock %}

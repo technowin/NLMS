@@ -160,6 +160,7 @@ class MembershipDetails(models.Model):
     updated_by = models.CharField(max_length=50, null=True, blank=True)
     membership_code = models.TextField(null=True, blank=True)
     membership_renew = models.IntegerField(default=0)
+    remarks = models.TextField(null=True, blank=True)
 
     class Meta: db_table = "tbl_membershipdetails"
 

@@ -74,11 +74,19 @@
                                     <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% elif m.status.status_code == "APP_RENEW" %}
                                     <span class="badge bg-success text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
+                                {% elif m.status.status_code == "APP_CANCEL" %}
+                                    <span class="badge bg-dark text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% else %}
                                     <span class="badge bg-light text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ m.membership_duration }} महिने</td>
+                            <td>
+                                {% if m.membership_duration == none %} 
+                                    -
+                                {% else %}
+                                    {{ m.membership_duration }} महिने
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if m.from_date and m.to_date %}
                                     {{ m.from_date|date:"d-m-Y" }} ते {{ m.to_date|date:"d-m-Y" }}
@@ -92,10 +100,18 @@
                                             संपादित करा
                                     </a>
                                 {% endif %}
+
                                 <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
                                     class="btn btn-primary btn-sm ms-2">
                                         फॉर्म तपासा
                                 </a>
+
+                                {% if m.status.status_code == "APP_CANCEL" %}
+                                    <!-- Librarian Accept Cancellation -->
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="openCancelModal('{{ m.membership_id_enc }}')">
+                                        सभासदत्व रद्द करणे स्वीकारा
+                                    </button>
+                                {% endif %}
                             </td>
                         </tr>
                     {% empty %}
@@ -106,6 +122,55 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="modal fade" id="cancelMembershipModal" tabindex="-1" aria-labelledby="cancelMembershipLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content rounded-3 shadow-lg">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title fw-bold" id="cancelMembershipLabel">
+                            सदस्यत्व रद्द करण्याची पुष्टी
+                        </h5>
+                        <input type="hidden" id="cancelMembershipId" value="">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <table class="table table-bordered table-striped">
+                            <thead class="table-danger">
+                                <tr>
+                                    <th colspan="2" class="text-center fw-bold membership-type"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><th>ठेव</th><td class="deposit"></td></tr>
+                                <tr><th>प्रवेश शुल्क</th><td class="entry-fees"></td></tr>
+                                <tr><th>एकूण सभासद शुल्क</th><td class="subscription"></td></tr>
+                                <tr><th>कालावधी</th><td class="duration"></td></tr>
+                                <tr><th>पासून - पर्यंत</th><td class="period"></td></tr>
+                                <tr><th>स्थिती</th><td class="status"></td></tr>
+                            </tbody>
+                        </table>
+
+                        <div class="alert alert-warning text-center mt-4 fw-bold">
+                            <strong>महत्वाची सूचना:</strong><br>
+                            फक्त ठेव रक्कम परत मिळेल. इतर शुल्क परत मिळणार नाहीत.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">
+                            मागे जा
+                        </button>
+                        <button type="button"
+                            class="btn btn-danger px-4 py-2"
+                            onclick="acceptCancellation(cancelMembershipId.value)">
+                            सभासदत्व रद्द करणे स्वीकारा
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
     </div>
 
@@ -152,5 +217,102 @@
             });
         });
     </script>
+
+    {% comment %} function for cancel modal {% endcomment %}
+    <script>
+        function openCancelModal(membershipId) {
+            $.ajax({
+                url: "{% url 'L01:membership_form_cancellation' %}",
+                type: "GET",
+                data: { membership_id: membershipId },
+                success: function (response) {
+                    if (response.success) {
+                        const d = response.data;
+
+                        // Fill modal fields dynamically
+                        $("#cancelMembershipId").val(membershipId);
+                        $(".membership-type").text(d.membership_type + " / " + d.membership_type_en);
+                        $(".deposit").text(d.deposit + " ₹");
+                        $(".entry-fees").text(d.entry_fees + " ₹");
+                        $(".subscription").text(d.subscription + " ₹");
+                        $(".duration").text(d.duration + " महिने");
+                        $(".period").text((d.from_date || "-") + " ते " + (d.to_date || "-"));
+                        $(".status").text(d.status_name);
+
+                        // Finally, open the modal
+                        $("#cancelMembershipModal").modal("show");
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    alert("सर्व्हरशी संपर्क साधता आला नाही.");
+                }
+            });
+        }
+
+        function acceptCancellation(membershipId) {
+            Swal.fire({
+                title: "आपण खात्रीने हे सभासदत्व रद्द करणे स्वीकारू इच्छिता?",
+                text: "ही कृती एकदा केल्यानंतर परत घेता येणार नाही.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "होय, रद्द करणे स्वीकारा",
+                cancelButtonText: "नाही, परत जा",
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{% url 'L01:membership_form_cancellation' %}",
+                        method: "POST",
+                        data: {
+                            membership_id: membershipId,
+                            action_by: "librarian",
+                            csrfmiddlewaretoken: "{{ csrf_token }}"
+                        },
+                        success: function(resp) {
+                            if (resp.success) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "यशस्वी!",
+                                    text: "सभासदत्व रद्द करणे यशस्वीरीत्या स्वीकारले गेले!",
+                                    confirmButtonText: "ठीक आहे"
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "त्रुटी!",
+                                    text: "चूक झाली: " + resp.error,
+                                    confirmButtonText: "ठीक आहे"
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: "error",
+                                title: "सर्व्हर त्रुटी!",
+                                text: "सर्व्हरमध्ये काही अडचण आली. कृपया नंतर पुन्हा प्रयत्न करा.",
+                                confirmButtonText: "ठीक आहे"
+                            });
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "info",
+                        title: "रद्द केले नाही",
+                        text: "आपण सभासदत्व रद्द करणे रद्द केले आहे.",
+                        confirmButtonText: "ठीक आहे"
+                    });
+                }
+            });
+        }
+
+
+    </script>
+
+
 
 {% endblock %}
