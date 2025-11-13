@@ -183,36 +183,34 @@
     </div>
 
 <div class="col-md-6 position-relative">
-    <label class="form-label">
-        Password <span class="required-star">*</span>
-    </label>
-    <input type="text" name="password" id="password" class="form-control"
-           style="padding-right: 40px;"
-           placeholder="{% if user_obj %}Leave blank to keep current{% else %}Enter Password{% endif %}"
-           maxlength="20">
-    <i id="togglePassword" class="fa fa-eye"
-       style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; z-index:2;"></i>
-    <small id="passwordHelp" class="form-text text-danger mt-1"></small>
+  <label class="form-label">
+    Password <span class="required-star">*</span>
+  </label>
+  <div class="input-group">
+    <input type="password" name="password" id="password" class="form-control"
+           placeholder="Enter Password" maxlength="20" autocomplete="new-password">
+    <span class="input-group-text" id="togglePassword" style="cursor:pointer;">
+      <i class="fa fa-eye"></i>
+    </span>
+  </div>
+  <small id="passwordHelp" class="form-text text-danger mt-1"></small>
 </div>
 
+<div class="col-md-6 position-relative mt-3">
+  <label class="form-label">
+    Confirm Password <span class="required-star">*</span>
+  </label>
+  <div class="input-group">
+    <input type="password" name="confirm_password" id="confirm_password" class="form-control"
+           placeholder="Confirm Password" maxlength="20" autocomplete="new-password">
+    <span class="input-group-text" id="toggleConfirm" style="cursor:pointer;">
+      <i class="fa fa-eye"></i>
+    </span>
+  </div>
+  <small id="confirmPasswordHelp" class="form-text text-danger mt-1"></small>
+</div>
+</div>
 
-</div>
-
-<!-- Row 5: Confirm Password -->
-<div class="mb-3 row">
-<div class="col-md-6 position-relative">
-    <label class="form-label">
-        Confirm Password <span class="required-star">*</span>
-    </label>
-    <input type="text" name="confirm_password" id="confirm_password" class="form-control"
-           style="padding-right: 40px;"
-           placeholder="{% if user_obj %}Leave blank to keep current{% else %}Confirm Password{% endif %}"
-           maxlength="20">
-    <i id="toggleConfirm" class="fa fa-eye"
-       style="position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; z-index:2;"></i>
-    <small id="confirmPasswordHelp" class="form-text text-danger mt-1"></small>
-</div>
-</div>
 
                 <!-- BUTTONS -->
                 <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
@@ -550,7 +548,7 @@ $(document).ready(function() {
 });
 </script>
 
-<script>
+{% comment %} <script>
 const passwordInput = document.getElementById('password');
 const confirmInput = document.getElementById('confirm_password');
 const togglePassword = document.getElementById('togglePassword');
@@ -643,6 +641,74 @@ confirmInput.addEventListener('input', function(e) {
         confirmHelp.innerHTML += (confirmHelp.innerHTML ? '<br>' : '') + "Passwords do not match";
     }
 });
+</script> {% endcomment %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+  const passwordInput = document.getElementById('password');
+  const confirmInput = document.getElementById('confirm_password');
+  const passwordHelp = document.getElementById('passwordHelp');
+  const confirmHelp = document.getElementById('confirmPasswordHelp');
+
+  // Toggle icons
+  document.getElementById('togglePassword').addEventListener('click', function() {
+    const icon = this.querySelector('i');
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    icon.classList.toggle('fa-eye');
+    icon.classList.toggle('fa-eye-slash');
+  });
+
+  document.getElementById('toggleConfirm').addEventListener('click', function() {
+    const icon = this.querySelector('i');
+    const isPassword = confirmInput.type === 'password';
+    confirmInput.type = isPassword ? 'text' : 'password';
+    icon.classList.toggle('fa-eye');
+    icon.classList.toggle('fa-eye-slash');
+  });
+
+  // Password validation function
+  function validatePassword(password) {
+    const messages = [];
+    if (!/[A-Z]/.test(password)) messages.push("One uppercase letter required");
+    if (!/[0-9]/.test(password)) messages.push("One number required");
+    if (!/[_@-]/.test(password)) messages.push("One special character (_ @ -) required");
+    if (password.length < 6) messages.push("Minimum 6 characters required");
+    if (password.length > 20) messages.push("Maximum 20 characters allowed");
+    return messages;
+  }
+
+  // Validation events
+  passwordInput.addEventListener('input', function() {
+    if (/\s/.test(this.value)) {
+      passwordHelp.textContent = "Spaces are not allowed";
+      return;
+    }
+
+    const messages = validatePassword(this.value);
+    passwordHelp.innerHTML = messages.join('<br>');
+
+    if (confirmInput.value && this.value !== confirmInput.value) {
+      confirmHelp.textContent = "Passwords do not match";
+    } else {
+      confirmHelp.textContent = "";
+    }
+  });
+
+  confirmInput.addEventListener('input', function() {
+    if (/\s/.test(this.value)) {
+      confirmHelp.textContent = "Spaces are not allowed";
+      return;
+    }
+
+    const messages = validatePassword(this.value);
+    confirmHelp.innerHTML = messages.join('<br>');
+
+    if (passwordInput.value && this.value !== passwordInput.value) {
+      confirmHelp.innerHTML += (confirmHelp.innerHTML ? '<br>' : '') + "Passwords do not match";
+    }
+  });
+});
+
 </script>
 
 
