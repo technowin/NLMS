@@ -3347,3 +3347,132 @@ def bookcatalog_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+
+
+def upsc_ebook_index(request):
+    try:
+        # Fetch the competitive exam details for UPSC (id = 1) from L01 DB
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using('L01'),
+            competitive_id=1
+        )
+
+        # Fetch all related sections linked to UPSC (from L01 DB)
+        sections = Sections.objects.using('L01').filter(
+            competitive_id=1
+        ).order_by('section_no')
+
+        # ✅ Fetch subjects for each section (order by subject_id)
+        # Keep as list of tuples (section_no, subjects)
+        subjects_by_section = []
+        for section in sections:
+            subjects = Subjects.objects.using('L01').filter(
+                section_no=section.section_no
+            ).order_by('subject_id')  # use subject_id since subject_no doesn't exist
+            subjects_by_section.append((section.section_no, subjects))
+
+        # Pass everything to template without converting to dict
+        return render(request, "L01/UPSC/upsc_ebook_index.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "sections": sections,
+            "subjects_by_section": subjects_by_section,  # list of tuples
+        })
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+
+def topic_index(request):
+    try:
+        # ✅ Get the competitive exam (UPSC)
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using('L01'),
+            competitive_id=1
+        )
+
+        # ✅ Fetch the specific section (section_no = 1)
+        section = get_object_or_404(
+            Sections.objects.using('L01'),
+            section_no=1
+        )
+
+        # ✅ Fetch all subjects under this section
+        subjects = Subjects.objects.using('L01').filter(
+            section_no=section.section_no
+        ).order_by('subject_id')
+
+        subjects_data = []
+
+        # ✅ For each subject, fetch topics under the same section
+        for subject in subjects:
+            topics = Topics.objects.using('L01').filter(
+                subject_id=subject.subject_id,
+                section_no=section.section_no  # ensures match with section_no = 1
+            ).order_by('topic_id')
+
+            subjects_data.append({
+                "subject": subject,
+                "topics": topics
+            })
+
+        # ✅ Pass the structured data to the template
+        return render(request, "L01/UPSC/topics_index.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "section": section,
+            "subjects_data": subjects_data,
+        })
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+
+def chapters_index(request, topic_id):
+    try:
+        
+        library_code = request.session.get('library_db', None)
+        
+        # ✅ Fetch the selected topic from L01
+        topic = get_object_or_404(
+            Topics.objects.using('L01'),
+            topic_id=topic_id
+        )
+
+        # ✅ Fetch the parent subject and section for breadcrumb
+        
+
+        section = get_object_or_404(
+            Sections.objects.using('L01'),
+            section_no=topic.section_no_id
+        )
+
+
+        # ✅ Fetch all chapters under this topic
+        chapters = Chapters.objects.using('L01').filter(
+            topic_id=topic_id
+        ).order_by('chapter_no')
+
+        # ✅ Prepare structured data (if needed for template)
+        chapters_data = []
+        for chapter in chapters:
+            chapters_data.append({
+                "chapter": chapter
+            })
+
+        # ✅ Render the chapters page
+        return render(request, "L01/UPSC/chapters_index.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "section": section,
+            "topic": topic,
+            "chapters_data": chapters_data,
+        })
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )

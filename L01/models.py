@@ -469,3 +469,111 @@ class PaymentReportKeyValue(models.Model):
 
     def __str__(self):
         return f"{self.key}: {self.value}"
+
+
+class CompetitiveExamMaster(models.Model):
+    competitive_id = models.AutoField(primary_key=True)
+    full_name = models.TextField(null=True, blank=True)
+    short_form = models.CharField(max_length=50, null=True, blank=True)
+    competitive_description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_competitive_exam_master"
+
+    def __str__(self):
+        return f"{self.full_name} ({self.short_form})" if self.short_form else self.full_name
+
+class Sections(models.Model):
+    section_no = models.CharField(max_length=50, primary_key=True)
+    competitive_id = models.ForeignKey(CompetitiveExamMaster, on_delete=models.CASCADE, db_column="competitive_id", related_name="sections")
+    section_name = models.TextField(null=True, blank=True)
+    section_description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_sections"
+
+    def __str__(self):
+        return f"{self.section_no} - {self.section_name}" if self.section_name else self.section_no
+
+class Subjects(models.Model):
+    subject_id = models.AutoField(primary_key=True)
+    section_no = models.ForeignKey(Sections, on_delete=models.CASCADE, db_column="section_no", related_name="subjects")
+    subject_name = models.TextField(null=True, blank=True)
+    subject_description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_subjects"
+
+    def __str__(self):
+        return f"{self.subject_name}" if self.subject_name else f"Subject {self.subject_id}"
+
+class Topics(models.Model):
+    topic_id = models.AutoField(primary_key=True)
+    section_no = models.ForeignKey(
+        Sections,
+        on_delete=models.CASCADE,
+        db_column="section_no",
+        related_name="topics",
+        null=True, blank=True
+    )
+    subject_id = models.ForeignKey(
+        Subjects,
+        on_delete=models.CASCADE,
+        db_column="subject_id",
+        related_name="topics"
+    )
+    topic_name = models.TextField(null=True, blank=True)
+    topic_reference = models.TextField(null=True, blank=True)
+    topic_image_url = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_topics"
+
+    def __str__(self):
+        return f"{self.topic_name}" if self.topic_name else f"Topic {self.topic_id}"
+
+
+class Chapters(models.Model):
+    chapter_no = models.CharField(max_length=50, primary_key=True)
+    section_no = models.ForeignKey(
+    Sections,
+    on_delete=models.CASCADE,
+    db_column="section_no",
+    related_name="chapters",
+    null=True, blank=True
+)
+
+    topic_id = models.ForeignKey(
+        Topics,
+        on_delete=models.CASCADE,
+        db_column="topic_id",
+        related_name="chapters"
+    )
+    chapter_name = models.TextField(null=True, blank=True)
+    chapter_pdf_url = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = "tbl_chapters"
+
+    def __str__(self):
+        return f"{self.chapter_no} - {self.chapter_name}" if self.chapter_name else self.chapter_no
