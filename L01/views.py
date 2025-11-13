@@ -1718,7 +1718,7 @@ def bar_code_index(request):
             # 🔹 Get matching circulation records
             circulation_qs = (
                 CirculationCopyStatus.objects
-                .select_related("bookcatalog", "bookcatalog__subject")
+                .select_related("bookcatalog", "bookcatalog__subject", "shelf_location")
                 .annotate(barcode_int=Cast("barcode", IntegerField()))
                 .filter(barcode_int__range=(int(from_acc), int(to_acc)))
                 .order_by("barcode_int")  # 👈 numeric order, ascending
@@ -1746,9 +1746,13 @@ def bar_code_index(request):
 
             for idx, record in enumerate(circulation_qs):
                 accession_no = record.accession_no or "UNKNOWN"
+                
                 subject_marathi = ""
+                
                 if record.bookcatalog and record.bookcatalog.subject:
                     subject_marathi = record.bookcatalog.subject.subjectNameMarathi or ""
+                    
+                location_name = record.shelf_location.location_name if record.shelf_location else ""
 
                 # ✅ Generate barcode image
                 CODE = Code128
@@ -1771,7 +1775,7 @@ def bar_code_index(request):
                 
                 marathi_text = "नवी मुंबई महानगरपालिका"
                 location_text = f"{library_location} - {library_code}"
-                number_text = f"{accession_no} - {subject_marathi}"
+                number_text = f"{accession_no} - {subject_marathi} - {location_name}"
 
                 try:
                     marathi_font = ImageFont.truetype(font_path, 22)
