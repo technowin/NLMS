@@ -15,6 +15,7 @@ def logged_in_user(request):
     full_name = request.session.get('full_name', '')
     user_id = request.session.get('user_id', '')
     role_id = request.session.get('role_id', '')
+    library_code = request.session.get('library_db', None) 
     role_name = ''
     if request.user.is_authenticated:
         user = str(request.user.id or '')
@@ -24,10 +25,22 @@ def logged_in_user(request):
     
     # Initialize file path variable
     file_path = '/static/images/user.png'  # Default fallback
-
+    library_name_show = None
+    library_details = None
     if user_id != '' and role_id != '':
         
         current_db = get_current_service() or 'default'
+        # library_name_show = 'none'  # default fallback
+
+        library_code = request.session.get('library_db', None)
+        if library_code == 'default':
+            library_code = None
+        
+        if library_code: 
+            library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+
+        if library_details:
+            library_name_show = library_details.library_name_mar
         
         role_obj = roles.objects.using(current_db).get(id=role_id)
         role_name = role_obj.role_name
@@ -58,6 +71,7 @@ def logged_in_user(request):
         menu_items = [item for item in items if item['parent_id'] == -1]
         
     membershipshow = None
+    
     # Step 1: Get the CustomUser model based on user_id
     if role_id == '3':
         try:
@@ -91,6 +105,7 @@ def logged_in_user(request):
         'menu_items': menu_items,
         'profile_picture_url': settings.MEDIA_URL + file_path,  # Construct the full image path
         'membershipshow': membershipshow, 
+        'library_name_show': library_name_show, 
     }
 
 # def logged_in_user(request):

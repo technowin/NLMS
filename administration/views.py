@@ -34,7 +34,7 @@ def library_list(request):
         cursor.callproc("stp_error_log", [fun, str(e), ''])
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
-        return redirect("Meta_Index")
+        return redirect("library_list")
     
 def service_redirect(request):
     # Get the library code from POST

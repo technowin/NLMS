@@ -1736,14 +1736,13 @@ def bar_code_index(request):
             width, height = A4
 
             # ✅ Font setup for Marathi
-            # font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
             font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSerifDevanagari-Bold.ttf")
             p.setFont("Helvetica", 10)
 
             # ✅ Page layout variables
             x_margin = 10 * mm           # tighter left margin
             y_position = height - 15 * mm  # start closer to top
-            y_gap = 30 * mm              # reduce gap between barcodes
+            y_gap = 45 * mm              # reduce gap between barcodes
 
             for idx, record in enumerate(circulation_qs):
                 accession_no = record.accession_no or "UNKNOWN"
@@ -1775,7 +1774,7 @@ def bar_code_index(request):
                 number_text = f"{accession_no} - {subject_marathi}"
 
                 try:
-                    marathi_font = ImageFont.truetype(font_path, 24)
+                    marathi_font = ImageFont.truetype(font_path, 22)
                     english_font = ImageFont.truetype(font_path, 22)
                     number_font = ImageFont.truetype(font_path, 22)
                 except:
@@ -1851,7 +1850,15 @@ def bar_code_index(request):
                 temp_img.seek(0)
 
                 # ✅ Draw image in PDF
-                p.drawImage(ImageReader(temp_img), x_margin, y_position - barcode_img.height, width=80 * mm, height=25 * mm)
+                # p.drawImage(ImageReader(temp_img), x_margin, y_position - barcode_img.height, width=80 * mm, height=40 * mm)
+                
+                # Calculate centered x position
+                img_width = 80 * mm
+                img_height = 40 * mm
+                center_x = (width - img_width) / 2  # horizontally center
+
+                p.drawImage(ImageReader(temp_img), center_x, y_position - img_height, width=img_width, height=img_height)
+
 
                 y_position -= y_gap
 

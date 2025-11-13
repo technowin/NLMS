@@ -5,35 +5,47 @@
         <div class="d-flex align-items-center gap-lg-2 gap-1">
 
             <!-- Topbar Brand Logo -->
-            <div class="logo-topbar">
+            {% comment %} <div class="logo-topbar">
                 <!-- Logo light -->
                 <a href="{% url 'LMS_Dashboard' %}" class="logo-light">
-                    <span style="color:white !important;font-weight:bold" class="">
-                        {% comment %} <img src="{% static 'images/logo.png' %}" alt="logo"> {% endcomment %}
-                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="logo">&nbsp;&nbsp;Technowin {% endcomment %}
+                    <span style="color:white !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;" class="">
                         <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
-                    </span>
-                    <span class="logo-sm">
-                        {% comment %} <img src="{% static 'images/logo-sm.png' %}" alt="small logo"> {% endcomment %}
-                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="small logo"> {% endcomment %}
-                        {% comment %} <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="small logo" style="height:50px;"> {% endcomment %}
                     </span>
                 </a>
 
                 <!-- Logo Dark -->
                 <a href="{% url 'LMS_Dashboard' %}" class="logo-dark">
-                    <span style="color:white !important;font-weight:bold;" class="">
-                        {% comment %} <img src="{% static 'images/logo-dark.png' %}" alt="dark logo"> {% endcomment %}
-                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="logo">&nbsp;&nbsp;Technowin {% endcomment %}
+                    <span style="color:#333399 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;" class="">
                         <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
                     </span>
-                    <span class="logo-sm">
-                        {% comment %} <img src="{% static 'images/logo-dark-sm.png' %}" alt="small logo"> {% endcomment %}
-                        {% comment %} <img src="{% static 'images/technologo1.png' %}" alt="small logo"> {% endcomment %}
-                        {% comment %} <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="small logo" style="height:50px;"> {% endcomment %}
+                </a>
+            </div> {% endcomment %}
+            <div class="logo-topbar d-none d-md-block">
+                <!-- Logo light -->
+                <a href="{% url 'LMS_Dashboard' %}" class="logo-light">
+                    <span style="color:white !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
+                        
+                            <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
+                                {% if library_name_show %}
+                                    &nbsp;&nbsp;{{ library_name_show }}
+                                {% endif %}
+                        
+                    </span>
+                </a>
+
+                <!-- Logo dark -->
+                <a href="{% url 'LMS_Dashboard' %}" class="logo-dark">
+                    <span style="color:#333399 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
+                    
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
+                            {% if library_name_show %}
+                                &nbsp;&nbsp;{{ library_name_show }}
+                            {% endif %}
+                    
                     </span>
                 </a>
             </div>
+
 
             <!-- Sidebar Menu Toggle Button -->
             <button class="button-toggle-menu">

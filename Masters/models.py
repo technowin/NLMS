@@ -359,6 +359,7 @@ class ResourceLocationMaster(models.Model):
 class WardMaster(models.Model):
     ward_id = models.AutoField(primary_key=True)
     ward_name = models.TextField(null=True, blank=True)              # Ward name
+    ward_name_mar = models.TextField(null=True, blank=True)
     ward_address = models.TextField(null=True, blank=True)           # Address of the ward
     pincode = models.TextField(null=True, blank=True)                # comma-separated pincodes
     accounting_code = models.TextField(null=True, blank=True)        # accounting code
