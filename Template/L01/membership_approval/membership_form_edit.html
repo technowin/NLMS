@@ -140,37 +140,6 @@
 
             <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
-            <!-- WARD NAME -->
-            <div class="form-section mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
-                    <select name="ward_name" id="ward_name" class="form-control" required>
-                        <option value="">Select Ward</option>
-                        {% for ward in ward_details %}
-                            {% comment %} <option value="{{ ward.ward_name }}">{{ ward.ward_name }}</option> {% endcomment %}
-                            <option value="{{ ward.ward_name }}" {% if membership.ward == ward.ward_name %}selected{% endif %}>
-                                {{ ward.ward_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <input type="hidden" id="saved_pincode" value="{{ membership.pincode }}">
-
-                <div class="col-md-6" id="pincode_row">
-                    <label class="form-label" for="pincode">
-                        Pincode / पिनकोड <span class="text-danger">*</span>
-                    </label>
-                    <select name="pincode" id="pincode" class="form-control" required>
-                        <option value="">Select Pincode</option>
-                        <option value="{{ membership.pincode }}" selected>{{ membership.pincode }}</option>
-                    </select>
-                </div>
-
-            </div>
-
-            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
             <!-- LIBRARY NAME -->
             <div class="form-section mb-3 row">
                 <div class="col-md-6">
@@ -257,6 +226,60 @@
                         <small class="form-text text-muted">
                             Enter the name of the examination or course (e.g. MPSC, UPSC, Banking).
                         </small>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+            <!-- WARD NAME -->
+            <div class="form-section mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
+                    <select name="ward_name" id="ward_name" class="form-control" required>
+                        <option value="">Select Ward</option>
+                        {% for ward in ward_details %}
+                            <option value="{{ ward.ward_name }}" {% if membership.ward == ward.ward_name %}selected{% endif %}>
+                                {{ ward.ward_name }}
+                            </option>
+                        {% endfor %}
+                        <option value="Other" {% if membership.ward == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+
+                <input type="hidden" id="saved_pincode" value="{{ membership.pincode }}">
+
+                <div class="col-md-6 {% if membership.ward == 'Other' %}d-none{% endif %}" id="pincode_row">
+                    <label class="form-label" for="pincode">
+                        Pincode / पिनकोड <span class="text-danger">*</span>
+                    </label>
+                    <select name="pincode" id="pincode" class="form-control" {% if membership.ward != 'Other' %}required{% endif %}>
+                        <option value="">Select Pincode</option>
+                        {% if membership.pincode %}
+                            <option value="{{ membership.pincode }}" selected>{{ membership.pincode }}</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="col-md-12 {% if membership.ward != 'Other' %}d-none{% endif %}" id="other_fields">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="custom_ward_name" class="form-label">
+                                Enter Ward Name / वॉर्डचे नाव <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="custom_ward_name" id="custom_ward_name"
+                                class="form-control"
+                                value="{{ membership.other_ward|default:'' }}"
+                                placeholder="Enter Ward Name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="custom_pincode" class="form-label">
+                                Enter Pincode / पिनकोड <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="custom_pincode" id="custom_pincode"
+                                class="form-control" value="{{ membership.pincode|default:'' }}"
+                                placeholder="Enter Pincode">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -422,8 +445,8 @@
             <!-- Email And Phone Number -->
             <div class="form-section mb-3 row">
                 <div class="mb-3 col-md-6">
-                    <label class="form-label" for="email">Email / ईमेल <span class="text-danger">*</span></label>        
-                    <input type="email" id="" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" value="{{ membership.email }}" required readonly>
+                    <label class="form-label" for="email">Email / ईमेल</label>        
+                    <input type="email" id="" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" value="{{ membership.email }}" readonly>
                     <small id="emailHelp" class="form-text text-muted">
                         Please provide a valid email address.
                     </small>
@@ -443,8 +466,8 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label" for="dob">Date of Birth / जन्म तारीख  <span class="text-danger">*</span></label>
-                    <input type="date" id="dob" name="dob" class="form-control" value="{{ membership.dob|date:'Y-m-d' }}" required>
+                    <label class="form-label" for="dob">Date of Birth / जन्म तारीख</label>
+                    <input type="date" id="dob" name="dob" class="form-control" value="{{ membership.dob|date:'Y-m-d' }}">
                     <small id="dobError" class="text-danger d-none"></small>
                 </div>
             </div>
@@ -574,6 +597,7 @@
                     <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
                 </button>
             </div>
+            
         </form>
 
         <!-- Back to Top Button -->
@@ -1008,14 +1032,56 @@
 {% comment %} Ward Name & Pincode Logic {% endcomment %}
 <script>
     $(document).ready(function() {
+        const savedWard = "{{ membership.ward }}";
+        const savedPincode = "{{ membership.pincode }}";
+        const savedOtherWard = "{{ membership.other_ward|default:'' }}";
+
+        let cachedOtherWard = savedOtherWard;
+        let cachedOtherPincode = savedPincode;
+
+        function setRequiredFields(wardName) {
+            if (wardName === "Other") {
+                // 🟢 OTHER SELECTED
+                $('#pincode_row').addClass('d-none');
+                $('#pincode').prop('required', false).val('');
+
+                $('#other_fields').removeClass('d-none');
+                $('#custom_ward_name, #custom_pincode').prop('required', true);
+
+                // Restore cached values
+                $('#custom_ward_name').val(cachedOtherWard);
+                $('#custom_pincode').val(cachedOtherPincode);
+            } 
+            else if (wardName) {
+                // 🟢 NORMAL WARD SELECTED
+                cachedOtherWard = $('#custom_ward_name').val();
+                cachedOtherPincode = $('#custom_pincode').val();
+
+                $('#other_fields').addClass('d-none');
+                $('#custom_ward_name, #custom_pincode').prop('required', false).val('');
+
+                $('#pincode_row').removeClass('d-none');
+                $('#pincode').prop('required', true);
+            } 
+            else {
+                // 🟡 NOTHING SELECTED
+                $('#pincode_row').addClass('d-none');
+                $('#pincode').prop('required', false).val('');
+
+                $('#other_fields').addClass('d-none');
+                $('#custom_ward_name, #custom_pincode').prop('required', false).val('');
+            }
+        }
+
+        // Initial state setup
+        setRequiredFields(savedWard);
+
+        // On dropdown change
         $('#ward_name').change(function() {
             const wardName = $(this).val();
 
-            if (wardName) {
-                // show pincode field & make it required
-                $('#pincode_row').removeClass('d-none');
-                $('#pincode').prop('required', true);
-
+            if (wardName && wardName !== "Other") {
+                // Fetch pincodes dynamically
                 $.ajax({
                     url: "{% url 'L01:get_pincodes' %}",
                     type: "GET",
@@ -1023,18 +1089,16 @@
                     success: function(response) {
                         let options = '<option value="">Select Pincode</option>';
                         response.pincodes.forEach(function(pincode) {
-                            const selected = (pincode == $('#saved_pincode').val()) ? 'selected' : '';
+                            const selected = (pincode == savedPincode) ? 'selected' : '';
                             options += `<option value="${pincode}" ${selected}>${pincode}</option>`;
                         });
                         $('#pincode').html(options);
                     }
                 });
-            } else {
-                // hide pincode & remove required
-                $('#pincode_row').addClass('d-none');
-                $('#pincode').prop('required', false)
-                            .html('<option value="">Select Pincode</option>');
             }
+
+            // Always update required logic after change
+            setRequiredFields(wardName);
         });
     });
 </script>

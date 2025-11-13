@@ -124,6 +124,7 @@ class MembershipDetails(models.Model):
     middle_name_mar = models.TextField(null=True, blank=True)
     last_name_mar = models.TextField(null=True, blank=True)
     ward = models.TextField(null=True, blank=True)
+    other_ward = models.TextField(null=True, blank=True)  
     pincode = models.TextField(null=True, blank=True)
     library_name = models.TextField(null=True, blank=True)
     library_name_mar = models.TextField(null=True, blank=True)
@@ -234,7 +235,6 @@ class MembershipDetailsHistory(models.Model):
     membershipmaster = models.ForeignKey(MembershipMaster, on_delete=models.SET_NULL, null=True, blank=True, db_column='membershipmaster_id', related_name='membership_holders_history')
     status = models.ForeignKey(StatusMaster, on_delete=models.SET_NULL, null=True, blank=True, db_column='status_id', related_name='memberships_history')
     member_type = models.ForeignKey(parameter_master_L01, on_delete=models.SET_NULL, null=True, blank=True, db_column='member_type_id', related_name='membership_types_history')
-    
     first_name = models.TextField(null=True, blank=True)
     middle_name = models.TextField(null=True, blank=True)
     last_name = models.TextField(null=True, blank=True)
@@ -242,6 +242,7 @@ class MembershipDetailsHistory(models.Model):
     middle_name_mar = models.TextField(null=True, blank=True)
     last_name_mar = models.TextField(null=True, blank=True)
     ward = models.TextField(null=True, blank=True)
+    other_ward = models.TextField(null=True, blank=True)  
     pincode = models.TextField(null=True, blank=True)
     library_name = models.TextField(null=True, blank=True)
     library_name_mar = models.TextField(null=True, blank=True)

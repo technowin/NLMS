@@ -273,7 +273,8 @@ def registration(request):
                         "middle_name_mar": request.POST.get("middle_name_mar") or None,
                         "last_name_mar": request.POST.get("last_name_mar") or None,
                         "ward": request.POST.get("ward_name") or None,
-                        "pincode": request.POST.get("pincode") or None,
+                        "other_ward": request.POST.get("custom_ward_name") if request.POST.get("ward_name") == "Other" else None,
+                        "pincode": (request.POST.get("custom_pincode") if request.POST.get("ward_name") == "Other" else request.POST.get("pincode")) or None,
                         "library_name": request.POST.get("library_name") or None,
                         "library_name_mar": request.POST.get("library_name_mar") or None,
                         "local_address": request.POST.get("local_address") or None,
@@ -528,7 +529,8 @@ def membership_form_create(request):
                         "middle_name_mar": request.POST.get("middle_name_mar") or None,
                         "last_name_mar": request.POST.get("last_name_mar") or None,
                         "ward": request.POST.get("ward_name") or None,
-                        "pincode": request.POST.get("pincode") or None,
+                        "other_ward": request.POST.get("custom_ward_name") if request.POST.get("ward_name") == "Other" else None,
+                        "pincode": (request.POST.get("custom_pincode") if request.POST.get("ward_name") == "Other" else request.POST.get("pincode")) or None,
                         "library_name": request.POST.get("library_name") or None,
                         "library_name_mar": request.POST.get("library_name_mar") or None,
                         "local_address": request.POST.get("local_address") or None,
@@ -765,8 +767,6 @@ def membership_form_edit(request):
                     "middle_name_mar": "middle_name_mar",
                     "last_name": "last_name",
                     "last_name_mar": "last_name_mar",
-                    "ward_name": "ward",
-                    "pincode": "pincode",
                     "occupation_details": "occupation",
                     "phone_number": "office_phone",
                     "education": "education",
@@ -781,6 +781,17 @@ def membership_form_edit(request):
                     "fromDate": "from_date",
                     "dob": "dob",
                 }
+                
+                # --- Handle Ward & Pincode (including "Other") ---
+                ward_name = request.POST.get("ward_name")
+                custom_ward = request.POST.get("custom_ward_name")
+                custom_pincode = request.POST.get("custom_pincode")
+                dropdown_pincode = request.POST.get("pincode")
+
+                membership.ward = ward_name or None
+                membership.other_ward = custom_ward if ward_name == "Other" else None
+                membership.pincode = (custom_pincode if ward_name == "Other" else dropdown_pincode) or None
+                updated = True  # mark as updated if any ward-related change
                 
                 date_fields = ["dob", "from_date", "to_date"]
 
@@ -1389,6 +1400,7 @@ def membership_paymentreceipt_download(request):
         messages.error(request, "Oops! Something went wrong!")
         return render(request, "L01/Member Payment/member_payment.html", {})
 
+# membership renew form
 @login_required
 def membership_form_renew(request):
     Db.closeConnection()
@@ -1506,6 +1518,7 @@ def membership_form_renew(request):
                         middle_name_mar=membership.middle_name_mar,
                         last_name_mar=membership.last_name_mar,
                         ward=membership.ward,
+                        other_ward=membership.other_ward,
                         pincode=membership.pincode,
                         library_name=membership.library_name,
                         library_name_mar=membership.library_name_mar,
@@ -1565,6 +1578,7 @@ def membership_form_renew(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_payment_index")
 
+# membership cancel form
 @login_required
 def membership_form_cancellation(request):
     Db.closeConnection()
