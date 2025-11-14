@@ -5,9 +5,7 @@ urlpatterns = [
     path("index",index,name='index'),
     path("view_catalogue",view_catalogue,name='view_catalogue'),
     path('upsc_ebook_index/', upsc_ebook_index, name='upsc_ebook_index'),
-    # urls.py
-    path('topics/<int:section_no>/', topic_index, name='topic_index'),
-
+    path('topic_index/', topic_index, name='topic_index'),
     path('chapters_index/<int:topic_id>/', chapters_index, name='chapters_index'),
     path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
     path("registration",registration,name='registration'),
