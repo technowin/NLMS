@@ -78,6 +78,7 @@
   background-color: rgba(0, 51, 102, 0.05);
 }
 
+/* Alternating row colors */
 .chapters-table tbody tr:nth-child(even) {
   background-color: #f7f9fc;
 }
@@ -104,50 +105,50 @@
 
 /* Pagination container */
 #pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* Pagination buttons */
 #pagination button {
-    min-width: 35px;
-    padding: 6px 12px;
-    border: 2px solid #007bff;
-    border-radius: 50px; /* pill-shaped buttons */
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    background-color: #fff;
-    color: #007bff;
+  min-width: 35px;
+  padding: 6px 12px;
+  border: 2px solid #007bff;
+  border-radius: 50px; /* pill-shaped buttons */
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  color: #007bff;
 }
 
 /* Active page button */
 #pagination button.btn-primary {
-    background-color: #007bff;
-    color: #fff;
-    border-color: #0056b3;
-    box-shadow: 0 2px 5px rgba(0, 0, 0);
+  background-color: #007bff;
+  color: #fff;
+  border-color: #0056b3;
+  box-shadow: 0 2px 5px rgba(0, 0, 0);
 }
 
 /* Hover effect for all buttons */
 #pagination button:hover {
-    background-color: #0056b3;
-    color: #fff;
-    transform: translateY(-2px);
+  background-color: #0056b3;
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 /* Disabled buttons (optional) */
 #pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    background-color: #e9ecef;
-    color: #6c757d;
-    border-color: #dee2e6;
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background-color: #e9ecef;
+  color: #6c757d;
+  border-color: #dee2e6;
 }
 
 /* 🌟 Breadcrumb Styling */
@@ -184,6 +185,7 @@
 }
 
 
+
 </style>
     {% comment %} Slider {% endcomment %}
 
@@ -192,6 +194,7 @@
   <div class="container">
     <div class="card shadow-sm border-0 rounded-3">
       <div class="card-body">
+
         <h3 class="chapters-title mb-4 text-center">{{ topic.topic_name }}</h3>
 
         <nav aria-label="breadcrumb" class="mb-3">
@@ -230,8 +233,9 @@
           <td>
               {% if chapter_data.chapter.chapter_pdf_url %}
               <a href="{{ MEDIA_URL }}{{ chapter_data.chapter.chapter_pdf_url }}" target="_blank" class="btn btn-sm btn-primary">
-                <i class="fas fa-eye me-1"></i> View
-              </a>
+    <i class="fas fa-eye me-1"></i> View
+</a>
+
               {% else %}
               <span class="text-muted">No PDF</span>
               {% endif %}
@@ -248,7 +252,6 @@
   <!-- Pagination buttons -->
   <div id="pagination" class="d-flex justify-content-center mt-3"></div>
 </div>
-
         </div>
 
       </div>
@@ -448,6 +451,7 @@ function toggleSubjects(section_no) {
     }
 </script>
 
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const table = document.getElementById("chaptersTable");
@@ -492,5 +496,6 @@ document.addEventListener("DOMContentLoaded", function () {
     renderTablePage(currentPage);
 });
 </script>
+
 
 {% endblock %}

@@ -192,6 +192,7 @@
     <!-- Dynamic Subjects List -->
     <ul id="subjects-list" class="subjects-list"></ul>
 
+
 <!-- Study More Button -->
 <div style="text-align: center; margin-top: 25px;">
   <a href="#"  
@@ -201,15 +202,8 @@
     Study More →
   </a>
 </div>
-
-
   </div>
 </section>
-
-
-
-
-
 
 
     <script>
@@ -264,6 +258,8 @@
                 }
             });
         });
+        
+    
     </script>
 
     <script>
@@ -351,7 +347,6 @@ function toggleSubjects(section_no) {
 
 
 <script>
-    // Preload subjects data into JS safely
     const subjectsData = {
         {% for section_no, subjects in subjects_by_section %}
             "{{ section_no }}": [
@@ -373,30 +368,26 @@ function toggleSubjects(section_no) {
         const studyMoreBtn = document.getElementById("study-more-btn");
 
         if (section) {
-            // Clear previous subjects
             list.innerHTML = "";
-
-            // Update title
             title.textContent = "Subjects for Phase " + sectionNo;
 
-            // Populate subjects
             section.forEach(sub => {
                 const li = document.createElement("li");
                 li.innerHTML = `<strong>${sub.name}</strong>: ${sub.description}`;
                 list.appendChild(li);
             });
 
-            // Show the section
             container.style.display = "block";
-
-            // Smooth scroll to the section
             container.scrollIntoView({ behavior: "smooth" });
 
-            // ✅ Update Study More button URL dynamically
-            studyMoreBtn.href = "{% url 'L01:topic_index' 0 %}".replace("/0/", "/" + sectionNo + "/");
+            // FIXED → Safe placeholder method
+            studyMoreBtn.href =
+                "{% url 'L01:topic_index' section_no=999999 %}".replace("999999", sectionNo);
+
         } else {
             container.style.display = "none";
         }
     }
 </script>
+
 {% endblock %}

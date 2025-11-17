@@ -3411,20 +3411,39 @@ def topic_index(request, section_no):
             status=500
         )
 
-
 def chapters_index(request, topic_id):
     try:
+        
         library_code = request.session.get('library_db', None)
         
-        topic = get_object_or_404(Topics.objects.using('L01'), topic_id=topic_id)
-        section = get_object_or_404(Sections.objects.using('L01'), section_no=topic.section_no_id)
+        # ✅ Fetch the selected topic from L01
+        topic = get_object_or_404(
+            Topics.objects.using('L01'),
+            topic_id=topic_id
+        )
 
-        # Fetch chapters and sort numerically
-        chapters = list(Chapters.objects.using('L01').filter(topic_id=topic_id))
-        chapters.sort(key=lambda x: int(x.chapter_no))  # ✅ numeric ascending
+        # ✅ Fetch the parent section for breadcrumb
+        section = get_object_or_404(
+            Sections.objects.using('L01'),
+            section_no=topic.section_no_id
+        )
 
-        chapters_data = [{"chapter": chapter} for chapter in chapters]
+        # ✅ Fetch all chapters under this topic (sorted numerically)
+        chapters = Chapters.objects.using('L01') \
+            .filter(topic_id=topic_id) \
+            .annotate(
+                chapter_no_int=Cast('chapter_no', IntegerField())
+            ) \
+            .order_by('chapter_no_int')
 
+        # ✅ Prepare structured data (if needed for template)
+        chapters_data = []
+        for chapter in chapters:
+            chapters_data.append({
+                "chapter": chapter
+            })
+
+        # ✅ Render the chapters page
         return render(request, "L01/UPSC/chapters_index.html", {
             "MEDIA_URL": settings.MEDIA_URL,
             "section": section,
@@ -3439,7 +3458,7 @@ def chapters_index(request, topic_id):
         )
 
 
-        return JsonResponse(
-            {"error": "An unexpected error occurred.", "details": str(e)},
-            status=500
-        )
+
+
+
+      
