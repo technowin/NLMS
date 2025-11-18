@@ -606,3 +606,19 @@ class Chapters(models.Model):
         return f"{self.chapter_no} - {self.chapter_name}" if self.chapter_name else self.chapter_no
 
 
+class MemberEntryExit(models.Model):
+    membership_code = models.CharField(max_length=100)
+    entry_time = models.DateTimeField(null=True, blank=True)
+    exit_time = models.DateTimeField(null=True, blank=True)
+    role_id = models.IntegerField(null=True, blank=True)
+    remark = models.TextField(null=True, blank=True)
+    created_by = models.ForeignKey(CustomUser, related_name='member_entry_created',on_delete=models.SET_NULL, null=True, blank=True)
+    updated_by = models.ForeignKey(CustomUser, related_name='member_entry_updated',on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "tbl_member_log"
+
+    def __str__(self):
+        return f"{self.membership_code} - Entry/Exit"

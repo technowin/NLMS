@@ -53,4 +53,10 @@ urlpatterns = [
     path('user_create', user_create, name='user_create'),
     path('user_edit', user_edit, name='user_edit'),
     path('user_view', user_view, name='user_view'),
+
+    path('user_view', user_view, name='user_view'),
+    path('user_view', user_view, name='user_view'),
+
+    path('member-entry-exit/', member_entry_exit, name='member_entry_exit'),
+    path('get-member-details/<str:membership_code>/', get_member_details, name='get_member_details'),
 ]

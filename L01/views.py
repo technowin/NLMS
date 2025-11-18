@@ -65,6 +65,8 @@ from barcode import Code128
 from reportlab.lib.utils import ImageReader
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
+from django.db.models import Value, CharField
+from django.db.models.functions import Concat
 # Part First While Filling Membership Form
 
 def index(request):
@@ -3589,6 +3591,114 @@ def mpsc_chapters_index(request, topic_id):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+    
+def member_entry_exit(request):
+    from django.utils.timezone import localdate
+    members = MembershipDetails.objects.using('L01').filter(isactive=True).annotate(
+        display_name=Concat(
+            'first_name', Value(' '), 
+            'middle_name', Value(' '), 
+            'last_name', Value(' - '), 
+            'membership_code',
+            output_field=CharField()
+        )
+    ).values('membership_code', 'display_name')
+    active_members = MembershipDetails.objects.using('L01').filter(isactive=True).count()
+    today = date.today()
+
+    today = localdate()
+
+    scan_today = MemberEntryExit.objects.using('L01').filter(
+        entry_time__date=today
+    ).count()
 
 
-      
+
+    context = {
+        'members': list(members),
+        'active_members': active_members,
+        'scan_today': scan_today
+    }
+
+    return render(request, 'L01/Member Payment/member_log.html', context)
+
+def get_member_details(request, membership_code):
+    try:
+        # Query from L01 database
+        member = MembershipDetails.objects.using('L01').get(membership_code=membership_code)
+        
+        # Check if membership is valid based on to_date
+        current_date = date.today()
+        is_valid = member.to_date >= current_date if member.to_date else False
+        
+        # Get profile picture from DocumentDetails in L01 database
+        profile_pic = '/static/images/default-profile.png'
+        try:
+            document = DocumentDetails.objects.using('L01').get(membership=member.id, document_id=1)
+            if document.file_path:
+                file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
+                if file_path.exists():
+                    profile_pic = f"{settings.MEDIA_URL}{document.file_path.replace('\\', '/')}"
+        except DocumentDetails.DoesNotExist:
+            pass  # Use default profile picture
+        
+        # Prepare response data
+        member_data = {
+            'membership_code': member.membership_code,
+            'full_name': f"{member.first_name} {member.middle_name} {member.last_name}".strip(),
+            'ward': member.ward or 'Not specified',
+            'user_id': member.user_id,
+            'is_active': member.isactive,
+            'status': 'valid' if is_valid else 'invalid',
+            'profile_pic': profile_pic,
+            'to_date': member.to_date.strftime('%Y-%m-%d') if member.to_date else 'N/A',
+            'membership_expired': not is_valid  # Add this flag
+        }
+        
+        # AUTO CREATE ENTRY ONLY IF MEMBERSHIP IS VALID (to_date not passed)
+        if is_valid and member.isactive:
+            current_time = datetime.now()
+            
+            # Check for existing open entry today
+            today_start = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = current_time.replace(hour=23, minute=59, second=59, microsecond=999999)
+            
+            existing_entry = MemberEntryExit.objects.using('L01').filter(
+                membership_code=membership_code,
+                entry_time__gte=today_start,
+                entry_time__lte=today_end,
+                exit_time__isnull=True
+            ).first()
+            
+            if not existing_entry:
+                # Create new entry record
+                entry_record = MemberEntryExit.objects.using('L01').create(
+                    membership_code=membership_code,
+                    entry_time=current_time,
+                    exit_time=None,
+                    role_id=getattr(member, 'role_id', None),
+                    created_by=request.user if request.user.is_authenticated else None,
+                    updated_by=request.user if request.user.is_authenticated else None
+                )
+                
+                member_data['auto_entry_created'] = True
+                member_data['entry_time'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+                member_data['entry_id'] = entry_record.id
+                member_data['log_message'] = f"Entry log successfully created for {member.first_name} {member.last_name}"
+            else:
+                member_data['auto_entry_created'] = False
+                member_data['log_message'] = f"Active entry already exists for {member.first_name} {member.last_name}"
+        else:
+            member_data['auto_entry_created'] = False
+            if not is_valid:
+                member_data['log_message'] = f"Membership expired for {member.first_name} {member.last_name}. Cannot create entry log."
+            elif not member.isactive:
+                member_data['log_message'] = f"Member account is inactive for {member.first_name} {member.last_name}. Cannot create entry log."
+        
+        return JsonResponse(member_data)
+    
+    except MembershipDetails.DoesNotExist:
+        return JsonResponse({"error": "Member not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": "An unexpected error occurred.", "details": str(e)}, status=500)
+    
