@@ -3456,8 +3456,15 @@ def chapters_index(request, topic_id):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+    
+def get_membership_code(request):
+    user_id = request.session.get("user_id")
+    email = get_object_or_404(CustomUser, id = user_id ).email
+    member = MembershipDetails.objects.get(email=email)
 
-
+    return JsonResponse({
+        "membership_code": member.membership_code
+    })
 
 
 

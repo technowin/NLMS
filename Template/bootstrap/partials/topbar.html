@@ -413,9 +413,92 @@
                         <i class="mdi mdi-logout me-1"></i>
                         <span>Logout</span>
                     </a>
+                    {% if request.session.role_id == '3' %}
+                    <a href="javascript:void(0)" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#qrCodeModal" onclick="loadQRCode()">
+                        <i class="mdi mdi-logout me-1"></i>
+                        <span>QR Code</span>
+                    </a>
+                    {% endif %} 
                 </div>
             </li>
         </ul>
     </div>
 </div>
+
+<!-- QR CODE MODAL -->
+<div class="modal fade" id="qrCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            
+            <div class="modal-header">
+                <h5 class="modal-title">Your QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+
+                <!-- Show Membership Code -->
+                <div id="memberCodeText" class="fw-bold mb-2"></div>
+
+                <!-- QR Code -->
+                <div id="qrCodeContainer"></div>
+
+                <!-- Download Button -->
+                <button class="btn btn-primary mt-3" onclick="downloadQRCode()">
+                    Download QR Code
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+let qr; // global QR object
+
+function loadQRCode() {
+
+    $("#qrCodeContainer").html("");
+    $("#memberCodeText").html("Loading...");
+
+    $.ajax({
+        url: '{% url "L01:get_membership_code" %}',
+        method: "GET",
+        success: function(res) {
+            let memberCode = res.membership_code;
+
+            // Show membership code
+            $("#memberCodeText").html(
+                "Membership Code: <span class='text-primary'>" + memberCode + "</span>"
+            );
+
+            // Generate QR
+            let canvas = document.createElement("canvas");
+            qr = new QRious({
+                element: canvas,
+                size: 220,
+                value: memberCode
+            });
+
+            $("#qrCodeContainer").append(canvas);
+        }
+    });
+}
+
+function downloadQRCode() {
+    if (!qr) return;
+
+    const link = document.createElement("a");
+    link.download = "membership_qr.png";
+    link.href = qr.toDataURL("image/png");
+    link.click();
+}
+</script>
+
+
 <!-- ========== Topbar End ========== -->

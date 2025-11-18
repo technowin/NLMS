@@ -13,6 +13,8 @@ urlpatterns = [
     path("check_aadhar", check_aadhar, name="check_aadhar"),
     path("get_pincodes", get_pincodes, name="get_pincodes"),
     path("get_membership_details", get_membership_details, name="get_membership_details"),
+    path("get-membership-code/",get_membership_code, name="get_membership_code"),
+
     
     # membership approval
     path("membership_approval", membership_approval, name="membership_approval"),
