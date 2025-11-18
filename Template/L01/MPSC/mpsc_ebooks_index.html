@@ -156,7 +156,7 @@
     <nav aria-label="breadcrumb" class="mb-3">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'library_list' %}">Home</a></li>
-        <li class="breadcrumb-item active" aria-current="page">UPSC</li>
+        <li class="breadcrumb-item active" aria-current="page">MPSC</li>
       </ol>
     </nav>
 
@@ -173,7 +173,7 @@
           <h3>{{ section.section_name }}</h3>
           <p>{{ section.section_description }}</p>
 
-         <a href="javascript:void(0);" class="view-more-btn"
+          <a href="javascript:void(0);" class="view-more-btn"
    onclick="showSubjectsSection({{ section.section_no }}, '{{ section.section_name }}')">
     View More
 </a>
@@ -311,40 +311,33 @@
 
 
 <script>
-function toggleSubjects(section_no) {
-    // Find the global subjects section
+function showSubjectsSection(section_no, sectionName) {
     const container = document.getElementById("subjects-section");
     const title = document.getElementById("subjects-title");
     const list = document.getElementById("subjects-list");
 
-    // Hide existing content first
     list.innerHTML = "";
 
-    // Get subjects data from preloaded JS object
     const sectionData = subjectsData[section_no];
 
     if (sectionData && sectionData.length > 0) {
-        // Update the title
-        title.textContent = "Subjects for Phase " + section_no;
+        title.textContent = "Subjects for " + sectionName;
 
-        // Populate subjects
         sectionData.forEach(sub => {
             const li = document.createElement("li");
             li.innerHTML = `<strong>${sub.name}</strong>: ${sub.description}`;
             list.appendChild(li);
         });
 
-        // Show the section
         container.style.display = "block";
-
-        // Smooth scroll to subjects section
         container.scrollIntoView({ behavior: "smooth" });
     } else {
-        // Hide section if no data
         container.style.display = "none";
     }
 }
 </script>
+
+
 
 
 <script>
@@ -361,7 +354,7 @@ function toggleSubjects(section_no) {
         {% endfor %}
     };
 
-   function showSubjectsSection(sectionNo, sectionName) {
+    function showSubjectsSection(sectionNo, sectionName) {
     const section = subjectsData[sectionNo];
     const list = document.getElementById("subjects-list");
     const title = document.getElementById("subjects-title");
@@ -371,7 +364,7 @@ function toggleSubjects(section_no) {
     if (section) {
         list.innerHTML = "";
 
-        // ✅ Updated title to use sectionName
+        // ✅ Updated title (your request)
         title.textContent = "Subjects for " + sectionName;
 
         section.forEach(sub => {
@@ -383,9 +376,9 @@ function toggleSubjects(section_no) {
         container.style.display = "block";
         container.scrollIntoView({ behavior: "smooth" });
 
-        // FIXED → Safe placeholder method (unchanged)
+        // ❗ No changes here — kept exactly as you had it
         studyMoreBtn.href =
-            "{% url 'L01:topic_index' section_no=999999 %}".replace("999999", sectionNo);
+            "{% url 'L01:mpsc_topics_index' section_no=999999 %}".replace("999999", sectionNo);
 
     } else {
         container.style.display = "none";

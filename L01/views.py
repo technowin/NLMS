@@ -3465,7 +3465,130 @@ def get_membership_code(request):
     return JsonResponse({
         "membership_code": member.membership_code
     })
+def mpsc_ebook_index(request):
+    try:
+        # Fetch the competitive exam details for MPSC (id = 2) from L01 DB
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using('L01'),
+            competitive_id=2
+        )
 
+        # Fetch all related sections linked to MPSC (from L01 DB)
+        sections = Sections.objects.using('L01').filter(
+            competitive_id=2
+        ).order_by('section_no')
+
+        # ✅ Fetch subjects for each section (order by subject_id)
+        subjects_by_section = []
+        for section in sections:
+            subjects = Subjects.objects.using('L01').filter(
+                section_no=section.section_no
+            ).order_by('subject_id')  # using subject_id same as UPSC
+            subjects_by_section.append((section.section_no, subjects))
+
+        # Pass everything to template without converting to dict
+        return render(request, "L01/MPSC/mpsc_ebooks_index.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "sections": sections,
+            "subjects_by_section": subjects_by_section,
+        })
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+
+
+def mpsc_topics_index(request, section_no):
+    try:
+        # ✅ Get the competitive exam (MPSC)
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using('L01'),
+            competitive_id=2   # ← MPSC ID
+        )
+
+        # ✅ Fetch the specific section using the passed section_no
+        section = get_object_or_404(
+            Sections.objects.using('L01'),
+            section_no=section_no
+        )
+
+        # ✅ Fetch all subjects under this section
+        subjects = Subjects.objects.using('L01').filter(
+            section_no=section.section_no
+        ).order_by('subject_id')
+
+        subjects_data = []
+
+        # ✅ For each subject, fetch topics under the same section
+        for subject in subjects:
+            topics = Topics.objects.using('L01').filter(
+                subject_id=subject.subject_id,
+                section_no=section.section_no
+            ).order_by('topic_id')
+
+            subjects_data.append({
+                "subject": subject,
+                "topics": topics
+            })
+
+        # ✅ Render the MPSC topics page
+        return render(request, "L01/MPSC/mpsc_topics_index.html", {   # ← Change template if needed
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "section": section,
+            "subjects_data": subjects_data,
+        })
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+
+def mpsc_chapters_index(request, topic_id):
+    try:
+        # Fetch competitive exam (MPSC)
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using('L01'),
+            competitive_id=2
+        )
+
+        # Fetch the topic
+        topic = get_object_or_404(
+            Topics.objects.using('L01'),
+            topic_id=topic_id
+        )
+
+        # Fetch parent section
+        section = get_object_or_404(
+            Sections.objects.using('L01'),
+            section_no=topic.section_no_id
+        )
+
+        # Fetch chapters under this topic
+        chapters = Chapters.objects.using('L01') \
+            .filter(topic_id=topic_id) \
+            .annotate(chapter_no_int=Cast('chapter_no', IntegerField())) \
+            .order_by('chapter_no_int')
+
+        chapters_data = [{"chapter": chapter} for chapter in chapters]
+
+        return render(request, "L01/MPSC/mpsc_chapters_index.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "section": section,
+            "topic": topic,
+            "chapters_data": chapters_data,
+        })
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
 
 
       
