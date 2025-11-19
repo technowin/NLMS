@@ -65,25 +65,44 @@
                     </div>
                     
                     <div class="qr-scanner-container">
-                        <h5><i class="bi bi-qr-code-scan"></i> QR Code Scanner</h5>
-                        <p class="text-muted">जलद प्रवेशासाठी सदस्याचा QR कोड स्कॅन करा</p>
-                        <div class="qr-placeholder">
-                            <div>
-                                <i class="bi bi-upc-scan display-4 text-muted"></i>
-                                <p class="mt-2">QR स्कॅनर क्षेत्र</p>
-                                <small class="text-muted">या क्षेत्रात QR कोड ठेवा</small>
+
+                            <h5><i class="bi bi-qr-code-scan"></i> QR Code Scanner</h5>
+                            <p class="text-muted">जलद प्रवेशासाठी सदस्याचा QR कोड स्कॅन करा</p>
+
+                            <!-- SCAN BUTTON -->
+                            <button style="color: white !important;" class="btn scan-btn w-100" id="scan-btn">
+                                <i class="bi bi-camera"></i> स्कॅनर सक्रिय करा
+                            </button>
+
+                            <!-- Placeholder Area -->
+                            <div id="placeholder-area" class="qr-placeholder mt-3">
+                                <div>
+                                    <i class="bi bi-upc-scan display-4 text-muted"></i>
+                                    <p class="mt-2">QR Scanner Area</p>
+                                    <small class="text-muted">या क्षेत्रात QR कोड ठेवा</small>
+                                </div>
                             </div>
+
+                            <!-- REAL QR READER -->
+                            <div id="qr-reader" style="display:none; width:100%;"></div>
+
+                            <!-- Result -->
+                            <div id="scan-result" class="mt-3 text-center fw-bold"></div>
+
+                            <!-- Upload Button -->
+                            <button class="btn btn-secondary w-100 mt-2" id="upload-btn">
+                                <i class="bi bi-upload"></i> Upload QR Image
+                            </button>
+
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> मोबाइलवर हे कॅमेरा उघडेल QR स्कॅन करण्यासाठी
+                                </small>
+                            </div>
+
                         </div>
-                        <button  style="color: white !important;"class="btn scan-btn w-100" id="scan-btn">
-                            <i class="bi bi-camera"></i> स्कॅनर सक्रिय करा
-                        </button>
-                        <div class="mt-3">
-                            <small class="text-muted">
-                                <i class="bi bi-info-circle"></i> 
-                                On mobile devices, this will open your camera for QR scanning
-                            </small>
-                        </div>
-                    </div>
+
+
                     
                     <div class="stats-container">
                         <div class="stat-item">
@@ -131,6 +150,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
 
 <script>
     // Theme Management
@@ -255,17 +276,15 @@
         });
         
         // Handle scan button click
-        $('#scan-btn').on('click', function() {
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                // Mobile device - simulate QR scanning
-                showInfoAlert('QR Scanner would open on a mobile device. In a real implementation, this would access the camera.', 'Mobile Device Detected');
-                // For demo purposes, we'll simulate scanning a QR code after a delay
-                setTimeout(simulateQRScan, 1500);
-            } else {
-                // Desktop - show message
-                showInfoAlert('QR scanning is optimized for mobile devices. On desktop, please use the dropdown to select a member.', 'Desktop Device');
-            }
-        });
+      //  $('#scan-btn').on('click', function() {
+      //      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      //          showInfoAlert('QR Scanner would open on a mobile device. In a real implementation, this would access the camera.', 'Mobile Device Detected');
+      //          
+      //          setTimeout(simulateQRScan, 1500);
+      //      } else {
+      //          showInfoAlert('QR scanning is optimized for mobile devices. On desktop, please use the dropdown to select a member.', 'Desktop Device');
+      //      }
+      //  });
         
         // Simulate QR scanning for demo
         function simulateQRScan() {
@@ -460,4 +479,87 @@
         }
     });
 </script>
+
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+let html5QrCode;
+
+// CLICK — START CAMERA SCAN
+document.addEventListener("DOMContentLoaded", function () {
+
+    const scanBtn = document.getElementById("scan-btn");
+    const uploadBtn = document.getElementById("upload-btn");
+
+    const qrReaderDiv = document.getElementById("qr-reader");
+    const placeholder = document.getElementById("placeholder-area");
+    const scanResult = document.getElementById("scan-result");
+
+    // 📌 START CAMERA SCAN
+    scanBtn.addEventListener("click", function () {
+
+        placeholder.style.display = "none";
+        qrReaderDiv.style.display = "block";
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: 250
+            },
+            qrMessage => {
+                scanResult.innerHTML = "Scanned Code: <b>" + qrMessage + "</b>";
+
+                // STOP CAMERA
+                html5QrCode.stop().then(() => {
+                    qrReaderDiv.style.display = "none";
+                    placeholder.style.display = "block";
+                });
+
+                // 🔥 Trigger dropdown selection or AJAX call here
+                // $('#member-select').val(qrMessage).trigger('change');
+            },
+            errorMessage => {
+                // ignore scan errors like "not found"
+            }
+        ).catch(err => {
+            alert("Camera not available or permission denied.");
+            console.log(err);
+        });
+
+    });
+
+    // 📌 UPLOAD IMAGE SCAN
+    uploadBtn.addEventListener("click", function () {
+
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        input.onchange = e => {
+
+            const file = e.target.files[0];
+            if (!file) return;
+
+            Html5Qrcode.scanFile(file, true)
+                .then(qrMessage => {
+                    scanResult.innerHTML =
+                        "Uploaded QR: <b>" + qrMessage + "</b>";
+
+                    // 🔥 Trigger dropdown or AJAX call
+                    // $('#member-select').val(qrMessage).trigger('change');
+                })
+                .catch(err => {
+                    alert("Error scanning image: " + err);
+                });
+        };
+
+        input.click();
+    });
+
+});
+</script>
+
 {% endblock %}
