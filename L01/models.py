@@ -362,41 +362,11 @@ class CirculationCopyStatus(models.Model):
     
 class CirculationTransaction(models.Model):
     id = models.AutoField(primary_key=True)
-    
-    catalog = models.ForeignKey(
-        BookCatalog,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        db_column="cat_ref_num",
-        related_name="transactions"  # All transactions for this catalog/book title
-    )
-    
-    accession = models.ForeignKey(
-        BookAccession,
-        on_delete=models.CASCADE,
-        db_column="accession_id",
-        related_name="transactions" 
-    )
-    
-    circulation = models.ForeignKey(
-        CirculationCopyStatus,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        db_column="copy_status_id",
-        related_name="transactions"  # All transactions linked to a particular copy status
-    )
-    
-    member = models.ForeignKey(
-        MembershipDetails,
-        on_delete=models.CASCADE,
-        db_column="member_id",
-        related_name="transactions" 
-    )
-    
+    catalog = models.ForeignKey(BookCatalog,on_delete=models.SET_NULL,null=True,blank=True,db_column="cat_ref_num",related_name="transactions")  # All transactions for this catalog/book title
+    accession = models.ForeignKey( BookAccession,on_delete=models.CASCADE,db_column="accession_id",related_name="transactions" )
+    circulation = models.ForeignKey(CirculationCopyStatus,on_delete=models.SET_NULL,null=True,blank=True,db_column="copy_status_id",related_name="transactions")  # All transactions linked to a particular copy status)
+    member = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE,db_column="member_id",related_name="transactions" )
     barcode = models.CharField(max_length=50, blank=True, null=True)
-    
     issue_date = models.DateField(blank=True, null=True)
     due_date = models.DateField(blank=True, null=True)
     return_date = models.DateField(blank=True, null=True)
@@ -411,14 +381,7 @@ class CirculationTransaction(models.Model):
     issued_by = models.TextField(null=True, blank=True)
     received_by = models.TextField(null=True, blank=True)
     membership_code = models.TextField(blank=True, null=True)
-    return_condition = models.ForeignKey(
-        status_master,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="transactions_with_condition"
-    )
-    
+    return_condition = models.ForeignKey(status_master,on_delete=models.SET_NULL,null=True,blank=True,related_name="transactions_with_condition")
     remarks = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.TextField(null=True, blank=True)
