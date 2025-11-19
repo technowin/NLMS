@@ -622,3 +622,64 @@ class MemberEntryExit(models.Model):
 
     def __str__(self):
         return f"{self.membership_code} - Entry/Exit"
+    
+
+    class EbookTypeMaster(models.Model):
+        type_id = models.AutoField(primary_key=True)
+        ebookTypeCode = models.TextField(blank=True, null=True)
+        ebookTypeNameEnglish = models.TextField(blank=True, null=True)
+        ebookTypeNameMarathi = models.TextField(blank=True, null=True)
+        is_active = models.IntegerField(null=True, blank=True, default=1)
+        created_at = models.DateTimeField(auto_now_add=True)
+        updated_at = models.DateTimeField(auto_now=True)
+        created_by = models.TextField(blank=True, null=True)
+        updated_by = models.TextField(blank=True, null=True)
+
+        class Meta:
+            db_table = 'tbl_ebooktypemaster'
+
+        def __str__(self):
+            return (
+                self.ebookTypeNameMarathi 
+                or self.ebookTypeNameEnglish 
+                or f"EbookType {self.type_id}"
+            )
+        
+class LibraryEbook(models.Model):
+        ebook_id = models.AutoField(primary_key=True)
+        eb_title = models.TextField(blank=True, null=True)
+        eb_subtitle = models.TextField(blank=True, null=True)
+        eb_author = models.TextField(blank=True, null=True)
+        eb_publisher = models.TextField(blank=True, null=True)
+        eb_isbn_issn = models.TextField(blank=True, null=True)
+        eb_edition = models.TextField(blank=True, null=True)
+        eb_pdf_url = models.TextField(blank=True, null=True)
+        eb_subject = models.ForeignKey(SubjectTypeMaster, on_delete=models.SET_NULL, blank=True, null=True, db_column='subject_id')
+        call_number = models.TextField(blank=True, null=True)  # NEW
+        cutter_number = models.TextField(blank=True, null=True)  # NEW
+        e_publication_year = models.TextField(blank=True, null=True)  # NEW
+        ebook_type = models.ForeignKey('EbookTypeMaster',on_delete=models.SET_NULL,null=True,blank=True,db_column='ebook_type_id')
+        remarks = models.TextField(blank=True, null=True)  # NEW
+        eb_keywords = models.TextField(blank=True, null=True)
+        eb_language = models.TextField(blank=True, null=True)
+        eb_publication_place = models.TextField(blank=True, null=True)
+        eb_year_of_publication = models.IntegerField(blank=True, null=True)
+        eb_classification_number = models.TextField(blank=True, null=True)
+        eb_pages = models.TextField(blank=True, null=True)
+        eb_date_of_registration = models.DateField(blank=True, null=True)
+        eb_other_authors = models.TextField(blank=True, null=True)
+        eb_front_page_photo = models.TextField(blank=True, null=True)
+        eb_last_page_photo = models.TextField(blank=True, null=True)
+        eb_status_id = models.IntegerField(blank=True, null=True)
+        created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+        created_by = models.TextField(null=True, blank=True)
+        updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+        updated_by = models.TextField(null=True, blank=True)
+
+        class Meta:
+            db_table = 'tbl_library_ebooks'
+
+        def __str__(self):
+            return f"{self.ebook_id} - {self.title}"
+
+
