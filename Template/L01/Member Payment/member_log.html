@@ -65,40 +65,43 @@
                     </div>
                     
                     <div class="qr-scanner-container">
+
                             <h5><i class="bi bi-qr-code-scan"></i> QR Code Scanner</h5>
                             <p class="text-muted">जलद प्रवेशासाठी सदस्याचा QR कोड स्कॅन करा</p>
 
-                            <!-- SCAN AREA -->
-                            <div id="qr-reader" style="width: 100%; display:none;"></div>
+                            <!-- SCAN BUTTON -->
+                            <button style="color: white !important;" class="btn scan-btn w-100" id="scan-btn">
+                                <i class="bi bi-camera"></i> स्कॅनर सक्रिय करा
+                            </button>
 
-                            <!-- Placeholder -->
-                            <div class="qr-placeholder" id="placeholder-area">
+                            <!-- Placeholder Area -->
+                            <div id="placeholder-area" class="qr-placeholder mt-3">
                                 <div>
                                     <i class="bi bi-upc-scan display-4 text-muted"></i>
-                                    <p class="mt-2">QR स्कॅनर क्षेत्र</p>
+                                    <p class="mt-2">QR Scanner Area</p>
                                     <small class="text-muted">या क्षेत्रात QR कोड ठेवा</small>
                                 </div>
                             </div>
 
-                            <!-- SCAN CAMERA BUTTON -->
-                            <button class="btn scan-btn w-100" id="scan-btn" style="color:white !important;">
-                                <i class="bi bi-camera"></i> स्कॅनर सक्रिय करा
-                            </button>
+                            <!-- REAL QR READER -->
+                            <div id="qr-reader" style="display:none; width:100%;"></div>
 
-                            <!-- UPLOAD BUTTON (PC TESTING) -->
+                            <!-- Result -->
+                            <div id="scan-result" class="mt-3 text-center fw-bold"></div>
+
+                            <!-- Upload Button -->
                             <button class="btn btn-secondary w-100 mt-2" id="upload-btn">
                                 <i class="bi bi-upload"></i> Upload QR Image
                             </button>
-
-                            <!-- RESULT -->
-                            <div id="scan-result" class="mt-3 fw-bold text-primary"></div>
 
                             <div class="mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i> मोबाइलवर हे कॅमेरा उघडेल QR स्कॅन करण्यासाठी
                                 </small>
                             </div>
+
                         </div>
+
 
                     
                     <div class="stats-container">
@@ -148,7 +151,6 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 
 <script>
@@ -478,61 +480,85 @@
     });
 </script>
 
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
 <script>
 let html5QrCode;
-const qrReaderDiv = document.getElementById("qr-reader");
-const placeholder = document.getElementById("placeholder-area");
-const scanResult = document.getElementById("scan-result");
 
-// 👉 CAMERA SCAN
-document.getElementById("scan-btn").addEventListener("click", function () {
-    debugger;
+// CLICK — START CAMERA SCAN
+document.addEventListener("DOMContentLoaded", function () {
 
-    placeholder.style.display = "none";
-    qrReaderDiv.style.display = "block";
+    const scanBtn = document.getElementById("scan-btn");
+    const uploadBtn = document.getElementById("upload-btn");
 
-    html5QrCode = new Html5Qrcode("qr-reader");
+    const qrReaderDiv = document.getElementById("qr-reader");
+    const placeholder = document.getElementById("placeholder-area");
+    const scanResult = document.getElementById("scan-result");
 
-    html5QrCode.start(
-        { facingMode: "environment" }, // back camera
-        {
-            fps: 10,
-            qrbox: 250
-        },
-        qrCodeMessage => {
-            scanResult.innerHTML = "Scanned Code: <b>" + qrCodeMessage + "</b>";
-            html5QrCode.stop(); // stop camera after success
-        },
-        errorMessage => {
-            // ignore errors
-        }
-    ).catch(err => {
-        console.log("Camera Error:", err);
+    // 📌 START CAMERA SCAN
+    scanBtn.addEventListener("click", function () {
+
+        placeholder.style.display = "none";
+        qrReaderDiv.style.display = "block";
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: 250
+            },
+            qrMessage => {
+                scanResult.innerHTML = "Scanned Code: <b>" + qrMessage + "</b>";
+
+                // STOP CAMERA
+                html5QrCode.stop().then(() => {
+                    qrReaderDiv.style.display = "none";
+                    placeholder.style.display = "block";
+                });
+
+                // 🔥 Trigger dropdown selection or AJAX call here
+                // $('#member-select').val(qrMessage).trigger('change');
+            },
+            errorMessage => {
+                // ignore scan errors like "not found"
+            }
+        ).catch(err => {
+            alert("Camera not available or permission denied.");
+            console.log(err);
+        });
+
     });
-});
 
+    // 📌 UPLOAD IMAGE SCAN
+    uploadBtn.addEventListener("click", function () {
 
-// 👉 IMAGE UPLOAD (for PC testing)
-document.getElementById("upload-btn").addEventListener("click", function () {
-    debugger;
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
 
-    input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
+        input.onchange = e => {
 
-        Html5Qrcode.scanFile(file, true)
-            .then(qrMessage => {
-                scanResult.innerHTML = "Uploaded QR Code Result: <b>" + qrMessage + "</b>";
-            })
-            .catch(err => {
-                alert("Could not scan image: " + err);
-            });
-    };
+            const file = e.target.files[0];
+            if (!file) return;
 
-    input.click();
+            Html5Qrcode.scanFile(file, true)
+                .then(qrMessage => {
+                    scanResult.innerHTML =
+                        "Uploaded QR: <b>" + qrMessage + "</b>";
+
+                    // 🔥 Trigger dropdown or AJAX call
+                    // $('#member-select').val(qrMessage).trigger('change');
+                })
+                .catch(err => {
+                    alert("Error scanning image: " + err);
+                });
+        };
+
+        input.click();
+    });
+
 });
 </script>
 
