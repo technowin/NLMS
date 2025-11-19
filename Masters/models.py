@@ -1,6 +1,8 @@
 from django.db import models
 from django.db import models
 from Account.models import *
+
+
 class status_master(models.Model):
     status_id = models.AutoField(primary_key=True)
     status_name = models.TextField(null=True, blank=True)
@@ -178,6 +180,8 @@ class BookCatalog(models.Model):
     front_page_photo = models.TextField(blank=True, null=True)
     last_page_photo = models.TextField(blank=True, null=True)
     status_id = models.IntegerField(blank=True, null=True)
+    ebook = models.ForeignKey('L01.LibraryEbook',on_delete=models.SET_NULL,null=True,blank=True,db_column='ebook_id')
+    ebook_available = models.CharField(max_length=3,choices=[("Yes", "Yes"), ("No", "No")],default="No",blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
@@ -391,3 +395,6 @@ class LibraryLocationMaster(models.Model):
 
     def __str__(self):
         return f"{self.location_name} ({self.location_id})"
+    
+
+    
