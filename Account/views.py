@@ -87,8 +87,11 @@ def Login(request):
                 request.session.set_expiry(1209600)  # 2 weeks
             else:
                 request.session.set_expiry(0)  # Browser close
-            # return redirect(f'/menu_admin?entity=menu&type=i')
-            return redirect(f'LMS_Dashboard')
+
+            if str(user.role_id) == '3':
+                return redirect('L01:membership_dashboard')  # or whatever your dashboard URL name is
+            else:
+                return redirect(f'LMS_Dashboard')
             # return render(request,'bootstrap/landing.html')
         else:
             messages.error(request, 'Invalid Credentials')
