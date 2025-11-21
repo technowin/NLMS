@@ -11,6 +11,7 @@ from Account.models import  CustomUser, password_storage
 from Account.serializers import *
 import Db 
 import bcrypt
+from L01.models import *
 from django.contrib.auth.decorators import login_required
 # from .models import SignUpModel
 # from .forms import SignUpForm
@@ -56,35 +57,114 @@ from django.shortcuts import render, redirect
 
 User = get_user_model()
 
+from django.contrib.auth.models import update_last_login
+
+def safe_login(request, user, db_alias):
+    # Temporarily override update_last_login to use correct DB
+    original_save = user.save
+
+    def save_with_db(*args, **kwargs):
+        kwargs['using'] = db_alias
+        return original_save(*args, **kwargs)
+
+    user.save = save_with_db  # monkey patch
+
+    login(request, user)
+
+    user.save = original_save
+    
+def authenticate_from_db(request, username, password, db_alias):
+    try:
+        user = User.objects.using(db_alias).get(username=username)
+    except User.DoesNotExist:
+        return None
+
+    if check_password(password, user.password):
+        # Tell Django which backend authenticated this user
+        user.backend = 'django.contrib.auth.backends.ModelBackend'
+        safe_login(request, user, db_alias)
+        return user
+    
+    return None
+
 @csrf_exempt
 def Login(request):
-    if request.method=="GET":
-       library_code = request.session.get('library_db', None) 
-       library = LibraryMaster.objects.using('default').filter(
+
+    if request.method == "GET":
+
+        next_url = request.GET.get("next", "")
+
+        library_code = request.session.get('library_db', None) 
+        library = LibraryMaster.objects.using('default').filter(
             is_active=1, 
             library_code=library_code
-        ).first()  # <-- important
-       membership_url = library.membership_page_link.strip() if library and library.membership_page_link else "#"
+        ).first()
 
-       return render(request,'bootstrap/account/login.html',{'library_code':library_code,'registration_url':membership_url })
-    
-    if request.method=="POST":
+        membership_url = library.membership_page_link.strip() if library and library.membership_page_link else "#"
+
+        return render(request, 'bootstrap/account/login.html', {
+            'library_code': library_code,
+            'registration_url': membership_url,
+            'next': next_url,
+        })
+
+    if request.method == "POST":
+
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
-        user = authenticate(request, username=username, password=password)
+        next_url = request.POST.get("next")
+        db_alias = None
+
+        if next_url:
+            request.session['service'] = "L01"
+            request.session['library_db'] = "L01"
+            db_alias = "L01"
+        else:
+            request.session['service'] = "default"
+            db_alias = "default"
+            request.session['library_db'] = "default"
+
+        # Authenticate user
+        user = authenticate_from_db(request, username, password, db_alias)
+
         if user is not None:
-            login(request, user)
+
             request.session.cycle_key()
-            request.session["username"]=(str(username))
-            request.session["full_name"]=(str(user.full_name))
-            request.session["user_id"]=(str(user.id))
+            request.session["username"] = str(username)
+            request.session["full_name"] = str(user.full_name)
+            request.session["user_id"] = str(user.id)
             request.session["role_id"] = str(user.role_id)
-            
-            # if user.role_id in [2,3]:
-            #     return redirect('/index')
-            if remember_me == 'on':
-                request.session.set_expiry(1209600)  # 2 weeks
+
+            # --------------------------------------------------------
+            # GET USER'S MEMBERSHIP ID
+            # --------------------------------------------------------
+            member = None
+            membership = None
+            if db_alias != 'default':
+                member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
+                if member:
+                    membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
+
+            membership_id = None
+            if member:
+                membership_id = membership.id
+
+            # --------------------------------------------------------
+            # membership_id == 8 → give access
+            # --------------------------------------------------------
+            if membership_id == 8:
+                if next_url:
+                    return redirect(next_url)
+                else:
+                    # UPSC (L01)
+                    if db_alias == "L01":
+                        return redirect('L01:chapters_index', topic_id=1)
+
+                    # MPSC (default)
+                    if db_alias == "default":
+                        return redirect('L01:mpsc_chapters_index', topic_id=1)
+
             else:
                 request.session.set_expiry(0)  # Browser close
             # return redirect(f'/menu_admin?entity=menu&type=i')
@@ -93,6 +173,9 @@ def Login(request):
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
+
+
+
         
 # def logoutView(request):
 #     logout(request)
