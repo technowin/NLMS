@@ -121,9 +121,9 @@ def Login(request):
             request.session['library_db'] = "L01"
             db_alias = "L01"
         else:
-            request.session['service'] = "default"
-            db_alias = "default"
-            request.session['library_db'] = "default"
+            request.session['service'] = "L01"
+            db_alias = "L01"
+            request.session['library_db'] = "L01"
 
         # Authenticate user
         user = authenticate_from_db(request, username, password, db_alias)
