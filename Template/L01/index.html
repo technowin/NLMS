@@ -575,65 +575,95 @@
   {% if library.books %}
     <div class="library-books-section">
         <h4>Books Available in {{ library.library_name }}</h4>
-        <div class="book-gallery">
-            {% for book in library.books %}
-            <div class="book-item">
-                <div class="book-flip" id="book-flip-{{ forloop.counter }}">
-                    <div class="book-flip-inner">
+     <div class="book-gallery">
+    {% for book in library.books %}
+    <div class="book-item">
+        <div class="book-flip" id="book-flip-{{ forloop.counter }}">
+            <div class="book-flip-inner">
 
-                        {% if book.front_page_photo %}
-                        <div class="book-flip-front">
-                            <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
-                                 alt="{{ book.title }} Front Cover"
-                                 class="book-image"
-                                 onclick="zoomImage(this)"
-                                 data-author="{{ book.author }}"
-                                 data-title="{{ book.title }}"
-                                 data-subtitle="{{ book.subtitle }}"
-                                 data-publisher="{{ book.publisher }}"
-                                 data-isbn_issn="{{ book.isbn_issn }}"
-                                 data-edition="{{ book.edition }}"
-                                 {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
-                                 data-publication_place="{{ book.publication_place }}"
-                                 data-year_of_publication="{{ book.year_of_publication }}"
-                                 data-pages="{{ book.pages }}"
-                                 data-remarks="{{ book.remarks }}"
-                                 data-language="{{ book.language }}"
-                                 data-description="{{ book.description }}">
-                        </div>
-                        {% endif %}
-
-                        {% if book.last_page_photo %}
-                        <div class="book-flip-back">
-                            <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
-                                 alt="{{ book.title }} Back Cover"
-                                 class="book-image"
-                                 onclick="zoomImage(this)"
-                                 data-author="{{ book.author }}"
-                                 data-title="{{ book.title }}"
-                                 data-subtitle="{{ book.subtitle }}"
-                                 data-publisher="{{ book.publisher }}"
-                                 data-isbn_issn="{{ book.isbn_issn }}"
-                                 data-edition="{{ book.edition }}"
-                                 {% comment %} data-subject="{{ book.subject }}" {% endcomment %}
-                                 data-publication_place="{{ book.publication_place }}"
-                                 data-year_of_publication="{{ book.year_of_publication }}"
-                                 data-pages="{{ book.pages }}"
-                                 data-remarks="{{ book.remarks }}"
-                                 data-language="{{ book.language }}"
-                                 data-description="{{ book.description }}">
-                        </div>
-                        {% endif %}
-                    </div>
+                {% if book.front_page_photo %}
+                <div class="book-flip-front">
+                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
+                         alt="{{ book.title }} Front Cover"
+                         class="book-image"
+                         onclick="zoomImage(this)"
+                         data-author="{{ book.author }}"
+                         data-title="{{ book.title }}"
+                         data-subtitle="{{ book.subtitle }}"
+                         data-publisher="{{ book.publisher }}"
+                         data-isbn_issn="{{ book.isbn_issn }}"
+                         data-edition="{{ book.edition }}"
+                         data-publication_place="{{ book.publication_place }}"
+                         data-year_of_publication="{{ book.year_of_publication }}"
+                         data-pages="{{ book.pages }}"
+                         data-remarks="{{ book.remarks }}"
+                         data-language="{{ book.language }}"
+                         data-description="{{ book.description }}"
+                         data-ebook_available="{{ book.ebook_available }}">
                 </div>
+                {% endif %}
 
-                <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
-                    <i class="fas fa-sync-alt"></i> Flip
-                </button>
-                <p class="book-title">{{ book.title }}</p>
+                {% if book.last_page_photo %}
+                <div class="book-flip-back">
+                    <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
+                         alt="{{ book.title }} Back Cover"
+                         class="book-image"
+                         onclick="zoomImage(this)"
+                         data-author="{{ book.author }}"
+                         data-title="{{ book.title }}"
+                         data-subtitle="{{ book.subtitle }}"
+                         data-publisher="{{ book.publisher }}"
+                         data-isbn_issn="{{ book.isbn_issn }}"
+                         data-edition="{{ book.edition }}"
+                         data-publication_place="{{ book.publication_place }}"
+                         data-year_of_publication="{{ book.year_of_publication }}"
+                         data-pages="{{ book.pages }}"
+                         data-remarks="{{ book.remarks }}"
+                         data-language="{{ book.language }}"
+                         data-description="{{ book.description }}"
+                         data-ebook_available="{{ book.ebook_available }}">
+                </div>
+                {% endif %}
             </div>
-            {% endfor %}
         </div>
+
+        <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
+            <i class="fas fa-sync-alt"></i> Flip
+        </button>
+
+        <!-- ⭐ Title -->
+        <p class="book-title" style="margin-bottom: 4px;">
+            {{ book.title }}
+        </p>
+
+        <!-- ⭐ Ebook availability in ONE clean line -->
+        <p class="ebook-line" style="font-size: 13px; margin-top: -4px;">
+            {% if book.ebook_available == "Yes" %}
+                <span style="
+                    background: #e8f8e8;
+                    color: #0b8e0b;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                ">
+                    📘 Ebook Available
+                </span>
+            {% else %}
+                <span style="
+                    background: #fbeaea;
+                    color: #d10a0a;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                ">
+                    ❌ No Ebook
+                </span>
+            {% endif %}
+        </p>
+
+    </div>
+    {% endfor %}
+</div>
 
         <!-- View More Button -->
        <div class="view-more-btn-container" style="display:flex; justify-content:center; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
@@ -653,8 +683,10 @@
        onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)'; this.style.transform='translateY(0) scale(1)';">
        <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
     </a>
+
 </div>
-</div>
+<br>
+    </div>
 {% endif %}
 
 {% if library.ebooks %}

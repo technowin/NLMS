@@ -74,13 +74,21 @@ def index(request):
     library_code = request.session.get('library_db', None)
 
     if library_code:
-        library_details = LibraryMaster.objects.using('default').filter(is_active=1, library_code=library_code)
+        library_details = LibraryMaster.objects.using('default').filter(
+            is_active=1, 
+            library_code=library_code
+        )
+
         for lilo in library_details:
+
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
 
-            # Fetch 5 most recent books
+            # -------------------------------------------
+            # FETCH RECENT 5 BOOKS
+            # -------------------------------------------
             books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
+
             lilo.books = [
                 {
                     "title": book.title or "Untitled",
@@ -89,20 +97,21 @@ def index(request):
                     "publisher": book.publisher or "",
                     "isbn_issn": book.isbn_issn or "",
                     "edition": book.edition or "",
-                    # "subject": book.subject.subjectNameEnglish if book.subject else "",
                     "publication_place": book.publication_place or "",
-                    "year_of_publication": book.year_of_publication or "N/A",  # ✅ fixed key name
+                    "year_of_publication": book.year_of_publication or "N/A",
                     "pages": book.pages or "",
                     "language": book.language or "Unknown",
                     "front_page_photo": book.front_page_photo if book.front_page_photo else "",
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
                     "remarks": book.remarks or "",
-                    "description": book.remarks or "No description available."
-                } for book in books
+                    "description": book.remarks or "No description available.",
+                    "ebook_available": book.ebook_available or "No"   # ⭐ ADDED LINE
+                }
+                for book in books
             ]
 
-         # -------------------------------------------
-            # FETCH RECENT 5 EBOOKS (YOUR MODEL)
+            # -------------------------------------------
+            # FETCH RECENT 5 EBOOKS
             # -------------------------------------------
             ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
 
@@ -130,12 +139,16 @@ def index(request):
         library_name = library_details.first().library_name if library_details.exists() else ""
 
     else:
-        # If no library selected, show all libraries but still attach recent books + ebooks
+        # -------------------------------------------
+        # WHEN NO LIBRARY IS SELECTED
+        # -------------------------------------------
         library_details = LibraryMaster.objects.using('default').filter(is_active=1)
 
         for lilo in library_details:
+
             # --- Books fetch ---
             books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
+
             lilo.books = [
                 {
                     "title": book.title or "Untitled",
@@ -151,7 +164,8 @@ def index(request):
                     "front_page_photo": book.front_page_photo if book.front_page_photo else "",
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
                     "remarks": book.remarks or "",
-                    "description": book.remarks or "No description available."
+                    "description": book.remarks or "No description available.",
+                    "ebook_available": book.ebook_available or "No"   # ⭐ ADDED LINE
                 }
                 for book in books
             ]
@@ -187,6 +201,7 @@ def index(request):
         'library_name': library_name,
         'MEDIA_URL': settings.MEDIA_URL
     })
+
 
 def check_user_id(request):
     Db.closeConnection()
