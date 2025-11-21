@@ -51,7 +51,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 import barcode
@@ -3460,9 +3460,9 @@ def chapters_index(request, topic_id):
         )
     
 def get_membership_code(request):
-    user_id = request.session.get("user_id")
-    email = get_object_or_404(CustomUser, id = user_id ).email
-    member = MembershipDetails.objects.get(email=email)
+    username = request.session.get("username")
+    # email = get_object_or_404(CustomUser, id = user_id).email
+    member = MembershipDetails.objects.get(user_id=username)
 
     return JsonResponse({
         "membership_code": member.membership_code
@@ -3622,17 +3622,19 @@ def member_entry_exit(request):
 
     return render(request, 'L01/Member Payment/member_log.html', context)
 
-def get_member_details(request, membership_code):
+def get_member_detail(request, membership_code):
     try:
         # Query from L01 database
         member = MembershipDetails.objects.using('L01').get(membership_code=membership_code)
+        # membership_typemember_type = f"{member.membership.membership_type '+' (member.membership.membership_code)})"
         
         # Check if membership is valid based on to_date
         current_date = date.today()
-        is_valid = member.to_date >= current_date if member.to_date else False
+        is_valid = (member.from_date <= current_date <= member.to_date if (member.from_date and member.to_date) else False)
+
         
         # Get profile picture from DocumentDetails in L01 database
-        profile_pic = '/static/images/default-profile.png'
+        # profile_pic = '/static/images/default-profile.png'
         try:
             document = DocumentDetails.objects.using('L01').get(membership=member.id, document_id=1)
             if document.file_path:
@@ -3647,7 +3649,7 @@ def get_member_details(request, membership_code):
             'membership_code': member.membership_code,
             'full_name': f"{member.first_name} {member.middle_name} {member.last_name}".strip(),
             'ward': member.ward or 'Not specified',
-            'user_id': member.user_id,
+            'member_type': member.membership.membership_type,
             'is_active': member.isactive,
             'status': 'valid' if is_valid else 'invalid',
             'profile_pic': profile_pic,
@@ -3702,3 +3704,140 @@ def get_member_details(request, membership_code):
     except Exception as e:
         return JsonResponse({"error": "An unexpected error occurred.", "details": str(e)}, status=500)
     
+def membership_dashboard(request):
+    # Get username from session
+    username = request.session.get('username')
+    
+    if not username:
+        # Handle case where user is not logged in
+        return render(request, 'error.html', {'error': 'User not logged in'})
+    
+    try:
+        # Get membership details
+        membership = MembershipDetails.objects.get(user_id=username)
+        membership_code = membership.membership_code
+        
+        # Current date for calculations
+        today = timezone.now().date()
+        
+        # Calculate due soon threshold (2 days from now)
+        due_soon_threshold = today + timedelta(days=2)
+        
+        # Get currently borrowed books (return_date is null)
+        currently_borrowed = CirculationTransaction.objects.filter(
+            membership_code=membership_code,
+            return_date__isnull=True
+        ).count()
+        
+        # Get due soon books (due date within 2 days and not returned)
+        due_soon = CirculationTransaction.objects.filter(
+            membership_code=membership_code,
+            due_date__lte=due_soon_threshold,
+            due_date__gte=today,
+            return_date__isnull=True
+        ).count()
+        
+        # Get overdue books (due date passed and not returned)
+        overdue = CirculationTransaction.objects.filter(
+            membership_code=membership_code,
+            due_date__lt=today,
+            return_date__isnull=True
+        ).count()
+        
+        # Get latest 3 borrowed books with catalog details
+        latest_books = []
+        transactions = CirculationTransaction.objects.filter(
+            membership_code=membership_code,
+            return_date__isnull=True
+        ).select_related('catalog').order_by('-issue_date')[:3]
+        
+        for transaction in transactions:
+            book_data = {
+                'transaction': transaction,
+                'title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
+                'author': transaction.catalog.author if transaction.catalog and transaction.catalog.author else 'Unknown Author',
+                'issue_date': transaction.issue_date,
+                'due_date': transaction.due_date,
+                'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None
+            }
+            latest_books.append(book_data)
+        
+        context = {
+            'username': username,
+            'membership_code': membership_code,
+            'currently_borrowed': currently_borrowed,
+            'due_soon': due_soon,
+            'overdue': overdue,
+            'latest_books': latest_books,
+            'today': today,
+        }
+        
+        return render(request, 'L01/Dashboard/member_dashboard.html', context)
+        
+    except MembershipDetails.DoesNotExist:
+        return render(request, 'error.html', {'error': 'Membership not found'})
+    except Exception as e:
+        return render(request, 'error.html', {'error': str(e)})
+
+def get_book_cover(catalog):
+    """Get book cover image path from BookCatalog"""
+    try:
+        if catalog and catalog.front_page_photo:
+            # Use the front_page_photo field directly
+            file_path = Path(settings.MEDIA_ROOT) / Path(catalog.front_page_photo.replace("\\", "/"))
+            if file_path.exists():
+                return f"{settings.MEDIA_URL}{catalog.front_page_photo.replace('\\', '/')}"
+        
+        # Return default book cover if no image found
+        return "{% static 'images/default-book-cover.jpg' %}"
+    except Exception as e:
+        print(f"Error getting book cover: {e}")
+        # Return default book cover if any error occurs
+        return "{% static 'images/default-book-cover.jpg' %}"
+    
+def get_borrowing_history(request):
+    """AJAX view to get member's borrowing history"""
+    username = request.session.get('username')
+    
+    if not username:
+        return JsonResponse({'success': False, 'error': 'User not logged in'})
+    
+    try:
+        # Get membership details
+        membership = MembershipDetails.objects.get(user_id=username)
+        membership_code = membership.membership_code
+        
+        # Get all circulation transactions for this member
+        transactions = CirculationTransaction.objects.filter(
+            membership_code=membership_code
+        ).select_related('catalog', 'return_condition').order_by('-issue_date')
+        
+        history_data = []
+        for transaction in transactions:
+            # Determine status based on dates
+            status = "Issued"
+            if transaction.return_date:
+                status = "Returned"
+            elif transaction.due_date and transaction.due_date < timezone.now().date():
+                status = "Overdue"
+            elif transaction.due_date and transaction.due_date <= timezone.now().date() + timedelta(days=2):
+                status = "Due Soon"
+            
+            history_data.append({
+                'book_title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
+                'author': transaction.catalog.author if transaction.catalog and transaction.catalog.author else 'Unknown Author',
+                'issue_date': transaction.issue_date.strftime('%b %d, %Y') if transaction.issue_date else 'N/A',
+                'return_date': transaction.return_date.strftime('%b %d, %Y') if transaction.return_date else None,
+                'status': status,
+                'return_condition': transaction.return_condition.status_name if transaction.return_condition else 'N/A'
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'history': history_data
+        })
+        
+    except MembershipDetails.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Membership not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

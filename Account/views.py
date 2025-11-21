@@ -166,12 +166,10 @@ def Login(request):
                         return redirect('L01:mpsc_chapters_index', topic_id=1)
 
             else:
-                # --------------------------------------------------------
-                # NORMAL USERS (membership_id != 8)
-                # --------------------------------------------------------
-                request.session.set_expiry(0)
-                return redirect('LMS_Dashboard')
-
+                request.session.set_expiry(0)  # Browser close
+            # return redirect(f'/menu_admin?entity=menu&type=i')
+            return redirect(f'LMS_Dashboard')
+            # return render(request,'bootstrap/landing.html')
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")

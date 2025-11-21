@@ -58,5 +58,9 @@ urlpatterns = [
     path('user_view', user_view, name='user_view'),
 
     path('member-entry-exit/', member_entry_exit, name='member_entry_exit'),
-    path('get-member-details/<str:membership_code>/', get_member_details, name='get_member_details'),
+    path('get-member-details/<str:membership_code>/', get_member_detail, name='get_member_detail'),
+
+    path('membership_dashboard/', membership_dashboard, name='membership_dashboard'),
+    path('get-borrowing-history/',get_borrowing_history, name='get_borrowing_history'),
+    # ... your other URLs
 ]
