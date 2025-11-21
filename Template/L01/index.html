@@ -653,11 +653,121 @@
        onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)'; this.style.transform='translateY(0) scale(1)';">
        <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
     </a>
+</div>
+</div>
+{% endif %}
+
+{% if library.ebooks %}
+    <div class="library-books-section">
+        <h4>eBooks Available in {{ library.library_name }}</h4>
+
+        <div class="book-gallery">
+            {% for ebook in library.ebooks %}
+            <div class="book-item">
+
+                <div class="book-flip" id="ebook-flip-{{ forloop.counter }}">
+                    <div class="book-flip-inner">
+
+                        {% if ebook.eb_front_page_photo %}
+                        <div class="book-flip-front">
+                            <img src="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo }}"
+                                alt="{{ ebook.eb_title }} Front Cover"
+                                class="book-image"
+                                onclick="zoomImage(this)"
+                                
+                                data-title="{{ ebook.eb_title }}"
+                                data-subtitle="{{ ebook.eb_subtitle }}"
+                                data-author="{{ ebook.eb_author }}"
+                                data-publisher="{{ ebook.eb_publisher }}"
+                                data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                data-edition="{{ ebook.eb_edition }}"
+                                data-subject="{{ ebook.eb_subject }}"
+                                data-publication_place="{{ ebook.eb_publication_place }}"
+                                data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                data-pages="{{ ebook.eb_pages }}"
+                                data-remarks="{{ ebook.remarks }}"
+                                data-language="{{ ebook.eb_language }}"
+                                data-description="{{ ebook.eb_keywords }}"
+                                data-pdf_file="{{ ebook.eb_pdf_url }}">
+                        </div>
+                        {% endif %}
+
+                        {% if ebook.eb_last_page_photo %}
+                        <div class="book-flip-back">
+                            <img src="{{ MEDIA_URL }}{{ ebook.eb_last_page_photo }}"
+                                alt="{{ ebook.eb_title }} Back Cover"
+                                class="book-image"
+                                onclick="zoomImage(this)"
+
+                                data-title="{{ ebook.eb_title }}"
+                                data-subtitle="{{ ebook.eb_subtitle }}"
+                                data-author="{{ ebook.eb_author }}"
+                                data-publisher="{{ ebook.eb_publisher }}"
+                                data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                data-edition="{{ ebook.eb_edition }}"
+                                data-subject="{{ ebook.eb_subject }}"
+                                data-publication_place="{{ ebook.eb_publication_place }}"
+                                data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                data-pages="{{ ebook.eb_pages }}"
+                                data-remarks="{{ ebook.remarks }}"
+                                data-language="{{ ebook.eb_language }}"
+                                data-description="{{ ebook.eb_keywords }}"
+                                data-pdf_file="{{ ebook.eb_pdf_url }}">
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <!-- Flip Button -->
+                <button class="flip-btn"
+                        onclick="flipBook('ebook-flip-{{ forloop.counter }}')">
+                    <i class="fas fa-sync-alt"></i> Flip
+                </button>
+
+                <p class="book-title">{{ ebook.eb_title }}</p>
+
+
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Buttons -->
+        <div class="view-more-btn-container"
+            style="display:flex; justify-content:center; gap:12px; align-items:center;
+                    margin-top:10px; flex-wrap:wrap;">
+
+             <a href="{% url 'L01:view_ebook_catalogue' %}"
+            style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff;
+                    text-decoration:none; padding:8px 18px; border-radius:30px;
+                    font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                    transition:all 0.3s ease;"
+            onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)';this.style.transform='translateY(-2px) scale(1.05)';"
+            onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)';this.style.transform='translateY(0) scale(1)';">
+
+                <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
+            </a>
+
+            <a href="{% url 'Login' %}"
+            style="background:linear-gradient(135deg, #10b981, #047857); color:#fff;
+                    text-decoration:none; padding:8px 18px; border-radius:30px;
+                    font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                    transition:all 0.3s ease;"
+            onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)';this.style.transform='translateY(-2px) scale(1.05)';"
+            onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)';this.style.transform='translateY(0) scale(1)';">
+
+                <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
+            </a>
+
+        </div>
+
+    </div>
+    {% endif %}
 
 </div>
 <br>
     </div>
-{% endif %}
+
 
 <!-- ================= Zoom Modal ================= -->
 <div id="zoomModal" class="zoom-modal">

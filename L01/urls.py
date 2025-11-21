@@ -4,6 +4,7 @@ from L01.views import *
 urlpatterns = [
     path("index",index,name='index'),
     path("view_catalogue",view_catalogue,name='view_catalogue'),
+    path("view_ebook_catalogue",view_ebook_catalogue,name='view_ebook_catalogue'),
     path('upsc_ebook_index/', upsc_ebook_index, name='upsc_ebook_index'),
     path('topic_index/<int:section_no>/', topic_index, name='topic_index'),
     path('chapters_index/<int:topic_id>/',chapters_index, name='chapters_index'),
@@ -13,6 +14,7 @@ urlpatterns = [
     path('mpsc_chapters_index/<int:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
 
     path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
+    path("libraryebook_search", libraryebook_search, name="libraryebook_search"),
     path("registration",registration,name='registration'),
     path("check_user_id", check_user_id, name="check_user_id"),
     path("check_aadhar", check_aadhar, name="check_aadhar"),

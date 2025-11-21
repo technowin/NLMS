@@ -101,10 +101,40 @@ def index(request):
                 } for book in books
             ]
 
+         # -------------------------------------------
+            # FETCH RECENT 5 EBOOKS (YOUR MODEL)
+            # -------------------------------------------
+            ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
+
+            lilo.ebooks = [
+                {
+                    "eb_title": ebook.eb_title or "Untitled",
+                    "eb_subtitle": ebook.eb_subtitle or "",
+                    "eb_author": ebook.eb_author or "Unknown",
+                    "eb_publisher": ebook.eb_publisher or "",
+                    "eb_isbn_issn": ebook.eb_isbn_issn or "",
+                    "eb_edition": ebook.eb_edition or "",
+                    "eb_publication_place": ebook.eb_publication_place or "",
+                    "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
+                    "eb_pages": ebook.eb_pages or "",
+                    "eb_language": ebook.eb_language or "Unknown",
+                    "eb_front_page_photo": ebook.eb_front_page_photo if ebook.eb_front_page_photo else "",
+                    "eb_last_page_photo": ebook.eb_last_page_photo if ebook.eb_last_page_photo else "",
+                    "remarks": ebook.remarks or "",
+                    "description": ebook.eb_keywords or "No description available.",
+                    "eb_pdf_url": ebook.eb_pdf_url or "",
+                }
+                for ebook in ebooks
+            ]
+
         library_name = library_details.first().library_name if library_details.exists() else ""
+
     else:
+        # If no library selected, show all libraries but still attach recent books + ebooks
         library_details = LibraryMaster.objects.using('default').filter(is_active=1)
+
         for lilo in library_details:
+            # --- Books fetch ---
             books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
             lilo.books = [
                 {
@@ -114,16 +144,40 @@ def index(request):
                     "publisher": book.publisher or "",
                     "isbn_issn": book.isbn_issn or "",
                     "edition": book.edition or "",
-                    # "subject": book.subject.subjectNameEnglish if book.subject else "",
                     "publication_place": book.publication_place or "",
-                    "year_of_publication": book.year_of_publication or "N/A",  # ✅ fixed key name
+                    "year_of_publication": book.year_of_publication or "N/A",
                     "pages": book.pages or "",
                     "language": book.language or "Unknown",
                     "front_page_photo": book.front_page_photo if book.front_page_photo else "",
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
                     "remarks": book.remarks or "",
                     "description": book.remarks or "No description available."
-                } for book in books
+                }
+                for book in books
+            ]
+
+            # --- eBooks fetch ---
+            ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
+
+            lilo.ebooks = [
+                {
+                    "eb_title": ebook.eb_title or "Untitled",
+                    "eb_subtitle": ebook.eb_subtitle or "",
+                    "eb_author": ebook.eb_author or "Unknown",
+                    "eb_publisher": ebook.eb_publisher or "",
+                    "eb_isbn_issn": ebook.eb_isbn_issn or "",
+                    "eb_edition": ebook.eb_edition or "",
+                    "eb_publication_place": ebook.eb_publication_place or "",
+                    "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
+                    "eb_pages": ebook.eb_pages or "",
+                    "eb_language": ebook.eb_language or "Unknown",
+                    "eb_front_page_photo": ebook.eb_front_page_photo if ebook.eb_front_page_photo else "",
+                    "eb_last_page_photo": ebook.eb_last_page_photo if ebook.eb_last_page_photo else "",
+                    "remarks": ebook.remarks or "",
+                    "description": ebook.eb_keywords or "No description available.",
+                    "eb_pdf_url": ebook.eb_pdf_url or "",
+                }
+                for ebook in ebooks
             ]
 
         library_name = ""
@@ -3263,6 +3317,11 @@ def view_catalogue(request):
         "MEDIA_URL": settings.MEDIA_URL
     })
 
+def view_ebook_catalogue(request):
+    return render(request, "L01/view_ebook_catalogue.html", {
+        "MEDIA_URL": settings.MEDIA_URL
+    })
+
 
 @csrf_exempt
 def bookcatalog_search(request):
@@ -3329,6 +3388,91 @@ def bookcatalog_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+    
+@csrf_exempt
+def libraryebook_search(request):
+    try:
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+
+        query = request.POST.get("query", "").strip()
+        search_type = request.POST.get("searchType", "").strip().lower()
+
+        results = LibraryEbook.objects.all()
+
+        # ---- APPLY SEARCH CONDITIONS ----
+        if query:
+            if search_type in ["title", "book", "ebook"]:
+                results = results.filter(eb_title__icontains=query)
+
+            elif search_type == "author":
+                results = results.filter(
+                    Q(eb_author__icontains=query) |
+                    Q(eb_other_authors__icontains=query)
+                )
+
+            elif search_type == "publisher":
+                results = results.filter(eb_publisher__icontains=query)
+
+            elif search_type == "keyword":
+                results = results.filter(eb_keywords__icontains=query)
+
+            elif search_type == "language":
+                results = results.filter(eb_language__icontains=query)
+
+            elif search_type in ["isbn", "issn"]:
+                results = results.filter(eb_isbn_issn__icontains=query)
+
+            elif search_type == "year":
+                if query.isdigit():
+                    results = results.filter(eb_year_of_publication=int(query))
+                else:
+                    return JsonResponse({"error": "Invalid year format."}, status=400)
+
+            else:
+                # Generic search across multiple fields
+                results = results.filter(
+                    Q(eb_title__icontains=query) |
+                    Q(eb_author__icontains=query) |
+                    Q(eb_other_authors__icontains=query) |
+                    Q(eb_publisher__icontains=query) |
+                    Q(eb_keywords__icontains=query) |
+                    Q(eb_language__icontains=query) |
+                    Q(eb_isbn_issn__icontains=query)
+                )
+
+        # ---- FIELDS TO RETURN ----
+        results = results.values(
+            "ebook_id",
+            "eb_title",
+            "eb_author",
+            "eb_publisher",
+            "eb_year_of_publication",
+            "eb_language",
+            "eb_keywords",
+            "eb_pdf_url",
+            "eb_front_page_photo"
+        )[:50]
+
+        # ---- BUILD ABSOLUTE IMAGE URLs ----
+        updated_results = []
+        for r in results:
+            img = r.get("eb_front_page_photo")
+            if img:
+                full_img_url = request.build_absolute_uri(f"/media/{img}")
+            else:
+                full_img_url = ""
+
+            r["eb_front_page_photo"] = full_img_url
+            updated_results.append(r)
+
+        return JsonResponse(updated_results, safe=False)
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )   
 
 
 def upsc_ebook_index(request):
