@@ -284,7 +284,10 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
 
                     <!-- ✅ Fixed Bottom Button -->
                     <div class="topic-btn-container">
-                    <a href="{% url 'L01:mpsc_chapters_index' topic_id=topic.topic_id %}" class="topic-btn">View Details</a>
+                       <a href="{% url 'Login' %}?next={% url 'L01:mpsc_chapters_index' topic_id=topic.topic_id %}" 
+                      class="topic-btn">
+                        View Details
+                    </a>
                     </div>
                   </div>
                   {% endfor %}
