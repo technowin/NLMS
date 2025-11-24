@@ -2218,7 +2218,18 @@ def issue_return_book_create(request):
 
         if request.method == "GET":
             
-            members = MembershipDetails.objects.filter(isactive=1)
+            # members = MembershipDetails.objects.filter(isactive=1)
+            # members = MembershipDetails.objects.filter(isactive=1).exclude(membership__id=8)
+            active_usernames = CustomUser.objects.filter(
+                is_active=True
+            ).values_list("username", flat=True)
+
+            members = (
+                MembershipDetails.objects
+                .filter(isactive=1)                       # active members only
+                .exclude(membership__id=8)               # exclude Practitioner Branch
+                .filter(user_id__in=active_usernames)    # join on username = user_id
+            )
             
             for m in members:
                 m.member_encrypted_id = enc(str(m.id))

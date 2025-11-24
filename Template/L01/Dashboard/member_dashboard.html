@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
+<div class="py-3">
     <!-- Welcome Section -->
     <div class="row mb-3">
         <div class="col-12">
@@ -101,7 +101,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-transparent border-0 py-2">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 section-title" style="color: white !important">
+                        <h5 class="card-title mb-0 section-title" >
                             <i class="bi bi-bookmark-check me-2"></i>Currently Reading
                         </h5>
                         <span class="badge bg-primary rounded-pill">{{ latest_books|length }} books</span>
@@ -170,7 +170,7 @@
                         <i class="bi bi-book-x display-6 text-muted mb-2"></i>
                         <h6 class="text-muted">No books currently borrowed</h6>
                         <p class="text-muted mb-3 small">Visit our library to discover exciting books!</p>
-                        <a href="{% url 'L01:bookcatalog_search' %}" class="btn btn-primary btn-sm">
+                        <a href="{% url 'L01:view_catalogue' %}" class="btn btn-primary btn-sm">
                             <i class="bi bi-search me-1"></i>Browse Collection
                         </a>
                     </div>
@@ -185,7 +185,7 @@
         <div class="col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-transparent border-0 py-2" >
-                    <h5 class="card-title mb-0 section-title"  style="color: white !important">
+                    <h5 class="card-title mb-0 section-title">
                         <i class="bi bi-lightning me-2"></i>Quick Actions
                     </h5>
                 </div>
@@ -194,7 +194,7 @@
                         <!-- Search Books -->
                         <div class="col-md-6">
                             <div class="d-grid">
-                                <a href="{% url 'L01:bookcatalog_search' %}" class="btn btn-primary btn-md action-btn p-2">
+                                <a href="{% url 'L01:view_catalogue' %}" class="btn btn-primary btn-md action-btn p-2">
                                     <div class="d-flex align-items-center justify-content-center">
                                         <i class="bi bi-search fs-4 me-2"></i>
                                         <div class="text-start">
@@ -274,347 +274,6 @@
     </div>
 </div>
 
-<style>
-:root {
-    --primary-color: #4e73df;
-    --primary-dark: #224abe;
-    --success-color: #1cc88a;
-    --warning-color: #f6c23e;
-    --danger-color: #e74a3b;
-    --light-color: #f8f9fc;
-    --dark-color: #5a5c69;
-    --border-radius: 0.5rem;
-    --box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-    --transition: all 0.3s ease;
-}
-
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #f8f9fc;
-    color: #5a5c69;
-    font-size: 0.9rem;
-}
-
-/* Dark theme support */
-[data-bs-theme="dark"] body {
-    background-color: #1a1d29;
-    color: #e9ecef;
-}
-
-[data-bs-theme="dark"] .card {
-    background-color: #2d3748;
-    border-color: #4a5568;
-}
-
-[data-bs-theme="dark"] .text-muted {
-    color: #a0aec0 !important;
-}
-
-[data-bs-theme="dark"] .table-light {
-    background-color: #4a5568;
-    color: #e9ecef;
-}
-
-[data-bs-theme="dark"] .book-details {
-    background-color: #4a5568;
-}
-
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Merriweather', serif;
-    color: #2e59d9;
-}
-
-[data-bs-theme="dark"] h1, 
-[data-bs-theme="dark"] h2, 
-[data-bs-theme="dark"] h3, 
-[data-bs-theme="dark"] h4, 
-[data-bs-theme="dark"] h5, 
-[data-bs-theme="dark"] h6 {
-    color: #93c5fd;
-}
-
-.card {
-    border-radius: var(--border-radius);
-    transition: var(--transition);
-}
-
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.1);
-}
-
-/* Welcome Card */
-.welcome-card {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-    color: white;
-    overflow: hidden;
-    position: relative;
-}
-
-.welcome-card::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: rotate(30deg);
-}
-
-.welcome-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.welcome-subtitle {
-    font-size: 0.9rem;
-    opacity: 0.9;
-}
-
-/* Stat Cards */
-.stat-card {
-    border-left: 3px solid transparent;
-    transition: var(--transition);
-}
-
-.stat-card-primary {
-    border-left-color: var(--primary-color);
-}
-
-.stat-card-warning {
-    border-left-color: var(--warning-color);
-}
-
-.stat-card-danger {
-    border-left-color: var(--danger-color);
-}
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3rem;
-}
-
-.stat-card-primary .stat-icon {
-    background-color: rgba(78, 115, 223, 0.1);
-    color: var(--primary-color);
-}
-
-.stat-card-warning .stat-icon {
-    background-color: rgba(246, 194, 62, 0.1);
-    color: var(--warning-color);
-}
-
-.stat-card-danger .stat-icon {
-    background-color: rgba(231, 74, 59, 0.1);
-    color: var(--danger-color);
-}
-
-/* Section Titles */
-.section-title {
-    color: var(--dark-color);
-    font-weight: 600;
-    position: relative;
-    padding-bottom: 0.3rem;
-    font-size: 1.1rem;
-}
-
-.section-title::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 40px;
-    height: 2px;
-    background: var(--primary-color);
-    border-radius: 2px;
-}
-
-[data-bs-theme="dark"] .section-title {
-    color: #e9ecef;
-}
-
-/* Book Cards */
-.book-card {
-    transition: var(--transition);
-    border: 1px solid #e3e6f0;
-}
-
-[data-bs-theme="dark"] .book-card {
-    border-color: #4a5568;
-}
-
-.book-card:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.1);
-}
-
-.book-cover-container {
-    position: relative;
-}
-
-.book-cover {
-    height: 100px;
-    width: 100%;
-    object-fit: cover;
-    border-radius: 0.3rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.book-status-badge .badge {
-    font-size: 0.6rem;
-    padding: 0.2rem 0.4rem;
-}
-
-.book-title {
-    font-weight: 600;
-    color: var(--dark-color);
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    font-size: 0.9rem;
-}
-
-[data-bs-theme="dark"] .book-title {
-    color: #e9ecef;
-}
-
-.book-author {
-    font-size: 0.8rem;
-    line-height: 1.2;
-}
-
-.book-details {
-    font-size: 0.75rem;
-    background-color: #f8f9fc;
-    padding: 0.5rem;
-    border-radius: 0.3rem;
-}
-
-[data-bs-theme="dark"] .book-details {
-    background-color: #4a5568;
-}
-
-/* Quick Actions */
-.action-btn {
-    border-radius: var(--border-radius);
-    transition: var(--transition);
-    border: 1px solid #e3e6f0;
-    height: 100%;
-}
-
-.action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.3rem 0.8rem rgba(0, 0, 0, 0.1);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    border: none;
-}
-
-.btn-outline-primary {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.btn-outline-primary:hover {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-}
-
-/* Empty State */
-.empty-state {
-    background-color: #f8f9fc;
-    border-radius: var(--border-radius);
-}
-
-[data-bs-theme="dark"] .empty-state {
-    background-color: #4a5568;
-}
-
-/* Modal Styles */
-.modal-content {
-    border-radius: var(--border-radius);
-    overflow: hidden;
-}
-
-.modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Table Styles */
-#historyTable th {
-    border-top: none;
-    font-weight: 600;
-    color: var(--primary-color);
-    background-color: #f8f9fc;
-    padding: 0.75rem 0.5rem;
-}
-
-[data-bs-theme="dark"] #historyTable th {
-    background-color: #4a5568;
-    color: #93c5fd;
-}
-
-#historyTable td {
-    padding: 0.75rem 0.5rem;
-    vertical-align: middle;
-    font-size: 0.85rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .welcome-title {
-        font-size: 1.3rem;
-    }
-    
-    .book-cover {
-        height: 90px;
-    }
-    
-    .action-btn .fs-4 {
-        font-size: 1.2rem !important;
-    }
-    
-    .stat-icon {
-        width: 45px;
-        height: 45px;
-        font-size: 1.2rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .container-fluid {
-        padding-left: 10px;
-        padding-right: 10px;
-    }
-    
-    .book-cover {
-        height: 80px;
-    }
-    
-    .action-btn .fw-bold {
-        font-size: 0.8rem;
-    }
-    
-    .action-btn small {
-        font-size: 0.7rem;
-    }
-    
-    .section-title {
-        font-size: 1rem;
-    }
-}
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
