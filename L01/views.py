@@ -202,7 +202,6 @@ def index(request):
         'MEDIA_URL': settings.MEDIA_URL
     })
 
-
 def check_user_id(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -348,7 +347,8 @@ def registration(request):
                         "middle_name_mar": request.POST.get("middle_name_mar") or None,
                         "last_name_mar": request.POST.get("last_name_mar") or None,
                         "ward": request.POST.get("ward_name") or None,
-                        "pincode": request.POST.get("pincode") or None,
+                        "other_ward": request.POST.get("custom_ward_name") if request.POST.get("ward_name") == "Other" else None,
+                        "pincode": (request.POST.get("custom_pincode") if request.POST.get("ward_name") == "Other" else request.POST.get("pincode")) or None,
                         "library_name": request.POST.get("library_name") or None,
                         "library_name_mar": request.POST.get("library_name_mar") or None,
                         "local_address": request.POST.get("local_address") or None,
@@ -603,7 +603,8 @@ def membership_form_create(request):
                         "middle_name_mar": request.POST.get("middle_name_mar") or None,
                         "last_name_mar": request.POST.get("last_name_mar") or None,
                         "ward": request.POST.get("ward_name") or None,
-                        "pincode": request.POST.get("pincode") or None,
+                        "other_ward": request.POST.get("custom_ward_name") if request.POST.get("ward_name") == "Other" else None,
+                        "pincode": (request.POST.get("custom_pincode") if request.POST.get("ward_name") == "Other" else request.POST.get("pincode")) or None,
                         "library_name": request.POST.get("library_name") or None,
                         "library_name_mar": request.POST.get("library_name_mar") or None,
                         "local_address": request.POST.get("local_address") or None,
@@ -840,8 +841,6 @@ def membership_form_edit(request):
                     "middle_name_mar": "middle_name_mar",
                     "last_name": "last_name",
                     "last_name_mar": "last_name_mar",
-                    "ward_name": "ward",
-                    "pincode": "pincode",
                     "occupation_details": "occupation",
                     "phone_number": "office_phone",
                     "education": "education",
@@ -856,6 +855,17 @@ def membership_form_edit(request):
                     "fromDate": "from_date",
                     "dob": "dob",
                 }
+                
+                # --- Handle Ward & Pincode (including "Other") ---
+                ward_name = request.POST.get("ward_name")
+                custom_ward = request.POST.get("custom_ward_name")
+                custom_pincode = request.POST.get("custom_pincode")
+                dropdown_pincode = request.POST.get("pincode")
+
+                membership.ward = ward_name or None
+                membership.other_ward = custom_ward if ward_name == "Other" else None
+                membership.pincode = (custom_pincode if ward_name == "Other" else dropdown_pincode) or None
+                updated = True  # mark as updated if any ward-related change
                 
                 date_fields = ["dob", "from_date", "to_date"]
 
@@ -1581,6 +1591,7 @@ def membership_form_renew(request):
                         middle_name_mar=membership.middle_name_mar,
                         last_name_mar=membership.last_name_mar,
                         ward=membership.ward,
+                        other_ward=membership.other_ward,
                         pincode=membership.pincode,
                         library_name=membership.library_name,
                         library_name_mar=membership.library_name_mar,
@@ -1793,7 +1804,7 @@ def bar_code_index(request):
             # 🔹 Get matching circulation records
             circulation_qs = (
                 CirculationCopyStatus.objects
-                .select_related("bookcatalog", "bookcatalog__subject")
+                .select_related("bookcatalog", "bookcatalog__subject", "shelf_location")
                 .annotate(barcode_int=Cast("barcode", IntegerField()))
                 .filter(barcode_int__range=(int(from_acc), int(to_acc)))
                 .order_by("barcode_int")  # 👈 numeric order, ascending
@@ -1811,20 +1822,23 @@ def bar_code_index(request):
             width, height = A4
 
             # ✅ Font setup for Marathi
-            # font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
             font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSerifDevanagari-Bold.ttf")
             p.setFont("Helvetica", 10)
 
             # ✅ Page layout variables
             x_margin = 10 * mm           # tighter left margin
             y_position = height - 15 * mm  # start closer to top
-            y_gap = 30 * mm              # reduce gap between barcodes
+            y_gap = 45 * mm              # reduce gap between barcodes
 
             for idx, record in enumerate(circulation_qs):
                 accession_no = record.accession_no or "UNKNOWN"
+                
                 subject_marathi = ""
+                
                 if record.bookcatalog and record.bookcatalog.subject:
                     subject_marathi = record.bookcatalog.subject.subjectNameMarathi or ""
+                    
+                location_name = record.shelf_location.location_name if record.shelf_location else ""
 
                 # ✅ Generate barcode image
                 CODE = Code128
@@ -1847,10 +1861,10 @@ def bar_code_index(request):
                 
                 marathi_text = "नवी मुंबई महानगरपालिका"
                 location_text = f"{library_location} - {library_code}"
-                number_text = f"{accession_no} - {subject_marathi}"
+                number_text = f"{accession_no} - {subject_marathi} - {location_name}"
 
                 try:
-                    marathi_font = ImageFont.truetype(font_path, 24)
+                    marathi_font = ImageFont.truetype(font_path, 22)
                     english_font = ImageFont.truetype(font_path, 22)
                     number_font = ImageFont.truetype(font_path, 22)
                 except:
@@ -1926,7 +1940,15 @@ def bar_code_index(request):
                 temp_img.seek(0)
 
                 # ✅ Draw image in PDF
-                p.drawImage(ImageReader(temp_img), x_margin, y_position - barcode_img.height, width=80 * mm, height=25 * mm)
+                # p.drawImage(ImageReader(temp_img), x_margin, y_position - barcode_img.height, width=80 * mm, height=40 * mm)
+                
+                # Calculate centered x position
+                img_width = 80 * mm
+                img_height = 40 * mm
+                center_x = (width - img_width) / 2  # horizontally center
+
+                p.drawImage(ImageReader(temp_img), center_x, y_position - img_height, width=img_width, height=img_height)
+
 
                 y_position -= y_gap
 
@@ -2207,7 +2229,7 @@ def issue_return_book_create(request):
             for circ in circulation:
                 circ.circ_encrypted_barcode = enc(str(circ.barcode))
                 circ.circ_encrypted_id = enc(str(circ.id))
-                circ.circ_encrypted_accession_id = enc(str(circ.accession.accession_id))
+                # circ.circ_encrypted_accession_id = enc(str(circ.accession.accession_id))
             
             # barcode for returned books
             

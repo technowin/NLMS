@@ -54,22 +54,28 @@
 
             <tbody>
                 {% for item in circulation_data %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ item.cat_ref_num|default:"-" }}</td>
-                    <td>{{ item.title|default:"-" }}</td>
-                    <td>{{ item.accession_no|default:"-" }}</td>
-                    <td>{{ item.isbn|default:"-" }}</td>
-                    <td>{{ item.subject|default:"-" }}</td>
-                    <td>{{ item.barcode|default:"-" }}</td>
-                    <td>{{ item.shelf_location_name|default:"-" }}</td>
-                    <td>{{ item.current_status_name|default:"-" }}</td>
-                    <td>{{ item.processing_status_name|default:"-" }}</td>
-                    <td>
-                        <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">संपादन करा</a>
-                        <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-info">तपशील पहा</a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.cat_ref_num|default:"-" }}</td>
+                        <td>{{ item.title|default:"-" }}</td>
+                        <td>{{ item.accession_no|default:"-" }}</td>
+                        <td>{{ item.isbn|default:"-" }}</td>
+                        <td>{{ item.subject|default:"-" }}</td>
+                        <td>{{ item.barcode|default:"-" }}</td>
+                        <td>{{ item.shelf_location_name|default:"-" }}</td>
+                        <td>{{ item.current_status_name|default:"-" }}</td>
+                        <td>{{ item.processing_status_name|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">संपादन करा</a>
+                            <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-info">तपशील पहा</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center fw-bold">
+                            उपलब्ध माहिती आढळली नाही
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

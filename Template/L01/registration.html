@@ -128,30 +128,6 @@
 
         <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
 
-        <!-- WARD NAME -->
-        <div class="form-section mb-3 row">
-            <div class="col-md-6">
-                <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
-                <select name="ward_name" id="ward_name" class="form-control" required>
-                    <option value="">Select Ward</option>
-                    {% for ward in ward_details %}
-                        <option value="{{ ward.ward_name }}">{{ ward.ward_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="col-md-6 d-none" id="pincode_row">
-                <label class="form-label" for="pincode">
-                    Pincode / पिनकोड <span class="text-danger">*</span>
-                </label>
-                <select name="pincode" id="pincode" class="form-control" required>
-                    <option value="">Select Pincode</option>
-                </select>
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
-
         <!-- LIBRARY NAME -->
         <div class="form-section mb-3 row">
             <div class="col-md-6">
@@ -238,6 +214,48 @@
                     </small>
                 </div>
             </div>
+        </div>
+
+        <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
+
+        <!-- WARD NAME -->
+        <div class="form-section mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label" for="ward_name">Ward Name / वॉर्डचे नाव <span class="text-danger">*</span></label>
+                <select name="ward_name" id="ward_name" class="form-control" required>
+                    <option value="">Select Ward</option>
+                    {% for ward in ward_details %}
+                        <option value="{{ ward.ward_name }}">{{ ward.ward_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6 d-none" id="pincode_row">
+                <label class="form-label" for="pincode">
+                    Pincode / पिनकोड <span class="text-danger">*</span>
+                </label>
+                <select name="pincode" id="pincode" class="form-control" required>
+                    <option value="">Select Pincode</option>
+                </select>
+            </div>
+
+            <div class="col-md-12 d-none mt-3" id="other_fields">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="custom_ward_name" class="form-label">
+                            Enter Ward Name / वॉर्डचे नाव <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="custom_ward_name" id="custom_ward_name" class="form-control" placeholder="Enter Ward Name">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="custom_pincode" class="form-label">
+                            Enter Pincode / पिनकोड <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="custom_pincode" id="custom_pincode" class="form-control" placeholder="Enter Pincode">
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <hr style="border: 0; border-top: 2px dashed #212529; margin-top: 2%; margin-bottom: 2%;">
@@ -390,8 +408,8 @@
         <!-- Email And Phone Number -->
         <div class="form-section mb-3 row">
             <div class="mb-3 col-md-6">
-                <label class="form-label" for="email">Email / ईमेल <span class="text-danger">*</span></label>        
-                <input type="email" id="email" name="email" class="form-control" placeholder="e.g. hello@gmail.com>" required>
+                <label class="form-label" for="email">Email / ईमेल</label>        
+                <input type="email" id="email" name="email" class="form-control" placeholder="e.g. hello@gmail.com>">
                 <small id="emailHelp" class="form-text text-muted">
                     Please provide a valid email address.
                 </small>
@@ -411,8 +429,10 @@
             </div>
 
             <div class="col-md-6">
-                <label class="form-label" for="dob">Date of Birth / जन्म तारीख  <span class="text-danger">*</span></label>
-                <input type="date" id="dob" name="dob" class="form-control" required>
+                <label class="form-label" for="dob">Date of Birth / जन्म तारीख
+                    
+                </label>
+                <input type="date" id="dob" name="dob" class="form-control">
                 <small id="dobError" class="text-danger d-none"></small>
             </div>
         </div>
@@ -867,11 +887,28 @@
         $('#ward_name').change(function() {
             const wardName = $(this).val();
 
-            if (wardName) {
-                // show pincode field & make it required
+            if (wardName === "Other") {
+                // Hide dropdown section completely
+                $('#pincode_row').addClass('d-none');
+                $('#pincode').prop('required', false)
+                            .html('<option value="">Select Pincode</option>');
+
+                // Show text inputs for custom ward/pincode
+                $('#other_fields').removeClass('d-none');
+                $('#custom_ward_name, #custom_pincode').prop('required', true);
+            } 
+            else if (wardName) {
+                // Hide "Other" fields and clear them
+                $('#other_fields').addClass('d-none');
+                $('#custom_ward_name, #custom_pincode')
+                    .prop('required', false)
+                    .val('');
+
+                // Show dropdown + required
                 $('#pincode_row').removeClass('d-none');
                 $('#pincode').prop('required', true);
 
+                // Load pincodes via AJAX
                 $.ajax({
                     url: "{% url 'L01:get_pincodes' %}",
                     type: "GET",
@@ -884,15 +921,22 @@
                         $('#pincode').html(options);
                     }
                 });
-            } else {
-                // hide pincode & remove required
+            } 
+            else {
+                // Nothing selected → hide all and reset
                 $('#pincode_row').addClass('d-none');
                 $('#pincode').prop('required', false)
                             .html('<option value="">Select Pincode</option>');
+
+                $('#other_fields').addClass('d-none');
+                $('#custom_ward_name, #custom_pincode')
+                    .prop('required', false)
+                    .val('');
             }
         });
     });
 </script>
+
 
 {% comment %} Membership Type / सदस्यत्व प्रकार {% endcomment %}
 <script>
