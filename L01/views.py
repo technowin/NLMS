@@ -3874,9 +3874,9 @@ def get_member_detail(request, membership_code):
         else:
             member_data['auto_entry_created'] = False
             if not is_valid:
-                member_data['log_message'] = f"Membership expired for {member.first_name} {member.last_name}. Cannot create entry log."
+                member_data['log_message'] = f"Membership expired for {member.first_name} {member.last_name}."
             elif not member.isactive:
-                member_data['log_message'] = f"Member account is inactive for {member.first_name} {member.last_name}. Cannot create entry log."
+                member_data['log_message'] = f"Member account is inactive for {member.first_name} {member.last_name}."
         
         return JsonResponse(member_data)
     
