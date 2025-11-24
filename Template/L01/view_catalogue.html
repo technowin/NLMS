@@ -5,136 +5,351 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 
+<!-- Popup Animation -->
+<style>
+@keyframes popupScale {
+    from { transform:scale(0.85); opacity:0; }
+    to   { transform:scale(1); opacity:1; }
+}
+
+@keyframes popupFade {
+    from { opacity:0; }
+    to   { opacity:1; }
+}
+
+/* Background fade-in */
+@keyframes fadeInBg {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Popup zoom animation */
+@keyframes popupZoom {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Close button hover animation */
+#closePopup:hover {
+    color: #000;
+    transform: scale(1.2);
+}
+
+.cube-loader {
+  position: relative;
+  width: 75px;
+  height: 75px;
+  transform-style: preserve-3d;
+  transform: rotateX(-30deg);
+  animation: animate 4s linear infinite;
+  margin: auto;
+}
+
+@keyframes animate {
+  0% { transform: rotateX(-30deg) rotateY(0); }
+  100% { transform: rotateX(-30deg) rotateY(360deg); }
+}
+
+.cube-loader .cube-wrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.cube-loader .cube-wrapper .cube-span {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: rotateY(calc(90deg * var(--i))) translateZ(37.5px);
+  background: hsl(176.89, 99.07%, 58.04%);
+}
+
+.cube-top {
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  background: hsl(176.89, 99.07%, 58.04%);
+  transform: rotateX(90deg) translateZ(37.5px);
+  transform-style: preserve-3d;
+}
+
+.cube-top::before {
+  content: '';
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  background: hsl(176.61, 42.28%, 40.7%);
+  transform: translateZ(-90px);
+  filter: blur(10px);
+  box-shadow: 0 0 10px #323232,
+              0 0 20px hsl(176.61, 42.28%, 40.7%),
+              0 0 30px #323232,
+              0 0 40px hsl(176.61, 42.28%, 40.7%);
+}
+
+</style>
+
+
 <!-- ================= Search Section ================= -->
 <div class="search-section" style="background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%); padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); max-width: 1200px; margin: 20px auto;">
 
-    <!-- ================= Basic Search Form ================= -->
-    <div class="basic-search-wrapper" style="text-align: center; margin-bottom: 20px;">
+<!-- ====================== SEARCH + BELL + MODAL ====================== -->
 
-        <p id="advancedNote" style="background: linear-gradient(90deg, #fff8e1, #fff3c4); border-left: 5px solid #f59e0b; padding: 16px 20px; border-radius: 12px; color: #374151; font-size: 15px; line-height: 1.7; margin-bottom: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; box-shadow: 0 4px 8px rgba(0,0,0,0.08);">
-            <strong style="color:#b45309;">Note:</strong> Please enter the <strong style="color:#b45309;">entire book title</strong> to search.<br>
-            <span style="color:#4b5563; font-style:italic;">टीप: कृपया शोधण्यासाठी <strong>संपूर्ण पुस्तकाचे</strong> शीर्षक भरा.</span>
-        </p>
+<!-- ================= ROW 1 ================= -->
+<div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;
+            padding:10px; text-align:center;">
 
-        <!-- ================= Advanced Search ================= -->
-        <div class="advanced-search" id="advancedSearchSection"
-             style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; background: #fff; border-radius: 12px; padding: 15px 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+    <!-- Title -->
+    <span style="font-size:18px; font-weight:600; color:#002b5c; white-space:nowrap;">
+        प्रगत शोध / Advanced Search:
+    </span>
 
-            <label for="searchType" style="font-weight: 600; color: #002850; white-space: nowrap;">
-                अ‍ॅडव्हान्स्ड शोध / Advanced Search:
-            </label>
+    <!-- Dropdown -->
+    <select id="searchType" onchange="clearResults();"
+        style="padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px;
+               font-size:15px; background:#f8fafc; color:#1e293b; width:180px;">
+        <option value="">Select Type</option>
+        <option value="books">पुस्तके / Books</option>
+        <option value="title">शीर्षक / Title</option>
+        <option value="author">लेखक / Author</option>
+        <option value="keyword">कीवर्ड / Keyword</option>
+        <option value="language">भाषा / Language</option>
+        <option value="publisher">प्रकाशक / Publisher</option>
+        <option value="year">प्रकाशन वर्ष / Year of Publication</option>
+    </select>
 
-            <select id="searchType" onchange="clearResults();" 
-                style="padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; background: #f8fafc; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <option value="">Select Type</option>
-                <option value="books">पुस्तके / Books</option>
-                <option value="title">शीर्षक / Title</option>
-                <option value="author">लेखक / Author</option>
-                <option value="keyword">कीवर्ड / Keyword</option>
-                <option value="language">भाषा / Language</option>
-                <option value="publisher">प्रकाशक / Publisher</option>
-                <option value="year">प्रकाशन वर्ष / Year of Publication</option>
-            </select>
+    <!-- Search Input -->
+    <input type="text" id="advancedSearchInput" placeholder="Type to search..."
+        style="padding:10px 12px; width:220px; border:1px solid #cbd5e1; border-radius:8px;
+               background:#f8fafc; font-size:15px; color:#1e293b;">
+</div>
 
-            <input type="text" id="advancedSearchInput" placeholder="Type to search..."
-    style="padding: 10px 12px; width: 240px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-size: 15px; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" />
-            <p id="errorMsg" style="color:red; margin-top: 5px;"></p>
 
-            <!-- ================= Buttons in Single Row ================= -->
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-           <button type="button" id="advancedSearchBtn" onclick="performSearch()"
-                style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; font-weight: 600; border: none; border-radius: 25px; padding: 10px 22px; cursor: pointer; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0); display: flex; align-items: center; gap: 6px;">
-                <i class="fa fa-search"></i> शोध / Search
-            </button>
-                <button type="button" id="indexSearchBtn" onclick="toggleKeywordSection()" 
-                    style="background: linear-gradient(135deg, #1d4ed8, #0f172a); color: white; font-weight: 600; border: none; border-radius: 25px; padding: 10px 22px; cursor: pointer; font-size: 15px; box-shadow: 0 4px 6px rgba(0,0,0); display: flex; align-items: center; gap: 6px;">
-                    <i class="fa fa-list"></i> सूची शोध / Index Search
-                </button>
-            </div>
+<!-- ================= ROW 2 ================= -->
+<div style="display:flex; justify-content:center; align-items:center; gap:12px;
+            flex-wrap:wrap; padding:10px; position:relative;">
 
+    <!-- Help Button -->
+    <button type="button" onclick="openHelp()"
+        style="background:linear-gradient(135deg,#f59e0b,#b45309); color:white;
+               font-weight:600; border:none; border-radius:25px; padding:10px 22px;
+               cursor:pointer; font-size:15px; display:flex; align-items:center;
+               gap:6px; box-shadow:0 4px 6px rgba(0,0,0,0.2);">
+        <i class="fa fa-question-circle"></i> Help
+    </button>
+
+    <!-- Search Button -->
+    <button type="button" id="advancedSearchBtn" onclick="performSearch()"
+        style="background:linear-gradient(135deg,#2563eb,#1e40af); color:white;
+               font-weight:600; border:none; border-radius:25px; padding:10px 22px;
+               cursor:pointer; font-size:15px; display:flex; align-items:center;
+               gap:6px; box-shadow:0 4px 6px rgba(0,0,0,0.2);">
+        <i class="fa fa-search"></i> शोध / Search
+    </button>
+
+    <!-- Index Search Button -->
+    <button type="button" id="indexSearchBtn" onclick="toggleKeywordSection()"
+        style="background:linear-gradient(135deg,#1d4ed8,#0f172a); color:white;
+               font-weight:600; border:none; border-radius:25px; padding:10px 22px;
+               cursor:pointer; font-size:15px; display:flex; align-items:center;
+               gap:6px; box-shadow:0 4px 6px rgba(0,0,0,0.2);">
+        <i class="fa fa-list"></i> सूची शोध / Index Search
+    </button>
+
+    <!-- NEW X BUTTON (HIDDEN BY DEFAULT) -->
+    <button id="closeXBtn" type="button"
+        onclick="window.location.reload()"
+        style="
+            position:absolute;
+            top:-5px;
+            right:-5px;
+            background:#ff4d4d; color:white; font-weight:600; border:none;
+            padding:6px 14px; border-radius:8px; cursor:pointer;
+            font-size:16px; box-shadow:0 2px 6px rgba(0,0,0,0.25);
+            transition:transform 0.2s ease;
+            display:none;
+        "
+        onmouseover="this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.transform='translateY(0)'"
+        onmousedown="this.style.transform='scale(0.92)'"
+        onmouseup="this.style.transform='translateY(-2px)'">
+        X
+    </button>
+
+</div>
+
+
+
+<!-- ====================== MODAL ====================== -->
+
+<div id="notePopup" 
+     style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.45); 
+            display:none; justify-content:center; align-items:center; z-index:9999;
+            backdrop-filter:blur(4px); animation:fadeInBg 0.4s ease;">
+
+    <div style="background:rgba(255,255,255,0.95); width:95%; max-width:520px; padding:28px;
+                border-radius:18px; box-shadow:0 12px 35px rgba(0,0,0); 
+                border:1px solid rgba(255,255,255,0.4); backdrop-filter:blur(8px);
+                position:relative; transform:scale(0.9); opacity:1; animation:popupZoom 0.35s ease;">
+
+        <!-- Close Button -->
+        <span id="closePopup"
+            style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer;
+                   color:#666; transition:0.2s;">
+            &times;
+        </span>
+
+        <!-- Note Box Marathi -->
+        <div style="
+            background:linear-gradient(90deg,#fff8db,#ffefc1);
+            border-left:6px solid #f59e0b; padding:18px 22px; border-radius:14px;
+             box-shadow:0 4px 12px rgba(255,204,80),
+                        0 0 14px rgba(255,204,80); color:#2d3748;
+            font-size:15.5px; line-height:1.75; margin-bottom:15px;
+            font-family:'Segoe UI', Tahoma, sans-serif;">
+            
+            <strong style="font-size:15px;font-weight:bold;">📘 महत्त्वाच्या टीपा :</strong>
+
+            <ul style="margin-top:10px; padding-left:20px; font-size:15px; color:black; line-height:1.7;">
+                <li>कीवर्ड शोधामध्ये अर्धवट मजकूर/शब्द देखील स्वीकारले जातात.</li>
+                <li>अनुक्रमणिका (Index) शोधात विद्यमान वर्गीकरणानुसार परिणाम फिल्टर केले जातात.</li>
+                <li>अचूक निकालांसाठी पुस्तकाचे संपूर्ण शीर्षक टाइप करणे आवश्यक आहे.</li>
+                <li>निवडलेल्या शोध प्रकारानुसार शोध परिणाम बदलतात.</li>
+            </ul>
         </div>
-    </div>
 
-   <!-- ================= Keyword Buttons Section ================= -->
-<div class="keyword-buttons" id="keywordSection"
-     style="display: none; background: #fff; border-radius: 12px; padding: 20px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+        <!-- Important Notes English -->
+        <div style="
+            background:linear-gradient(135deg, #e8f1ff 0%, #f4f9ff 100%);
+            border-left:6px solid #2563eb;
+            padding:20px 22px;
+            border-radius:16px;
+            box-shadow:0 4px 12px rgba(37,99,235),
+                        0 0 14px rgba(37,99,235);
+            font-size:15px;
+            color:#1e3a8a;
+            line-height:1.7;
+            position:relative;
+            overflow:hidden;
+            font-family:'Segoe UI', Tahoma, sans-serif;">
+
+            <div style="
+                position:absolute;
+                top:0; right:0;
+                width:120px; height:120px;
+                background:radial-gradient(circle, rgba(59,130,246,0.35), transparent 70%);
+                border-radius:50%;
+                pointer-events:none;
+                opacity:0.7;
+            "></div>
+
+            <strong style="
+                font-size:16px; 
+                color:#1d4ed8; 
+                display:flex; 
+                align-items:center; 
+                gap:8px;
+                font-weight:bold;">
+                📘 Important Notes : 
+            </strong>
+
+            <ul style="
+                margin-top:12px;
+                padding-left:22px;
+                font-size:15px;
+                color:#1e40af;
+                list-style:none;
+                line-height:1.75;
+                font-weight:600;">
+                
+                <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
+                    <span style='color:#2563eb; font-weight:bold;'>✔</span>
+                    Keyword search supports partial text.
+                </li>
+
+                <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
+                    <span style='color:#2563eb; font-weight:bold;'>✔</span>
+                    Index search will filter based on existing categories.
+                </li>
+
+                <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
+                    <span style='color:#2563eb; font-weight:bold;'>✔</span>
+                    Book titles must be typed completely for accurate results.
+                </li>
+
+                <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
+                    <span style='color:#2563eb; font-weight:bold;'>✔</span>
+                    Search results depend on the selected search type.
+                </li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ================= Keyword Buttons Section ================= -->
+<div id="keywordSection"
+     style="display:none; background:#fff; border-radius:12px; padding:20px; 
+            margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0); max-width:1100px; 
+            margin-left:auto; margin-right:auto;">
 
     <!-- English A–Z -->
     <div class="keyword-row english" 
-         style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 15px;">
+         style="display:flex; flex-wrap:wrap; justify-content:center;
+                gap:5px; margin-bottom:15px; width:100%;">
+
         {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-            <button type="button" class="keyword-btn"
-                onclick="document.getElementById('advancedSearchInput').value='{{ letter }}'; performBookSearch()"  
-                style="background: #00f7ff; color: #000; border: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0); transition: 0.3s;">
+            <button type="button"
+                onclick="document.getElementById('advancedSearchInput').value='{{ letter }}'; performBookSearch()"
+                style="
+                    background:#00eaff; color:#000; border:none;
+                    padding:6px 10px; border-radius:6px;
+                    font-size:13px; cursor:pointer; min-width:32px;
+                    text-align:center; font-weight:bold;
+                    transition:transform 0.2s ease, box-shadow 0.2s ease;
+                    box-shadow:0 2px 5px rgba(0,0,0);
+                "
+                onmouseover="this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.transform='translateY(0)'"
+                onmousedown="this.style.transform='scale(0.92)'"
+                onmouseup="this.style.transform='translateY(-2px)'">
                 {{ letter }}
             </button>
         {% endfor %}
     </div>
 
     <!-- Marathi Letters -->
-    <div class="keyword-row marathi" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+    <div class="keyword-row marathi" 
+         style="display:flex; flex-wrap:wrap; justify-content:center;
+                gap:5px; width:100%;">
 
-        <!-- अ and अं grouped together -->
-        <div style="display:inline-flex; gap:8px;">
-            <button type="button"
-                onclick="document.getElementById('advancedSearchInput').value='अ'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">अ</button>
-
-            <button type="button"
-                onclick="document.getElementById('advancedSearchInput').value='अं'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">अं</button>
-        </div>
-
-        {% for letter in "आइईउऊएऐओऔअःकखगघङचछ" %}
+        {% for letter in "अअंआइईउऊएऐओऔअःकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळक्ष" %}
             <button type="button"
                 onclick="document.getElementById('advancedSearchInput').value='{{ letter }}'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">
-                {{ letter }}
-            </button>
-        {% endfor %}
-
-        <!-- ज, ज्ञ, झ grouped together -->
-        <div style="display:inline-flex; gap:8px;">
-            <button type="button"
-                onclick="document.getElementById('advancedSearchInput').value='ज'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ज</button>
-
-            <button type="button"
-                onclick="document.getElementById('advancedSearchInput').value='ज्ञ'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">ज्ञ</button>
-
-            <button type="button"
-                onclick="document.getElementById('advancedSearchInput').value='झ'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">झ</button>
-        </div>
-
-        {% for letter in "ञटठडढणतथदधनपफबभमयरलवशषसहळक्ष" %}
-            <button type="button"
-                onclick="document.getElementById('advancedSearchInput').value='{{ letter }}'; performBookSearch()"
-                style="background:#015296;color:white;border:none;box-shadow:0 2px 8px rgba(0,0,0);
-                padding:8px 12px;border-radius:8px;font-size:15px;cursor:pointer;transition:0.3s;">
+                style="
+                    background:#054f9d; color:white; border:none;
+                    padding:6px 10px; border-radius:6px;
+                    font-size:13px; cursor:pointer; min-width:32px;
+                    text-align:center; font-weight:600;
+                    transition:transform 0.2s ease, box-shadow 0.2s ease;
+                    box-shadow:0 2px 5px rgba(0,0,0,0.25);
+                "
+                onmouseover="this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.transform='translateY(0)'"
+                onmousedown="this.style.transform='scale(0.92)'"
+                onmouseup="this.style.transform='translateY(-2px)'">
                 {{ letter }}
             </button>
         {% endfor %}
     </div>
 
-<!-- ====== Refresh Button ====== -->
-<div style="text-align:center; margin-top:25px;">
-   <button type="button" onclick="window.location.reload()"
-    style="background:#ff4d4d;color:white;font-weight:600;border:none;
-    padding:10px 20px;border-radius:10px;cursor:pointer;
-    box-shadow:0 3px 8px rgba(0,0,0);transition:0.3s;
-    display:flex;align-items:center;gap:8px;justify-content:center;">
-    <i class="fa fa-refresh"></i> Refresh
-</button>
+</div>
+
 
 </div>
+
 
 
 </div>
@@ -246,7 +461,6 @@ const itemsPerPage = 6;
 let currentData = []; // Stores last search results
 
 function performSearch(page = 1) {
-    debugger;
     const type = document.getElementById("searchType").value;
     const query = document.getElementById("advancedSearchInput").value.trim();
     const resultsDiv = document.getElementById("searchResults");
@@ -257,11 +471,18 @@ function performSearch(page = 1) {
         return;
     }
 
-    const tableName = (type === "books") ? "tbl_bookcatalog" : "tbl_authormaster";
-
-    // Directly perform search without confirmation
-    resultsDiv.innerHTML =
-        `<p>Searching for "<strong>${query}</strong>" in <strong>${tableName}</strong>...</p>`;
+    // Show loader while fetching
+    resultsDiv.innerHTML = `
+        <div class="cube-loader">
+            <div class="cube-wrapper">
+                <span class="cube-span" style="--i:0;"></span>
+                <span class="cube-span" style="--i:1;"></span>
+                <span class="cube-span" style="--i:2;"></span>
+                <span class="cube-span" style="--i:3;"></span>
+                <div class="cube-top"></div>
+            </div>
+        </div>
+    `;
 
     $.ajax({
         url: "{% url 'L01:bookcatalog_search' %}",
@@ -279,9 +500,9 @@ function performSearch(page = 1) {
                 return;
             }
 
-            currentData = data; // Save data globally
-            currentPage = page; // Set current page
-            renderPage(currentPage);
+            currentData = data;
+            currentPage = page;
+            renderPage(currentPage); // Loader is replaced by results
         },
         error: function(xhr, status, error) {
             console.error("Error fetching data:", error);
@@ -315,7 +536,7 @@ function renderPage(page) {
                     transform-style: preserve-3d;
                     transition: transform 0.8s cubic-bezier(0.4,0,0.2,1);
                     border-radius:12px;
-                    box-shadow:0 6px 20px rgba(0,0,0);
+                    box-shadow:0 6px 20px rgba(0,0,0,0.15);
                 ">
                     <div class="flip-card-front" style="
                         position:absolute;
@@ -323,14 +544,12 @@ function renderPage(page) {
                         height:100%;
                         backface-visibility:hidden;
                         border-radius:12px;
-                        box-shadow:0 6px 20px rgba(0,0,0);
                         display:flex;
                         flex-direction:column;
                         justify-content:center;
                         align-items:center;
                         padding:12px;
                         background: linear-gradient(135deg, #f8fafc, #e0f2fe);
-                        transition: all 0.3s ease;
                     ">
                         <img src="${imageUrl}" alt="Book Image" style="
                             width:100%;
@@ -348,30 +567,28 @@ function renderPage(page) {
                             border-radius:6px;
                             cursor:pointer;
                             font-weight:600;
-                            transition: all 0.3s ease;
-                            box-shadow:0 2px 5px rgba(0,0,0);
                         " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Flip</button>
                     </div>
+
                     <div class="flip-card-back" style="
                         position:absolute;
                         width:100%;
                         height:100%;
                         backface-visibility:hidden;
                         border-radius:12px;
-                        box-shadow:0 6px 20px rgba(0,0,0);
                         transform:rotateY(180deg);
                         overflow:auto;
                         padding:12px;
-                        justify-content:center;
-                        align-items:center;
                         text-align:left;
                         background: linear-gradient(135deg, #ffffff, #e0f7fa);
                     ">
-                        <h4 style="font-size:16px; color:#0f172a; margin-bottom:8px;">${item.title || "Untitled Book"}</h4><br>
+                        <h4 style="font-size:16px; color:#0f172a; margin-bottom:8px;">${item.title || "Untitled Book"}</h4>
                         <p><strong>लेखक / Author:</strong> ${item.author || "N/A"}</p>
                         <p><strong>प्रकाशक / Publisher:</strong> ${item.publisher || "N/A"}</p>
                         <p><strong>भाषा / Language:</strong> ${item.language || "N/A"}</p>
-                        <p><strong>प्रकाशन वर्ष / Year:</strong> ${item.year_of_publication || "N/A"}</p>
+                        <p><strong>Year (Publication):</strong> ${item.year_of_publication || item.publication_year || "N/A"}</p>
+                        <p><strong>Call Number:</strong> ${item.call_number || "N/A"}</p>
+                        <p><strong>Ebook Available:</strong> ${item.ebook_available || "No"}</p>
 
                         <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
                             <button onclick="flipCard(${globalIndex})" style="
@@ -383,11 +600,7 @@ function renderPage(page) {
                                 border-radius:6px;
                                 cursor:pointer;
                                 font-weight:600;
-                                box-shadow:0 2px 5px rgba(0,0,0);
-                                transition: all 0.3s ease;
-                            " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">
-                                Back
-                            </button>
+                            " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
                             <button onclick="window.location.href='{% url 'Login' %}'" style="
                                 flex:1;
                                 background:linear-gradient(135deg,#2563eb,#1e40af);
@@ -397,14 +610,9 @@ function renderPage(page) {
                                 border-radius:6px;
                                 font-weight:600;
                                 cursor:pointer;
-                                box-shadow:0 2px 5px rgba(0,0,0);
-                                transition: all 0.3s ease;
-                            " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">
-                                Login
-                            </button>
+                            " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">Login</button>
                         </div>
 
-                        <!-- Note below buttons -->
                         <div style="
                             margin-top:10px;
                             padding:10px 12px;
@@ -415,8 +623,7 @@ function renderPage(page) {
                             font-size:13px;
                             font-weight:bold;
                             text-align:center;
-                            box-shadow: 0 4px 10px rgba(0,0,0);
-                            line-height:1.4;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
                             display:flex;
                             align-items:center;
                             justify-content:center;
@@ -424,7 +631,6 @@ function renderPage(page) {
                             <span style="margin-right:6px; font-size:14px;">&#9432;</span> 
                             Note: Please login to access full book details.
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -433,21 +639,21 @@ function renderPage(page) {
 
     html += `</div>`;
 
-    // Pagination buttons
+    // Pagination
     const totalPages = Math.ceil(currentData.length / itemsPerPage);
-    if(totalPages > 1){
+    if (totalPages > 1) {
         html += `<div style="margin-top:15px; text-align:center;">`;
-        for(let i = 1; i <= totalPages; i++){
+        for (let i = 1; i <= totalPages; i++) {
             html += `<button onclick="renderPage(${i})" style="
                         margin:2px;
                         padding:6px 12px;
                         border-radius:6px;
                         border:1px solid #cbd5e1;
                         background:${i === page ? '#2563eb' : '#f8fafc'};
-                        color:${i===page?'white':'#1e293b'};
+                        color:${i === page ? 'white' : '#1e293b'};
                         cursor:pointer;
-                        transition: all 0.3s ease;
-                    " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 0 rgba(0,0,0,0)'">
+                    " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.2)'" 
+                       onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 0 rgba(0,0,0,0)'">
                         ${i}
                      </button>`;
         }
@@ -460,35 +666,40 @@ function renderPage(page) {
 // Flip card logic
 function flipCard(index) {
     const card = document.getElementById(`flipCard${index}`);
-    if (card.style.transform === "rotateY(180deg)") {
-        card.style.transform = "rotateY(0deg)";
-    } else {
-        card.style.transform = "rotateY(180deg)";
-    }
+    card.style.transform = (card.style.transform === "rotateY(180deg)") ? "rotateY(0deg)" : "rotateY(180deg)";
 }
 </script>
+
 
 
 <script>
 let currentPageNew = 1;
 const itemsPerPageNew = 6;
-let currentDataNew = []; // Stores last search results for this function
+let currentDataNew = []; // Stores last search results
 
 function performBookSearch(page = 1) {
     const query = document.getElementById("advancedSearchInput").value.trim();
     const resultsDiv = document.getElementById("searchResults");
 
     if (!query) {
-        resultsDiv.innerHTML =
-            "<p style='color:red;'>Please enter a search term.</p>";
+        resultsDiv.innerHTML = "<p style='color:red;'>Please enter a search term.</p>";
         return;
     }
 
     const tableName = "tbl_bookcatalog";
 
-    // Directly perform search without confirmation
-    resultsDiv.innerHTML =
-        `<p>Searching for "<strong>${query}</strong>" in <strong>${tableName}</strong>...</p>`;
+    // Show loader while fetching
+    resultsDiv.innerHTML = `
+        <div class="cube-loader">
+            <div class="cube-wrapper">
+                <span class="cube-span" style="--i:0;"></span>
+                <span class="cube-span" style="--i:1;"></span>
+                <span class="cube-span" style="--i:2;"></span>
+                <span class="cube-span" style="--i:3;"></span>
+                <div class="cube-top"></div>
+            </div>
+        </div>
+    `;
 
     $.ajax({
         url: "{% url 'L01:bookcatalog_search' %}",
@@ -506,20 +717,19 @@ function performBookSearch(page = 1) {
                 return;
             }
 
-            currentDataNew = data; // Save data globally for this function
+            currentDataNew = data; // Save data globally
             currentPageNew = page; // Set current page
-            renderPageNew(currentPageNew);
+            renderPageNew(currentPageNew); // Loader replaced by results
         },
         error: function(xhr, status, error) {
             console.error("Error fetching data:", error);
-            resultsDiv.innerHTML =
-                "<p style='color:red;'>An error occurred while searching.</p>";
+            resultsDiv.innerHTML = "<p style='color:red;'>An error occurred while searching.</p>";
             Swal.fire("Error!", "An error occurred while fetching search results.", "error");
         }
     });
 }
 
-// Render a specific page for this function
+// Render a specific page
 function renderPageNew(page) {
     const resultsDiv = document.getElementById("searchResults");
     const startIndex = (page - 1) * itemsPerPageNew;
@@ -612,9 +822,7 @@ function renderPageNew(page) {
                                 font-weight:600;
                                 box-shadow:0 2px 5px rgba(0,0,0);
                                 transition: all 0.3s ease;
-                            " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">
-                                Back
-                            </button>
+                            " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
                             <button onclick="window.location.href='{% url 'Login' %}'" style="
                                 flex:1;
                                 background:linear-gradient(135deg,#2563eb,#1e40af);
@@ -626,9 +834,7 @@ function renderPageNew(page) {
                                 cursor:pointer;
                                 box-shadow:0 2px 5px rgba(0,0,0);
                                 transition: all 0.3s ease;
-                            " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">
-                                Login
-                            </button>
+                            " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">Login</button>
                         </div>
 
                         <div style="
@@ -683,31 +889,10 @@ function renderPageNew(page) {
     resultsDiv.innerHTML = html;
 }
 
-// Flip card logic for this function
+// Flip card logic
 function flipCardNew(index) {
     const card = document.getElementById(`flipCardNew${index}`);
-    if (card.style.transform === "rotateY(180deg)") {
-        card.style.transform = "rotateY(0deg)";
-    } else {
-        card.style.transform = "rotateY(180deg)";
-    }
-}
-</script>
-
-
-<script>
-function toggleYearInputs() {
-    const searchType = document.getElementById('searchType').value;
-    const yearFrom = document.getElementById('yearFrom');
-    const yearTo = document.getElementById('yearTo');
-
-    if(searchType === 'year') {
-        yearFrom.style.display = 'inline-block';
-        yearTo.style.display = 'inline-block';
-    } else {
-        yearFrom.style.display = 'none';
-        yearTo.style.display = 'none';
-    }
+    card.style.transform = (card.style.transform === "rotateY(180deg)") ? "rotateY(0deg)" : "rotateY(180deg)";
 }
 
 </script>
@@ -756,6 +941,31 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 
 
+<script>
+function openHelp() {
+    document.getElementById('notePopup').style.display = 'flex';
+}
+
+document.getElementById("closePopup").onclick = function() {
+    document.getElementById("notePopup").style.display = "none";
+};
+</script>
+
+<!-- ================= JS — SHOW/HIDE X BUTTON ================= -->
+<script>
+function toggleKeywordSection() {
+    const section = document.getElementById("keywordSection");
+    const closeBtn = document.getElementById("closeXBtn");
+
+    if (section.style.display === "none" || section.style.display === "") {
+        section.style.display = "block";
+        closeBtn.style.display = "block";  // Show X
+    } else {
+        section.style.display = "none";
+        closeBtn.style.display = "none";   // Hide X
+    }
+}
+</script>
 
 {% endblock %}
 
@@ -782,4 +992,9 @@ document.addEventListener("DOMContentLoaded", function() {
 <!-- Selectize.js JS -->
 <script src="{% static 'js/selectize.min.js' %}"></script>
 <script src="{% static 'js/vendor/select2.min.js' %}"></script>
+
+
+
+
+
 {% endblock %}

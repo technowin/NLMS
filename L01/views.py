@@ -3370,7 +3370,6 @@ def view_ebook_catalogue(request):
         "MEDIA_URL": settings.MEDIA_URL
     })
 
-
 @csrf_exempt
 def bookcatalog_search(request):
     try:
@@ -3380,53 +3379,55 @@ def bookcatalog_search(request):
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
 
-        results = BookCatalog.objects.all()
+        if not query or not search_type:
+            return JsonResponse({"error": "Please provide both query and search type."}, status=400)
 
-        if query:
-            if search_type in ["books", "title"]:
-                results = results.filter(title__icontains=query)
-            elif search_type == "author":
-                results = results.filter(author__icontains=query)
-            elif search_type == "keyword":
-                results = results.filter(keywords__icontains=query)
-            elif search_type == "language":
-                results = results.filter(language__icontains=query)
-            elif search_type == "publisher":
-                results = results.filter(publisher__icontains=query)
-            elif search_type == "year":
-                if query.isdigit():
-                    results = results.filter(year_of_publication=int(query))
-                else:
-                    return JsonResponse({"error": "Invalid year format."}, status=400)
-            else:
-                results = results.filter(
-                    Q(title__icontains=query) |
-                    Q(author__icontains=query) |
-                    Q(keywords__icontains=query) |
-                    Q(publisher__icontains=query) |
-                    Q(language__icontains=query)
-                )
+        # Base queryset from L01 database
+        results = BookCatalog.objects.using('L01').all()
 
+        # Filter by selected search type
+        if search_type == "title" or search_type == "books":
+            results = results.filter(title__icontains=query)
+        elif search_type == "author":
+            results = results.filter(author__icontains=query)
+        elif search_type == "publisher":
+            results = results.filter(publisher__icontains=query)
+        elif search_type == "language":
+            results = results.filter(language__icontains=query)
+        elif search_type == "keyword":
+            results = results.filter(keywords__icontains=query)
+        elif search_type == "year":
+            year_filters = Q()
+            if query.isdigit():
+                year_filters |= Q(year_of_publication=int(query))
+            year_filters |= Q(publication_year__icontains=query)
+            results = results.filter(year_filters)
+        elif search_type == "call_number":
+            results = results.filter(call_number__icontains=query)
+        elif search_type == "cutter_number":
+            results = results.filter(cutter_number__icontains=query)
+        else:
+            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+
+        # Limit results to 50
         results = results.values(
             "title",
             "author",
             "publisher",
             "language",
             "year_of_publication",
+            "publication_year",
+            "call_number",
+            "cutter_number",
             "front_page_photo",
+            "ebook_available",
         )[:50]
 
-        # ✅ Convert image path to full URL
+        # Convert front_page_photo to absolute URL
         updated_results = []
         for r in results:
             image_path = r.get("front_page_photo")
-            if image_path:
-                # Builds complete URL from MEDIA_URL or MEDIA_ROOT
-                full_image_url = request.build_absolute_uri(f"/media/{image_path}")
-            else:
-                full_image_url = ""  # Fallback if no image
-
-            r["front_page_photo"] = full_image_url
+            r["front_page_photo"] = request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
@@ -3437,6 +3438,7 @@ def bookcatalog_search(request):
             status=500
         )
     
+
 @csrf_exempt
 def libraryebook_search(request):
     try:
