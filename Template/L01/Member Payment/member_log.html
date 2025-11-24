@@ -4,7 +4,7 @@
 {% block title %}सदस्यत्व अर्ज पडताळणी{% endblock title %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{% comment %} <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"> {% endcomment %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
@@ -19,8 +19,12 @@
 </style> {% endcomment %}
 {% endblock %}
 
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय नोंदवही मास्टर तयार करा'  %}
+{% endblock %}
+
 {% block content %}
-<div class="header">
+{% comment %} <div class="header"  hidden>
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-6">
@@ -38,9 +42,10 @@
             </div>
         </div>
     </div>
-</div>
+</div> {% endcomment %}
+    <div class="card shadow-sm">
+        <div class="card-body">
 
-<div class="container">
     <div class="row">
         <!-- Left Side Card -->
         <div class="col-lg-6 mb-4">
@@ -93,17 +98,6 @@
 
                             <div id="scan-result" class="mt-3 fw-bold text-center"></div>
 
-                            {% comment %} <button class="btn btn-primary w-100 mt-3" id="scan-mobile-btn">
-                                <i class="bi bi-camera"></i> Start Mobile Scanner
-                            </button>
-
-                            <!-- Live QR Scanner Area -->
-                            <div id="mobile-scanner" style="width:100%; display:none;" class="mt-3"></div>
-
-                            <!-- Scan Result -->
-                            <div id="scan-result" class="mt-3 text-center fw-bold"></div> {% endcomment %}
-
-
                             <div class="mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i> मोबाइलवर हे कॅमेरा उघडेल QR स्कॅन करण्यासाठी
@@ -148,50 +142,20 @@
     </div>
 </div>
 
-<div class="footer">
-    <div class="container">
-        <p>&copy; 2023 Library Management System | L01 Database | Member Entry/Exit Tracking</p>
-        <p class="small text-muted">Last updated: <span id="last-updated"></span></p>
-    </div>
-</div>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> {% endcomment %}
 
 
 
 <script>
     // Theme Management
-    function initializeTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-bs-theme', savedTheme);
-        updateThemeIcon(savedTheme);
-    }
     
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.documentElement.setAttribute('data-bs-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
-        
-        // Update Select2 dropdowns to match theme
-        $('#member-select').trigger('change.select2');
-    }
     
-    function updateThemeIcon(theme) {
-        const themeIcon = document.getElementById('theme-icon');
-        if (theme === 'dark') {
-            themeIcon.className = 'bi bi-moon-fill';
-        } else {
-            themeIcon.className = 'bi bi-sun-fill';
-        }
-    }
-    
+
     // SweetAlert Functions
     function showSuccessAlert(message, memberName) {
         Swal.fire({
@@ -209,7 +173,7 @@
         });
     }
 
-    function showErrorAlert(message, title = 'Access Denied') {
+    {% comment %} function showErrorAlert(message, title = 'Access Denied') {
         Swal.fire({
             title: `❌ ${title}`,
             text: message,
@@ -220,7 +184,7 @@
             confirmButtonColor: '#dc3545',
             position: 'center'
         });
-    }
+    } {% endcomment %}
 
     function showInfoAlert(message, title = 'Information') {
         Swal.fire({
@@ -238,11 +202,8 @@
     // Initialize Select2 and other functionality
     $(document).ready(function() {
         // Initialize theme
-        initializeTheme();
         
         // Theme toggle event
-        $('#theme-toggle').on('click', toggleTheme);
-        
         // Initialize Select2
         $('#member-select').select2({
             placeholder: "Search for a member...",
@@ -251,28 +212,10 @@
         });
         
         // Update Select2 when theme changes
-        $(document).on('themeChanged', function() {
-            $('#member-select').select2({
-                theme: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'bootstrap4' : 'bootstrap'
-            });
-        });
+       
         
         // Set current date and time
-        function updateDateTime() {
-            const now = new Date();
-            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-            
-            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', dateOptions);
-            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', timeOptions);
-            
-            // Set last updated
-            document.getElementById('last-updated').textContent = now.toLocaleString('en-US');
-        }
         
-        // Update time immediately and then every second
-        updateDateTime();
-        setInterval(updateDateTime, 1000);
         
         // Handle member selection change
         $('#member-select').on('change', function() {
@@ -442,7 +385,6 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <!-- Libraries: html5-qrcode (optional) + jsQR (fallback decoder) -->
 <script src="https://unpkg.com/html5-qrcode@2.3.7" type="text/javascript"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -530,19 +472,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
         success: function (response) {
             debugger;
-            // Show exactly like dropdown AJAX
+
+            // Show member details
             displayMemberDetails(response);
 
-            // SweetAlert logic (same as your dropdown function)
-            if (response.auto_entry_created) {
-                showSuccessAlert(response.log_message, response.full_name);
-            } 
-            else if (response.log_message) {
-                if (response.membership_expired || !response.is_active) {
-                    showErrorAlert(response.log_message, 'Membership Issue');
-                } else {
-                    showInfoAlert(response.log_message, 'Information');
-                }
+            // Membership issue → show red card
+            if (response.membership_expired || !response.is_active) {
+                $('#member-details-container').html(`
+                    <div class="alert alert-danger text-center py-4">
+                        <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
+                        <h5>Membership Issue</h5>
+                        <p>${response.log_message || "Membership not valid"}</p>
+                        <button class="btn btn-outline-danger mt-2" onclick="resetMemberDetails()">Try Again</button>
+                    </div>
+                `);
             }
 
             // Scan result text
@@ -551,7 +494,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
 
         error: function (xhr) {
-            // EXACT same error HTML you use in dropdown AJAX
+            // Show error in card only
             $('#member-details-container').html(`
                 <div class="alert alert-danger text-center py-4">
                     <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
@@ -561,14 +504,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             `);
 
-            // Show error SweetAlert same as dropdown
-            showErrorAlert(xhr.responseJSON?.error || 'Member not found or server error', 'Error');
-
-            // Update scan result text
+            // Scan result text
             scanResult.innerHTML =
                 `<span class="text-danger">${xhr.responseJSON?.error || "Member not found"}</span>`;
         }
     });
+
+
 }
 
 
@@ -860,4 +802,26 @@ function displayMemberDetails(member) {
 
 
 
+{% endblock %}
+
+{% block extra_javascript %}
+
+{% include "bootstrap/partials/syntax-highlight.html" %}
+
+<!-- Third party js -->
+<script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
+<script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
+<script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
+<!-- Third party js ends -->
+
+<script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
+
+<!-- Init js -->
+<script src="{% static 'js/pages/demo.typehead.js' %}"></script>
+<script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
+<!-- Init js end -->
+
+<!-- Selectize.js JS -->
+<script src="{% static 'js/selectize.min.js' %}"></script>
+<script src="{% static 'js/vendor/select2.min.js' %}"></script>
 {% endblock %}
