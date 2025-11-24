@@ -660,7 +660,6 @@ def book_catalog_edit(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect('book_catalog_index')
 
-
 # Book Accession Index     
 @login_required
 def book_accession_index(request):
