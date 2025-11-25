@@ -1153,9 +1153,9 @@ def membership_form_view(request):
 
                             current_number = int(increment_master.incrementFieldNumber)
                             new_number = current_number + 1
-                            new_number_str = str(new_number).zfill(5)
+                            new_number_str = str(new_number).zfill(3)
 
-                            membership_code = f"{increment_master.incrementFieldName}_{timezone.now().strftime('%Y%m%d')}_{new_number_str}"
+                            membership_code = f"{increment_master.incrementFieldName}{new_number_str}"
 
                             increment_master.incrementFieldNumber = new_number_str
                             increment_master.save()

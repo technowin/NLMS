@@ -113,7 +113,7 @@ def Login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
-        next_url = request.POST.get("next")
+        next_url = request.POST.get('next')
         db_alias = None
 
         if next_url:
@@ -122,8 +122,8 @@ def Login(request):
             db_alias = "L01"
         else:
             request.session['service'] = "L01"
-            db_alias = "L01"
             request.session['library_db'] = "L01"
+            db_alias = "L01"
 
         # Authenticate user
         user = authenticate_from_db(request, username, password, db_alias)
@@ -177,9 +177,6 @@ def Login(request):
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
-
-
-
         
 # def logoutView(request):
 #     logout(request)
