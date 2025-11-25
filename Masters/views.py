@@ -2449,13 +2449,14 @@ def ward_master_edit(request):
         user_id = request.user.id
 
         if request.method == "POST":
-            # 🔹 Get encrypted ID from hidden form field
+
+            # 🔹 Get encrypted ID
             enc_id = request.POST.get("id")
             if not enc_id:
                 messages.error(request, "Missing Ward ID!")
                 return redirect("ward_master_index")
 
-            # 🔹 Decrypt the ID
+            # 🔹 Decrypt ID
             try:
                 ward_id = int(dec(enc_id))
             except Exception as e:
@@ -2463,25 +2464,29 @@ def ward_master_edit(request):
                 messages.error(request, "Invalid or corrupted ID!")
                 return redirect("ward_master_index")
 
-            # 🔹 Fetch the ward record
+            # 🔹 Fetch the record
             ward = WardMaster.objects.get(ward_id=ward_id)
 
             # ✅ Get form data
             ward_name = request.POST.get("ward_name", "").strip()
             pincode = request.POST.get("pincode", "").strip()
             ward_address = request.POST.get("ward_address", "").strip()
-            accounting_code_id = request.POST.get("accounting_code")  # ForeignKey
+
+            # 🔹 accounting_code is a TextField — NOT a ForeignKey
+            accounting_code = request.POST.get("accounting_code", "").strip()
+
             is_active = int(request.POST.get("is_active", "1"))
 
-            # ✅ Validate required fields
+            # Validate required fields
             if not ward_name or not ward_address or not pincode:
                 messages.error(request, "Ward Name, Address, and Pincode are required!")
                 return redirect(request.path)
 
-            # 🔹 Duplicate check for ward_name
+            # Duplicate check
             duplicate_name = WardMaster.objects.filter(
                 ward_name__iexact=ward_name
             ).exclude(ward_id=ward.ward_id)
+
             if duplicate_name.exists():
                 messages.error(request, f"Ward '{ward_name}' already exists!")
                 return redirect("ward_master_index")
@@ -2490,7 +2495,7 @@ def ward_master_edit(request):
             ward.ward_name = ward_name
             ward.ward_address = ward_address
             ward.pincode = pincode
-            ward.accounting_code_id = int(accounting_code_id) if accounting_code_id else None
+            ward.accounting_code = accounting_code  # ✔ Correct
             ward.is_active = is_active
             ward.updated_by = user_id
             ward.updated_at = timezone.now()
@@ -2505,7 +2510,7 @@ def ward_master_edit(request):
                 messages.error(request, "Missing Ward ID!")
                 return redirect("ward_master_index")
 
-            # 🔹 Decrypt ID
+            # Decrypt ID
             try:
                 ward_id = int(dec(enc_id))
             except Exception as e:
@@ -2513,17 +2518,20 @@ def ward_master_edit(request):
                 messages.error(request, "Invalid or corrupted ID!")
                 return redirect("ward_master_index")
 
-            # 🔹 Fetch record directly
+            # Fetch record
             ward = WardMaster.objects.get(ward_id=ward_id)
             ward.encrypted_id = enc(str(ward.ward_id))  # for hidden input
 
-        # 🔹 Pass only active accounting codes for dropdown
+        # Only active wards for dropdown (if needed)
         active_accounting_codes = WardMaster.objects.filter(is_active=1)
 
         return render(
             request,
             "Master/ward_master_edit.html",
-            {"ward": ward, "accounting_codes": active_accounting_codes}
+            {
+                "ward": ward,
+                "accounting_codes": active_accounting_codes
+            }
         )
 
     except Exception as e:

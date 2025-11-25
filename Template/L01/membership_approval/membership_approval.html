@@ -46,6 +46,18 @@
                         <th>सदस्यता शुल्क</th>
                         <th>कृती</th>
                     </tr>
+                    <tr class="filter-row">
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for m in memberships %}
@@ -171,7 +183,6 @@
             </div>
         </div>
 
-
     </div>
 
 {% endblock %}
@@ -207,15 +218,15 @@
     {% endif %}
 
     <script>
-        $(document).ready(function () {
+        {% comment %} $(document).ready(function () {
             $('#membershipTable').DataTable({
                 "pageLength": 10,
                 "lengthChange": false,
-                "searching": true,   // <-- enables search box
-                "ordering": true,    // optional: enable column sorting
-                "info": true,        // shows "Showing 1 to 10 of X entries"
+                "searching": true, 
+                "ordering": true,    
+                "info": true,       
             });
-        });
+        }); {% endcomment %}
     </script>
 
     {% comment %} function for cancel modal {% endcomment %}
@@ -313,6 +324,54 @@
 
     </script>
 
+    <script>
+        $(document).ready(function () {
 
+            var table = $('#membershipTable').DataTable({
+                pageLength: 10,
+                lengthChange: false,
+                search: true,
+                ordering: true,
+                info: true,
+                orderCellsTop: true,   // very important when extra header row exists
+
+                initComplete: function () {
+                    let api = this.api();
+
+                    api.columns().every(function (colIdx) {
+
+                        let column = this;
+                        let th = $('.filter-row th').eq(colIdx);
+
+                        // Skip "कृती" column (last index)
+                        if (colIdx === api.columns().nodes().length - 1) {
+                            th.html(""); // keep empty
+                            return;
+                        }
+
+                        // Create dropdown
+                        let select = $('<select class="form-select form-select-sm"><option value="">सर्व</option></select>')
+                            .appendTo(th)
+                            .on('change', function () {
+                                let val = $.fn.dataTable.util.escapeRegex($(this).val());
+                                column.search(val ? '^' + val + '$' : '', true, false).draw();
+                            });
+
+                        // Read unique values from the column
+                        column.data().unique().sort().each(function (d) {
+                            // Strip HTML badges (like <span>)
+                            let clean = $("<div>").html(d).text().trim();
+
+                            if (clean !== "") {
+                                select.append(`<option value="${clean}">${clean}</option>`);
+                            }
+                        });
+
+                    });
+                }
+            });
+
+        });
+    </script>
 
 {% endblock %}

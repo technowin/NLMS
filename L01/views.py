@@ -1769,6 +1769,12 @@ def bar_code_index(request):
             subjectNames = SubjectTypeMaster.objects.filter(is_active=1)
             for sub in subjectNames:
                 sub.subjectIdEnc = enc(str(sub.id))
+                
+            location_list = ResourceLocationMaster.objects.filter(is_active=1)
+
+            for loc in location_list:
+                loc.locationEnc = enc(str(loc.location_id))
+                loc.full_name = f"{loc.location_code} - {loc.location_name}"
         
             return render(
                 request,
@@ -1779,6 +1785,8 @@ def bar_code_index(request):
                     "accessions": accessions,
                     "circulation_accessions": circulation_accessions,
                     "subjectNames": subjectNames,
+                    "location_list": location_list,
+                    
                 }
             )
         
@@ -1794,9 +1802,14 @@ def bar_code_index(request):
             from_acc = dec(str(request.POST.get("from_accession")))
             to_acc = dec(str(request.POST.get("to_accession")))
             subject_id = request.POST.get("subject_id")  # optional
+            location_id = request.POST.get("location_id")  # optional
+            
 
             if subject_id:
                 subject_id = dec(str(subject_id))
+                
+            if location_id:
+                location_id = dec(str(location_id))
 
             if not from_acc or not to_acc:
                 return JsonResponse({"error": "Missing fields"}, status=400)
@@ -1812,6 +1825,9 @@ def bar_code_index(request):
 
             if subject_id:
                 circulation_qs = circulation_qs.filter(bookcatalog__subject_id=subject_id)
+                
+            if location_id:
+                circulation_qs = circulation_qs.filter(shelf_location=location_id)
 
             if not circulation_qs.exists():
                 return JsonResponse({"error": "No matching records found"}, status=404)

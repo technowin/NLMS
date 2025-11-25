@@ -23,58 +23,63 @@
   <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
   <style>
     /* Style for action buttons */
-.view-btn {
-    font-size: 14px;
-    font-weight: bold;
-    color: #000000ff!important;
-    background-color: #ffc504ff!important;
-    padding: 6px 14px;
-    border-radius: 6px;
-    transition: all 0.3s ease-in-out;
-}
+        .view-btn {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000ff!important;
+            background-color: #ffc504ff!important;
+            padding: 6px 14px;
+            border-radius: 6px;
+            transition: all 0.3s ease-in-out;
+        }
 
-/* Hover effect */
-.view-btn:hover {
-    color: #ffffffff!important;
-    font-weight: bold;
-    background-color: #5e34aaff!important; /* darker shade of Bootstrap info */
-    transform: scale(1.05);
-}
+        /* Hover effect */
+        .view-btn:hover {
+            color: #ffffffff!important;
+            font-weight: bold;
+            background-color: #5e34aaff!important; /* darker shade of Bootstrap info */
+            transform: scale(1.05);
+        }
 
-/* Icon alignment */
-.view-btn i {
-    font-size: 14px;
-}
+        /* Icon alignment */
+        .view-btn i {
+            font-size: 14px;
+        }
 
-.edit-btn {
-    background-color: #079cffff!important; /* Bootstrap warning color */
-    border: none;
-    color: #0a0a0aff!important;
-    font-weight: bold;
-    transition: all 0.3s ease-in-out;
-}
+        .edit-btn {
+            background-color: #079cffff!important; /* Bootstrap warning color */
+            border: none;
+            color: #0a0a0aff!important;
+            font-weight: bold;
+            transition: all 0.3s ease-in-out;
+        }
 
-.edit-btn:hover {
-    background-color: #e0a800!important;
-    color: #000000ff!important;
-    font-weight:bold;
-}
+        .edit-btn:hover {
+            background-color: #e0a800!important;
+            color: #000000ff!important;
+            font-weight:bold;
+        }
 
- /* Common style for all action buttons */
-    .action-btn {
-        width: 50px;           /* Equal size */
-        height: 38px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;    /* Rounded corners */
-        padding: 0;            /* Remove padding */
-    }
+        /* Common style for all action buttons */
+            .action-btn {
+                width: 50px;           /* Equal size */
+                height: 38px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 6px;    /* Rounded corners */
+                padding: 0;            /* Remove padding */
+            }
 
-    /* Uniform icon size */
-    .action-btn i {
-        font-size: 16px;
-    }
+            /* Uniform icon size */
+            .action-btn i {
+                font-size: 16px;
+            }
+
+            .pagination-btn.active {
+            background-color: #000;
+            color: #fff;
+        }
 
   </style>
 
@@ -103,10 +108,10 @@
 <!-- Ward Master Table -->
 <div class="card shadow-sm">
     <div class="card-body">
-       <table id="wardMasterTable" class="table table-bordered table-striped table-hover align-middle mb-0">
+
+        <table id="wardMasterTable" class="table table-bordered table-striped table-hover align-middle mb-0">
             <thead class="table-dark text-center">
                 <tr>
-                    {% comment %} <th>Ward Code</th> {% endcomment %}
                     <th>Ward Name</th>
                     <th>Ward Address</th>
                     <th>Pincode</th>
@@ -114,58 +119,58 @@
                     <th>Action</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for ward in wards %}
                 <tr>
-                    {% comment %} <td class="text-center">{{ ward.ward_id }}</td> {% endcomment %}
+                      <!-- Hidden ID Added Here -->
+                    <input type="hidden" name="id" value="{{ ward.encrypted_id }}">
                     <td class="text-center">{{ ward.ward_name }}</td>
                     <td class="text-center">{{ ward.ward_address }}</td>
                     <td class="text-center">{{ ward.pincode }}</td>
                     <td class="text-center">{{ ward.accounting_code }}</td>
+
                     <td class="text-center">
                         <div class="mb-2 d-flex gap-2 justify-content-center">
-                            <!-- Toggle Active / Inactive -->
+
                             {% if ward.is_active %}
-                                <button class="btn btn-success action-btn toggle-status" 
-                                        data-id="{{ ward.encrypted_id }}" 
+                                <button class="btn btn-success action-btn toggle-status"
+                                        data-id="{{ ward.encrypted_id }}"
                                         data-status="1"
                                         title="Deactivate">
                                     <i class="fa-solid fa-toggle-on"></i>
                                 </button>
                             {% else %}
-                                <button class="btn btn-danger action-btn toggle-status" 
-                                        data-id="{{ ward.encrypted_id }}" 
+                                <button class="btn btn-danger action-btn toggle-status"
+                                        data-id="{{ ward.encrypted_id }}"
                                         data-status="0"
                                         title="Activate">
                                     <i class="fa-solid fa-toggle-off"></i>
                                 </button>
                             {% endif %}
 
-                            <!-- View Button -->
-                            <a href="{% url 'ward_master_view' %}?ward_id={{ ward.encrypted_id }}" 
+                            <a href="{% url 'ward_master_view' %}?ward_id={{ ward.encrypted_id }}"
                                class="action-btn"
                                style="background-color:#FFD700; color:black;"
                                title="View">
                                 <i class="fa-solid fa-eye"></i>
-                            </a>  
+                            </a>
 
-                             <!-- Edit Button -->
-                            <a href="{% url 'ward_master_edit' %}?ward_id={{ ward.encrypted_id }}" 
-                                class="action-btn"
-                                style="background-color:#007BFF; color:white;"
-                                title="Edit">
+                            <a href="{% url 'ward_master_edit' %}?ward_id={{ ward.encrypted_id }}"
+                               class="action-btn"
+                               style="background-color:#007BFF; color:white;"
+                               title="Edit">
                                 <i class="fa-solid fa-pen-to-square"></i>
-                            </a> 
+                            </a>
 
-                             <!-- Delete Button -->
-                            <button type="button" 
+                            <button type="button"
                                     class="action-btn"
                                     style="background-color:#FF4136; color:white;"
-                                    onclick="ward_master_delete('{{ ward.encrypted_id }}')" 
+                                    onclick="ward_master_delete('{{ ward.encrypted_id }}')"
                                     title="Delete">
                                 <i class="fa-solid fa-trash"></i>
-                            </button> 
-                        </div> 
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -175,14 +180,37 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>
-</div>
 
-
-
+        <!-- Pagination Container -->
+        <div id="paginationControls" class="mt-3 d-flex justify-content-center gap-2"></div>
 
     </div>
 </div>
+</div>
+
+    </div>
+</div>
+
+<!-- Include DataTables CSS & JS (If not already included) -->
+<link rel="stylesheet" 
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script 
+src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#wardMasterTable').DataTable({
+            "pageLength": 5,              // default items per page
+            "lengthMenu": [5, 10, 25, 50, 100], 
+            "ordering": true,             // enable sorting
+            "searching": true,            // enable search
+            "info": true,                 // show “Showing 1 to 5 of …”
+            "paging": true,               // enable pagination
+        });
+    });
+</script>
 
 
 {% endblock %}
@@ -435,7 +463,5 @@ function ward_master_delete(encId) {
             }
         });
     </script> {% endcomment %}
-
-
 
 {% endblock %}

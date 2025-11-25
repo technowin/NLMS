@@ -365,11 +365,12 @@
                     <input type="hidden" name="from_accession" id="formFromAccession">
                     <input type="hidden" name="to_accession" id="formToAccession">
                     <input type="hidden" name="subject_id" id="formSubject">
+                    <input type="hidden" name="location_id" id="formlocation">
                     
                     <div class="modal-body" style="font-size:1.05rem; color:#333;">
                         <div class="row g-4">
                             <!-- From Accession -->
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label fw-semibold text-secondary">
                                     पासून दालन क्रमांक<span class="text-danger">*</span>
                                 </label>
@@ -386,7 +387,7 @@
                             </div>
 
                             <!-- To Accession -->
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label fw-semibold text-secondary">
                                     पर्यंत दालन क्रमांक<span class="text-danger">*</span>
                                 </label>
@@ -403,7 +404,7 @@
                             </div>
 
                             <!-- Subject Dropdown -->
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label fw-semibold text-secondary">
                                     विषय निवडा
                                 </label>
@@ -418,6 +419,26 @@
                                         {% endfor %}
                                     </ul>
                                     <input type="hidden" name="subject_id" id="subjectHidden">
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-secondary">
+                                    स्थान निवडा
+                                </label>
+                                <div class="custom-dropdown">
+                                    <input type="text" id="locationSearch" class="dropdown-input form-control shadow-sm"
+                                        placeholder="स्थान शोधा..." autocomplete="off">
+
+                                    <ul id="locationOptions" class="dropdown-options">
+                                        {% for loc in location_list %}
+                                            <li data-value="{{ loc.locationEnc }}">
+                                                {{ loc.full_name }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+
+                                    <input type="hidden" name="location_id" id="locationHidden">
                                 </div>
                             </div>
                         </div>
@@ -734,6 +755,48 @@
 
     </script>
 
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    // ----- LOCATION DROPDOWN LOGIC -----
+    const locationInput = document.getElementById("locationSearch");
+    const locationOptions = document.getElementById("locationOptions");
+    const locationItems = locationOptions.querySelectorAll("li");
+
+    // Filter location dropdown live as user types
+    locationInput.addEventListener("input", () => {
+        const search = locationInput.value.toLowerCase();
+        locationItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(search) ? "block" : "none";
+        });
+        locationOptions.style.display = "block";
+    });
+
+    // Handle selection (click)
+    locationItems.forEach(item => {
+        item.addEventListener("click", () => {
+            locationInput.value = item.textContent.trim();
+            document.getElementById("locationHidden").value = item.dataset.value;
+            locationOptions.style.display = "none";
+        });
+    });
+
+    // Show on focus
+    locationInput.addEventListener("focus", () => {
+        locationOptions.style.display = "block";
+    });
+
+    // Hide on click outside
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".custom-dropdown")) {
+            document.querySelectorAll(".dropdown-options").forEach(ul => ul.style.display = "none");
+        }
+    });
+
+});
+</script>
+
     {% comment %} download barcode range modal script {% endcomment %}
     <script>
         $(document).ready(function() {
@@ -921,13 +984,14 @@
             });
         });*/
 
-        document.addEventListener("DOMContentLoaded", function () {
+          document.addEventListener("DOMContentLoaded", function () {
             const loader = document.getElementById("loaderOverlay");
 
             document.getElementById("downloadRangeBtn").addEventListener("click", function () {
                 const fromAccession = document.getElementById("fromAccessionHidden").value.trim();
                 const toAccession = document.getElementById("toAccessionHidden").value.trim();
                 const subject = document.getElementById("subjectHidden").value.trim();
+                const location = document.getElementById("locationHidden").value.trim();
 
                 if (!fromAccession || !toAccession) {
                     Swal.fire({
@@ -957,9 +1021,74 @@
                         document.getElementById("formFromAccession").value = fromAccession;
                         document.getElementById("formToAccession").value = toAccession;
                         document.getElementById("formSubject").value = subject;
+                        document.getElementById("formlocation").value = location;
 
                         // ✅ Submit the form immediately (start download)
-                        document.getElementById("downloadForm").submit();
+                        $.ajax({
+                            url: "{% url 'L01:bar_code_index' %}",
+                            type: "POST",
+                            data: {
+                                from_accession: fromAccession,
+                                to_accession: toAccession,
+                                subject_id: subject,
+                                location_id: location,
+                                csrfmiddlewaretoken: "{{ csrf_token }}"
+                            },
+                            xhrFields: {
+                                responseType: "blob"   // important for file download
+                            },
+                            success: function (data, status, xhr) {
+
+                                loader.classList.remove("active");
+
+                                // Check if response is JSON error
+                                const contentType = xhr.getResponseHeader("Content-Type");
+                                if (contentType.includes("application/json")) {
+
+                                    // Convert blob → text → JSON
+                                    let reader = new FileReader();
+                                    reader.onload = () => {
+                                        let json = JSON.parse(reader.result);
+
+                                        Swal.fire({
+                                            icon: "error",
+                                            title: "रेकॉर्ड आढळले नाहीत!",
+                                            text: json.error,
+                                            confirmButtonColor: "#727cf5"
+                                        });
+                                    };
+                                    reader.readAsText(data);
+                                    return;
+                                }
+
+                                // Otherwise → it's a PDF → download it
+                                let blob = new Blob([data], { type: "application/pdf" });
+                                let link = document.createElement("a");
+                                link.href = window.URL.createObjectURL(blob);
+                                link.download = "barcodes.pdf";
+                                link.click();
+
+                            },
+                            error: function (xhr) {
+                                loader.classList.remove("active");
+
+                                if (xhr.status === 404) {
+                                    Swal.fire({
+                                        icon: "warning",
+                                        title: "रेकॉर्ड आढळले नाहीत!",
+                                        text: "निवडलेल्या दालन क्रमांकात कोणतेही रेकॉर्ड मिळाले नाहीत.",
+                                        confirmButtonColor: "#727cf5"
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: "error",
+                                        title: "त्रुटी!",
+                                        text: "काहीतरी चुकीचे झाले.",
+                                        confirmButtonColor: "#727cf5"
+                                    });
+                                }
+                            }
+                        });
 
                         // ✅ Keep loader on screen, hide + redirect after 5s
                         const checkCookie = setInterval(() => {
@@ -974,7 +1103,6 @@
                 });
             });
         });
-
     </script>
 
 {% endblock %}
