@@ -349,23 +349,46 @@
             </div>
 
             <!-- Last Page & Remarks -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
-                    <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*">
-                    {% if obj.last_page_photo %}
-                        <div class="mt-2">
-                            <img src="{{ MEDIA_URL }}{{ obj.last_page_photo }}" alt="Last Page Image"
-                                class="img-thumbnail shadow-sm" style="max-height: 120px;">
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">टीप / Remarks</label>
-                    <textarea name="remarks" class="form-control transliterate" rows="3"
-                            placeholder="Notes, e.g. Donated by XYZ">{{ obj.remarks }}</textarea>
-                </div>
+         <div class="mb-3 row">
+
+    <!-- Last Page Image -->
+    <div class="col-md-6">
+        <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
+
+        <input type="file" 
+            name="last_page_image" 
+            id="last_page_image" 
+            class="form-control" 
+            accept="image/*" 
+            onchange="previewImage(this, 'last_page_preview')">
+
+        {% if obj.last_page_photo %}
+            <div class="mt-2">
+                <img id="last_page_preview"
+                    src="{{ MEDIA_URL }}{{ obj.last_page_photo }}"
+                    alt="Last Page Image"
+                    class="img-thumbnail shadow-sm"
+                    style="max-height: 120px;">
             </div>
+        {% else %}
+            <div class="mt-2">
+                <img id="last_page_preview"
+                    src=""
+                    alt="Last Page Preview"
+                    class="img-thumbnail shadow-sm d-none"
+                    style="max-height: 120px;">
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Remarks -->
+    <div class="col-md-6">
+        <label class="form-label">टीप / Remarks</label>
+        <textarea name="remarks" class="form-control transliterate" rows="3"
+            placeholder="Notes, e.g. Donated by XYZ">{{ obj.remarks }}</textarea>
+    </div>
+
+</div>
 
             <!-- BUTTONS -->
             <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">

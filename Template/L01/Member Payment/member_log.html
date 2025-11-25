@@ -14,9 +14,35 @@
 <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
 <link rel="stylesheet" href="{% static 'css/member_log.css' %}">
 
-{% comment %} <style>
-   
-</style> {% endcomment %}
+<style>
+    .membership-status {
+        margin: 15px 0;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        transition: all 0.3s ease;
+    }
+    
+    .membership-valid {
+        background-color: #d4edda;
+        color: #155724;
+        border: 2px solid #c3e6cb;
+    }
+    
+    .membership-invalid {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 2px solid #f5c6cb;
+    }
+    
+    .membership-default {
+        background-color: #e2e3e5;
+        color: #383d41;
+        border: 2px solid #d6d8db;
+    }
+</style>
 {% endblock %}
 
 {% block page_title %}
@@ -24,25 +50,6 @@
 {% endblock %}
 
 {% block content %}
-{% comment %} <div class="header"  hidden>
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h4><i class="bi bi-book-half"></i> ग्रंथालय सदस्य ये-जा नोंदणी यंत्रणा</h4>
-                <p class="mb-0">सभासदांच्या प्रवेशाची नोंद ठेवा आणि सदस्यत्व स्थितीची तत्काळ पडताळणी करा.</p>
-            </div>
-            <div class="col-md-6 text-md-end d-flex align-items-center justify-content-end">
-                <div class="date-badge me-3">
-                    <i class="bi bi-calendar-check"></i> <span id="current-date"></span>
-                    <div id="current-time" class="small mt-1"></div>
-                </div>
-                <button class="btn theme-toggle" id="theme-toggle" title="Toggle theme">
-                    <i class="bi bi-sun-fill" id="theme-icon"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div> {% endcomment %}
     <div class="card shadow-sm">
         <div class="card-body">
 
@@ -63,50 +70,12 @@
                         {% endfor %}
                     </select>
 
-                    </div>
-                    
-                    <div class="qr-scanner-container">
-
-                            <h5><i class="bi bi-qr-code-scan"></i> QR Code Scanner</h5>
-                            <p class="text-muted">जलद प्रवेशासाठी सदस्याचा QR कोड स्कॅन करा</p>
-
-                            <!-- SCAN BUTTON -->
-                            <button style="color: white !important;" class="btn scan-btn w-100" id="scan-btn">
-                                <i class="bi bi-camera"></i> स्कॅनर सक्रिय करा
-                            </button>
-
-                            <!-- Placeholder Area -->
-                            <div id="placeholder-area" class="qr-placeholder mt-3">
-                                <div>
-                                    <i class="bi bi-upc-scan display-4 text-muted"></i>
-                                    <p class="mt-2">QR Scanner Area</p>
-                                    <small class="text-muted">या क्षेत्रात QR कोड ठेवा</small>
-                                </div>
-                            </div>
-
-                            <!-- REAL QR READER -->
-                            <div id="qr-reader" style="display:none; width:100%;"></div>
-
-                            <!-- Upload Button -->
-                           <div class="text-center mb-3">
-                                <img id="qr-preview" src="" style="max-width: 220px; display:none; border:1px solid #ddd; padding:5px; border-radius:8px;">
-                            </div>
-
-                            <button class="btn btn-secondary w-100 mt-2" id="upload-btn">
-                                <i class="bi bi-upload"></i> Upload QR Image
-                            </button>
-
-                            <div id="scan-result" class="mt-3 fw-bold text-center"></div>
-
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> मोबाइलवर हे कॅमेरा उघडेल QR स्कॅन करण्यासाठी
-                                </small>
-                            </div>
-
-                        </div>
-
-
+                </div>
+                
+                <!-- Membership Status Display -->
+                <div id="membership-status-container" class="membership-status membership-default">
+                    <i class="bi bi-info-circle"></i> Select a member to view status
+                </div>
                     
                     <div class="stats-container">
                         <div class="stat-item">
@@ -153,9 +122,6 @@
 
 <script>
     // Theme Management
-    
-    
-
     // SweetAlert Functions
     function showSuccessAlert(message, memberName) {
         Swal.fire({
@@ -173,18 +139,6 @@
         });
     }
 
-    {% comment %} function showErrorAlert(message, title = 'Access Denied') {
-        Swal.fire({
-            title: `❌ ${title}`,
-            text: message,
-            icon: 'error',
-            timer: 4000,
-            timerProgressBar: true,
-            showConfirmButton: true,
-            confirmButtonColor: '#dc3545',
-            position: 'center'
-        });
-    } {% endcomment %}
 
     function showInfoAlert(message, title = 'Information') {
         Swal.fire({
@@ -199,36 +153,74 @@
         });
     }
 
+    // Function to refocus on dropdown
+    function refocusDropdown() {
+        setTimeout(function() {
+            $('#member-select').select2('open');
+            setTimeout(function() {
+                $('.select2-search__field').focus();
+            }, 100);
+        }, 500);
+    }
+
+    // Function to update membership status display
+    function updateMembershipStatus(member) {
+        const statusContainer = $('#membership-status-container');
+        
+        if (member.status === 'valid' && member.is_active) {
+            statusContainer.removeClass('membership-default membership-invalid').addClass('membership-valid');
+            statusContainer.html(`<i class="bi bi-check-circle"></i> MEMBERSHIP VALID - ${member.full_name}`);
+        } else {
+            statusContainer.removeClass('membership-default membership-valid').addClass('membership-invalid');
+            let reason = '';
+            if (!member.is_active) reason = 'Account Inactive';
+            else if (member.membership_expired) reason = 'Membership Expired';
+            else reason = 'Invalid Status';
+            
+            statusContainer.html(`<i class="bi bi-exclamation-triangle"></i> MEMBERSHIP ISSUE - ${reason}`);
+        }
+    }
+
+    // Function to reset membership status display
+    function resetMembershipStatus() {
+        const statusContainer = $('#membership-status-container');
+        statusContainer.removeClass('membership-valid membership-invalid').addClass('membership-default');
+        statusContainer.html('<i class="bi bi-info-circle"></i> Select a member to view status');
+    }
+
     // Initialize Select2 and other functionality
     $(document).ready(function() {
         // Initialize theme
-        
-        // Theme toggle event
-        // Initialize Select2
-        $('#member-select').select2({
+       $('#member-select').select2({
             placeholder: "Search for a member...",
             allowClear: true,
             width: '100%',
         });
-        
-        // Update Select2 when theme changes
-       
-        
-        // Set current date and time
-        
-        
+
+        // Auto-focus Select2 on page load
+        $(document).ready(function () {
+            // Open select2 dropdown automatically
+            $('#member-select').select2('open');
+
+            // Focus cursor inside the search box so QR scan types directly
+            setTimeout(function () {
+                $('.select2-search__field').focus();
+            }, 200);
+        });
+
         // Handle member selection change
         $('#member-select').on('change', function() {
             const membershipCode = $(this).val();
             console.log('Selected member:', membershipCode);
+
             if (membershipCode) {
                 fetchMemberDetails(membershipCode);
             } else {
                 resetMemberDetails();
+                resetMembershipStatus();
             }
         });
-        
-        
+
         // Fetch member details via AJAX
         function fetchMemberDetails(membershipCode) {
             // Show loading state
@@ -251,6 +243,10 @@
                 },
                 success: function(response) {
                     displayMemberDetails(response);
+                    updateMembershipStatus(response);
+                    
+                    // Refocus dropdown after successful selection
+                    refocusDropdown();
                     
                     // Show SweetAlert based on log status
                     if (response.auto_entry_created) {
@@ -272,6 +268,11 @@
                             <button class="btn btn-outline-danger mt-2" onclick="resetMemberDetails()">Try Again</button>
                         </div>
                     `);
+                    
+                    resetMembershipStatus();
+                    
+                    // Refocus dropdown even on error
+                    refocusDropdown();
                     
                     // Show error SweetAlert
                     showErrorAlert(xhr.responseJSON?.error || 'Member not found or server error', 'Error');
@@ -385,13 +386,147 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <!-- Libraries: html5-qrcode (optional) + jsQR (fallback decoder) -->
 <script src="https://unpkg.com/html5-qrcode@2.3.7" type="text/javascript"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    let scannerActive = false;
+    let html5QrCode = null;
 
+    // Barcode Scanner Input Handler
+    function setupBarcodeScanner() {
+        let barcodeBuffer = '';
+        let barcodeTimeout;
+
+        document.addEventListener('keydown', function(event) {
+            // Check if it's a character key (not control keys)
+            if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                barcodeBuffer += event.key;
+                
+                // Clear previous timeout
+                if (barcodeTimeout) {
+                    clearTimeout(barcodeTimeout);
+                }
+                
+                // Set timeout to detect end of barcode input
+                barcodeTimeout = setTimeout(function() {
+                    if (barcodeBuffer.length > 3) { // Minimum barcode length
+                        processScannedCode(barcodeBuffer.trim());
+                    }
+                    barcodeBuffer = '';
+                }, 100); // Adjust timeout as needed for your scanner
+            }
+            
+            // Handle Enter key (some scanners send Enter at the end)
+            if (event.key === 'Enter' && barcodeBuffer.length > 0) {
+                event.preventDefault();
+                if (barcodeBuffer.length > 3) {
+                    processScannedCode(barcodeBuffer.trim());
+                }
+                barcodeBuffer = '';
+            }
+        });
+    }
+
+    // Process scanned code (both QR and barcode)
+    function processScannedCode(code) {
+        console.log('Scanned code:', code);
+        
+        // Show scanning feedback
+        const scanResult = document.getElementById("scan-result");
+        scanResult.innerHTML = `<span class="text-info">Detected Code: <b>${escapeHtml(code)}</b></span>`;
+        
+        // Fetch member details
+        fetchMemberDetailsFromQR(code);
+    }
+
+    // Initialize barcode scanner on page load
+    setupBarcodeScanner();
+
+    // Camera QR Scanner Functions
+    const scanBtn = document.getElementById("scan-btn");
+    const placeholderArea = document.getElementById("placeholder-area");
+    const qrReader = document.getElementById("qr-reader");
+
+    scanBtn.addEventListener("click", function() {
+        if (!scannerActive) {
+            startCameraScanner();
+        } else {
+            stopCameraScanner();
+        }
+    });
+
+    function startCameraScanner() {
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("qr-reader");
+        }
+
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            supportedScanTypes: [
+                Html5QrcodeScanType.SCAN_TYPE_QR_CODE,
+                Html5QrcodeScanType.SCAN_TYPE_BARCODE
+            ]
+        };
+
+        Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length) {
+                const cameraId = cameras[0].id;
+                
+                html5QrCode.start(
+                    cameraId,
+                    config,
+                    onScanSuccess,
+                    onScanFailure
+                ).then(() => {
+                    scannerActive = true;
+                    qrReader.style.display = 'block';
+                    placeholderArea.style.display = 'none';
+                    scanBtn.innerHTML = '<i class="bi bi-camera-video-off"></i> Stop Scanner';
+                    scanBtn.classList.remove('btn-primary');
+                    scanBtn.classList.add('btn-danger');
+                });
+            } else {
+                alert('No camera found. Please check your camera permissions.');
+            }
+        }).catch(err => {
+            console.error("Camera error:", err);
+            alert('Error accessing camera: ' + err);
+        });
+    }
+
+    function stopCameraScanner() {
+        if (html5QrCode && scannerActive) {
+            html5QrCode.stop().then(() => {
+                scannerActive = false;
+                qrReader.style.display = 'none';
+                placeholderArea.style.display = 'block';
+                scanBtn.innerHTML = '<i class="bi bi-camera"></i> Activate Scanner';
+                scanBtn.classList.remove('btn-danger');
+                scanBtn.classList.add('btn-primary');
+            }).catch(err => {
+                console.error("Stop error:", err);
+            });
+        }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log(`Scan result: ${decodedText}`, decodedResult);
+        processScannedCode(decodedText);
+        
+        // Optional: Stop scanner after successful scan
+        // stopCameraScanner();
+    }
+
+    function onScanFailure(error) {
+        // Expected error - just means no QR code is detected
+        // console.log('Scan failure (expected):', error);
+    }
+
+    // Upload QR Image Functionality
     const uploadBtn = document.getElementById("upload-btn");
     const preview = document.getElementById("qr-preview");
-    const scanResult = document.getElementById("scan-result");
 
     uploadBtn.addEventListener("click", function () {
         const input = document.createElement("input");
@@ -402,16 +537,18 @@ document.addEventListener("DOMContentLoaded", function () {
             const file = e.target.files[0];
             if (!file) return;
 
-            // show preview
+            // Show preview
             preview.src = URL.createObjectURL(file);
             preview.style.display = "block";
+            
+            const scanResult = document.getElementById("scan-result");
             scanResult.innerHTML = "Scanning QR…";
 
             // Try Html5Qrcode.scanFile if available
             if (typeof Html5Qrcode !== "undefined" && typeof Html5Qrcode.scanFile === "function") {
                 try {
                     const qrMessage = await Html5Qrcode.scanFile(file, /* showImage= */ true);
-                    handleScannedCode(qrMessage);
+                    processScannedCode(qrMessage);
                     return;
                 } catch (err) {
                     console.warn("Html5Qrcode.scanFile failed, falling back to jsQR:", err);
@@ -419,11 +556,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            // FALLBACK: use jsQR (draw image to canvas and decode)
+            // FALLBACK: use jsQR
             try {
                 const qrMessage = await decodeWithJsQR(file);
                 if (qrMessage) {
-                    handleScannedCode(qrMessage);
+                    processScannedCode(qrMessage);
                 } else {
                     scanResult.innerHTML = '<span class="text-danger">No QR code detected in image.</span>';
                 }
@@ -436,14 +573,7 @@ document.addEventListener("DOMContentLoaded", function () {
         input.click();
     });
 
-    // common handler after a code is read
-    function handleScannedCode(qrMessage) {
-        scanResult.innerHTML = "Detected Code: <b>" + escapeHtml(qrMessage) + "</b>";
-
-        // Trigger your AJAX call to fetch member details
-        fetchMemberDetailsFromQR(qrMessage);
-    }
-
+    // Common utility functions
     function escapeHtml(str) {
         return str.replace(/[&<>"'`=\/]/g, function(s) {
             return ({
@@ -459,68 +589,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Ajax function — uses your existing endpoint and UI handlers
-    function fetchMemberDetailsFromQR(membershipCode) {
-    scanResult.innerHTML = "Fetching member details…";
-
-    $.ajax({
-        url: '/L01/get-member-details/' + membershipCode + '/',
-        type: 'GET',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-
-        success: function (response) {
-            debugger;
-
-            // Show member details
-            displayMemberDetails(response);
-
-            // Membership issue → show red card
-            if (response.membership_expired || !response.is_active) {
-                $('#member-details-container').html(`
-                    <div class="alert alert-danger text-center py-4">
-                        <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
-                        <h5>Membership Issue</h5>
-                        <p>${response.log_message || "Membership not valid"}</p>
-                        <button class="btn btn-outline-danger mt-2" onclick="resetMemberDetails()">Try Again</button>
-                    </div>
-                `);
-            }
-
-            // Scan result text
-            scanResult.innerHTML =
-                `<span class="text-success">Member Found: <b>${response.full_name || '—'}</b></span>`;
-        },
-
-        error: function (xhr) {
-            // Show error in card only
-            $('#member-details-container').html(`
-                <div class="alert alert-danger text-center py-4">
-                    <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
-                    <h5>Error Loading Member Details</h5>
-                    <p>${xhr.responseJSON?.error || 'Member not found or server error'}</p>
-                    <button class="btn btn-outline-danger mt-2" onclick="resetMemberDetails()">Try Again</button>
-                </div>
-            `);
-
-            // Scan result text
-            scanResult.innerHTML =
-                `<span class="text-danger">${xhr.responseJSON?.error || "Member not found"}</span>`;
-        }
-    });
-
-
-}
-
-
-    // decode using jsQR fallback (returns string or null)
+    // decode using jsQR fallback
     function decodeWithJsQR(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onerror = () => reject(new Error("Failed to load image"));
             img.onload = () => {
-                // set canvas size (limit to reasonable max to avoid huge images)
                 const maxDim = 1200;
                 let w = img.naturalWidth;
                 let h = img.naturalHeight;
@@ -549,256 +623,163 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             };
 
-            // create blob URL and load
             const url = URL.createObjectURL(file);
             img.src = url;
-
-            // revoke URL after load to free memory
             img.onloadend = () => {
                 URL.revokeObjectURL(url);
             };
         });
     }
 
-});
+    // AJAX function to fetch member details
+    function fetchMemberDetailsFromQR(membershipCode) {
+        const scanResult = document.getElementById("scan-result");
+        scanResult.innerHTML = "Fetching member details…";
 
- function displayMemberDetails(member) {
-            const statusClass = member.status === 'valid' ? 'status-valid' : 'status-invalid';
-            const statusIcon = member.status === 'valid' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
-            const statusText = member.status === 'valid' ? 'Valid Member' : 'Membership Expired';
-            
-            const activeStatus = member.is_active ? 
-                '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>' : 
-                '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Inactive</span>';
-
-            // Show log status message if available
-            let logStatusMessage = '';
-            if (member.auto_entry_created !== undefined) {
-                const alertClass = member.auto_entry_created ? 'alert-success' : 
-                                 member.membership_expired ? 'alert-danger' : 'alert-info';
-                const alertIcon = member.auto_entry_created ? 'bi-check-circle' : 
-                                member.membership_expired ? 'bi-exclamation-triangle' : 'bi-info-circle';
+        $.ajax({
+            url: '/L01/get-member-details/' + membershipCode + '/',
+            type: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function (response) {
+                // Update the member select dropdown
+                $('#member-select').val(membershipCode).trigger('change');
                 
-                logStatusMessage = `
-                    <div class="alert ${alertClass} alert-dismissible fade show mt-3" role="alert">
-                        <i class="bi ${alertIcon} me-2"></i> 
-                        ${member.log_message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                // Show member details
+                displayMemberDetails(response);
+                
+                // Update membership status
+                updateMembershipStatus(response);
+
+                // Scan result text
+                scanResult.innerHTML = `<span class="text-success">Member Found: <b>${response.full_name || '—'}</b></span>`;
+                
+                // Refocus dropdown after successful scan
+                refocusDropdown();
+            },
+            error: function (xhr) {
+                // Show error in card
+                $('#member-details-container').html(`
+                    <div class="alert alert-danger text-center py-4">
+                        <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
+                        <h5>Error Loading Member Details</h5>
+                        <p>${xhr.responseJSON?.error || 'Member not found or server error'}</p>
+                        <button class="btn btn-outline-danger mt-2" onclick="resetMemberDetails()">Try Again</button>
                     </div>
-                `;
+                `);
+
+                resetMembershipStatus();
+                
+                // Refocus dropdown even on error
+                refocusDropdown();
+
+                // Scan result text
+                scanResult.innerHTML = `<span class="text-danger">${xhr.responseJSON?.error || "Member not found"}</span>`;
             }
-            
-            $('#member-details-container').html(`
-                <div class="member-status ${statusClass}">
-                    <i class="bi ${statusIcon}"></i> ${statusText}
-                </div>
-                
-                ${logStatusMessage}
-                
-                <div class="profile-pic-container">
-                    <img src="${member.profile_pic}" alt="Profile Picture" class="profile-pic" onerror="this.src='/static/images/default-profile.png'">
-                </div>
-                
-                <div class="text-center mb-4">
-                    <h3 class="fw-bold">${member.full_name}</h3>
-                    <p class="text-muted">Library Member</p>
-                </div>
-                
-                <div class="member-details">
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-person-badge"></i> Membership Code
-                        </div>
-                        <div class="detail-value">${member.membership_code}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-geo-alt"></i> Ward
-                        </div>
-                        <div class="detail-value">${member.ward}</div>
-                    </div>
-                    
-                     <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-person-circle"></i> Member Type
-                        </div>
-                        <div class="detail-value">${member.member_type}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-circle-fill"></i> Status
-                        </div>
-                        <div class="detail-value">${activeStatus}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-calendar-check"></i> Valid Until
-                        </div>
-                        <div class="detail-value">${member.to_date}</div>
-                    </div>
-                </div>
-                
-                <div class="mt-4 text-center">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> 
-                        Entry/Exit is automatically logged when member is selected
-                    </small>
-                </div>
-            `);
-        }
-</script>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-{% comment %} <script>
-let html5QrScanner;
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const scanBtn = document.getElementById("scan-mobile-btn");
-    const scanResult = document.getElementById("scan-result");
-    const scannerDiv = document.getElementById("mobile-scanner");
-
-    scanBtn.addEventListener("click", function () {
-
-        scannerDiv.style.display = "block";   // Show scanner area
-        scanResult.innerHTML = "<span class='text-info'>Opening camera…</span>";
-
-        if (html5QrScanner) {
-            html5QrScanner.stop().catch(()=>{});
-        }
-
-        html5QrScanner = new Html5Qrcode("mobile-scanner");
-
-        // Start scanning using back camera
-        Html5Qrcode.getCameras().then(devices => {
-            if (devices && devices.length) {
-                let cameraId = devices[0].id; // DEFAULT CAMERA
-
-                // Start QR camera
-                html5QrScanner.start(
-                    cameraId,
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 }
-                    },
-                    qrCodeMessage => {
-                        // STOP scanning after QR detected
-                        html5QrScanner.stop();
-
-                        scanResult.innerHTML =
-                            `<span class="text-success">QR Detected: ${qrCodeMessage}</span>`;
-
-                        // Call your Django API
-                        fetchMemberDetailsFromQR(qrCodeMessage);
-                    },
-                    () => {}
-                ).catch(err => {
-                    scanResult.innerHTML =
-                        `<span class="text-danger">Camera Error: ${err}</span>`;
-                });
-            }
-        })
-        .catch(err => {
-            scanResult.innerHTML =
-                `<span class="text-danger">Unable to access camera</span>`;
         });
-    });
-
+    }
 });
 
+// Make these functions global so they can be called from HTML
 function displayMemberDetails(member) {
-            const statusClass = member.status === 'valid' ? 'status-valid' : 'status-invalid';
-            const statusIcon = member.status === 'valid' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
-            const statusText = member.status === 'valid' ? 'Valid Member' : 'Membership Expired';
-            
-            const activeStatus = member.is_active ? 
-                '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>' : 
-                '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Inactive</span>';
+    // Your existing displayMemberDetails function
+    const statusClass = member.status === 'valid' ? 'status-valid' : 'status-invalid';
+    const statusIcon = member.status === 'valid' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+    const statusText = member.status === 'valid' ? 'Valid Member' : 'Membership Expired';
+    
+    const activeStatus = member.is_active ? 
+        '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>' : 
+        '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Inactive</span>';
 
-            // Show log status message if available
-            let logStatusMessage = '';
-            if (member.auto_entry_created !== undefined) {
-                const alertClass = member.auto_entry_created ? 'alert-success' : 
-                                 member.membership_expired ? 'alert-danger' : 'alert-info';
-                const alertIcon = member.auto_entry_created ? 'bi-check-circle' : 
-                                member.membership_expired ? 'bi-exclamation-triangle' : 'bi-info-circle';
-                
-                logStatusMessage = `
-                    <div class="alert ${alertClass} alert-dismissible fade show mt-3" role="alert">
-                        <i class="bi ${alertIcon} me-2"></i> 
-                        ${member.log_message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-            }
+    let logStatusMessage = '';
+    if (member.auto_entry_created !== undefined) {
+        const alertClass = member.auto_entry_created ? 'alert-success' : 
+                         member.membership_expired ? 'alert-danger' : 'alert-info';
+        const alertIcon = member.auto_entry_created ? 'bi-check-circle' : 
+                        member.membership_expired ? 'bi-exclamation-triangle' : 'bi-info-circle';
+        
+        logStatusMessage = `
+            <div class="alert ${alertClass} alert-dismissible fade show mt-3" role="alert">
+                <i class="bi ${alertIcon} me-2"></i> 
+                ${member.log_message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+    
+    $('#member-details-container').html(`
+        <div class="member-status ${statusClass}">
+            <i class="bi ${statusIcon}"></i> ${statusText}
+        </div>
+        
+        ${logStatusMessage}
+        
+        <div class="profile-pic-container">
+            <img src="${member.profile_pic}" alt="Profile Picture" class="profile-pic" onerror="this.src='/static/images/default-profile.png'">
+        </div>
+        
+        <div class="text-center mb-4">
+            <h3 class="fw-bold">${member.full_name}</h3>
+            <p class="text-muted">Library Member</p>
+        </div>
+        
+        <div class="member-details">
+            <div class="detail-item">
+                <div class="detail-label">
+                    <i class="bi bi-person-badge"></i> Membership Code
+                </div>
+                <div class="detail-value">${member.membership_code}</div>
+            </div>
             
-            $('#member-details-container').html(`
-                <div class="member-status ${statusClass}">
-                    <i class="bi ${statusIcon}"></i> ${statusText}
+            <div class="detail-item">
+                <div class="detail-label">
+                    <i class="bi bi-geo-alt"></i> Ward
                 </div>
-                
-                ${logStatusMessage}
-                
-                <div class="profile-pic-container">
-                    <img src="${member.profile_pic}" alt="Profile Picture" class="profile-pic" onerror="this.src='/static/images/default-profile.png'">
+                <div class="detail-value">${member.ward}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">
+                    <i class="bi bi-person-circle"></i> Member Type
                 </div>
-                
-                <div class="text-center mb-4">
-                    <h3 class="fw-bold">${member.full_name}</h3>
-                    <p class="text-muted">Library Member</p>
+                <div class="detail-value">${member.member_type}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">
+                    <i class="bi bi-circle-fill"></i> Status
                 </div>
-                
-                <div class="member-details">
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-person-badge"></i> Membership Code
-                        </div>
-                        <div class="detail-value">${member.membership_code}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-geo-alt"></i> Ward
-                        </div>
-                        <div class="detail-value">${member.ward}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-person-circle"></i> User ID
-                        </div>
-                        <div class="detail-value">${member.user_id}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-circle-fill"></i> Status
-                        </div>
-                        <div class="detail-value">${activeStatus}</div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-label">
-                            <i class="bi bi-calendar-check"></i> Valid Until
-                        </div>
-                        <div class="detail-value">${member.to_date}</div>
-                    </div>
+                <div class="detail-value">${activeStatus}</div>
+            </div>
+            
+            <div class="detail-item">
+                <div class="detail-label">
+                    <i class="bi bi-calendar-check"></i> Valid Until
                 </div>
-                
-                <div class="mt-4 text-center">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> 
-                        Entry/Exit is automatically logged when member is selected
-                    </small>
-                </div>
-            `);
-        }
-</script> {% endcomment %}
+                <div class="detail-value">${member.to_date}</div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> 
+                Entry/Exit is automatically logged when member is selected
+            </small>
+        </div>
+    `);
+}
 
+function resetMemberDetails() {
+    $('#member-details-container').html(`
+        <div class="empty-state">
+            <i class="bi bi-person-x"></i>
+            <h4 class="mt-3">No Member Selected</h4>
+            <p>Select a member from the dropdown or scan a QR code to view details</p>
+        </div>
+    `);
+}
+</script>
 
 
 

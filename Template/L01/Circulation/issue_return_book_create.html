@@ -1962,4 +1962,332 @@
         });
     </script>
 
+     {% comment %} QR Scanner Integration for Membership Code {% endcomment %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const memberSearchInput = document.getElementById('memberSearch');
+    
+    // Auto-focus on page load
+    setTimeout(() => {
+        memberSearchInput.focus();
+        memberSearchInput.select();
+    }, 1000);
+    
+    // QR Scanner detection
+    let qrBuffer = '';
+    let qrTimer;
+    
+    memberSearchInput.addEventListener('keypress', function(e) {
+        // Add character to buffer
+        qrBuffer += e.key;
+        
+        // Clear previous timer
+        clearTimeout(qrTimer);
+        
+        // Set new timer
+        qrTimer = setTimeout(() => {
+            if (qrBuffer.length >= 6) { // Minimum length for membership code
+                processQRScan(qrBuffer);
+            }
+            qrBuffer = ''; // Reset buffer
+        }, 100);
+    });
+    
+    function processQRScan(qrData) {
+        const cleanData = qrData.trim();
+        const memberOptions = document.getElementById('memberOptions').getElementsByTagName('li');
+        let found = false;
+        
+        // Search for matching membership code
+        for (let i = 0; i < memberOptions.length; i++) {
+            const option = memberOptions[i];
+            const optionText = option.textContent.trim();
+            const membershipCode = optionText.split(' - ')[0];
+            
+            if (membershipCode === cleanData) {
+                // Found match - trigger selection
+                option.click();
+                found = true;
+                
+                // Optional: Show success feedback
+                console.log(`QR Scan successful: ${optionText}`);
+                break;
+            }
+        }
+        
+        if (!found) {
+            console.warn(`No member found with QR code: ${cleanData}`);
+            // Optional: Show error message to user
+            Swal.fire({
+                icon: 'warning',
+                title: 'Member Not Found',
+                text: `No member found with code: ${cleanData}`,
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+            
+            // Clear the input field
+            memberSearchInput.value = '';
+            memberSearchInput.focus();
+        }
+    }
+});
+</script>
+
+
+{% comment %} QR Scanner Integration for Barcode Field {% endcomment %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // QR Scanner for Barcode Field
+    const barcodeSearchInput = document.getElementById('barcodeSearch');
+    
+    // Enable barcode field when member is selected and setup QR scanning
+    function setupBarcodeQRScanner() {
+        if (barcodeSearchInput && !barcodeSearchInput.disabled) {
+            // Auto-focus on barcode field when it becomes enabled
+            setTimeout(() => {
+                barcodeSearchInput.focus();
+                barcodeSearchInput.select();
+            }, 500);
+
+            // QR Scanner detection for barcode
+            let barcodeQrBuffer = '';
+            let barcodeQrTimer;
+            let barcodeLastKeyTime = 0;
+
+            barcodeSearchInput.addEventListener('keydown', function(e) {
+                const currentTime = new Date().getTime();
+                
+                // Reset buffer if time between keys is too long (normal typing)
+                if (currentTime - barcodeLastKeyTime > 200) {
+                    barcodeQrBuffer = '';
+                }
+                
+                barcodeLastKeyTime = currentTime;
+
+                // Handle special keys
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (barcodeQrBuffer.length > 0) {
+                        processBarcodeQRScan(barcodeQrBuffer);
+                        barcodeQrBuffer = '';
+                    }
+                    return;
+                }
+
+                // Add printable characters to buffer
+                if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                    barcodeQrBuffer += e.key;
+                }
+
+                // Clear previous timer
+                clearTimeout(barcodeQrTimer);
+                
+                // Set new timer to process QR input
+                barcodeQrTimer = setTimeout(() => {
+                    if (barcodeQrBuffer.length >= 3) { // Minimum length for barcode
+                        processBarcodeQRScan(barcodeQrBuffer);
+                    }
+                    barcodeQrBuffer = '';
+                }, 150);
+            });
+
+            // Also handle direct input for manual entry
+            barcodeSearchInput.addEventListener('input', function(e) {
+                const value = e.target.value.trim();
+                if (value.length >= 3) {
+                    // Small delay to allow complete input
+                    setTimeout(() => {
+                        if (value === e.target.value.trim()) { // Ensure value hasn't changed
+                            processBarcodeQRScan(value);
+                        }
+                    }, 300);
+                }
+            });
+        }
+    }
+
+    function processBarcodeQRScan(qrData) {
+        const cleanData = qrData.trim();
+        console.log('Processing Barcode QR scan:', cleanData);
+        
+        const barcodeOptions = document.querySelectorAll('#barcodeOptions li');
+        let found = false;
+
+        // Search for matching barcode
+        for (let i = 0; i < barcodeOptions.length; i++) {
+            const option = barcodeOptions[i];
+            const optionText = option.textContent.trim();
+            const barcodeValue = optionText; // Barcode is the full text
+            
+            if (barcodeValue === cleanData) {
+                // Found match - trigger selection
+                barcodeSearchInput.value = optionText;
+                document.getElementById('barcodeCodeInput').value = option.getAttribute('data-value');
+                
+                // Hide dropdown
+                const barcodeOptionsElement = document.getElementById('barcodeOptions');
+                if (barcodeOptionsElement) {
+                    barcodeOptionsElement.style.display = "none";
+                }
+                
+                // Call your existing AJAX function for book details
+                fetchBookDetails(option.getAttribute('data-value'));
+                
+                found = true;
+                
+                // Show success feedback
+
+                break;
+            }
+        }
+
+        if (!found) {
+            // Try partial match
+            for (let i = 0; i < barcodeOptions.length; i++) {
+                const option = barcodeOptions[i];
+                const optionText = option.textContent.trim();
+                
+                if (optionText.includes(cleanData)) {
+                    barcodeSearchInput.value = optionText;
+                    document.getElementById('barcodeCodeInput').value = option.getAttribute('data-value');
+                    
+                    const barcodeOptionsElement = document.getElementById('barcodeOptions');
+                    if (barcodeOptionsElement) {
+                        barcodeOptionsElement.style.display = "none";
+                    }
+                    
+                    fetchBookDetails(option.getAttribute('data-value'));
+                    found = true;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Book Found!',
+                        text: `Barcode ${optionText} selected successfully`,
+                        confirmButtonText: 'OK',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            // Clear the input field
+            barcodeSearchInput.value = '';
+            barcodeSearchInput.focus();
+        }
+    }
+
+    // Monitor when barcode field becomes enabled (after member selection)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
+                if (!barcodeSearchInput.disabled) {
+                    setupBarcodeQRScanner();
+                }
+            }
+        });
+    });
+
+    // Start observing the barcode input for disabled attribute changes
+    if (barcodeSearchInput) {
+        observer.observe(barcodeSearchInput, {
+            attributes: true,
+            attributeFilter: ['disabled']
+        });
+    }
+
+    // Also setup immediately if barcode field is already enabled
+    if (barcodeSearchInput && !barcodeSearchInput.disabled) {
+        setupBarcodeQRScanner();
+    }
+});
+
+// Your existing fetchBookDetails function (make sure it's accessible)
+function fetchBookDetails(barcodeId) {
+    $.ajax({
+        url: "{% url 'L01:get_book_details' %}",
+        type: "POST",
+        data: {
+            barcode_id: barcodeId,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        dataType: "json",
+        success: function(data) {
+            const container = $("#barcodeDetails");
+            const issueBtn = $("#issueBookBtn");
+            container.empty();
+
+            if (data.success) {
+                const books = Array.isArray(data.book) ? data.book : [data.book];
+                allOnShelf = true;
+
+                books.forEach(book => {
+                    // Determine status-based colors
+                    const isOnShelf = book.status_name === 'On-Shelf';
+                    if (!isOnShelf) {
+                        allOnShelf = false; // found at least one not on shelf
+                    }
+                    const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
+                    const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
+                    const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
+                    const textColor = isOnShelf ? '#28a745' : '#dc3545';    // for title & labels
+
+                    container.append(`
+                        <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
+                            <div class="book-photo">
+                                <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
+                                    alt="Book Photo">
+                            </div>
+                            <div class="book-info">
+                                <h5 style="color:${textColor};">${book.title || 'Untitled Book'}</h5>
+                                <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
+                                <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
+                                <p> 
+                                    <span 
+                                        class="status-badge"
+                                        style="background-color: ${badgeBg}; color: ${textColor};"
+                                        ${book.status_name === "Issued" ? `onclick="viewCirculationDetails('${barcodeId}')"` : ''}
+                                    >
+                                        ${book.status_name || 'Unknown'}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    `);
+                });
+                // Disable or enable Issue button based on status
+                if (!allOnShelf) {
+                    issueBtn.prop('disabled', true)
+                            .addClass('btn-secondary')
+                            .removeClass('btn-success')
+                            .html('<i class="uil uil-ban"></i> Cannot Issue');
+                } else {
+                    issueBtn.prop('disabled', false)
+                            .addClass('btn-success')
+                            .removeClass('btn-secondary')
+                            .html('<i class="uil uil-check-circle"></i> Issue Book');
+                }
+            } else {
+                container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
+                $("#issueBookBtn").prop("disabled", true)
+                    .addClass('btn-secondary')
+                    .removeClass('btn-success')
+                    .html('<i class="uil uil-ban"></i> Cannot Issue');
+            }
+        },
+        error: function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to fetch book details',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+}
+</script>
+
 {% endblock %}
