@@ -1331,200 +1331,152 @@ def membership_paymentreceipt_download(request):
         payments = PaymentDetails.objects.filter(
             membership=membership,
             payment_type='Membership'
-        ).order_by('-id')[:1]
+        ).order_by('-id')[:1] 
 
         buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
 
-        # Thermal printer size
-        thermal_width = 80 * mm
-        thermal_height = 300 * mm
+        regular_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Regular.ttf')
+        bold_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Merriweather_120pt-Bold.ttf')
+        pdfmetrics.registerFont(TTFont('Merriweather', regular_font_path))
+        pdfmetrics.registerFont(TTFont('Merriweather-Bold', bold_font_path))
 
-        c = canvas.Canvas(buffer, pagesize=(thermal_width, thermal_height))
-        width, height = thermal_width, thermal_height
-
-        # Use simple Helvetica font (printer friendly)
-        c.setFont("Helvetica", 9)  # Increased base font size
-
-        # Colors - Simple black for thermal printing
-        header_color = colors.black
-        accent_color = colors.black
-
-        # MAIN BORDER
-        main_border_padding = 3 * mm
-        c.setStrokeColor(colors.black)
-        c.setLineWidth(0.8)
-        c.rect(main_border_padding, main_border_padding,
-               thermal_width - 2 * main_border_padding,
-               thermal_height - 2 * main_border_padding)
-
-        # Margins
-        left_margin = 6 * mm
-        right_margin = thermal_width - 6 * mm
-        top_margin = thermal_height - 10 * mm
+        # Page margins
+        left_margin = 20*mm
+        right_margin = width - 20*mm
+        top_margin = height - 10*mm
+        bottom_margin = 20*mm
         y = top_margin
 
-        # ✅ HEADER - Larger and centered
+        # ✅ Full-page border
+        c.setLineWidth(1)
+        c.rect(10, 10, width - 20, height - 20)
+
+        # Logo
         logo_path = os.path.join(settings.BASE_DIR, 'static/images/administrative/nmmc-logo.jpeg')
-        logo_width = 16 * mm  # Slightly larger
-        logo_height = 16 * mm
-
+        logo_width = 30*mm
+        logo_height = 30*mm
         if os.path.exists(logo_path):
-            c.drawImage(logo_path, left_margin, y - logo_height,
-                        width=logo_width, height=logo_height, mask='auto')
+            c.drawImage(logo_path, left_margin, y - logo_height, width=logo_width, height=logo_height, mask='auto')
 
-        # Header text - Larger and better spaced
-        text_x = left_margin + logo_width + 4 * mm
-        
-        c.setFont("Helvetica-Bold", 10)  # Larger font
-        c.drawString(text_x, y - 10, "NAVI MUMBAI MUNICIPAL")
-        c.drawString(text_x, y - 22, "CORPORATION")
-        
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(text_x, y - 36, "Membership Payment Receipt")
+        # Header text - side by side with logo
+        text_x = left_margin + logo_width + 10*mm
+        text_y = y - logo_height/2 + 12
 
-        y = y - logo_height - 50
+        c.setFont("Merriweather", 24)
+        c.drawString(text_x, text_y, "Navi Mumbai Municipal Corporation")
 
-        # ✅ MEMBERSHIP DETAILS - Simple text format
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(left_margin, y, "MEMBERSHIP DETAILS")
-        y -= 15
-        
-        c.setFont("Helvetica", 9)  # Increased font size
-        details = [
-            f"Full Name: {membership.first_name} {membership.middle_name or ''} {membership.last_name}",
-            f"User ID: {membership.user_id}",
-            f"Library: {membership.library_name}",
-            f"Membership Type: {membership_master.membership_type_en}",
-            f"Duration: {membership.membership_duration} months",
-            f"From Date: {membership.from_date}",
-            f"To Date: {membership.to_date}"
+        c.setFont("Merriweather", 14)
+        c.drawString(text_x, text_y - 30, "Membership Payment Receipt")
+
+        # Move y down for next content
+        y = y - logo_height - 30
+
+        # ---------------- Member Details Table ----------------
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Member Details:")
+        y -= 60
+
+        table_data = [
+            ["Field", "Details"],
+            ["Full Name", f"{membership.first_name} {membership.middle_name or ''} {membership.last_name}"],
+            ["User ID", membership.user_id],
+            ["Library", membership.library_name],
+            ["Membership Name", membership_master.membership_type_en],
+            ["Membership Duration", f"{membership.membership_duration} months ({membership.from_date} to {membership.to_date})"]
         ]
-        
-        for detail in details:
-            # Handle long text by wrapping
-            if len(detail) > 35:
-                words = detail.split()
-                lines = []
-                current_line = ""
-                for word in words:
-                    if len(current_line + word) <= 35:
-                        current_line += word + " "
-                    else:
-                        lines.append(current_line)
-                        current_line = word + " "
-                lines.append(current_line)
-                for line in lines:
-                    c.drawString(left_margin, y, line)
-                    y -= 12
-            else:
-                c.drawString(left_margin, y, detail)
-                y -= 12
 
-        y -= 10  # Extra space between sections
+        table = Table(table_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('TOPPADDING', (0,0), (-1,-1), 8),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ]))
+        table.wrapOn(c, width, height)
+        table.drawOn(c, left_margin, y - (len(table_data) * 20))
+        y = y - (len(table_data) * 20) - 20
 
-        # ✅ PAYMENT DETAILS - Simple text format
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(left_margin, y, "PAYMENT DETAILS")
-        y -= 15
-        
-        c.setFont("Helvetica", 9)  # Increased font size
-        
-        if payments:
-            payment = payments[0]
-            payment_lines = [
-                f"Payment Date: {payment.payment_date}",
-                f"Payment Mode: {payment.payment_mode}",
-                f"Status: {payment.status.status_name if payment.status else ''}",
-                "",  # Empty line for spacing
-                f"Deposit Amount: Rs.{payment.deposit_amount or 0:.2f}",
-                f"Entry Fee: Rs.{payment.entry_fee_amount or 0:.2f}",
-                f"Subscription Fee: Rs.{payment.monthly_subscription_amount or 0:.2f}",
-                f"Total Paid: Rs.{payment.total_subscription_amount or 0:.2f}",
-            ]
-            
-            if payment.transaction_id:
-                payment_lines.append(f"Transaction ID: {payment.transaction_id}")
-            if payment.remarks:
-                remarks = f"Remarks: {payment.remarks}"
-                if len(remarks) > 35:
-                    words = remarks.split()
-                    lines = []
-                    current_line = ""
-                    for word in words:
-                        if len(current_line + word) <= 35:
-                            current_line += word + " "
-                        else:
-                            lines.append(current_line)
-                            current_line = word + " "
-                    lines.append(current_line)
-                    payment_lines.extend(lines)
-                else:
-                    payment_lines.append(remarks)
-            
-            for line in payment_lines:
-                if line:  # Only draw non-empty lines
-                    c.drawString(left_margin, y, line)
-                y -= 12
-        else:
-            c.drawString(left_margin, y, "No payment records found")
-            y -= 12
+        # ---------------- Payment Details Table ----------------
+        y -= 10
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Payment Details:")
+        y -= 60
 
-        y -= 10  # Extra space between sections
+        payment_data_list = []
+        for idx, p in enumerate(payments, start=1):
+            payment_data_list.append(["Field", "Details"])
+            payment_data_list.append(["Payment Date", str(p.payment_date)])
+            payment_data_list.append(["Payment Mode", str(p.payment_mode)])
+            payment_data_list.append(["Payment Status", str(p.status.status_name if p.status else "")])
+            payment_data_list.append(["Deposit (₹)", f"{p.deposit_amount or 0:.2f}"])
+            payment_data_list.append(["Entry Fee (₹)", f"{p.entry_fee_amount or 0:.2f}"])
+            payment_data_list.append(["Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
+            payment_data_list.append(["Total Paid (₹)", f"{p.total_subscription_amount or 0:.2f}"])
+            payment_data_list.append(["Transaction / Remarks", f"{p.transaction_id or ''} {('(' + p.remarks + ')' if p.remarks else '')}"])
 
-        # ✅ MEMBERSHIP SUMMARY - Simple highlighted box
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(left_margin, y, "MEMBERSHIP SUMMARY")
-        y -= 15
-        
-        # Draw a simple box around summary
-        summary_height = 25
-        c.setFillColor(colors.HexColor('#F0F0F0'))  # Light gray background
-        c.rect(left_margin, y - summary_height, width - 12 * mm, summary_height, fill=1, stroke=0)
-        
-        c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", 10)
-        summary_text = f"Total Subscription Fee: Rs.{membership.subscription:.2f}"
-        
-        # Center the text in the box
-        text_width = c.stringWidth(summary_text, "Helvetica-Bold", 10)
-        text_x = left_margin + ((width - 12 * mm) - text_width) / 2
-        c.drawString(text_x, y - 18, summary_text)
-        
-        y -= summary_height + 10
+        if not payment_data_list:
+            payment_data_list = [["No payments found", ""]]
 
-        # ✅ FOOTER
-        footer_y = 20 * mm
-        
-        # Footer separator line
-        c.setStrokeColor(colors.black)
-        c.setLineWidth(0.5)
-        c.line(left_margin, footer_y + 8, right_margin, footer_y + 8)
-        
-        c.setFillColor(colors.black)
-        c.setFont("Helvetica", 7)
-        footer_lines = [
-            "Computer Generated Receipt - No Signature Required",
-            "NMMC Library Services",
-            f"Generated: {timezone.now().strftime('%d-%m-%Y %H:%M')}"
+        payment_table = Table(payment_data_list, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        payment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        payment_table.wrapOn(c, width, height)
+        payment_table.drawOn(c, left_margin, y - (len(payment_data_list) * 20))
+        y = y - (len(payment_data_list) * 20) - 20
+
+        # ---------------- Membership Summary Table ----------------
+        y -= 10
+        c.setFont("Merriweather-Bold", 14)
+        c.drawString(left_margin, y, "Membership Summary:")
+        y -= 20
+
+        sub_data = [
+            ["Total Subscription Fee (₹)", f"{membership.subscription:.2f}"]
         ]
-        
-        for i, line in enumerate(footer_lines):
-            # Center align footer text
-            text_width = c.stringWidth(line, "Helvetica", 7)
-            x_position = (thermal_width - text_width) / 2
-            c.drawString(x_position, footer_y - (i * 5), line)
+
+        summary_table = Table(sub_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
+        summary_table.setStyle(TableStyle([
+            ('FONTNAME', (0,0), (-1,-1), 'Merriweather'),
+            ('FONTSIZE', (0,0), (-1,-1), 12),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        summary_table.wrapOn(c, width, height)
+        summary_table.drawOn(c, left_margin, y - (len(sub_data) * 20))
+        y = y - (len(sub_data) * 20) - 20
+
+        # Footer
+        c.setFont("Merriweather", 12)
+        c.drawString(left_margin, bottom_margin, "This is a computer-generated receipt and does not require signature. NMMC Library")
 
         c.save()
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="receipt_{membership.user_id}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="payment_receipt_{membership.user_id}.pdf"'
         return response
 
     except Exception as e:
-        print("PDF ERROR:", e)
+        print(f"Error generating PDF: {e}")
         messages.error(request, "Oops! Something went wrong!")
         return render(request, "L01/Member Payment/member_payment.html", {})
-
 
 @login_required
 def membership_form_renew(request):
@@ -3814,11 +3766,20 @@ def mpsc_chapters_index(request, topic_id):
     
 def member_entry_exit(request):
     from django.utils.timezone import localdate
-    members = MembershipDetails.objects.using('L01').filter(isactive=True).annotate(
+    active_user_ids = CustomUser.objects.filter(
+        is_active=1
+    ).values_list('username', flat=True)   # <-- important
+
+
+    # 2️⃣ Filter MembershipDetails for those active user_ids
+    members = MembershipDetails.objects.using('L01').filter(
+        isactive=1,
+        user_id__in=active_user_ids
+    ).annotate(
         display_name=Concat(
-            'first_name', Value(' '), 
-            'middle_name', Value(' '), 
-            'last_name', Value(' - '), 
+            'first_name', Value(' '),
+            'middle_name', Value(' '),
+            'last_name', Value(' - '),
             'membership_code',
             output_field=CharField()
         )
