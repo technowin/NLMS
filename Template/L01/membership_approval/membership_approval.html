@@ -124,6 +124,13 @@
                                         सभासदत्व रद्द करणे स्वीकारा
                                     </button>
                                 {% endif %}
+
+                                {% if m.status.status_code == "PAY_SUCCESS" %}
+                                    <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-success btn-sm" >
+                                        देयक पावती डाउनलोड करा
+                                    </a>
+                                {% endif %}
                             </td>
                         </tr>
                     {% empty %}
