@@ -2366,6 +2366,7 @@ def issue_return_book_create(request):
                 # Book condition and fine
                 condition_name = request.POST.get("book_condition")
                 fine_amount = float(request.POST.get("fine_amount", 0) or 0)
+                adjusted_fine = float(request.POST.get("adjusted_amount", 0) or 0)  # <-- new
                 book_price_amount = float(request.POST.get("book_price_amount", 0) or 0)
                 total_amount = float(request.POST.get("total_amount", 0))
                 fine_Breakdown = float(request.POST.get("fine_Breakdown", 0))
@@ -2384,9 +2385,13 @@ def issue_return_book_create(request):
                 try:
                     with db_transaction.atomic():
                         # Update CirculationTransaction
+                        
+                        final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
+                        
                         trans_obj.return_date = timezone.now().date()
                         trans_obj.return_condition = new_copy_status
                         trans_obj.fine_amount = fine_amount
+                        trans_obj.adjusted_fine = adjusted_fine  # <-- save adjusted fine
                         trans_obj.book_fine_amount = book_price_amount
                         trans_obj.total_fine = total_amount
                         trans_obj.days_overdue_count = fine_Breakdown
@@ -2424,7 +2429,7 @@ def issue_return_book_create(request):
                                 payment_mode="Offline",
                                 payment_method=payment_method,
                                 payment_type=payment_type,
-                                fine_amount=fine_amount,                  
+                                fine_amount=final_fine,              
                                 book_fine_amount=book_price_amount,  
                                 user_id=trans_obj.member.user_id,
                                 membership_code=trans_obj.membership_code,
@@ -3395,7 +3400,6 @@ def view_ebook_catalogue(request):
     return render(request, "L01/view_ebook_catalogue.html", {
         "MEDIA_URL": settings.MEDIA_URL
     })
-
 @csrf_exempt
 def bookcatalog_search(request):
     try:
@@ -3463,8 +3467,6 @@ def bookcatalog_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-    
-
 @csrf_exempt
 def libraryebook_search(request):
     try:
@@ -3549,7 +3551,6 @@ def libraryebook_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )   
-
 
 def upsc_ebook_index(request):
     try:
@@ -3687,6 +3688,7 @@ def get_membership_code(request):
     return JsonResponse({
         "membership_code": member.membership_code
     })
+
 def mpsc_ebook_index(request):
     try:
         # Fetch the competitive exam details for MPSC (id = 2) from L01 DB
@@ -3721,7 +3723,6 @@ def mpsc_ebook_index(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-
 
 def mpsc_topics_index(request, section_no):
     try:

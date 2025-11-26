@@ -376,6 +376,7 @@ class CirculationTransaction(models.Model):
     book_fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    adjusted_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, default=0)  # <-- new
     fine_status = models.CharField(max_length=20, blank=True, null=True)
     fine_paid_date = models.DateField(blank=True, null=True)
     transaction_type = models.CharField(max_length=20, blank=True, null=True)
