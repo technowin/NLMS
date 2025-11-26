@@ -143,12 +143,12 @@
                 <!-- Educational Institution -->
                 <div class="mb-3 row" id="education_row">
                     <div class="col-md-6">
-                        <label class="form-label" for="education">Education / शिक्षण <span class="text-danger">*</span></label>
+                        <label class="form-label" for="education">Education / शिक्षण <span class="text-danger"><span id="education_required"></span></span></label>
                         <input type="text" id="education" name="education" class="form-control" placeholder="e.g. B.Com, M.A." required>
                     </div>
 
                     <div class="col-md-6" id="institution_row">
-                        <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger">*</span></label>
+                        <label class="form-label" for="institution_name">Educational Institution / शिक्षण संस्थेचे नाव (कॉलेज/शाळा/विद्यापीठ) <span class="text-danger"><span id="institute_reuired"></span></span></label>
                         <input type="text" id="institution_name" name="institution_name" class="form-control" placeholder="e.g. St. Xavier's College" required>
                     </div>
                 </div>
@@ -706,7 +706,7 @@
 </script>
 
 {% comment %} Member Type / सदस्य प्रकार Logic to show fields accordingly student / employed / retired {% endcomment %}
-<script>
+{% comment %} <script>
 
     $(document).ready(function() {
         // Hide all rows initially
@@ -732,6 +732,73 @@
         });
     });
 
+
+</script> {% endcomment %}
+
+<script>
+
+    $(document).ready(function () {
+
+        // Always show Education + Institution
+        $('#education_row, #institution_row')
+            .show()
+            .find('input').prop('required', true);
+
+        // Hide conditional rows initially
+        $('#occupation_row, #phone_row, #referrer_row, #practitioner_row').hide();
+
+
+        function toggleMemberFields(val) {
+
+            // Show required * only when id = 1
+            if (val === '1') {
+                $('#education_required').text('*');
+                $('#institute_reuired').text('*');
+            } else {
+                $('#education_required').text('');
+                $('#institute_reuired').text('');
+            }
+
+            // Reset other fields
+            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row, #practitioner_row')
+                .hide()
+                .find('input, select').prop('required', false);
+
+            if(val !== "") {
+                // Always show education row for all selections
+                $('#education_row, #institution_row').show();
+            }
+
+            // Conditions except education & institution
+            if (val === '2' || val === '3') { // Employed / Govt
+                $('#occupation_row, #phone_row').show()
+                    .find('input').prop('required', true);
+
+            } else if (val === '4') { // Retired / Senior Citizen (Referrer)
+                $('#referrer_row').show()
+                    .find('input').prop('required', true);
+
+            } else if (val === '5') { // Practitioner
+                $('#practitioner_row').show()
+                    .find('input').prop('required', true);
+            }
+
+            // Education + Institution are ALWAYS shown
+        }
+
+
+        // On change
+        $('#membertype').change(function () {
+            toggleMemberFields($(this).val());
+        });
+
+        // On edit page: load preselected type
+        let preselected = "{{ membership.member_type_id }}";
+        if (preselected) {
+            toggleMemberFields(preselected);
+        }
+
+    });
 
 </script>
 
