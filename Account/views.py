@@ -78,6 +78,9 @@ def authenticate_from_db(request, username, password, db_alias):
         user = User.objects.using(db_alias).get(username=username)
     except User.DoesNotExist:
         return None
+    
+    if not user.is_active:
+        return None
 
     if check_password(password, user.password):
         # Tell Django which backend authenticated this user

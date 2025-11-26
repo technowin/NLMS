@@ -110,12 +110,16 @@
                             <li><a href="#">Online Services</a></li>
                         </ul>
                     </li>
-                    
-                    {% comment %} <li class="nav-item"><a href="{% url 'Login' %}">Login</a></li> {% endcomment %}
 
-                    {% comment %} <li class="icon">
-                        <a href="javascript:void(0);" onclick="toggleNavbar()">☰</a>
-                    </li> {% endcomment %}
+                    <li class="nav-item dropdown">
+                        <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC</a></li>
+                           <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC</a></li>
+                            
+                        </ul>
+                    </li>
+
                     <li class="icon">
                         <a href="javascript:void(0);" onclick="toggleNavbar('navbar-english')">☰</a>
                     </li>
@@ -144,19 +148,15 @@
                             <li><a href="#">ऑनलाइन सेवा</a></li>
                         </ul>
                     </li>
-
-                    <li class="nav-item dropdown">
-                        <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
+                  
+                    <li class="nav-item dropdown">      
+                        <a href="javascript:void(0);" class="dropbtn">परीक्षा तयारी ▾</a>
                         <ul class="dropdown-menu">
                             <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC</a></li>
-                           <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC</a></li>
-                            
+                            <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC</a></li>
                         </ul>
                     </li>
-                    
-                    {% comment %} <li class="icon">
-                        <a href="javascript:void(0);" onclick="toggleNavbar()">☰</a>
-                    </li> {% endcomment %}
+
                     <li class="icon">
                         <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>
                     </li>
@@ -200,20 +200,6 @@
 </body>
 
     <script>
-        {% comment %} function toggleNavbar() {
-            const navbar = document.getElementById("myTopnav");
-            navbar.classList.toggle("responsive");
-        }
-
-        // Toggle dropdowns in mobile view
-        document.querySelectorAll('.dropbtn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                if (window.innerWidth <= 1000) { // mobile/tablet only
-                const dropdown = this.nextElementSibling;
-                dropdown.classList.toggle('show');
-                }
-            });
-        }); {% endcomment %}
         function toggleNavbar(navbarId) {
             const navbar = document.getElementById(navbarId);
             if (!navbar) return;
