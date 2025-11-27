@@ -587,6 +587,7 @@
                             <input type="hidden" name="book_price_amount" id="bookPriceAmountHidden" value="0">
                             <input type="hidden" name="total_amount" id="totalAmountHidden" value="0">
                             <input type="hidden" name="fine_Breakdown" id="fineBreakdownHidden" value="0">
+                            <input type="hidden" name="adjusted_amount" id="adjustedAmountHidden" value="0">
                             
                             {% comment %} Barcode / बारकोड {% endcomment %}
 
@@ -627,14 +628,23 @@
                                         <div id="fineBreakdown">0 days overdue × ₹0/day</div>
                                         <div id="fineAmount" style="font-size:1.2rem;">₹0.00</div>
                                     </div>
-                                    <hr style="margin:8px 0; border:0; border-top:1px solid rgba(220,53,69,0.5);">
+                                    
+                                    <!-- Adjusted Fine Row -->
+                                    <div id="adjustedFineRow" 
+                                        style="display:none; display:flex; justify-content:space-between; align-items:center; color:#dc3545; font-weight:500; margin-top:8px;">
+                                        <div>Adjusted Fine</div>
+                                        <input type="number" id="adjustedFineInput" value="0" min="0" 
+                                            style="width:120px; border:1px solid #dc3545; border-radius:5px; padding:3px 6px; text-align:right;">
+                                    </div>
+                                    
 
+                                    <hr style="margin:8px 0; border:0; border-top:1px solid rgba(220,53,69,0.5);">
 
                                     <!-- 🆕 Book Price Row -->
                                     <div id="bookPriceRow" 
-                                        style="display:none; justify-content:space-between; align-items:center; color:#dc3545; font-weight:500;">
+                                        style="display:flex; justify-content:space-between; align-items:center; color:#dc3545; font-weight:500; margin-top:5px;">
                                         <div>Book Price</div>
-                                        <div id="bookPriceAmount" style="font-size:1.1rem;">₹0.00</div>
+                                        <div id="bookPriceAmount" style="font-size:1.1rem; text-align:right;">₹0.00</div>
                                     </div>
 
                                     <hr id="bookPriceHR" style="margin:8px 0; border:0; border-top:1px solid #dc3545; display:none;">
@@ -1403,20 +1413,16 @@
                             const book = data.book;
                             const member = data.member;
 
-                            // Enable Book Condition dropdown
                             $("#bookConditionSelect").prop("disabled", false);
-
-                            // Reset dropdown value
                             $("#bookConditionSelect").val("");
 
-                            // --- BOOK CARD ---
                             const isIssued = book.status_name === 'Issued';
-                            const borderColor = isIssued ? '#ffc107' : '#6c757d'; // yellow or gray
+                            const borderColor = isIssued ? '#ffc107' : '#6c757d';
                             const cardBg = isIssued ? '#fff9e6' : '#f0f0f0';
                             const badgeBg = isIssued ? '#fff3cd' : '#e0e0e0';
                             const textColor = isIssued ? '#856404' : '#6c757d';
 
-                            // Book card
+                            // --- Book card ---
                             container.append(`
                                 <div class="book-card mb-3" style="border: 1px solid ${borderColor}; background-color: ${cardBg}; border-radius: 10px; padding: 10px; display: flex; align-items: center;">
                                     <div class="book-photo me-3">
@@ -1438,28 +1444,21 @@
                                 </div>
                             `);
 
-                            // --- MEMBER CARD ---
-                            const cardClass = "member-card";
+                            // --- Member card ---
                             const daysOverdue = book.days_overdue || 0;
                             const overdueColor = daysOverdue > 0 ? "text-danger fw-bold" : "text-success fw-bold";
 
                             container.append(`
-                                <div class="${cardClass}" style="border: 1px solid #0d6efd; background-color: #e9f3ff; border-radius: 10px; padding: 10px; display: flex; align-items: center;">
+                                <div class="member-card" style="border: 1px solid #0d6efd; background-color: #e9f3ff; border-radius: 10px; padding: 10px; display: flex; align-items: center;">
                                     <div class="member-photo me-3">
                                         <img src="${member.profile_photo ? data.MEDIA_URL + member.profile_photo : '/static/images/default-user.png'}" 
                                             alt="Member Photo" style="width:100px;height:100px;object-fit:cover;border-radius:50%;">
                                     </div>
                                     <div class="member-info flex-grow-1">
                                         <h4 class="member-name mb-1" style="color:#0d6efd;">${member.member_name}</h4>
-                                        <div class="membership-row mb-1">
-                                            <span><strong>Membership Code:</strong> ${member.member_code || '-'}</span>
-                                        </div>
-                                        <div class="membership-row mb-1">
-                                            <span><strong>Issue Date:</strong> ${book.issue_date || '-'}</span>
-                                        </div>
-                                        <div class="membership-row">
-                                            <span><strong>Days Overdue:</strong> <span class="${overdueColor}">${daysOverdue}</span></span>
-                                        </div>
+                                        <div class="membership-row mb-1"><span><strong>Membership Code:</strong> ${member.member_code || '-'}</span></div>
+                                        <div class="membership-row mb-1"><span><strong>Issue Date:</strong> ${book.issue_date || '-'}</span></div>
+                                        <div class="membership-row"><span><strong>Days Overdue:</strong> <span class="${overdueColor}">${daysOverdue}</span></span></div>
                                     </div>
                                 </div>
                             `);
@@ -1468,109 +1467,123 @@
                             const finePerDay = fineAmount && daysOverdue > 0 ? (fineAmount / daysOverdue).toFixed(2) : 0;
                             const fineCard = $("#fineCard");
 
-                            // ✅ Show fine info if overdue
-                            if (daysOverdue > 0 && fineAmount > 0) {
-                                const finePerDay = (fineAmount / daysOverdue).toFixed(2);
-                                $("#fineBreakdown").text(`${daysOverdue} days overdue × ₹${finePerDay}/day`);
-                                $("#fineAmount").text(`₹${fineAmount.toFixed(2)}`);
-                                $("#fineTotal").text(`Total Fine: ₹${fineAmount.toFixed(2)}`);
-                                fineCard.show();
-                                fineAmountHidden.value = fineAmount.toFixed(2);
-                                fineBreakdownHidden.value = daysOverdue.toFixed(2);
-                            } else {
-                                fineCard.hide();
-                            }
-
-                            // ✅ Store data globally for dropdown usage
+                            // Store data globally
                             window.bookData = {
-                                days_overdue: book.days_overdue || 0,
+                                days_overdue: daysOverdue,
                                 fine_per_day: parseFloat(finePerDay) || 0,
+                                original_fine: fineAmount,            
                                 price: parseFloat(book.price || 0)
                             };
 
-                            console.log("✅ Book Data Loaded:", window.bookData);
+                            // Hide fine card by default
+                            $("#fineCard").hide();
+                            $("#adjustedFineRow").hide();
+                            $("#bookPriceRow").hide();
+                            $("#bookPriceHR").hide();
+
+                            // Only show fine if daysOverdue > 0 (optional)
+                            if (daysOverdue > 0) {
+                                $("#fineCard").show();
+                                $("#adjustedFineRow").show();
+                                $("#fineBreakdown").text(`${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue × ₹${finePerDay}/day`);
+                                $("#fineAmount").text(`₹${window.bookData.original_fine.toFixed(2)}`);
+                                $("#fineTotal").text(`Total Fine: ₹${window.bookData.original_fine.toFixed(2)}`);
+                                fineAmountHidden.value = window.bookData.original_fine.toFixed(2);
+                                fineBreakdownHidden.value = daysOverdue.toFixed(2);
+                            }
+
 
                             // --- Dropdown logic ---
                             document.getElementById("bookConditionSelect").addEventListener("change", function () {
-                                debugger;
                                 const condition = this.value;
-                                const fineCard = document.getElementById("fineCard");
-                                const fineAmountEl = document.getElementById("fineAmount");
-                                const fineTotalEl = document.getElementById("fineTotal");
-                                const fineBreakdownEl = document.getElementById("fineBreakdown");
-                                const bookPriceRow = document.getElementById("bookPriceRow");
-                                const bookPriceAmount = document.getElementById("bookPriceAmount");
-                                const bookPriceHR = document.getElementById("bookPriceHR");
+                                const adjusted = parseFloat($("#adjustedFineInput").val()) || 0;
 
-                                const overdueDays = parseFloat(window.bookData.days_overdue) || 0;
-                                const finePerDay = parseFloat(window.bookData.fine_per_day) || 0;
-                                const bookPrice = parseFloat(window.bookData.price) || 0;
+                                // Original fine
+                                const originalFine = window.bookData.original_fine;
 
-                                // --- Case 1: Condition = "Good"
-                                if (condition === "17") {
-                                    if (overdueDays > 0 && finePerDay > 0) {
-                                        fineCard.style.display = "block";
-                                        bookPriceRow.style.display = "none";
-                                        const fineAmount = overdueDays * finePerDay;
-                                        fineBreakdownEl.innerText = `${overdueDays} days overdue × ₹${finePerDay}/day`;
-                                        fineAmountEl.innerText = `₹${fineAmount.toFixed(2)}`;
-                                        fineTotalEl.innerText = `Total Fine: ₹${fineAmount.toFixed(2)}`;
+                                // Start with adjusted fine if entered, else original fine
+                                let totalFine = adjusted > 0 ? adjusted : originalFine;
 
-                                        bookPriceHR.style.display = "none";
-                                    } else {
-                                        fineCard.style.display = "none";
-                                    }
-                                    return;
-                                }
-
-                                let fineAmount = overdueDays * finePerDay;
-                                let totalFine = fineAmount;
-
+                                // Torn/Lost adds book price
                                 if (condition === "18" || condition === "19") {
-                                    totalFine += bookPrice;
-                                    bookPriceRow.style.display = "flex";
-                                    bookPriceAmount.innerText = `₹${bookPrice.toFixed(2)}`;
-                                    bookPriceHR.style.display = "block";
+                                    totalFine += window.bookData.price;
+                                    $("#bookPriceRow").show();
+                                    $("#bookPriceAmount").text(`₹${window.bookData.price.toFixed(2)}`);
+                                    $("#bookPriceHR").show();
+                                    bookPriceAmountHidden.value = window.bookData.price.toFixed(2);
                                 } else {
-                                    bookPriceRow.style.display = "none";
-                                    bookPriceHR.style.display = "none"; // ✅ hide HR too
+                                    $("#bookPriceRow").hide();
+                                    $("#bookPriceHR").hide();
+                                    $("#bookPriceAmount").text("₹0.00");
+                                    bookPriceAmountHidden.value = "0.00";
                                 }
 
-                                // --- Update text values ---
-                                fineBreakdownEl.innerText =
-                                    overdueDays > 0
-                                        ? `${overdueDays} days overdue × ₹${finePerDay}/day`
-                                        : "No overdue fine";
+                                // Show/hide fine card if overdue or Torn/Lost
+                                if (window.bookData.days_overdue > 0 || condition === "18" || condition === "19") {
+                                    $("#fineCard").show();
+                                } else {
+                                    $("#fineCard").hide();
+                                }
 
-                                fineAmountEl.innerText = `₹${fineAmount.toFixed(2)}`;
-                                fineAmountHidden.value = fineAmount.toFixed(2);
-                                bookPriceAmountHidden.value = bookPrice.toFixed(2);
-                                totalAmountHidden.value = totalFine.toFixed(2);
-                                fineTotalEl.innerText = `Total Fine: ₹${totalFine.toFixed(2)}`;
+                                // Update UI
+                                $("#fineAmount").text(`₹${originalFine.toFixed(2)}`); // always original
+                                $("#fineTotal").text(`Total Fine: ₹${totalFine.toFixed(2)}`);
 
-                                // --- Always show the card for Torn/Lost/Other ---
-                                fineCard.style.display = "block";
+                                // Update hidden fields
+                                fineAmountHidden.value = originalFine.toFixed(2);  // always original fine
+                                totalAmountHidden.value = totalFine.toFixed(2);    // total fine including book price
+                                $("#adjustedAmountHidden").val(adjusted.toFixed(2)); // adjusted fine if any
                             });
 
-                            // 🧽 Reset Book Condition dropdown & Fine card when new book is selected
-                            $("#bookConditionSelect").val(""); // Reset dropdown to default
+
+                            // --- Adjusted fine input listener ---
+                            $("#adjustedFineInput").on("input", function () {
+                                const condition = $("#bookConditionSelect").val();
+                                const adjusted = parseFloat($(this).val()) || 0;
+
+                                const originalFine = window.bookData.original_fine;
+                                let totalFine = adjusted > 0 ? adjusted : originalFine;
+
+                                // Torn/Lost adds book price
+                                if (condition === "18" || condition === "19") {
+                                    totalFine += window.bookData.price;
+                                    $("#bookPriceRow").show();
+                                    $("#bookPriceAmount").text(`₹${window.bookData.price.toFixed(2)}`);
+                                    $("#bookPriceHR").show();
+                                    bookPriceAmountHidden.value = window.bookData.price.toFixed(2);
+                                } else {
+                                    $("#bookPriceRow").hide();
+                                    $("#bookPriceHR").hide();
+                                    $("#bookPriceAmount").text("₹0.00");
+                                    bookPriceAmountHidden.value = "0.00";
+                                }
+
+                                // Update UI
+                                $("#fineAmount").text(`₹${originalFine.toFixed(2)}`); // always original
+                                $("#fineTotal").text(`Total Fine: ₹${totalFine.toFixed(2)}`);
+
+                                // Update hidden fields
+                                fineAmountHidden.value = originalFine.toFixed(2);  // always original fine
+                                totalAmountHidden.value = totalFine.toFixed(2);    // total fine including book price
+                                $("#adjustedAmountHidden").val(adjusted.toFixed(2)); // adjusted fine
+                            });
+
+
+
+                            // Reset UI
+                            $("#bookConditionSelect").val("");
                             $("#bookPriceAmount").text("₹0.00");
-                            //$("#fineCard").hide(); // Hide fine section initially
-                            $("#bookPriceRow").hide(); // Hide price row
-                            $("#bookPriceHR").hide(); // Hide price row
+                            $("#bookPriceRow").hide();
+                            $("#bookPriceHR").hide();
+
                         } else {
-                            // ✅ if no record or error — just show message and clear UI
                             $("#bookConditionSelect").prop("disabled", true);
                             container.html(`
                                 <div class="alert alert-warning text-center mt-3" role="alert">
                                     ${data.error || "No book details found for this barcode."}
                                 </div>
                             `);
-                            returnBtn
-                                .prop("disabled", true)
-                                .addClass("btn-secondary")
-                                .removeClass("btn-success")
-                                .html('<i class="uil uil-ban"></i> Cannot Return');
+                            returnBtn.prop("disabled", true).addClass("btn-secondary").removeClass("btn-success").html('<i class="uil uil-ban"></i> Cannot Return');
                         }
                     }
                 });
@@ -1962,332 +1975,331 @@
         });
     </script>
 
-     {% comment %} QR Scanner Integration for Membership Code {% endcomment %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const memberSearchInput = document.getElementById('memberSearch');
-    
-    // Auto-focus on page load
-    setTimeout(() => {
-        memberSearchInput.focus();
-        memberSearchInput.select();
-    }, 1000);
-    
-    // QR Scanner detection
-    let qrBuffer = '';
-    let qrTimer;
-    
-    memberSearchInput.addEventListener('keypress', function(e) {
-        // Add character to buffer
-        qrBuffer += e.key;
-        
-        // Clear previous timer
-        clearTimeout(qrTimer);
-        
-        // Set new timer
-        qrTimer = setTimeout(() => {
-            if (qrBuffer.length >= 6) { // Minimum length for membership code
-                processQRScan(qrBuffer);
-            }
-            qrBuffer = ''; // Reset buffer
-        }, 100);
-    });
-    
-    function processQRScan(qrData) {
-        const cleanData = qrData.trim();
-        const memberOptions = document.getElementById('memberOptions').getElementsByTagName('li');
-        let found = false;
-        
-        // Search for matching membership code
-        for (let i = 0; i < memberOptions.length; i++) {
-            const option = memberOptions[i];
-            const optionText = option.textContent.trim();
-            const membershipCode = optionText.split(' - ')[0];
+    {% comment %} QR Scanner Integration for Membership Code {% endcomment %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const memberSearchInput = document.getElementById('memberSearch');
             
-            if (membershipCode === cleanData) {
-                // Found match - trigger selection
-                option.click();
-                found = true;
-                
-                // Optional: Show success feedback
-                console.log(`QR Scan successful: ${optionText}`);
-                break;
-            }
-        }
-        
-        if (!found) {
-            console.warn(`No member found with QR code: ${cleanData}`);
-            // Optional: Show error message to user
-            Swal.fire({
-                icon: 'warning',
-                title: 'Member Not Found',
-                text: `No member found with code: ${cleanData}`,
-                confirmButtonText: 'OK',
-                timer: 3000
-            });
-            
-            // Clear the input field
-            memberSearchInput.value = '';
-            memberSearchInput.focus();
-        }
-    }
-});
-</script>
-
-
-{% comment %} QR Scanner Integration for Barcode Field {% endcomment %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // QR Scanner for Barcode Field
-    const barcodeSearchInput = document.getElementById('barcodeSearch');
-    
-    // Enable barcode field when member is selected and setup QR scanning
-    function setupBarcodeQRScanner() {
-        if (barcodeSearchInput && !barcodeSearchInput.disabled) {
-            // Auto-focus on barcode field when it becomes enabled
+            // Auto-focus on page load
             setTimeout(() => {
-                barcodeSearchInput.focus();
-                barcodeSearchInput.select();
-            }, 500);
-
-            // QR Scanner detection for barcode
-            let barcodeQrBuffer = '';
-            let barcodeQrTimer;
-            let barcodeLastKeyTime = 0;
-
-            barcodeSearchInput.addEventListener('keydown', function(e) {
-                const currentTime = new Date().getTime();
-                
-                // Reset buffer if time between keys is too long (normal typing)
-                if (currentTime - barcodeLastKeyTime > 200) {
-                    barcodeQrBuffer = '';
-                }
-                
-                barcodeLastKeyTime = currentTime;
-
-                // Handle special keys
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (barcodeQrBuffer.length > 0) {
-                        processBarcodeQRScan(barcodeQrBuffer);
-                        barcodeQrBuffer = '';
-                    }
-                    return;
-                }
-
-                // Add printable characters to buffer
-                if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                    barcodeQrBuffer += e.key;
-                }
-
-                // Clear previous timer
-                clearTimeout(barcodeQrTimer);
-                
-                // Set new timer to process QR input
-                barcodeQrTimer = setTimeout(() => {
-                    if (barcodeQrBuffer.length >= 3) { // Minimum length for barcode
-                        processBarcodeQRScan(barcodeQrBuffer);
-                    }
-                    barcodeQrBuffer = '';
-                }, 150);
-            });
-
-            // Also handle direct input for manual entry
-            barcodeSearchInput.addEventListener('input', function(e) {
-                const value = e.target.value.trim();
-                if (value.length >= 3) {
-                    // Small delay to allow complete input
-                    setTimeout(() => {
-                        if (value === e.target.value.trim()) { // Ensure value hasn't changed
-                            processBarcodeQRScan(value);
-                        }
-                    }, 300);
-                }
-            });
-        }
-    }
-
-    function processBarcodeQRScan(qrData) {
-        const cleanData = qrData.trim();
-        console.log('Processing Barcode QR scan:', cleanData);
-        
-        const barcodeOptions = document.querySelectorAll('#barcodeOptions li');
-        let found = false;
-
-        // Search for matching barcode
-        for (let i = 0; i < barcodeOptions.length; i++) {
-            const option = barcodeOptions[i];
-            const optionText = option.textContent.trim();
-            const barcodeValue = optionText; // Barcode is the full text
+                memberSearchInput.focus();
+                memberSearchInput.select();
+            }, 1000);
             
-            if (barcodeValue === cleanData) {
-                // Found match - trigger selection
-                barcodeSearchInput.value = optionText;
-                document.getElementById('barcodeCodeInput').value = option.getAttribute('data-value');
+            // QR Scanner detection
+            let qrBuffer = '';
+            let qrTimer;
+            
+            memberSearchInput.addEventListener('keypress', function(e) {
+                // Add character to buffer
+                qrBuffer += e.key;
                 
-                // Hide dropdown
-                const barcodeOptionsElement = document.getElementById('barcodeOptions');
-                if (barcodeOptionsElement) {
-                    barcodeOptionsElement.style.display = "none";
+                // Clear previous timer
+                clearTimeout(qrTimer);
+                
+                // Set new timer
+                qrTimer = setTimeout(() => {
+                    if (qrBuffer.length >= 6) { // Minimum length for membership code
+                        processQRScan(qrBuffer);
+                    }
+                    qrBuffer = ''; // Reset buffer
+                }, 100);
+            });
+            
+            function processQRScan(qrData) {
+                const cleanData = qrData.trim();
+                const memberOptions = document.getElementById('memberOptions').getElementsByTagName('li');
+                let found = false;
+                
+                // Search for matching membership code
+                for (let i = 0; i < memberOptions.length; i++) {
+                    const option = memberOptions[i];
+                    const optionText = option.textContent.trim();
+                    const membershipCode = optionText.split(' - ')[0];
+                    
+                    if (membershipCode === cleanData) {
+                        // Found match - trigger selection
+                        option.click();
+                        found = true;
+                        
+                        // Optional: Show success feedback
+                        console.log(`QR Scan successful: ${optionText}`);
+                        break;
+                    }
                 }
                 
-                // Call your existing AJAX function for book details
-                fetchBookDetails(option.getAttribute('data-value'));
-                
-                found = true;
-                
-                // Show success feedback
-
-                break;
-            }
-        }
-
-        if (!found) {
-            // Try partial match
-            for (let i = 0; i < barcodeOptions.length; i++) {
-                const option = barcodeOptions[i];
-                const optionText = option.textContent.trim();
-                
-                if (optionText.includes(cleanData)) {
-                    barcodeSearchInput.value = optionText;
-                    document.getElementById('barcodeCodeInput').value = option.getAttribute('data-value');
-                    
-                    const barcodeOptionsElement = document.getElementById('barcodeOptions');
-                    if (barcodeOptionsElement) {
-                        barcodeOptionsElement.style.display = "none";
-                    }
-                    
-                    fetchBookDetails(option.getAttribute('data-value'));
-                    found = true;
-                    
+                if (!found) {
+                    console.warn(`No member found with QR code: ${cleanData}`);
+                    // Optional: Show error message to user
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Book Found!',
-                        text: `Barcode ${optionText} selected successfully`,
+                        icon: 'warning',
+                        title: 'Member Not Found',
+                        text: `No member found with code: ${cleanData}`,
                         confirmButtonText: 'OK',
-                        timer: 2000,
-                        showConfirmButton: false
+                        timer: 3000
                     });
-                    break;
-                }
-            }
-        }
-
-        if (!found) {
-            // Clear the input field
-            barcodeSearchInput.value = '';
-            barcodeSearchInput.focus();
-        }
-    }
-
-    // Monitor when barcode field becomes enabled (after member selection)
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
-                if (!barcodeSearchInput.disabled) {
-                    setupBarcodeQRScanner();
+                    
+                    // Clear the input field
+                    memberSearchInput.value = '';
+                    memberSearchInput.focus();
                 }
             }
         });
-    });
+    </script>
 
-    // Start observing the barcode input for disabled attribute changes
-    if (barcodeSearchInput) {
-        observer.observe(barcodeSearchInput, {
-            attributes: true,
-            attributeFilter: ['disabled']
-        });
-    }
+    {% comment %} QR Scanner Integration for Barcode Field {% endcomment %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // QR Scanner for Barcode Field
+            const barcodeSearchInput = document.getElementById('barcodeSearch');
+            
+            // Enable barcode field when member is selected and setup QR scanning
+            function setupBarcodeQRScanner() {
+                if (barcodeSearchInput && !barcodeSearchInput.disabled) {
+                    // Auto-focus on barcode field when it becomes enabled
+                    setTimeout(() => {
+                        barcodeSearchInput.focus();
+                        barcodeSearchInput.select();
+                    }, 500);
 
-    // Also setup immediately if barcode field is already enabled
-    if (barcodeSearchInput && !barcodeSearchInput.disabled) {
-        setupBarcodeQRScanner();
-    }
-});
+                    // QR Scanner detection for barcode
+                    let barcodeQrBuffer = '';
+                    let barcodeQrTimer;
+                    let barcodeLastKeyTime = 0;
 
-// Your existing fetchBookDetails function (make sure it's accessible)
-function fetchBookDetails(barcodeId) {
-    $.ajax({
-        url: "{% url 'L01:get_book_details' %}",
-        type: "POST",
-        data: {
-            barcode_id: barcodeId,
-            csrfmiddlewaretoken: '{{ csrf_token }}'
-        },
-        dataType: "json",
-        success: function(data) {
-            const container = $("#barcodeDetails");
-            const issueBtn = $("#issueBookBtn");
-            container.empty();
+                    barcodeSearchInput.addEventListener('keydown', function(e) {
+                        const currentTime = new Date().getTime();
+                        
+                        // Reset buffer if time between keys is too long (normal typing)
+                        if (currentTime - barcodeLastKeyTime > 200) {
+                            barcodeQrBuffer = '';
+                        }
+                        
+                        barcodeLastKeyTime = currentTime;
 
-            if (data.success) {
-                const books = Array.isArray(data.book) ? data.book : [data.book];
-                allOnShelf = true;
+                        // Handle special keys
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (barcodeQrBuffer.length > 0) {
+                                processBarcodeQRScan(barcodeQrBuffer);
+                                barcodeQrBuffer = '';
+                            }
+                            return;
+                        }
 
-                books.forEach(book => {
-                    // Determine status-based colors
-                    const isOnShelf = book.status_name === 'On-Shelf';
-                    if (!isOnShelf) {
-                        allOnShelf = false; // found at least one not on shelf
+                        // Add printable characters to buffer
+                        if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                            barcodeQrBuffer += e.key;
+                        }
+
+                        // Clear previous timer
+                        clearTimeout(barcodeQrTimer);
+                        
+                        // Set new timer to process QR input
+                        barcodeQrTimer = setTimeout(() => {
+                            if (barcodeQrBuffer.length >= 3) { // Minimum length for barcode
+                                processBarcodeQRScan(barcodeQrBuffer);
+                            }
+                            barcodeQrBuffer = '';
+                        }, 150);
+                    });
+
+                    // Also handle direct input for manual entry
+                    barcodeSearchInput.addEventListener('input', function(e) {
+                        const value = e.target.value.trim();
+                        if (value.length >= 3) {
+                            // Small delay to allow complete input
+                            setTimeout(() => {
+                                if (value === e.target.value.trim()) { // Ensure value hasn't changed
+                                    processBarcodeQRScan(value);
+                                }
+                            }, 300);
+                        }
+                    });
+                }
+            }
+
+            function processBarcodeQRScan(qrData) {
+                const cleanData = qrData.trim();
+                console.log('Processing Barcode QR scan:', cleanData);
+                
+                const barcodeOptions = document.querySelectorAll('#barcodeOptions li');
+                let found = false;
+
+                // Search for matching barcode
+                for (let i = 0; i < barcodeOptions.length; i++) {
+                    const option = barcodeOptions[i];
+                    const optionText = option.textContent.trim();
+                    const barcodeValue = optionText; // Barcode is the full text
+                    
+                    if (barcodeValue === cleanData) {
+                        // Found match - trigger selection
+                        barcodeSearchInput.value = optionText;
+                        document.getElementById('barcodeCodeInput').value = option.getAttribute('data-value');
+                        
+                        // Hide dropdown
+                        const barcodeOptionsElement = document.getElementById('barcodeOptions');
+                        if (barcodeOptionsElement) {
+                            barcodeOptionsElement.style.display = "none";
+                        }
+                        
+                        // Call your existing AJAX function for book details
+                        fetchBookDetails(option.getAttribute('data-value'));
+                        
+                        found = true;
+                        
+                        // Show success feedback
+
+                        break;
                     }
-                    const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
-                    const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
-                    const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
-                    const textColor = isOnShelf ? '#28a745' : '#dc3545';    // for title & labels
+                }
 
-                    container.append(`
-                        <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
-                            <div class="book-photo">
-                                <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
-                                    alt="Book Photo">
-                            </div>
-                            <div class="book-info">
-                                <h5 style="color:${textColor};">${book.title || 'Untitled Book'}</h5>
-                                <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
-                                <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
-                                <p> 
-                                    <span 
-                                        class="status-badge"
-                                        style="background-color: ${badgeBg}; color: ${textColor};"
-                                        ${book.status_name === "Issued" ? `onclick="viewCirculationDetails('${barcodeId}')"` : ''}
-                                    >
-                                        ${book.status_name || 'Unknown'}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                    `);
+                if (!found) {
+                    // Try partial match
+                    for (let i = 0; i < barcodeOptions.length; i++) {
+                        const option = barcodeOptions[i];
+                        const optionText = option.textContent.trim();
+                        
+                        if (optionText.includes(cleanData)) {
+                            barcodeSearchInput.value = optionText;
+                            document.getElementById('barcodeCodeInput').value = option.getAttribute('data-value');
+                            
+                            const barcodeOptionsElement = document.getElementById('barcodeOptions');
+                            if (barcodeOptionsElement) {
+                                barcodeOptionsElement.style.display = "none";
+                            }
+                            
+                            fetchBookDetails(option.getAttribute('data-value'));
+                            found = true;
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Book Found!',
+                                text: `Barcode ${optionText} selected successfully`,
+                                confirmButtonText: 'OK',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            break;
+                        }
+                    }
+                }
+
+                if (!found) {
+                    // Clear the input field
+                    barcodeSearchInput.value = '';
+                    barcodeSearchInput.focus();
+                }
+            }
+
+            // Monitor when barcode field becomes enabled (after member selection)
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
+                        if (!barcodeSearchInput.disabled) {
+                            setupBarcodeQRScanner();
+                        }
+                    }
                 });
-                // Disable or enable Issue button based on status
-                if (!allOnShelf) {
-                    issueBtn.prop('disabled', true)
+            });
+
+            // Start observing the barcode input for disabled attribute changes
+            if (barcodeSearchInput) {
+                observer.observe(barcodeSearchInput, {
+                    attributes: true,
+                    attributeFilter: ['disabled']
+                });
+            }
+
+            // Also setup immediately if barcode field is already enabled
+            if (barcodeSearchInput && !barcodeSearchInput.disabled) {
+                setupBarcodeQRScanner();
+            }
+        });
+
+        // Your existing fetchBookDetails function (make sure it's accessible)
+        function fetchBookDetails(barcodeId) {
+            $.ajax({
+                url: "{% url 'L01:get_book_details' %}",
+                type: "POST",
+                data: {
+                    barcode_id: barcodeId,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                dataType: "json",
+                success: function(data) {
+                    const container = $("#barcodeDetails");
+                    const issueBtn = $("#issueBookBtn");
+                    container.empty();
+
+                    if (data.success) {
+                        const books = Array.isArray(data.book) ? data.book : [data.book];
+                        allOnShelf = true;
+
+                        books.forEach(book => {
+                            // Determine status-based colors
+                            const isOnShelf = book.status_name === 'On-Shelf';
+                            if (!isOnShelf) {
+                                allOnShelf = false; // found at least one not on shelf
+                            }
+                            const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
+                            const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
+                            const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
+                            const textColor = isOnShelf ? '#28a745' : '#dc3545';    // for title & labels
+
+                            container.append(`
+                                <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
+                                    <div class="book-photo">
+                                        <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
+                                            alt="Book Photo">
+                                    </div>
+                                    <div class="book-info">
+                                        <h5 style="color:${textColor};">${book.title || 'Untitled Book'}</h5>
+                                        <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
+                                        <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
+                                        <p> 
+                                            <span 
+                                                class="status-badge"
+                                                style="background-color: ${badgeBg}; color: ${textColor};"
+                                                ${book.status_name === "Issued" ? `onclick="viewCirculationDetails('${barcodeId}')"` : ''}
+                                            >
+                                                ${book.status_name || 'Unknown'}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                        // Disable or enable Issue button based on status
+                        if (!allOnShelf) {
+                            issueBtn.prop('disabled', true)
+                                    .addClass('btn-secondary')
+                                    .removeClass('btn-success')
+                                    .html('<i class="uil uil-ban"></i> Cannot Issue');
+                        } else {
+                            issueBtn.prop('disabled', false)
+                                    .addClass('btn-success')
+                                    .removeClass('btn-secondary')
+                                    .html('<i class="uil uil-check-circle"></i> Issue Book');
+                        }
+                    } else {
+                        container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
+                        $("#issueBookBtn").prop("disabled", true)
                             .addClass('btn-secondary')
                             .removeClass('btn-success')
                             .html('<i class="uil uil-ban"></i> Cannot Issue');
-                } else {
-                    issueBtn.prop('disabled', false)
-                            .addClass('btn-success')
-                            .removeClass('btn-secondary')
-                            .html('<i class="uil uil-check-circle"></i> Issue Book');
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to fetch book details',
+                        confirmButtonText: 'OK'
+                    });
                 }
-            } else {
-                container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
-                $("#issueBookBtn").prop("disabled", true)
-                    .addClass('btn-secondary')
-                    .removeClass('btn-success')
-                    .html('<i class="uil uil-ban"></i> Cannot Issue');
-            }
-        },
-        error: function() {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to fetch book details',
-                confirmButtonText: 'OK'
             });
         }
-    });
-}
-</script>
+    </script>
 
 {% endblock %}

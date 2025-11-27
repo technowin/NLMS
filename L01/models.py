@@ -376,6 +376,7 @@ class CirculationTransaction(models.Model):
     book_fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    adjusted_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, default=0)  # <-- new
     fine_status = models.CharField(max_length=20, blank=True, null=True)
     fine_paid_date = models.DateField(blank=True, null=True)
     transaction_type = models.CharField(max_length=20, blank=True, null=True)
@@ -646,5 +647,37 @@ class LibraryEbook(models.Model):
 
         def __str__(self):
             return f"{self.ebook_id} - {self.title}"
+        
+class EODLog(models.Model):
+    date = models.DateField()
+    is_eod_done = models.BooleanField(default=False)
+    status = models.CharField(max_length=100, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='eod_created_by')
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='eod_updated_by')
+
+    def __str__(self):
+        return f"EODLog {self.id} - {self.date}"
+    
+    class Meta:
+            db_table = 'tbl_eod_log'
+    
+class BookReturnLog(models.Model):
+    eod_log = models.ForeignKey(EODLog, on_delete=models.CASCADE, related_name='return_logs')
+    cat_rem_num = models.ForeignKey(BookCatalog, on_delete=models.CASCADE, related_name='catalog_returns')
+    barcode = models.CharField(max_length=100)
+    is_shelved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='return_created_by')
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='return_updated_by')
+
+    def __str__(self):
+        return f"ReturnLog {self.id} - {self.barcode}"
+    
+    class Meta:
+            db_table = 'tbl_book_return_log'
 
 

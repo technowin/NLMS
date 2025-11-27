@@ -2318,6 +2318,7 @@ def issue_return_book_create(request):
                 # Book condition and fine
                 condition_name = request.POST.get("book_condition")
                 fine_amount = float(request.POST.get("fine_amount", 0) or 0)
+                adjusted_fine = float(request.POST.get("adjusted_amount", 0) or 0)  # <-- new
                 book_price_amount = float(request.POST.get("book_price_amount", 0) or 0)
                 total_amount = float(request.POST.get("total_amount", 0))
                 fine_Breakdown = float(request.POST.get("fine_Breakdown", 0))
@@ -2336,9 +2337,13 @@ def issue_return_book_create(request):
                 try:
                     with db_transaction.atomic():
                         # Update CirculationTransaction
+                        
+                        final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
+                        
                         trans_obj.return_date = timezone.now().date()
                         trans_obj.return_condition = new_copy_status
                         trans_obj.fine_amount = fine_amount
+                        trans_obj.adjusted_fine = adjusted_fine  # <-- save adjusted fine
                         trans_obj.book_fine_amount = book_price_amount
                         trans_obj.total_fine = total_amount
                         trans_obj.days_overdue_count = fine_Breakdown
@@ -2376,7 +2381,7 @@ def issue_return_book_create(request):
                                 payment_mode="Offline",
                                 payment_method=payment_method,
                                 payment_type=payment_type,
-                                fine_amount=fine_amount,                  
+                                fine_amount=final_fine,              
                                 book_fine_amount=book_price_amount,  
                                 user_id=trans_obj.member.user_id,
                                 membership_code=trans_obj.membership_code,
@@ -3364,6 +3369,144 @@ def bookcatalog_search(request):
         results = BookCatalog.objects.using('L01').all()
 
         # Filter by selected search type
+        if search_type in ["title", "books"]:
+            results = results.filter(title__icontains=query)
+        elif search_type == "author":
+            results = results.filter(author__icontains=query)
+        elif search_type == "publisher":
+            results = results.filter(publisher__icontains=query)
+        elif search_type == "language":
+            results = results.filter(language__icontains=query)
+        elif search_type == "keyword":
+            results = results.filter(keywords__icontains=query)
+        elif search_type == "year":
+            year_filters = Q()
+            if query.isdigit():
+                year_filters |= Q(year_of_publication=int(query))
+            year_filters |= Q(publication_year__icontains=query)
+            results = results.filter(year_filters)
+        elif search_type == "call_number":
+            results = results.filter(call_number__icontains=query)
+        elif search_type == "cutter_number":
+            results = results.filter(cutter_number__icontains=query)
+        else:
+            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+
+        # Limit results to 50
+        results = results.values(
+            "title",
+            "author",
+            "publisher",
+            "language",
+            "year_of_publication",
+            "publication_year",
+            "call_number",
+            "cutter_number",
+            "front_page_photo",
+            "ebook_available",
+            "cat_ref_num",  # <-- Include cat_ref_num from DB
+        )[:50]
+
+        # Convert front_page_photo to absolute URL
+        updated_results = []
+        for r in results:
+            image_path = r.get("front_page_photo")
+            r["front_page_photo"] = request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
+            updated_results.append(r)
+
+        return JsonResponse(updated_results, safe=False)
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+    
+@csrf_exempt
+def index_book_search(request):
+    try:
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+
+        query = request.POST.get("query", "").strip()
+        search_type = request.POST.get("searchType", "").strip().lower()  # Optional filter type
+
+        if not query:
+            return JsonResponse({"error": "Please enter a search term."}, status=400)
+
+        # Base queryset
+        results = BookCatalog.objects.using('L01').all()
+
+        # Search only from FIRST letter (using istartswith)
+        if search_type in ["title", "books", ""]:
+            results = results.filter(title__istartswith=query)
+
+        elif search_type == "author":
+            results = results.filter(author__istartswith=query)
+
+        elif search_type == "publisher":
+            results = results.filter(publisher__istartswith=query)
+
+        elif search_type == "language":
+            results = results.filter(language__istartswith=query)
+
+        elif search_type == "keyword":
+            results = results.filter(keywords__istartswith=query)
+
+        elif search_type == "year":
+            # Publication year should also start with the query
+            year_filters = Q(publication_year__istartswith=query) | Q(year_of_publication__istartswith=query)
+            results = results.filter(year_filters)
+
+        else:
+            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+
+        # Limit results
+        results = results.values(
+            "title",
+            "author",
+            "publisher",
+            "language",
+            "year_of_publication",
+            "publication_year",
+            "call_number",
+            "cutter_number",
+            "front_page_photo",
+            "ebook_available",
+        )[:50]
+
+        # Convert image path to absolute URL
+        updated_results = []
+        for r in results:
+            image_path = r.get("front_page_photo")
+            r["front_page_photo"] = (
+                request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
+            )
+            updated_results.append(r)
+
+        return JsonResponse(updated_results, safe=False)
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+
+
+    try:
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+
+        query = request.POST.get("query", "").strip()
+        search_type = request.POST.get("searchType", "").strip().lower()
+
+        if not query or not search_type:
+            return JsonResponse({"error": "Please provide both query and search type."}, status=400)
+
+        # Base queryset from L01 database
+        results = BookCatalog.objects.using('L01').all()
+
+        # Filter by selected search type
         if search_type == "title" or search_type == "books":
             results = results.filter(title__icontains=query)
         elif search_type == "author":
@@ -3415,8 +3558,6 @@ def bookcatalog_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-    
-
 @csrf_exempt
 def libraryebook_search(request):
     try:
@@ -3501,7 +3642,6 @@ def libraryebook_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )   
-
 
 def upsc_ebook_index(request):
     try:
@@ -3639,6 +3779,7 @@ def get_membership_code(request):
     return JsonResponse({
         "membership_code": member.membership_code
     })
+
 def mpsc_ebook_index(request):
     try:
         # Fetch the competitive exam details for MPSC (id = 2) from L01 DB
@@ -3673,7 +3814,6 @@ def mpsc_ebook_index(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-
 
 def mpsc_topics_index(request, section_no):
     try:
