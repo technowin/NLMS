@@ -212,24 +212,59 @@ def Test_sample(request):
         if request.method=="GET":
              return render(request,'Master/Test_sample.html')
          
+# @login_required
+# def LMS_Dashboard(request):
+#     try:
+#         if request.user.is_authenticated ==True:                
+#                 global user,role_id
+#                 user = request.user.id    
+#                 role_id = request.user.role_id 
+#         if request.method=="GET":
+#             print("GET")
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name
+#         callproc("stp_error_log",[fun,str(e),user])  
+#         messages.error(request, 'Oops...! Something went wrong!')
+#     finally:
+#         Db.closeConnection()
+#         if request.method=="GET":
+#              return render(request,'Workflow/index.html')
+
 @login_required
 def LMS_Dashboard(request):
     try:
-        if request.user.is_authenticated ==True:                
-                global user,role_id
-                user = request.user.id    
-                role_id = request.user.role_id 
-        if request.method=="GET":
+        if request.user.is_authenticated:
+            global user, role_id
+            user = request.user.id
+            role_id = request.user.role_id
+
+        if request.method == "GET":
             print("GET")
+
+            # Get today's date
+            today = date.today()
+
+            # Fetch today's returned books
+            returned_books = CirculationTransaction.objects.filter(
+                return_date=today
+            )
+
+            context = {
+                "returned_books": returned_books
+            }
+
+            return render(request, 'Workflow/index.html', context)
+
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
-        callproc("stp_error_log",[fun,str(e),user])  
+        callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
+
     finally:
         Db.closeConnection()
-        if request.method=="GET":
-             return render(request,'Workflow/index.html')
+
          
 # Book Catalog Index     
 @login_required

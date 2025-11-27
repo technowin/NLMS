@@ -24,18 +24,81 @@
 
 {% block content %}
 
-  <section class="hero">
-    <h1 class="hero-title">
-      Library Management System<br>Coming Soon!
-    </h1>
-    <p class="hero-subtitle">
-      A smarter way to handle performance reviews, feedback, and growth — all in one powerful platform. We're building something awesome, just for you.
-    </p>
-    <div class="hero-buttons">
-      <a href="#" class="btn btn-primary disabled" aria-disabled="true">Launching Soon</a>
-      <a href="#" class="btn btn-outline">Stay Tuned</a>
+<section class="hero">
+  <h1 class="hero-title">
+    Library Management System<br>Coming Soon!
+  </h1>
+  <p class="hero-subtitle">
+    A smarter way to handle performance reviews, feedback, and growth — all in one powerful platform. We're building something awesome, just for you.
+  </p>
+  <div class="hero-buttons">
+    <a href="#" class="btn btn-primary disabled" aria-disabled="true">Launching Soon</a>
+    <a href="#" class="btn btn-outline">Stay Tuned</a>
+
+    <!-- New Button -->
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#todayTasksModal">
+      Today Tasks
+    </button>
+  </div>
+</section>
+
+
+
+  <!-- Today Tasks Modal -->
+<div class="modal fade" id="todayTasksModal" tabindex="-1" aria-labelledby="todayTasksLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="todayTasksLabel">Today's Returned Books</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        {% if returned_books %}
+        <form id="taskForm">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Book Name</th>
+                <th>Returned?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in returned_books %}
+              <tr>
+                <td>{{ t.catalog.title }}</td>
+                <td>
+                  <label style="margin-right: 10px;">
+                    <input type="radio" name="task_{{ t.id }}" value="yes"> Yes
+                  </label>
+                  <label>
+                    <input type="radio" name="task_{{ t.id }}" value="no"> No
+                  </label>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </form>
+        {% else %}
+        <p>No books returned today.</p>
+        {% endif %}
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary">
+          Submit
+        </button>
+      </div>
+
     </div>
-  </section>
+  </div>
+</div>
+
 
 
 
