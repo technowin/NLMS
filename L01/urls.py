@@ -12,7 +12,7 @@ urlpatterns = [
     path('mpsc_ebooks_index/', mpsc_ebook_index, name='mpsc_ebooks_index'),
     path('mpsc_topics_index/<int:section_no>/', mpsc_topics_index, name='mpsc_topics_index'),
     path('mpsc_chapters_index/<int:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
-
+    path("index_book_search", index_book_search, name="index_book_search"),
     path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
     path("libraryebook_search", libraryebook_search, name="libraryebook_search"),
     path("registration",registration,name='registration'),
@@ -21,7 +21,6 @@ urlpatterns = [
     path("get_pincodes", get_pincodes, name="get_pincodes"),
     path("get_membership_details", get_membership_details, name="get_membership_details"),
     path("get-membership-code/",get_membership_code, name="get_membership_code"),
-
     
     # membership approval
     path("membership_approval", membership_approval, name="membership_approval"),

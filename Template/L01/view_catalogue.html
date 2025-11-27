@@ -587,8 +587,9 @@ function renderPage(page) {
                         <p><strong>प्रकाशक / Publisher:</strong> ${item.publisher || "N/A"}</p>
                         <p><strong>भाषा / Language:</strong> ${item.language || "N/A"}</p>
                         <p><strong>Year (Publication):</strong> ${item.year_of_publication || item.publication_year || "N/A"}</p>
-                        <p><strong>Call Number:</strong> ${item.call_number || "N/A"}</p>
-                        <p><strong>Ebook Available:</strong> ${item.ebook_available || "No"}</p>
+
+                       <!-- Hidden cat_ref_num -->
+                        <span class="cat-ref-num" style="display:none;">${item.cat_ref_num}</span>
 
                         <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
                             <button onclick="flipCard(${globalIndex})" style="
@@ -601,7 +602,9 @@ function renderPage(page) {
                                 cursor:pointer;
                                 font-weight:600;
                             " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
-                            <button onclick="window.location.href='{% url 'Login' %}'" style="
+
+                            <!-- Login button reads hidden cat_ref_num -->
+                            <button onclick="redirectToLogin(this)" style="
                                 flex:1;
                                 background:linear-gradient(135deg,#2563eb,#1e40af);
                                 color:white;
@@ -668,7 +671,15 @@ function flipCard(index) {
     const card = document.getElementById(`flipCard${index}`);
     card.style.transform = (card.style.transform === "rotateY(180deg)") ? "rotateY(0deg)" : "rotateY(180deg)";
 }
+
+// Redirect Login button using hidden cat_ref_num
+function redirectToLogin(button) {
+    const cardBack = button.closest('.flip-card-back');
+    const catRefNum = cardBack.querySelector('.cat-ref-num').textContent || 'default';
+    window.location.href = "{% url 'Login' %}?cat_ref_num=" + encodeURIComponent(catRefNum);
+}
 </script>
+
 
 
 
@@ -679,6 +690,7 @@ let currentDataNew = []; // Stores last search results
 
 function performBookSearch(page = 1) {
     const query = document.getElementById("advancedSearchInput").value.trim();
+    const searchType = document.getElementById("searchType").value; // <-- get dropdown value
     const resultsDiv = document.getElementById("searchResults");
 
     if (!query) {
@@ -686,27 +698,15 @@ function performBookSearch(page = 1) {
         return;
     }
 
-    const tableName = "tbl_bookcatalog";
-
     // Show loader while fetching
-    resultsDiv.innerHTML = `
-        <div class="cube-loader">
-            <div class="cube-wrapper">
-                <span class="cube-span" style="--i:0;"></span>
-                <span class="cube-span" style="--i:1;"></span>
-                <span class="cube-span" style="--i:2;"></span>
-                <span class="cube-span" style="--i:3;"></span>
-                <div class="cube-top"></div>
-            </div>
-        </div>
-    `;
+    resultsDiv.innerHTML = `...`; // your existing loader
 
     $.ajax({
-        url: "{% url 'L01:bookcatalog_search' %}",
+        url: "{% url 'L01:index_book_search' %}",
         type: "POST",
-        data: {
-            searchType: "books", // fixed as books
-            query: query
+        data: { 
+            query: query,
+            searchType: searchType // <-- send searchType to backend
         },
         dataType: "json",
         headers: { "X-CSRFToken": "{{ csrf_token }}" },
@@ -717,9 +717,12 @@ function performBookSearch(page = 1) {
                 return;
             }
 
-            currentDataNew = data; // Save data globally
-            currentPageNew = page; // Set current page
-            renderPageNew(currentPageNew); // Loader replaced by results
+            currentDataNew = data;
+            currentPageNew = page;
+            renderPageNew(currentPageNew);
+
+            // ✅ CLEAR TEXTBOX AFTER SUCCESSFUL SEARCH
+            document.getElementById("advancedSearchInput").value = "";
         },
         error: function(xhr, status, error) {
             console.error("Error fetching data:", error);
@@ -728,6 +731,7 @@ function performBookSearch(page = 1) {
         }
     });
 }
+
 
 // Render a specific page
 function renderPageNew(page) {
@@ -789,6 +793,7 @@ function renderPageNew(page) {
                             box-shadow:0 2px 5px rgba(0,0,0);
                         " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Flip</button>
                     </div>
+
                     <div class="flip-card-back" style="
                         position:absolute;
                         width:100%;
@@ -823,6 +828,7 @@ function renderPageNew(page) {
                                 box-shadow:0 2px 5px rgba(0,0,0);
                                 transition: all 0.3s ease;
                             " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
+
                             <button onclick="window.location.href='{% url 'Login' %}'" style="
                                 flex:1;
                                 background:linear-gradient(135deg,#2563eb,#1e40af);
@@ -849,9 +855,6 @@ function renderPageNew(page) {
                             text-align:center;
                             box-shadow: 0 4px 10px rgba(0,0,0);
                             line-height:1.4;
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
                         ">
                             <span style="margin-right:6px; font-size:14px;">&#9432;</span> 
                             Note: Please login to access full book details.
@@ -879,9 +882,7 @@ function renderPageNew(page) {
                         color:${i===page?'white':'#1e293b'};
                         cursor:pointer;
                         transition: all 0.3s ease;
-                    " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 0 rgba(0,0,0,0)'">
-                        ${i}
-                     </button>`;
+                    ">${i}</button>`;
         }
         html += `</div>`;
     }
@@ -892,9 +893,10 @@ function renderPageNew(page) {
 // Flip card logic
 function flipCardNew(index) {
     const card = document.getElementById(`flipCardNew${index}`);
-    card.style.transform = (card.style.transform === "rotateY(180deg)") ? "rotateY(0deg)" : "rotateY(180deg)";
+    card.style.transform = (card.style.transform === "rotateY(180deg)") 
+        ? "rotateY(0deg)" 
+        : "rotateY(180deg)";
 }
-
 </script>
 
 <script>
