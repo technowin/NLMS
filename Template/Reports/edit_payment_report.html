@@ -34,10 +34,10 @@
                                     <label class="form-label">From Date / पासून दिनांक</label>
                                     <input type="text" class="form-control" value="{{ report.from_date|date:'d-m-Y' }}" readonly>
                                 </div>
-                                <div class="col-12">
+                                {% comment %} <div class="col-12">
                                     <label class="form-label">To Date / पर्यंत दिनांक</label>
                                     <input type="text" class="form-control" value="{{ report.to_date|date:'d-m-Y' }}" readonly>
-                                </div>
+                                </div> {% endcomment %}
                                 <div class="col-12">
                                     <label class="form-label">Total Amount / एकूण रक्कम</label>
                                     <input type="text" class="form-control" value="₹{{ report.total_amount }}" readonly>

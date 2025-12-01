@@ -1,0 +1,393 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+
+<!-- Popup Animation -->
+<style>
+ /* Container styling */
+    .book-detail-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 25px;
+        background: #fefefe;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #1e293b;
+        animation: fadeIn 0.8s ease-in-out;
+    }
+
+    .book-detail-container h2 {
+        margin-bottom: 25px;
+        text-align: center;
+        color: #2563eb;
+    }
+
+    .book-detail-flex {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    /* Image container */
+    .book-image-container {
+        flex: 1 1 250px;
+        text-align: center;
+    }
+
+    .book-image-container img {
+        width: 100%;
+        max-height: 350px;  /* Shorter height */
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        transition: transform 0.6s;
+    }
+
+    .book-image-container button {
+        margin-top: 12px;
+        padding: 10px 20px;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .book-image-container button:hover {
+        background-color: #1e40af;
+        transform: scale(1.05);
+    }
+
+    /* Info container */
+    .book-info-container {
+        flex: 2 1 500px;
+    }
+
+    .book-info-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .book-info-container th,
+    .book-info-container td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .book-info-container th {
+        width: 30%;
+        font-weight: 600;
+        color: #1e40af;
+    }
+
+    /* Back button */
+    .back-btn {
+        margin-top: 25px;
+        text-align: center;
+    }
+
+    .back-btn a {
+        text-decoration: none;
+        padding: 12px 25px;
+        background-color: #2563eb;
+        color: white;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .back-btn a:hover {
+        background-color: #1e40af;
+        transform: scale(1.05);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media screen and (max-width: 768px) {
+        .book-detail-flex {
+            flex-direction: column;
+        }
+
+        .book-image-container,
+        .book-info-container {
+            flex: 1 1 100%;
+        }
+
+        .book-image-container img {
+            max-height: 300px;
+        }
+    }
+
+</style>
+
+
+<!-- Store cat_ref_num hidden -->
+{% if book %}
+<input type="hidden" id="catRefNum" name="cat_ref_num" value="{{ book.cat_ref_num }}">
+{% else %}
+<input type="hidden" id="catRefNum" name="cat_ref_num" value="">
+{% endif %}
+
+<div class="book-detail-container">
+    <h2>{{ book.title|default:"Book Details" }}</h2>
+
+    <div class="book-detail-flex">
+        <!-- Book Images -->
+        <div class="book-image-container">
+            <img id="bookImage" src="{{ front_page_url }}" alt="Book Page">
+            <button id="flipBtn">Flip Page</button>
+        </div>
+
+        <!-- Book Details -->
+        <div class="book-info-container">
+            <table>
+                <tr><th>Subtitle:</th><td>{{ book.subtitle|default:"-" }}</td></tr>
+                <tr><th>Author:</th><td>{{ book.author|default:"-" }}</td></tr>
+                <tr><th>Other Authors:</th><td>{{ book.other_authors|default:"-" }}</td></tr>
+                <tr><th>Publisher:</th><td>{{ book.publisher|default:"-" }}</td></tr>
+                <tr><th>Edition:</th><td>{{ book.edition|default:"-" }}</td></tr>
+                <tr><th>ISBN/ISSN:</th><td>{{ book.isbn_issn|default:"-" }}</td></tr>
+                <tr><th>Language:</th><td>{{ book.language|default:"-" }}</td></tr>
+                <tr><th>Call Number:</th><td>{{ book.call_number|default:"-" }}</td></tr>
+                <tr><th>Cutter Number:</th><td>{{ book.cutter_number|default:"-" }}</td></tr>
+                <tr><th>Pages:</th><td>{{ book.pages|default:"-" }}</td></tr>
+                <tr><th>Ebook Available:</th><td>{{ book.ebook_available|default:"No" }}</td></tr>
+                <tr><th>Remarks:</th><td>{{ book.remarks|default:"-" }}</td></tr>
+                <tr><th>Keywords:</th><td>{{ book.keywords|default:"-" }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="back-btn">
+        <a href="{% url 'L01:view_catalogue_login_page' %}">Back to Catalog</a>
+    </div>
+</div>
+
+
+
+    <script>
+        // Open modal
+        document.querySelectorAll('.rule-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-modal');
+                document.querySelector(modalId).style.display = 'block';
+            });
+        });
+
+        // Close modal
+        document.querySelectorAll('.modal .close').forEach(span => {
+            span.addEventListener('click', () => {
+                span.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // Close modal on outside click
+        window.addEventListener('click', (e) => {
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (e.target == modal) modal.style.display = 'none';
+            });
+        });
+    </script>
+
+<script>
+    // Flip Book
+    function flipBook(flipId) {
+        const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
+        flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
+    }
+</script>
+
+
+<script>
+    function zoomImage(img) {
+        const modal = document.getElementById("zoomModal");
+        const modalImg = document.getElementById("zoomedImage");
+
+        // Core fields
+        const modalAuthor = document.getElementById("zoomBookAuthor");
+        const modalTitle = document.getElementById("zoomBookTitle");
+        const modalSubtitle = document.getElementById("zoomBookSubtitle");
+        const modalPublisher = document.getElementById("zoomBookPublisher");
+        const modalISBN = document.getElementById("zoomBookISBN");
+        const modalEdition = document.getElementById("zoomBookEdition");
+        const modalSubject = document.getElementById("zoomBookSubject");
+        const modalLanguage = document.getElementById("zoomBookLanguage");
+        const modalPlace = document.getElementById("zoomBookPlace");
+        const modalYear = document.getElementById("zoomBookYear");
+        const modalPages = document.getElementById("zoomBookPages");
+        const modalRemarks = document.getElementById("zoomBookRemarks");
+        const modalDescription = document.getElementById("zoomBookDescription");
+
+        // Show modal
+        modal.style.display = "flex";
+        modal.classList.add("show");
+
+        // Assign values safely
+        modalImg.src = img.src;
+        modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
+        modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
+        modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
+        modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
+        modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
+        modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
+        modalSubject.textContent = img.getAttribute('data-subject') || "N/A";
+        modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
+        modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
+        modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
+        modalPages.textContent = img.getAttribute('data-pages') || "N/A";
+        modalRemarks.textContent = img.getAttribute('data-remarks') || "";
+        modalDescription.textContent = img.getAttribute('data-description') || "";
+    }
+
+    function closeZoom() {
+        const modal = document.getElementById("zoomModal");
+        modal.style.display = "none";
+        modal.classList.remove("show");
+    }
+
+    // Close modal on click outside image
+    document.getElementById("zoomModal").addEventListener("click", function (e) {
+        if (e.target.id === "zoomModal") {
+            closeZoom();
+        }
+    });
+</script>
+
+<!-- AJAX Script -->
+{% comment %} <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> {% endcomment %}
+ <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const catRefInput = document.getElementById("catRefNum");
+
+    if (catRefInput) {
+        const catRef = catRefInput.value;
+        console.log("Book Reference Number:", catRef);
+
+        // You can use it here for API calls, redirects, logs etc.
+    } else {
+        console.error("cat_ref_num input field not found!");
+    }
+});
+</script>
+
+<script>
+$(document).ready(function() {
+    const catRefNum = $("#catRefNum").val();
+
+    if (catRefNum) {
+        $.ajax({
+            url: "{% url 'L01:book_info_login' %}",  // Call your book_info_login view
+            type: "GET",
+            data: { cat_ref_num: catRefNum },
+            dataType: "json",
+            success: function(data) {
+                if (data.success) {
+                    const book = data.book;
+
+                    // Populate hidden input
+                    $("#catRefNum").val(book.cat_ref_num);
+
+                    // Populate title
+                    $(".book-detail-container h2").text(book.title || "Book Details");
+
+                    // Populate images
+                    const imagesDiv = $(".book-detail-container div:first-child");
+                    imagesDiv.html("");
+                    if (book.front_page_url) imagesDiv.append(`<img src="${book.front_page_url}" alt="Front Page" style="width:100%; border-radius:8px; margin-bottom:10px;">`);
+                    if (book.last_page_url) imagesDiv.append(`<img src="${book.last_page_url}" alt="Last Page" style="width:100%; border-radius:8px;">`);
+
+                    // Populate table
+                    const table = $(".book-detail-container table");
+                    table.html(`
+                        <tr><th>Subtitle:</th><td>${book.subtitle || "-"}</td></tr>
+                        <tr><th>Author:</th><td>${book.author || "-"}</td></tr>
+                        <tr><th>Other Authors:</th><td>${book.other_authors || "-"}</td></tr>
+                        <tr><th>Publisher:</th><td>${book.publisher || "-"}</td></tr>
+                        <tr><th>Edition:</th><td>${book.edition || "-"}</td></tr>
+                        <tr><th>ISBN/ISSN:</th><td>${book.isbn_issn || "-"}</td></tr>
+                        <tr><th>Language:</th><td>${book.language || "-"}</td></tr>
+                        <tr><th>Call Number:</th><td>${book.call_number || "-"}</td></tr>
+                        <tr><th>Cutter Number:</th><td>${book.cutter_number || "-"}</td></tr>
+                        <tr><th>Pages:</th><td>${book.pages || "-"}</td></tr>
+                        <tr><th>Material:</th><td>${book.material || "-"}</td></tr>
+                        <tr><th>Ebook Available:</th><td>${book.ebook_available || "No"}</td></tr>
+                        <tr><th>Remarks:</th><td>${book.remarks || "-"}</td></tr>
+                        <tr><th>Keywords:</th><td>${book.keywords || "-"}</td></tr>
+                    `);
+                } else {
+                    alert("Error fetching book data");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX error:", error);
+            }
+        });
+    }
+});
+</script>
+
+<script>
+    const frontPage = "{{ front_page_url }}";
+    const lastPage = "{{ last_page_url }}";
+    const bookImage = document.getElementById("bookImage");
+    const flipBtn = document.getElementById("flipBtn");
+
+    let showingFront = true;
+
+    flipBtn.addEventListener("click", () => {
+        bookImage.style.transform = "rotateY(90deg)";
+        setTimeout(() => {
+            bookImage.src = showingFront ? lastPage : frontPage;
+            bookImage.style.transform = "rotateY(0deg)";
+            showingFront = !showingFront;
+        }, 300);
+    });
+</script>
+
+{% endblock %}
+
+
+
+
+{% block extra_javascript %}
+
+{% include "bootstrap/partials/syntax-highlight.html" %}
+
+<!-- Third party js -->
+<script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
+<script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
+<script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
+<!-- Third party js ends -->
+
+<script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
+
+<!-- Init js -->
+<script src="{% static 'js/pages/demo.typehead.js' %}"></script>
+<script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
+<!-- Init js end -->
+
+<!-- Selectize.js JS -->
+<script src="{% static 'js/selectize.min.js' %}"></script>
+<script src="{% static 'js/vendor/select2.min.js' %}"></script>
+
+
+
+
+
+{% endblock %}

@@ -3558,6 +3558,7 @@ def index_book_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+
 @csrf_exempt
 def libraryebook_search(request):
     try:
@@ -4024,7 +4025,8 @@ def get_member_detail(request, membership_code):
         return JsonResponse({"error": "Member not found"}, status=404)
     except Exception as e:
         return JsonResponse({"error": "An unexpected error occurred.", "details": str(e)}, status=500)
-    
+
+@login_required
 def membership_dashboard(request):
     # Get username from session
     username = request.session.get('username')
@@ -4162,3 +4164,269 @@ def get_borrowing_history(request):
         return JsonResponse({'success': False, 'error': 'Membership not found'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+    
+def view_catalogue_login_page(request):
+    try:
+        # Get username from session safely
+        username = request.session.get('username')
+        
+        # Initialize member variables
+        member_id = None
+        member_details = None
+        library_name_from_session = None
+        library_address = None
+        library_phone = None
+        user_image_url = None
+        transaction_details = []
+        
+        # Get library_code from session
+        library_code_from_session = request.session.get('library_db', None)
+        
+        # If library_code is provided in session, get library details from tbl_librarymasterL01
+        if library_code_from_session:
+            try:
+                library = tbl_librarymasterL01.objects.filter(library_code__iexact=library_code_from_session).first()
+                if library:
+                    library_name_from_session = library.library_name
+                    library_address = library.location
+                    library_phone = library.contact_phone
+            except Exception:
+                pass
+        
+        # If username exists, get the member details from tbl_membershipdetails using user_id field
+        if username:
+            try:
+                # Get the member using user_id field which matches the username from session
+                member = MembershipDetails.objects.get(user_id=username)
+                member_id = member.id
+                
+                # Also store member_id in session for future use
+                request.session['member_id'] = member_id
+                
+                # Get user image from tbl_documentdetails
+                try:
+                    document = DocumentDetails.objects.filter(
+                        membership_id=member_id, 
+                        isactive=1
+                    ).first()
+                    if document and document.file_path:
+                        user_image_url = document.file_path
+                except Exception:
+                    pass
+                
+                # Get transaction details from tbl_circulation_transaction
+                try:
+                    transactions = CirculationTransaction.objects.filter(
+                        member_id=member_id
+                    ).select_related('catalog')  # Join with BookCatalog table
+                    
+                    for transaction in transactions:
+                        if transaction.catalog:  # Check if catalog exists
+                            transaction_details.append({
+                                'book_title': transaction.catalog.title or 'Not available',
+                                'author': transaction.catalog.author or 'Not available',
+                                'issue_date': transaction.issue_date.strftime('%d-%b-%Y') if transaction.issue_date else 'Not set',
+                                'due_date': transaction.due_date.strftime('%d-%b-%Y') if transaction.due_date else 'Not set',
+                                'return_date': transaction.return_date.strftime('%d-%b-%Y') if transaction.return_date else 'Not returned',
+                                'due_date_raw': transaction.due_date  # for comparison
+                            })
+                except Exception:
+                    pass
+                
+                # Prepare member details for template
+                member_details = {
+                    'id': member.id,
+                    'name': f"{member.first_name or ''} {member.middle_name or ''} {member.last_name or ''}".strip(),
+                    'address': member.local_address or 'Not available',
+                    'mobile_no': member.mobile_no or 'Not available',
+                    'membership_from': member.from_date.strftime('%d-%b-%Y') if member.from_date else 'Not set',
+                    'membership_to': member.to_date.strftime('%d-%b-%Y') if member.to_date else 'Not set',
+                    'membership_code': member.membership_code or 'Not available',
+                    'library_name': library_name_from_session or member.library_name or 'Not available',
+                    'email': member.email or 'Not available',
+                    'user_id': member.user_id,
+                    'library_address': library_address or 'Not available',
+                    'library_phone': library_phone or 'Not available',
+                    'user_image_url': user_image_url
+                }
+                
+            except MembershipDetails.DoesNotExist:
+                pass
+            except Exception:
+                pass
+        
+        # Prepare context with media URL, username, member_id and member_details
+        context = {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "username": username,
+            "member_id": member_id,
+            "member_details": member_details,
+            "library_name_from_session": library_name_from_session,
+            "transaction_details": transaction_details,
+            "current_date": date.today(),  # your existing variable
+            "today": date.today()          # added for due_date comparison
+        }
+        
+        # Check if this is an AJAX request for library card data
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('member_id'):
+            member_id = (
+                request.GET.get("member_id") or 
+                request.POST.get("member_id") or
+                member_id or
+                request.session.get('member_id')
+            )
+
+            library_code = request.session.get('library_db', None)
+
+            if not member_id:
+                return JsonResponse({"status": "error", "message": "Member ID missing"})
+
+            try:
+                member = MembershipDetails.objects.get(id=member_id)
+                
+                if not library_code:
+                    library_code = (
+                        getattr(member, 'library_name', '') or
+                        getattr(member, 'membership_code', '')
+                    ).strip()
+
+                if not library_code:
+                    return JsonResponse({
+                        "status": "error", 
+                        "message": "Library code missing"
+                    })
+
+                library = tbl_librarymasterL01.objects.filter(library_code__iexact=library_code).first()
+
+                if library:
+                    return JsonResponse({
+                        "status": "success",
+                        "library_code": library_code,
+                        "library_name": library.library_name,
+                        "library_address": getattr(library, "location", "Not available"),
+                        "library_phone": getattr(library, "contact_phone", "Not available"),
+                    })
+                else:
+                    return JsonResponse({
+                        "status": "success",
+                        "library_code": library_code,
+                        "library_name": member_details.get('library_name', 'Not available') if member_details else 'Not available',
+                        "library_address": "Not available",
+                        "library_phone": "Not available",
+                    })
+
+            except MembershipDetails.DoesNotExist:
+                return JsonResponse({
+                    "status": "error", 
+                    "message": "Invalid Member ID"
+                })
+            except Exception as e:
+                return JsonResponse({
+                    "status": "error", 
+                    "message": f"Server error: {str(e)}"
+                })
+        
+        # Regular page render
+        return render(request, "L01/view_catalogue_login_page.html", context)
+        
+    except KeyError:
+        return render(request, "L01/view_catalogue_login_page.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "username": None,
+            "member_id": None,
+            "member_details": None,
+            "library_name_from_session": None,
+            "transaction_details": [],
+            "current_date": date.today(),
+            "today": date.today()
+        })
+        
+    except Exception:
+        return render(request, "L01/view_catalogue_login_page.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "username": None,
+            "member_id": None,
+            "member_details": None,
+            "library_name_from_session": None,
+            "transaction_details": [],
+            "current_date": date.today(),
+            "today": date.today()
+        })
+
+        
+def book_info_login(request):
+    try:
+        # Get cat_ref_num from GET params
+        cat_ref_num = request.GET.get("cat_ref_num")
+        if not cat_ref_num:
+            return render(request, "L01/error.html", {"message": "cat_ref_num not provided"})
+
+        # Fetch the book object
+        book = get_object_or_404(BookCatalog.objects.using('L01'), cat_ref_num=cat_ref_num)
+
+        # Build URLs for front and last pages
+        front_page_url = request.build_absolute_uri(f"/media/{book.front_page_photo}") if book.front_page_photo else ""
+        last_page_url = request.build_absolute_uri(f"/media/{book.last_page_photo}") if book.last_page_photo else ""
+
+        # Pass data to template
+        context = {
+            "book": book,
+            "front_page_url": front_page_url,
+            "last_page_url": last_page_url,
+        }
+
+        return render(request, "L01/book_info_login.html", context)
+
+    except Exception as e:
+        print(f"Error in book_info_login: {e}")
+        return render(request, "L01/error.html", {"message": "Something went wrong"})
+    
+@login_required
+def save_eod_log(request):
+    try:
+        if request.method == "POST":
+
+            # Step 1: Get all returned transaction IDs
+            all_ids_raw = request.POST.get("all_ids", "")
+            all_ids = [int(x) for x in all_ids_raw.split(",") if x]
+
+            # Step 2: Validation: every book MUST be checked
+            for tid in all_ids:
+                if not request.POST.get(f"shelved_{tid}"):
+                    return messages.error(("Please confirm that all books are put on shelf and then try again."))
+                    # return JsonResponse({
+                    #     "success": False,
+                    #     "error": "Please confirm that all books are put on shelf and then try again."
+                    # })
+
+            # Step 3: Create master EOD entry
+            today = timezone.now().date()
+            eod_log = EODLog.objects.create(
+                date=today,
+                is_active=True,
+                created_by=request.user,
+                updated_by=request.user,
+            )
+
+            # Step 4: Insert details for each returned book 
+            for tid in all_ids:
+                ciculation_id = get_object_or_404(CirculationTransaction,id =tid)
+                catalog_id = ciculation_id.catalog.cat_ref_num
+                barcode = request.POST.get(f"barcode_{tid}", "")
+                is_shelved = 1  # all must be checked to reach here
+
+                cat_obj = BookCatalog.objects.get(cat_ref_num=catalog_id)
+
+                BookReturnLog.objects.create(
+                    eod_log=eod_log,
+                    cat_rem_num=cat_obj,
+                    barcode=barcode,
+                    is_shelved=is_shelved,
+                    created_by=request.user,
+                    updated_by=request.user,
+                )
+
+            return redirect("payment_report")
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})

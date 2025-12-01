@@ -92,14 +92,13 @@ def authenticate_from_db(request, username, password, db_alias):
 
 @csrf_exempt
 def Login(request):
-
+    library_code = request.session.get('library_db', None)
     if request.method == "GET":
-
         next_url = request.GET.get("next", "")
+        cat_ref_num = request.GET.get("cat_ref_num", "")
 
-        library_code = request.session.get('library_db', None) 
         library = LibraryMaster.objects.using('default').filter(
-            is_active=1, 
+            is_active=1,
             library_code=library_code
         ).first()
 
@@ -109,14 +108,17 @@ def Login(request):
             'library_code': library_code,
             'registration_url': membership_url,
             'next': next_url,
+            'cat': cat_ref_num,
         })
 
     if request.method == "POST":
-
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
         next_url = request.POST.get('next')
+
+        cat_ref_num = request.POST.get("cat")
+
         db_alias = None
 
         if next_url:
@@ -154,7 +156,7 @@ def Login(request):
                 membership_id = membership.id
 
             # --------------------------------------------------------
-            # membership_id == 8 → give access
+            # membership_id == 8 → Full access
             # --------------------------------------------------------
             if membership_id == 8:
                 if next_url:
@@ -163,27 +165,36 @@ def Login(request):
                     # UPSC (L01)
                     if db_alias == "L01":
                         return redirect('L01:chapters_index', topic_id=1)
-
                     # MPSC (default)
                     if db_alias == "default":
                         return redirect('L01:mpsc_chapters_index', topic_id=1)
 
+            # --------------------------------------------------------
+            # membership_id != 8 → redirect to book_info_login WITH cat_ref_num
+            # --------------------------------------------------------
+            elif membership_id is not None and membership_id != 8:
+                if cat_ref_num:
+                    redirect_url = f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}"
+                    return redirect(redirect_url)
+                else:
+                    return redirect('L01:book_info_login')  # fallback
+
+            # --------------------------------------------------------
+            # membership_id missing (None)
+            # --------------------------------------------------------
             else:
                 request.session.set_expiry(0)  # Browser close
-            # return redirect(f'/menu_admin?entity=menu&type=i')
-            # return redirect(f'LMS_Dashboard')
+                return redirect('LMS_Dashboard')
+
+            # If role-based redirect still needed, keeping your original logic
             if str(user.role_id) == '3':
                 return redirect('L01:membership_dashboard')
             else:
-                return redirect(f'LMS_Dashboard')
-            # return render(request,'bootstrap/landing.html')
+                return redirect('LMS_Dashboard')
+
         else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
-        
-# def logoutView(request):
-#     logout(request)
-#     return redirect("Account")  
 
 def logoutView(request):
     library_code = request.session.get('library_db', None)

@@ -43,6 +43,7 @@ class="authentication-bg position-relative"
 
                         <form method="POST" action="Login" novalidate>
                             <input type="hidden" name="next" value="{{ next }}">
+                            <input type="hidden" name="cat" value="{{ cat }}">
                               <div class="mb-3">
                                 {% comment %} <label for="emailaddress" class="form-label">Email address</label> {% endcomment %}
                                 <label for="emailaddress" class="form-label">Username</label>

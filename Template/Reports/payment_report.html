@@ -558,8 +558,13 @@
                     <form id="paymentReportForm">
                     <div class="row g-3">
 
+                        <div class="col-md-12">
+                        <label class="form-label fw-semibold">Date / दिनांक</label>
+                        <input type="date" id="fromDate" name="from_date" class="form-control shadow-sm" required>
+                        </div>
+
                         <!-- From Date -->
-                        <div class="col-md-6">
+                        {% comment %} <div class="col-md-6">
                         <label class="form-label fw-semibold">From Date / दिनांक पासून</label>
                         <input type="date" id="fromDate" name="from_date" class="form-control shadow-sm" required>
                         </div>
@@ -568,14 +573,14 @@
                         <div class="col-md-6">
                         <label class="form-label fw-semibold">To Date / दिनांक पर्यंत</label>
                         <input type="date" id="toDate" name="to_date" class="form-control shadow-sm" required disabled>
-                        </div>
+                        </div> {% endcomment %}
 
                         <!-- Preview Button -->
                         <div class="col-12 text-center mt-3">
                         <button type="button" id="previewBtn" class="btn btn-info px-4">
                             <i class="bi bi-eye"></i> Preview / पूर्वावलोकन
                         </button>
-                        </div>
+                        </div> 
 
                     </div>
                     </form>
@@ -628,7 +633,7 @@
                         <form id="generateReportForm" method="POST" action="{% url 'payment_report' %}" class="d-inline">
                             {% csrf_token %}
                             <input type="hidden" name="from_date" id="hiddenFromDate">
-                            <input type="hidden" name="to_date" id="hiddenToDate">
+                            {% comment %} <input type="hidden" name="to_date" id="hiddenToDate"> {% endcomment %}
                             <input type="hidden" name="total_amount" id="hiddenTotalamount">
                             <button type="button" id="generateBtn" class="btn btn-success px-4">
                                 <i class="bi bi-file-earmark-text"></i> Generate Report / अहवाल तयार करा
@@ -784,6 +789,19 @@
     </script>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateInput = document.getElementById("fromDate");
+
+            // Get today's date in YYYY-MM-DD format
+            const today = new Date().toISOString().split("T")[0];
+
+            // Set default value
+            dateInput.value = today;
+        });
+    </script>
+
+
+    <script>
         $(document).ready(function () {
             // Clone the header row for filters
             $('#paymentReportTable thead tr')
@@ -866,8 +884,9 @@
     
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            debugger;
             const fromDate = document.getElementById("fromDate");
-            const toDate = document.getElementById("toDate");
+            //const toDate = document.getElementById("toDate");
             const previewBtn = document.getElementById("previewBtn");
             const generateBtn = document.getElementById("generateBtn");
 
@@ -876,8 +895,8 @@
                 toDate.disabled = !fromDate.value;
 
                 // Reset toDate when fromDate changes
-                toDate.value = "";
-                toDate.min = fromDate.value;
+                //toDate.value = "";
+                //toDate.min = fromDate.value;
             });
 
             // Validate To Date (must be greater than From Date)
@@ -906,17 +925,17 @@
                     });
                     return false;
                 }
-                if (!toDate.value) {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "दिनांक निवडा!",
-                        text: "कृपया ‘दिनांक पर्यंत’ निवडा.",
-                        confirmButtonText: "ठीक आहे",
-                        confirmButtonColor: "#3085d6"
-                    });
-                    return false;
-                }
-                return true;
+              //  if (!toDate.value) {
+              //      Swal.fire({
+              //          icon: "warning",
+              //          title: "दिनांक निवडा!",
+              //          text: "कृपया ‘दिनांक पर्यंत’ निवडा.",
+              //          confirmButtonText: "ठीक आहे",
+              //          confirmButtonColor: "#3085d6"
+              //      });
+              //      return false;
+              //  }
+              //  return true;
             }
             
             // Generate Report Button
@@ -925,7 +944,7 @@
                     Swal.fire({
                         icon: "success",
                         title: "अहवाल तयार करत आहे...",
-                        text: `कालावधी: ${fromDate.value} ते ${toDate.value}`,
+                        text: `कालावधी: ${fromDate.value}`,
                         showConfirmButton: false,
                         timer: 2000
                     });
@@ -939,9 +958,9 @@
         $(document).ready(function () {
             $("#previewBtn").click(function () {
                 const fromDate = $("#fromDate").val();
-                const toDate = $("#toDate").val();
+               // const toDate = $("#toDate").val();
 
-                if (!fromDate || !toDate) {
+                if (!fromDate ) {
                     Swal.fire({
                         icon: "warning",
                         title: "दिनांक निवडा!",
@@ -956,7 +975,6 @@
                     type: "POST",
                     data: {
                         from: fromDate,
-                        to: toDate,
                         csrfmiddlewaretoken: '{{ csrf_token }}'
                     },
                     dataType: "json",
@@ -964,6 +982,7 @@
                         $("#previewBtn").prop("disabled", true).html("Loading...");
                     },
                     success: function (data) {
+                        debugger;
                         $("#previewBtn").prop("disabled", false).html('<i class="bi bi-eye"></i> Preview / पूर्वावलोकन');
 
                         if (data.error || data.message) {
@@ -1023,7 +1042,7 @@
 
                         // Fill hidden form fields
                         $("#hiddenFromDate").val(fromDate);
-                        $("#hiddenToDate").val(toDate);
+                     //   $("#hiddenToDate").val(toDate);
                         $("#hiddenTotalamount").val(overall.toFixed(2));
 
                         // ✅ Store dynamic summary JSON

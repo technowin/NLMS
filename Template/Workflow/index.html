@@ -24,18 +24,75 @@
 
 {% block content %}
 
-  <section class="hero">
-    <h1 class="hero-title">
-      Library Management System<br>Coming Soon!
-    </h1>
-    <p class="hero-subtitle">
-      A smarter way to handle performance reviews, feedback, and growth — all in one powerful platform. We're building something awesome, just for you.
-    </p>
-    <div class="hero-buttons">
-      <a href="#" class="btn btn-primary disabled" aria-disabled="true">Launching Soon</a>
-      <a href="#" class="btn btn-outline">Stay Tuned</a>
+<section class="hero">
+  <h1 class="hero-title">
+    Library Management System<br>Coming Soon!
+  </h1>
+  <p class="hero-subtitle">
+    A smarter way to handle performance reviews, feedback, and growth — all in one powerful platform. We're building something awesome, just for you.
+  </p>
+  <div class="hero-buttons">
+    <a href="#" class="btn btn-primary disabled" aria-disabled="true">Launching Soon</a>
+    <a href="#" class="btn btn-outline">Stay Tuned</a>
+
+    <!-- New Button -->
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#todayTasksModal">
+      Today Tasks
+    </button>
+  </div>
+</section>
+
+  <div class="modal fade" id="todayTasksModal" tabindex="-1" aria-labelledby="todayTasksLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="todayTasksLabel">Today's Returned Books</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" action="{% url 'L01:save_eod_log' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% if returned_books %}
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Book Name</th>
+                <th>Put on Shelf?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in returned_books %}
+              <tr>
+                <td>{{ t.catalog.title }}</td>
+                <td>
+                  <input type="checkbox" name="shelved_{{ t.id }}" value="1">
+                  <input type="hidden" name="catalog_{{ t.id }}" value="{{ t.catalog.id }}">
+                  <input type="hidden" name="barcode_{{ t.id }}" value="{{ t.barcode }}">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Hidden list of all circulation transaction IDs -->
+          <input type="hidden" name="all_ids" value="{% for t in returned_books %}{{ t.id }},{% endfor %}">
+          {% else %}
+          <p>No books returned today.</p>
+          {% endif %}
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+
+      </form>
+
     </div>
-  </section>
+  </div>
+</div>
 
 
 

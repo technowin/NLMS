@@ -1,4 +1,4 @@
-{% extends "Shared/landingPageLayout.html" %}
+{% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
 
 {% block content %}
@@ -86,6 +86,188 @@
               0 0 20px hsl(176.61, 42.28%, 40.7%),
               0 0 30px #323232,
               0 0 40px hsl(176.61, 42.28%, 40.7%);
+}
+
+/* ================== MAIN CARD WRAPPER ================== */
+.library-card-wrapper {
+    max-width: 880px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #e6d785ff; /* soft golden yellow */
+    border-radius: 18px;
+    border: 1px solid #070707ff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ================== HEADER ================== */
+.library-card-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #000000ff;
+    margin-bottom: 5px;
+}
+
+.nmmc-logo {
+    width: 75px;
+}
+
+.nmmc-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #4a3a00;
+    letter-spacing: 0.5px;
+}
+
+/* ================== LIBRARY NAME ================== */
+.library-name-section h3 {
+    text-align: center;
+    font-size: 21px;
+    margin: 10px 0 20px;
+    color: #0011ffff;
+    font-weight: bold;
+}
+
+/* ================== USER INFO SECTION ================== */
+.library-user-section {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    background: #fff9df;
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid #e5d896;
+    box-shadow: inset 0 1px 6px rgba(0,0,0);
+}
+
+/* Photo */
+.library-user-photo img {
+    width: 125px;
+    height: 145px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 3px solid #d1b861;
+    box-shadow: 0 3px 8px rgba(0,0,0);
+}
+
+/* Details */
+.library-user-details {
+    line-height: 1.6;
+}
+
+.library-user-details p {
+    margin: 2px 0;
+    font-size: 17px;
+    color: #4a3e00;
+}
+
+.library-user-details strong {
+    color: #6a5700;
+    font-weight: 600;
+}
+
+/* ================== TABLE STYLING ================== */
+.library-table-wrapper {
+    margin-top: 25px;
+}
+
+/* Smooth rounded container + soft outer shadow */
+.library-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #d9c37c;
+    box-shadow: 0 3px 12px rgba(0, 0, 0);
+    background: #fff;
+    animation: fadeIn 0.4s ease;
+}
+
+/* Golden Header - Gloss finish */
+.library-table th {
+    background: linear-gradient(135deg, #d4b44a, #b99414);
+    color: #000000ff;
+    padding: 14px;
+    font-size: 16px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #a07d12;
+}
+
+/* Body cells */
+.library-table td {
+    padding: 13px 14px;
+    background: #fffdf4;
+    border: 1px solid #000000ff;
+    color: #453900;
+    font-size: 15px;
+    transition: 0.25s ease;
+}
+
+/* Zebra striping */
+.library-table tr:nth-child(even) td {
+    background: #fff9df;
+    border: 1px solid #000000ff;
+}
+
+
+
+/* Highlight first column */
+.library-table td:first-child {
+    font-weight: 600;
+    color: #6b5200;
+}
+
+/* Smooth fade-in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ================== RESPONSIVE ================== */
+@media (max-width: 700px) {
+    .library-user-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .library-user-photo img {
+        margin-bottom: 10px;
+    }
+}
+
+.library-user-details p {
+    margin: 2px 0;
+    font-size: 17px;
+    color: #4a3e00;
+}
+
+.library-user-details strong {
+    color: #6a5700;
+    font-weight: 600;
+}
+
+.overdue-row td {
+    background-color: #f73434ff !important;  /* solid red */
+    color: white !important;
+}
+
+/* Overdue note above the table */
+.overdue-note {
+    margin-bottom: 15px;        /* Space below the note */
+    margin-top: 15px;
+    padding: 12px 15px;         /* Some padding inside */
+    background-color: #fff3f3;  /* Light red background */
+    border-left: 5px solid #f44336; /* Bold red stripe on the left */
+    color: #ff0400ff;             /* Dark red text */
+    font-size: 14px;            /* Slightly smaller font */
+    font-weight: 500;           /* Medium weight */
+    border-radius: 5px;         /* Rounded corners */
 }
 
 </style>
@@ -359,6 +541,87 @@
     <div id="searchResults" style="margin-top: 25px;"></div>
 </div>
 
+<!-- ================= Library Card Section ================= -->
+<div class="library-card-wrapper">
+
+    <!-- Top Section: Logo and NMMC Title -->
+    <div class="library-card-header">
+        <img src="{% static 'images/administrative/image_logo.png' %}" alt="NMMC Logo" class="nmmc-logo">
+        <h2 class="nmmc-title">नवी मुंबई महानगरपालिका</h2>
+    </div>
+
+    <!-- Hidden fields for JavaScript -->
+    <input type="hidden" id="memberId" value="{{ member_details.id }}">
+    <input type="hidden" id="libraryCode" value="{{ member_details.library_name }}">
+
+    <!-- Library Name from URL -->
+    <div class="library-name-section">
+        <div id="libraryNameDisplay">
+            <!-- Display library name from URL parameter -->
+            <h3><u>{{ member_details.library_name }}</u></h3>
+        </div>
+    </div>
+
+    <!-- ====== USER DETAILS + PHOTO ====== -->
+    <div class="library-user-section">
+
+        <div class="library-user-photo">
+            {% if member_details.user_image_url %}
+                <img src="{{ MEDIA_URL }}{{ member_details.user_image_url }}" alt="User Photo">
+            {% else %}
+                <img src="{% static 'images/demo_member.jpg' %}" alt="User Photo">
+            {% endif %}
+        </div>
+
+        <div class="library-user-details">
+            <p><strong>Name :</strong> {{ member_details.name }}</p>
+            <p><strong>Address :</strong> {{ member_details.address }}</p>
+            <p><strong>Mobile No :</strong> {{ member_details.mobile_no }}</p>
+            <p><strong>Membership Date :</strong>  
+                {{ member_details.membership_from }} to {{ member_details.membership_to }}
+            </p>
+            {% comment %} <p><strong>Member ID :</strong> {{ member_details.user_id }}</p> {% endcomment %}
+            <!-- Added library address and phone here -->
+            <p><strong>Library Address :</strong> {{ member_details.library_address }}</p>
+            {% comment %} <p><strong>Library Phone :</strong> {{ member_details.library_phone }}</p> {% endcomment %}
+        </div>
+
+    </div>
+    <!-- ================================== -->
+
+<div class="overdue-note">
+    <strong>Note:</strong> Rows highlighted in red indicate that the book's due date has passed. Returning these books late will incur a fine.
+</div>
+<!-- Book Transactions Table -->
+<div class="library-table-wrapper">
+    <table class="library-table display" id="transactionsTable" style="width:100%">
+        <thead>
+            <tr>
+                <th>Book Title</th>
+                <th>Author</th>
+                <th>Issued Date</th>
+                <th>Due Date</th>
+                <th>Return Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if transaction_details %}
+                {% for transaction in transaction_details %}
+                    <tr class="{% if transaction.due_date and transaction.due_date < today %}overdue-row{% endif %}">
+                        <td>{{ transaction.book_title }}</td>
+                        <td>{{ transaction.author }}</td>
+                        <td>{{ transaction.issue_date }}</td>
+                        <td>{{ transaction.due_date }}</td>
+                        <td>{{ transaction.return_date }}</td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+</div>
+
     <script>
         // Open modal
         document.querySelectorAll('.rule-btn').forEach(btn => {
@@ -588,9 +851,6 @@ function renderPage(page) {
                         <p><strong>भाषा / Language:</strong> ${item.language || "N/A"}</p>
                         <p><strong>Year (Publication):</strong> ${item.year_of_publication || item.publication_year || "N/A"}</p>
 
-                       <!-- Hidden cat_ref_num -->
-                        <span class="cat-ref-num" style="display:none;">${item.cat_ref_num}</span>
-
                         <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
                             <button onclick="flipCard(${globalIndex})" style="
                                 flex:1;
@@ -602,38 +862,6 @@ function renderPage(page) {
                                 cursor:pointer;
                                 font-weight:600;
                             " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
-
-                            <!-- Login button reads hidden cat_ref_num -->
-                            <button onclick="redirectToLogin(this)" style="
-                                flex:1;
-                                background:linear-gradient(135deg,#2563eb,#1e40af);
-                                color:white;
-                                border:none;
-                                padding:8px 14px;
-                                border-radius:6px;
-                                font-weight:600;
-                                cursor:pointer;
-                            " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">Login</button>
-                        </div>
-
-                        <div style="
-                            margin-top:10px;
-                            padding:10px 12px;
-                            background: linear-gradient(135deg, #d0ebff, #74c0fc);
-                            border-left: 4px solid #1c7ed6;
-                            border-radius:8px;
-                            color:black;
-                            font-size:13px;
-                            font-weight:bold;
-                            text-align:center;
-                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                        ">
-                            <span style="margin-right:6px; font-size:14px;">&#9432;</span> 
-                            Note: Please login to access full book details.
-                        </div>
                     </div>
                 </div>
             </div>
@@ -671,15 +899,7 @@ function flipCard(index) {
     const card = document.getElementById(`flipCard${index}`);
     card.style.transform = (card.style.transform === "rotateY(180deg)") ? "rotateY(0deg)" : "rotateY(180deg)";
 }
-
-// Redirect Login button using hidden cat_ref_num
-function redirectToLogin(button) {
-    const cardBack = button.closest('.flip-card-back');
-    const catRefNum = cardBack.querySelector('.cat-ref-num').textContent || 'default';
-    window.location.href = "{% url 'Login' %}?cat_ref_num=" + encodeURIComponent(catRefNum);
-}
 </script>
-
 
 
 
@@ -829,7 +1049,7 @@ function renderPageNew(page) {
                                 transition: all 0.3s ease;
                             " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
 
-                            <button onclick="window.location.href='/Login?cat_ref_num=${item.cat_ref_num}'" style="
+                            <button onclick="window.location.href='{% url 'Login' %}'" style="
                                 flex:1;
                                 background:linear-gradient(135deg,#2563eb,#1e40af);
                                 color:white;
@@ -841,7 +1061,6 @@ function renderPageNew(page) {
                                 box-shadow:0 2px 5px rgba(0,0,0);
                                 transition: all 0.3s ease;
                             " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">Login</button>
-
                         </div>
 
                         <div style="
@@ -971,48 +1190,75 @@ function toggleKeywordSection() {
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+$(document).ready(function() {
+    const memberId = $("#memberId").val();
+    const libraryCode = $("#libraryCode").val();
 
-    const catNum = localStorage.getItem("cat_ref_num");
-
-    if (catNum) {
-
-        // Store in hidden input (optional)
-        const hiddenField = document.getElementById("hiddenCatRef");
-        if (hiddenField) {
-            hiddenField.value = catNum;
-        }
-
-        console.log("Book Reference Number:", catNum);
-
-        // ==============================
-        // AJAX CALL (same format as your search)
-        // ==============================
-        $.ajax({
-            url: `/L01/book_info_login/${catNum}/`,
-            type: "GET",
-            dataType: "json",
-
-            success: function (data) {
-                console.log("Book Info:", data);
-
-                if (!data || Object.keys(data).length === 0) {
-                    Swal.fire("No Data", "No book details found.", "info");
-                    return;
-                }
-
-                // 👉 You can display book info here
-                // Example:
-                // $("#bookTitle").text(data.title);
-            },
-
-            error: function (xhr, status, error) {
-                console.error("Error fetching book info:", error);
-                Swal.fire("Error", "Something went wrong while loading book details.", "error");
-            }
-        });
-
+    if (!memberId || !libraryCode) {
+        return;
     }
+
+    $.ajax({
+        url: "{% url 'L01:view_catalogue_login_page' %}",
+        type: "GET",
+        data: { 
+            member_id: memberId,
+            library_code: libraryCode
+        },
+        success: function(response) {
+            console.log("AJAX RESPONSE:", response);
+            // No HTML updates - just making the AJAX call
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX ERROR:", status, error);
+            // No error messages displayed
+        }
+    });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+    $('#transactionsTable').DataTable({
+        "pageLength": 5,              // default items per page
+        "lengthMenu": [5, 10, 25, 50, 100], 
+        "ordering": true,             // enable sorting
+        "searching": true,            // enable search
+        "info": true,                 // show "Showing 1 to 5 of ..."
+        "paging": true,               // enable pagination
+        "language": {
+            "search": "Search transactions:",
+            "lengthMenu": "Show _MENU_ entries",
+            "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty": "Showing 0 to 0 of 0 entries",
+            "infoFiltered": "(filtered from _MAX_ total entries)",
+            "paginate": {
+                "first": "First",
+                "last": "Last",
+                "next": "Next",
+                "previous": "Previous"
+            }
+        }
+    });
+});
+</script>
+
+<script>
+$(document).ready(function () {
+
+    $("#transactionsTable tbody tr").each(function () {
+        const dueDateText = $(this).find("td:nth-child(4)").text().trim();
+
+        if (!dueDateText) return;
+
+        const dueDate = new Date(dueDateText);
+        const today = new Date();
+
+        if (dueDate < today) {
+            $(this).addClass("overdue-row");
+        }
+    });
+
 });
 </script>
 

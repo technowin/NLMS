@@ -8,7 +8,8 @@ urlpatterns = [
     path('upsc_ebook_index/', upsc_ebook_index, name='upsc_ebook_index'),
     path('topic_index/<int:section_no>/', topic_index, name='topic_index'),
     path('chapters_index/<int:topic_id>/',chapters_index, name='chapters_index'),
-
+    path("book_info_login/", book_info_login, name="book_info_login"),
+    path("view_catalogue_login_page",view_catalogue_login_page,name='view_catalogue_login_page'),
     path('mpsc_ebooks_index/', mpsc_ebook_index, name='mpsc_ebooks_index'),
     path('mpsc_topics_index/<int:section_no>/', mpsc_topics_index, name='mpsc_topics_index'),
     path('mpsc_chapters_index/<int:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
@@ -63,5 +64,7 @@ urlpatterns = [
 
     path('membership_dashboard/', membership_dashboard, name='membership_dashboard'),
     path('get-borrowing-history/',get_borrowing_history, name='get_borrowing_history'),
+    
+     path("save-eod-log/", save_eod_log, name="save_eod_log"),
     # ... your other URLs
 ]

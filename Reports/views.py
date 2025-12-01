@@ -62,6 +62,381 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 import calendar
 
+# @login_required
+# def payment_report(request):
+#     try:
+#         if request.user.is_authenticated ==True:                
+#             global user
+#             user = request.user.id
+#             library_code = request.session.get('library_db', None)
+#             username = request.session.get('username', None)
+#             user_id = request.session["user_id"]
+#             role_id = request.session["role_id"]
+            
+#         if request.method == "GET":
+#             library_name = tbl_librarymasterL01.objects.using(library_code).filter(is_active=True).first()
+#             library_name_mar = library_name.library_name_mar if library_name else ''
+
+#             reports = PaymentReport.objects.all().order_by('-generated_date')
+
+#             for rep in reports:
+#                 # encrypted id for links
+#                 rep.report_encrypted_id = enc(str(rep.id))
+
+#                 # Determine if the record is "filled" for the four fields. notepad 387
+#                 # Consider a field filled if:
+#                 #  - receipt_no: not None and not empty string
+#                 #  - deposit_amount: not None and not zero (Decimal('0') considered empty)
+#                 #  - receipt_upload: not None and not empty string
+#                 #  - deposit_date: not None
+#                 receipt_no_filled = bool(rep.receipt_no and str(rep.receipt_no).strip() != "")
+                
+#                 # deposit_amount is DecimalField default 0. Treat 0 as NOT filled.
+#                 try:
+#                     deposit_amount_val = rep.deposit_amount if rep.deposit_amount is not None else Decimal('0')
+#                 except Exception:
+#                     deposit_amount_val = Decimal('0')
+#                 deposit_amount_filled = (deposit_amount_val is not None) and (Decimal(str(deposit_amount_val)) != Decimal('0'))
+
+#                 receipt_upload_filled = bool(rep.receipt_upload and str(rep.receipt_upload).strip() != "")
+#                 deposit_date_filled = bool(rep.deposit_date is not None)
+
+#                 # If ALL are filled => do NOT allow edit (can_edit = False)
+#                 rep.can_edit = not (receipt_no_filled and deposit_amount_filled and receipt_upload_filled and deposit_date_filled)
+
+#             return render(request, 'Reports/payment_report.html', {
+#                 'payment_reports': reports,
+#                 'library_name_mar': library_name_mar
+#             })
+            
+#         if request.method == "POST":
+            
+#             report_type = request.POST.get("report_type")
+#             from_month = request.POST.get("from_month")
+#             to_month = request.POST.get("to_month")
+
+#             # 🛑 Guard clause: Proceed only if both months are provided and type is valid
+#             if report_type not in ["pdf", "excel"] or not from_month or not to_month:
+#                 # create post
+#                 from_date = request.POST.get("from_date")
+#                 to_date = request.POST.get("to_date")
+#                 total_amount = request.POST.get("total_amount")
+#                 summary_data_json = request.POST.get("summary_data")
+
+#                 # Convert to Python date objects
+#                 from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
+#                 to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
+
+#                 # Check for overlap
+#                 overlap_exists = PaymentReport.objects.filter(
+#                     from_date__lte=to_date_obj,
+#                     to_date__gte=from_date_obj
+#                 ).exists()
+
+#                 if overlap_exists:
+#                     messages.error(request, "A report already exists for this date range! कृपया दुसरी दिनांक निवडा.")
+#                     return redirect("payment_report")
+
+#                 try:
+#                     with transaction.atomic():  # 👈 Ensures all or nothing
+
+#                         # Create main report
+#                         report = PaymentReport.objects.create(
+#                             from_date=from_date_obj,
+#                             to_date=to_date_obj,
+#                             generated_date=timezone.now().date(),
+#                             total_amount=total_amount,
+#                             created_by=user_id,
+#                             updated_by=user_id
+#                         )
+
+#                         # Parse and insert key-value pairs
+#                         if summary_data_json:
+#                             summary_data = json.loads(summary_data_json)
+#                             for item in summary_data:
+#                                 PaymentReportKeyValue.objects.create(
+#                                     payment_report=report,
+#                                     key=item.get("key"),
+#                                     value=item.get("value")
+#                                 )
+
+#                     messages.success(request, "Payment summary generated successfully!")
+
+#                 except Exception as e:
+#                     transaction.set_rollback(True)
+#                     messages.error(request, f"Error while generating report: {str(e)}")
+
+#                 messages.success(request, "Payment summary generated successfully!")
+                
+#                 return redirect("payment_report")
+
+#             else:
+#                 # ✅ Parse months safely
+#                 try:
+#                     from_date = datetime.strptime(from_month + "-01", "%Y-%m-%d")
+#                     year, month = map(int, to_month.split("-"))
+#                     to_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
+#                 except Exception as e:
+#                     return HttpResponse("Invalid date format received.", content_type="text/plain")
+
+#                 # ✅ Fetch reports between date range
+#                 reports = PaymentReport.objects.filter(
+#                     generated_date__gte=from_date,
+#                     generated_date__lt=to_date
+#                 )
+
+#                 if not reports.exists():
+#                     return HttpResponse("No reports found for the selected months.", content_type="text/plain")
+
+#                 # ✅ Collect all distinct keys for dynamic columns
+#                 all_keys = PaymentReportKeyValue.objects.values_list('key', flat=True).distinct()
+
+#                 # ✅ Build header (added Deposit Amount)
+#                 # header = ["Receipt No", "Generated Date", "Deposit Date"] + list(all_keys) + ["Deposit Amount"]
+#                 # data = [header]
+#                 header = ["पावती क्रमांक", "अहवाल दिनांक", "ठेव दिनांक"] + list(all_keys) + ["ठेव रक्कम"]
+#                 data = [header]
+
+#                 for report in reports:
+#                     key_value_map = {kv.key: kv.value for kv in report.key_values.all()}
+
+#                     # ✅ Show only date part (no time)
+#                     generated_date = report.generated_date.strftime("%Y-%m-%d") if report.generated_date else "-"
+#                     deposit_date = report.deposit_date.strftime("%Y-%m-%d") if report.deposit_date else "-"
+
+#                     # ✅ Build row with deposit amount
+#                     row = [
+#                         report.receipt_no or "-",
+#                         generated_date,
+#                         deposit_date,
+#                     ]
+
+#                     for key in all_keys:
+#                         row.append(key_value_map.get(key, "0.00"))
+
+#                     # ✅ Add deposit amount at end
+#                     row.append(f"{report.deposit_amount:.2f}" if report.deposit_amount else "0.00")
+
+#                     data.append(row)
+                    
+#                 from_year, from_month_num = map(int, from_month.split("-"))
+#                 to_year, to_month_num = map(int, to_month.split("-"))
+
+#                 from_month_name = calendar.month_name[from_month_num]
+#                 to_month_name = calendar.month_name[to_month_num]
+
+#                 # Optional: Marathi month names (if you want them instead of English)
+#                 marathi_months = {
+#                     1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल", 5: "मे", 6: "जून",
+#                     7: "जुलै", 8: "ऑगस्ट", 9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
+#                 }
+#                 from_month_name_mar = marathi_months.get(from_month_num, from_month_name)
+#                 to_month_name_mar = marathi_months.get(to_month_num, to_month_name)
+
+#                 # Create report range string
+#                 report_range = f"{from_month_name_mar} {from_year} ते {to_month_name_mar} {to_year}"
+
+#                 # ==================== PDF Export ====================
+                
+#                 if report_type == "pdf":
+#                     from weasyprint import HTML, CSS
+#                     from django.http import HttpResponse
+#                     import tempfile, os
+
+#                     # 🔹 Fetch library info
+#                     library = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+#                     library_name = library.library_name_mar if library else "ग्रंथालयाचे नाव उपलब्ध नाही"
+
+#                     # 🔹 Build Marathi title data
+#                     today_str = datetime.now().strftime("%d-%m-%Y")
+#                     report_title = "भरणा अहवाल"
+#                     file_name = f"Payment_Report_{today_str}.pdf"
+
+#                     # ✅ Font path (your local/static font file)
+#                     font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
+
+#                     # ✅ Build HTML dynamically
+#                     html_content = f"""
+#                     <!DOCTYPE html>
+#                     <html lang="mr">
+#                         <head>
+#                             <meta charset="UTF-8">
+#                             <title>{report_title}</title>
+#                             <style>
+#                                 @font-face {{
+#                                     font-family: 'MarathiFont';
+#                                     src: url('file://{font_path}') format('truetype');
+#                                 }}
+#                                 @page {{
+#                                     size: A4 landscape;
+#                                     margin: 1cm;
+#                                     @bottom-right {{
+#                                         content: "अहवाल तयार दिनांक : {today_str}";
+#                                         font-size: 10px;
+#                                         color: #444;
+#                                         font-family: 'MarathiFont', sans-serif;
+#                                     }}
+#                                 }}
+#                                 body {{
+#                                     font-family: 'MarathiFont', sans-serif;
+#                                     font-size: 11px;
+#                                     line-height: 1.5;
+#                                     color: #000;
+#                                     border: 1px solid #bbb;
+#                                     padding: 15px;
+#                                     background: #fff;
+#                                 }}
+#                                 h1, h2, h3 {{
+#                                     text-align: center;
+#                                     margin: 0;
+#                                 }}
+#                                 h1 {{ font-size: 18px; }}
+#                                 h2 {{ font-size: 15px; margin-top: 3px; }}
+#                                 h3 {{ font-size: 13px; margin: 4px 0 10px 0; }}
+#                                 table {{
+#                                     width: 100%;
+#                                     border-collapse: collapse;
+#                                     table-layout: fixed;
+#                                     margin-top: 10px;
+#                                 }}
+#                                 th, td {{
+#                                     border: 0.5px solid #ccc;
+#                                     padding: 6px;
+#                                     text-align: center;
+#                                     vertical-align: middle;
+#                                     word-wrap: break-word;
+#                                     white-space: normal;
+#                                     font-size: 11px;
+#                                 }}
+#                                 th {{
+#                                     background-color: #727cf5;
+#                                     color: white;
+#                                     font-weight: 600;
+#                                 }}
+#                                 tr:nth-child(even) {{
+#                                     background: #f9f9f9;
+#                                 }}
+#                             </style>
+#                         </head>
+#                         <body>
+#                             <h1>नवी मुंबई महानगरपालिका</h1>
+#                             <h2>{library_name}</h2>
+#                             <h3>{report_title} कालावधी: {report_range}</h3>
+
+#                             <table>
+#                                 <thead>
+#                                     <tr>
+#                                         {''.join(f'<th>{h}</th>' for h in data[0])}
+#                                     </tr>
+#                                 </thead>
+#                                 <tbody>
+#                                     {''.join('<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>' for row in data[1:])}
+#                                 </tbody>
+#                             </table>
+#                         </body>
+#                     </html>
+#                     """
+
+#                     # ✅ Generate PDF (direct, no temp file needed)
+#                     pdf_file = HTML(string=html_content).write_pdf(
+#                         stylesheets=[CSS(string="@page { size: A4 landscape; margin: 1cm; }")]
+#                     )
+
+#                     # ✅ Return PDF as download
+#                     response = HttpResponse(pdf_file, content_type="application/pdf")
+#                     response["Content-Disposition"] = f'attachment; filename="{file_name}"'
+#                     return response
+                
+#                 # ==================== Excel Export ====================
+#                 elif report_type == "excel":
+#                     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+#                     # 🔹 Fetch library info
+#                     library = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+#                     library_name = library.library_name_mar if library else "ग्रंथालयाचे नाव उपलब्ध नाही"
+
+#                     # 🔹 Build workbook and sheet
+#                     wb = openpyxl.Workbook()
+#                     ws = wb.active
+#                     ws.title = "Payment Report"
+
+#                     # ================= HEADER SECTION ==================
+#                     # Titles at the top
+#                     ws.merge_cells("A1:{}1".format(get_column_letter(len(header))))
+#                     ws["A1"] = "नवी मुंबई महानगरपालिका"
+#                     ws["A1"].font = Font(size=16, bold=True)
+#                     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+
+#                     ws.merge_cells("A2:{}2".format(get_column_letter(len(header))))
+#                     ws["A2"] = library_name
+#                     ws["A2"].font = Font(size=13, bold=True)
+#                     ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+                    
+#                     from datetime import timedelta
+
+#                     ws.merge_cells("A3:{}3".format(get_column_letter(len(header))))
+#                     ws["A3"] = f"भरणा अहवाल ({from_date.strftime('%B %Y')} ते {to_date.replace(day=1) - timedelta(days=1):%B %Y})"
+#                     ws["A3"].font = Font(size=12, bold=True)
+#                     ws["A3"].alignment = Alignment(horizontal="center", vertical="center")
+
+#                     ws.append([])  # Empty row before table
+
+#                     # ================= TABLE HEADER ==================
+#                     start_row = ws.max_row + 1
+#                     header_fill = PatternFill(start_color="727cf5", end_color="727cf5", fill_type="solid")
+#                     border_style = Border(
+#                         left=Side(border_style="thin", color="000000"),
+#                         right=Side(border_style="thin", color="000000"),
+#                         top=Side(border_style="thin", color="000000"),
+#                         bottom=Side(border_style="thin", color="000000"),
+#                     )
+
+#                     for col_num, col_name in enumerate(header, 1):
+#                         cell = ws.cell(row=start_row, column=col_num, value=col_name)
+#                         cell.font = Font(bold=True, color="FFFFFF")
+#                         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+#                         cell.fill = header_fill
+#                         cell.border = border_style
+#                         ws.column_dimensions[get_column_letter(col_num)].width = 20
+
+#                     ws.row_dimensions[start_row].height = 25
+
+#                     # ================= TABLE DATA ==================
+#                     for row_num, row_data in enumerate(data[1:], start_row + 1):
+#                         for col_num, value in enumerate(row_data, 1):
+#                             cell = ws.cell(row=row_num, column=col_num, value=value)
+#                             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+#                             cell.border = border_style
+
+#                     # ================= FOOTER ==================
+#                     footer_row = ws.max_row + 2
+#                     ws.merge_cells(f"A{footer_row}:{get_column_letter(len(header))}{footer_row}")
+#                     ws[f"A{footer_row}"] = f"अहवाल तयार दिनांक : {datetime.now().strftime('%d-%m-%Y')}"
+#                     ws[f"A{footer_row}"].alignment = Alignment(horizontal="right", vertical="center")
+#                     ws[f"A{footer_row}"].font = Font(size=10, italic=True, color="555555")
+
+#                     # ================= SAVE & RETURN ==================
+#                     buffer = io.BytesIO()
+#                     wb.save(buffer)
+#                     buffer.seek(0)
+                    
+#                     from django.http import HttpResponse
+
+#                     filename = f"Payment_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+#                     response = HttpResponse(
+#                         buffer,
+#                         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+#                     )
+#                     response["Content-Disposition"] = f'attachment; filename="{filename}"'
+#                     return response
+
+        
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name
+#         callproc("stp_error_log",[fun,str(e),request.user.id])  
+#         messages.error(request, 'Oops...! Something went wrong!')
+
+
 @login_required
 def payment_report(request):
     try:
@@ -119,56 +494,75 @@ def payment_report(request):
             if report_type not in ["pdf", "excel"] or not from_month or not to_month:
                 # create post
                 from_date = request.POST.get("from_date")
-                to_date = request.POST.get("to_date")
                 total_amount = request.POST.get("total_amount")
                 summary_data_json = request.POST.get("summary_data")
 
                 # Convert to Python date objects
                 from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
-                to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
 
                 # Check for overlap
-                overlap_exists = PaymentReport.objects.filter(
-                    from_date__lte=to_date_obj,
-                    to_date__gte=from_date_obj
-                ).exists()
-
-                if overlap_exists:
-                    messages.error(request, "A report already exists for this date range! कृपया दुसरी दिनांक निवडा.")
-                    return redirect("payment_report")
+                # Check if report already exists for same from_date
+                existing_report = PaymentReport.objects.filter(
+                    from_date=from_date_obj
+                ).first()
 
                 try:
-                    with transaction.atomic():  # 👈 Ensures all or nothing
+                    with transaction.atomic():
 
-                        # Create main report
-                        report = PaymentReport.objects.create(
-                            from_date=from_date_obj,
-                            to_date=to_date_obj,
-                            generated_date=timezone.now().date(),
-                            total_amount=total_amount,
-                            created_by=user_id,
-                            updated_by=user_id
-                        )
+                        if existing_report:
+                            # ------------ UPDATE EXISTING REPORT ------------
+                            existing_report.to_date = from_date_obj
+                            existing_report.total_amount = total_amount
+                            existing_report.updated_by = user_id
+                            existing_report.generated_date = timezone.now().date()
+                            existing_report.save()
 
-                        # Parse and insert key-value pairs
-                        if summary_data_json:
-                            summary_data = json.loads(summary_data_json)
-                            for item in summary_data:
-                                PaymentReportKeyValue.objects.create(
-                                    payment_report=report,
-                                    key=item.get("key"),
-                                    value=item.get("value")
-                                )
+                            # DELETE old key-value pairs
+                            PaymentReportKeyValue.objects.filter(payment_report=existing_report).delete()
 
-                    messages.success(request, "Payment summary generated successfully!")
+                            # INSERT new key-value pairs
+                            if summary_data_json:
+                                summary_data = json.loads(summary_data_json)
+                                for item in summary_data:
+                                    PaymentReportKeyValue.objects.create(
+                                        payment_report=existing_report,
+                                        key=item.get("key"),
+                                        value=item.get("value")
+                                    )
+
+                            messages.success(request, "Payment summary updated successfully!")
+
+                        else:
+                            # ------------ CREATE NEW REPORT ------------
+                            report = PaymentReport.objects.create(
+                                from_date=from_date_obj,
+                                to_date=from_date_obj,
+                                generated_date=timezone.now().date(),
+                                total_amount=total_amount,
+                                created_by=user_id,
+                                updated_by=user_id
+                            )
+
+                            # Insert key-value pairs
+                            if summary_data_json:
+                                summary_data = json.loads(summary_data_json)
+                                for item in summary_data:
+                                    PaymentReportKeyValue.objects.create(
+                                        payment_report=report,
+                                        key=item.get("key"),
+                                        value=item.get("value")
+                                    )
+
+                            messages.success(request, "Payment summary generated successfully!")
 
                 except Exception as e:
                     transaction.set_rollback(True)
-                    messages.error(request, f"Error while generating report: {str(e)}")
+                    messages.error(request, f"Error while saving report: {str(e)}")
+                    return redirect("payment_report")
 
-                messages.success(request, "Payment summary generated successfully!")
-                
                 return redirect("payment_report")
+
+
 
             else:
                 # ✅ Parse months safely
@@ -436,17 +830,83 @@ def payment_report(request):
         callproc("stp_error_log",[fun,str(e),request.user.id])  
         messages.error(request, 'Oops...! Something went wrong!')
 
+
+# @login_required
+# def get_payment_preview(request):
+#     try:
+#         from_date = request.POST.get("from")
+#         to_date = request.POST.get("to")
+
+#         if not from_date or not to_date:
+#             return JsonResponse({"error": "Missing date range"}, status=400)
+
+#         # Step 1️⃣ - Get payments in selected date range
+#         payments = PaymentDetails.objects.filter(payment_date__range=[from_date, to_date])
+
+#         # Step 2️⃣ - Get all membership types from master (so we show all even if count = 0)
+#         all_memberships = MembershipMaster.objects.all().values("membership_type_en", "membership_type")
+
+#         # Step 3️⃣ - Initialize dictionary with all membership types (English + Marathi)
+#         membership_summary = {
+#             f"{m['membership_type_en']} ({m['membership_type']})": {"count": 0, "total": 0}
+#             for m in all_memberships
+#         }
+
+#         # Step 4️⃣ - Add totals from payments if available
+#         for pay in payments.select_related("membership__membership"):
+#             mem = pay.membership
+#             if mem and mem.membership:
+#                 mtype_en = mem.membership.membership_type_en
+#                 mtype_mr = mem.membership.membership_type
+#                 label = f"{mtype_en} ({mtype_mr})"
+
+#                 if label in membership_summary:
+#                     membership_summary[label]["count"] += 1
+#                     membership_summary[label]["total"] += float(pay.total_subscription_amount or 0)
+
+#         # Step 5️⃣ - Overall totals
+#         total_deposit = payments.aggregate(total=Sum("deposit_amount")).get("total") or 0
+#         total_fine = payments.aggregate(total=Sum("fine_amount")).get("total") or 0
+#         total_subscription = sum(v["total"] for v in membership_summary.values())
+
+#         # Step 6️⃣ - Convert to list for frontend
+#         membership_list = [
+#             {
+#                 "membership_type": k,
+#                 "total_amount": round(v["total"], 2),
+#                 "count": v["count"]
+#             }
+#             for k, v in membership_summary.items()
+#         ]
+
+#         # Step 7️⃣ - Final data
+#         data = {
+#             "deposit_total": round(total_deposit, 2),
+#             "fine_total": round(total_fine, 2),
+#             "total_subscription_amount": round(total_subscription, 2),
+#             "membership_summary": membership_list
+#         }
+
+#         return JsonResponse(data)
+    
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[-1].name if tb else "get_payment_preview"
+#         callproc("stp_error_log", [fun, str(e), request.user.id])
+#         messages.error(request, "Oops...! Something went wrong!")
+#         return JsonResponse({"error": "Something went wrong. Please try again later."}, status=500)
+
 @login_required
 def get_payment_preview(request):
     try:
         from_date = request.POST.get("from")
-        to_date = request.POST.get("to")
+        # to_date = request.POST.get("to")
 
-        if not from_date or not to_date:
+        if not from_date:
             return JsonResponse({"error": "Missing date range"}, status=400)
 
         # Step 1️⃣ - Get payments in selected date range
-        payments = PaymentDetails.objects.filter(payment_date__range=[from_date, to_date])
+        payments = PaymentDetails.objects.filter(payment_date=from_date)
 
         # Step 2️⃣ - Get all membership types from master (so we show all even if count = 0)
         all_memberships = MembershipMaster.objects.all().values("membership_type_en", "membership_type")
