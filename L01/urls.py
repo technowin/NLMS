@@ -70,6 +70,6 @@ urlpatterns = [
     path('get-borrowing-history/',get_borrowing_history, name='get_borrowing_history'),
     
      path("save-eod-log/", save_eod_log, name="save_eod_log"),
-     path("membership_card/", membership_card, name="samembership_cardve_eod_log"),
+     path("membership_card/", membership_card, name="membership_card"),
     # ... your other URLs
 ]
