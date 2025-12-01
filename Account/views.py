@@ -177,7 +177,7 @@ def Login(request):
                     redirect_url = f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}"
                     return redirect(redirect_url)
                 else:
-                    return redirect('L01:book_info_login')  # fallback
+                    return redirect('L01:membership_dashboard')  # fallback
 
             # --------------------------------------------------------
             # membership_id missing (None)
