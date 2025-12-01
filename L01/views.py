@@ -4472,7 +4472,7 @@ def visit_Library_catalogue(request):
 
         if not new_books.exists():
             # Fallback: last 10 books
-            new_books = BookCatalog.objects.all().order_by('-created_at')[:10]
+            new_books = BookCatalog.objects.all().order_by('-cat_ref_num')[:10]
 
         for b in new_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num

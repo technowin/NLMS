@@ -70,29 +70,40 @@
 
                 <div class="new-arrivals-slider d-flex">
                     {% for book in new_books %}
-                    <div class="card book-card">
-                        <div class="book-img-box">
-                            {% if book.front_page_photo %}
-                                <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
-                                    alt="{{ book.title }}" 
-                                    class="img-fluid w-100 h-100 object-fit-cover">
-                            {% else %}
-                                <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                    <span class="text-muted">प्रतिमा उपलब्ध नाही</span>
-                                </div>
-                            {% endif %}
+                        <div class="card book-card">
+                            {% comment %} <div class="book-img-box">
+                                {% if book.front_page_photo %}
+                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
+                                        alt="{{ book.title }}" 
+                                        class="img-fluid w-100 h-100 object-fit-cover">
+                                {% else %}
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                        <span class="text-muted">प्रतिमा उपलब्ध नाही</span>
+                                    </div>
+                                {% endif %}
+                            </div> {% endcomment %}
+                            <div class="book-img-container">
+                                {% if book.front_page_photo %}
+                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
+                                        alt="{{ book.title }}" 
+                                        class="book-img">
+                                {% else %}
+                                    <div class="book-img-placeholder">
+                                        प्रतिमा उपलब्ध नाही
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-3">
+                                <h6 class="card-title text-truncate" title="{{ book.title }}">
+                                    {{ book.title }}
+                                </h6>
+                                {% if book.author %}
+                                <p class="mb-0 text-muted">
+                                    <small>लेखक: {{ book.author }}</small>
+                                </p>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="card-body p-3">
-                            <h6 class="card-title text-truncate" title="{{ book.title }}">
-                                {{ book.title }}
-                            </h6>
-                            {% if book.author %}
-                            <p class="mb-0 text-muted">
-                                <small>लेखक: {{ book.author }}</small>
-                            </p>
-                            {% endif %}
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
 
