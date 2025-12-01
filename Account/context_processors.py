@@ -97,6 +97,7 @@ def logged_in_user(request):
 
     # Return context with the file_path for image
     return {
+        'role_id':role_id,
         'username': username,
         'full_name': full_name,
         'role_name': role_name,

@@ -28,7 +28,8 @@
 
             <div class="logo-topbar d-none d-md-block">
                 <!-- Logo light -->
-                <a href="{% url 'LMS_Dashboard' %}" class="logo-light">
+                <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'LMS_Dashboard' %}{% endif %}"class="logo-light">
+
                     <span style="color:white !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
                         
                             <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
@@ -40,7 +41,7 @@
                 </a>
 
                 <!-- Logo dark -->
-                <a href="{% url 'LMS_Dashboard' %}" class="logo-dark">
+                <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'LMS_Dashboard' %}{% endif %}" class="logo-dark">
                     <span style="color:#333399 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
                     
                         <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">

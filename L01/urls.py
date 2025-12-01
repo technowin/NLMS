@@ -48,6 +48,10 @@ urlpatterns = [
     path("get_book_circulation_status", get_book_circulation_status, name="get_book_circulation_status"),
     path("circulation_transaction_details", circulation_transaction_details, name="circulation_transaction_details"),
     
+    # visit library master index views
+    path('visit_Library_catalogue', visit_Library_catalogue, name='visit_Library_catalogue'),
+    path('get_books_by_subject', get_books_by_subject, name='get_books_by_subject'),
+    
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
     path('user_master_index/', user_master_index, name='user_master_index'), 
@@ -66,5 +70,6 @@ urlpatterns = [
     path('get-borrowing-history/',get_borrowing_history, name='get_borrowing_history'),
     
      path("save-eod-log/", save_eod_log, name="save_eod_log"),
+     path("membership_card/", membership_card, name="samembership_cardve_eod_log"),
     # ... your other URLs
 ]

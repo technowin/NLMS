@@ -70,6 +70,7 @@ from django.db.models.functions import Concat
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageFont, ImageDraw
+from django.core.paginator import Paginator
 
 # Part First While Filling Membership Form
 
@@ -4352,7 +4353,6 @@ def view_catalogue_login_page(request):
             "current_date": date.today(),
             "today": date.today()
         })
-
         
 def book_info_login(request):
     try:
@@ -4430,3 +4430,212 @@ def save_eod_log(request):
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+
+@login_required
+def visit_Library_catalogue(request):
+    try:
+        # Session checks
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))  # your encoding function
+            subjects.append(s)
+
+        first_subject = subjects[0] if subjects else None
+
+        if first_subject:
+            books = BookCatalog.objects.filter(subject=first_subject).select_related('subject', 'material')
+        else:
+            books = BookCatalog.objects.none()
+
+        # Pagination: 8 books per page
+        paginator = Paginator(books, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        # Encode book IDs
+        for b in page_obj:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            
+        # --- NEW ARRIVALS LOGIC ---
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        new_books = BookCatalog.objects.filter(created_at__gte=thirty_days_ago).order_by('-created_at')
+
+        if not new_books.exists():
+            # Fallback: last 10 books
+            new_books = BookCatalog.objects.all().order_by('-created_at')[:10]
+
+        for b in new_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        context = {
+            'subjects': subjects,
+            'books': page_obj,
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'new_books': new_books,  # Pass to template
+        }
+
+        return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", context)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+
+@login_required
+def get_books_by_subject(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc)
+
+        search = request.GET.get('search', '').strip()
+
+        # Base queryset
+        all_books = BookCatalog.objects.filter(subject_id=subject_id).select_related('subject', 'material')
+
+        # Search filter
+        if search:
+            all_books = all_books.filter(
+                Q(title__icontains=search) |
+                Q(author__icontains=search)
+            )
+
+        # Encode book IDs
+        for b in all_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        # Pagination
+        paginator = Paginator(all_books, 8)
+        page_number = request.GET.get('page', 1)
+        books_page = paginator.get_page(page_number)
+
+        context = {
+            'books': books_page,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'subject_id_enc': subject_id_enc
+        }
+        return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
+
+    except Exception as e:
+        print("Error fetching books for subject:", e)
+        return JsonResponse({'error': 'Failed to fetch books'}, status=500)
+    
+def membership_card(request):
+    username = request.session.get('username')
+    member_id = None
+    member_details = None
+    library_name_from_session = None
+    library_address = None
+    library_phone = None
+    user_image_url = None
+    transaction_details = []
+
+    # Get library_code from session
+    library_code_from_session = request.session.get('library_db', None)
+
+    # Fetch library details
+    if library_code_from_session:
+        try:
+            library = tbl_librarymasterL01.objects.filter(library_code__iexact=library_code_from_session).first()
+            if library:
+                library_name_from_session = library.library_name
+                library_address = library.location
+                library_phone = library.contact_phone
+        except Exception:
+            pass
+
+    # Fetch member details
+    if username:
+        try:
+            member = MembershipDetails.objects.get(user_id=username)
+            member_id = member.id
+            request.session['member_id'] = member_id
+
+            # Fetch user image
+            try:
+                document = DocumentDetails.objects.filter(
+                    membership_id=member_id, 
+                    isactive=1
+                ).first()
+
+                if document and document.file_path:
+                    if document.file_path.startswith(settings.MEDIA_URL):
+                        user_image_url = document.file_path
+                    else:
+                        user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
+            except Exception:
+                pass
+
+            # Fetch full transaction list (NO PAGINATION)
+            try:
+                transactions = (
+                    CirculationTransaction.objects
+                    .filter(member_id=member_id)
+                    .select_related('catalog')
+                    .order_by('-issue_date')
+                )
+
+                for transaction in transactions:
+                    is_overdue = False
+                    if transaction.due_date and transaction.return_date is None:
+                        is_overdue = transaction.due_date < date.today()
+
+                    transaction_details.append({
+                        'book_title': transaction.catalog.title if transaction.catalog else 'Not available',
+                        'author': transaction.catalog.author if transaction.catalog else 'Not available',
+                        'issue_date': transaction.issue_date.strftime('%d-%b-%Y') if transaction.issue_date else 'Not set',
+                        'due_date': transaction.due_date.strftime('%d-%b-%Y') if transaction.due_date else 'Not set',
+                        'return_date': transaction.return_date.strftime('%d-%b-%Y') if transaction.return_date else 'Not returned',
+                        'due_date_raw': transaction.due_date,
+                        'is_overdue': is_overdue
+                    })
+
+            except Exception as e:
+                print(f"Error fetching transactions: {e}")
+
+            # Prepare member details
+            member_details = {
+                'id': member.id,
+                'name': f"{member.first_name or ''} {member.middle_name or ''} {member.last_name or ''}".strip(),
+                'address': member.local_address or 'Not available',
+                'mobile_no': member.mobile_no or 'Not available',
+                'membership_from': member.from_date.strftime('%d-%b-%Y') if member.from_date else 'Not set',
+                'membership_to': member.to_date.strftime('%d-%b-%Y') if member.to_date else 'Not set',
+                'membership_code': member.membership_code or 'Not available',
+                'library_name': library_name_from_session or member.library_name or 'Not available',
+                'email': member.email or 'Not available',
+                'user_id': member.user_id,
+                'library_address': library_address or 'Not available',
+                'library_phone': library_phone or 'Not available',
+                'user_image_url': user_image_url
+            }
+
+        except MembershipDetails.DoesNotExist:
+            member_details = None
+
+    # Context WITHOUT pagination
+    context = {
+        "MEDIA_URL": settings.MEDIA_URL,
+        "username": username,
+        "member_id": member_id,
+        "member_details": member_details,
+        "library_name_from_session": library_name_from_session,
+        "transaction_details": transaction_details,
+        "current_date": date.today().strftime('%d-%b-%Y'),
+        "today": date.today(),
+    }
+
+    return render(request, "Master/membership_card.html", context)
+
+
