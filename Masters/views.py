@@ -212,6 +212,25 @@ def Test_sample(request):
         if request.method=="GET":
              return render(request,'Master/Test_sample.html')
          
+# @login_required
+# def LMS_Dashboard(request):
+#     try:
+#         if request.user.is_authenticated ==True:                
+#                 global user,role_id
+#                 user = request.user.id    
+#                 role_id = request.user.role_id 
+#         if request.method=="GET":
+#             print("GET")
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name
+#         callproc("stp_error_log",[fun,str(e),user])  
+#         messages.error(request, 'Oops...! Something went wrong!')
+#     finally:
+#         Db.closeConnection()
+#         if request.method=="GET":
+#              return render(request,'Workflow/index.html')
+
 @login_required
 def LMS_Dashboard(request):
     try:
@@ -242,9 +261,6 @@ def LMS_Dashboard(request):
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
-
-    finally:
-        Db.closeConnection()
          
 # Book Catalog Index     
 @login_required
