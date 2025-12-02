@@ -16,6 +16,7 @@ urlpatterns = [
     path("index_book_search", index_book_search, name="index_book_search"),
     path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
     path("libraryebook_search", libraryebook_search, name="libraryebook_search"),
+    path("index_ebook_search", index_ebook_search, name="index_ebook_search"),
     path("registration",registration,name='registration'),
     path("check_user_id", check_user_id, name="check_user_id"),
     path("check_aadhar", check_aadhar, name="check_aadhar"),
@@ -50,6 +51,7 @@ urlpatterns = [
     
     # visit library master index views
     path('visit_Library_catalogue', visit_Library_catalogue, name='visit_Library_catalogue'),
+    path('view_book_detail/', view_book_detail, name='view_book_detail'),
     path('get_books_by_subject', get_books_by_subject, name='get_books_by_subject'),
     
     # Palaves work

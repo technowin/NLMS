@@ -42,306 +42,280 @@
 
 {% block content %}
 
- <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        
-        .membership-card {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        
-        .card-header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 5px solid #e74c3c;
-        }
-        
-        .card-header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
-        
-        .card-header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        
-        .card-body {
-            padding: 25px;
-        }
-        
-        .info-row {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: flex-start;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            width: 180px;
-            color: #2c3e50;
-        }
-        
-        .info-value {
-            flex: 1;
-            color: #555;
-        }
-        
-        .note-section {
-            background-color: #fff8e1;
-            padding: 15px;
-            margin: 0 25px 25px;
-            border-radius: 6px;
-            border-left: 4px solid #ffc107;
-            font-size: 14px;
-        }
-        
-        .note-section strong {
-            color: #d35400;
-        }
-        
-        .books-table-section {
-            padding: 0 25px 25px;
-        }
-        
-        .books-table-section h2 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        
-        th {
-            background-color: #3498db;
-            color: white;
-            text-align: left;
-            padding: 12px 15px;
-            font-weight: 600;
-            border: 1px solid #2c8cc9;
-        }
-        
-        td {
-            padding: 12px 15px;
-            border: 1px solid #eee;
-        }
-        
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        
-        tr:hover {
-            background-color: #f1f7fd;
-        }
-        
-        .overdue {
-            background-color: #ffebee !important;
-            color: #c62828;
-            font-weight: bold;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 15px;
-            background-color: #f8f9fa;
-            color: #666;
-            font-size: 14px;
-            border-top: 1px solid #eee;
-        }
-        
-        .no-member-message {
-            padding: 40px;
-            text-align: center;
-            color: #666;
-            font-size: 18px;
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        
-        .pagination a {
-            padding: 8px 16px;
-            text-decoration: none;
-            background-color: #3498db;
-            color: white;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        
-        .pagination a:hover {
-            background-color: #2980b9;
-        }
-        
-        .pagination .current {
-            padding: 8px 16px;
-            background-color: #2c3e50;
-            color: white;
-            border-radius: 4px;
-        }
-        
-        .pagination .disabled {
-            padding: 8px 16px;
-            background-color: #bdc3c7;
-            color: #7f8c8d;
-            border-radius: 4px;
-            cursor: not-allowed;
-        }
-        
-        .no-books-message {
-            text-align: center;
-            padding: 30px;
-            color: #666;
-            font-style: italic;
-        }
-        
-        @media (max-width: 768px) {
-            .info-row {
-                flex-direction: column;
-                margin-bottom: 12px;
-            }
-            
-            .info-label {
-                width: 100%;
-                margin-bottom: 3px;
-            }
-            
-            table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        }
-    </style>
-</head>
+<style>
+  
+    
+    .membership-card {
+        max-width: 900px;
+        margin: 0 auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    /* ---------- HEADER FIXED WITH LOGO LEFT ---------- */
+    .card-header {
+        background-color: #2c3e50;
+        color: white;
+        padding: 15px 20px;
+        border-bottom: 5px solid #e74c3c;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header-left img {
+        width: 70px;
+        height: auto;
+    }
+
+    .header-center {
+        text-align: center;
+        flex: 1;
+    }
+
+    .header-center h1 {
+        font-size: 26px;
+        margin: 0;
+    }
+
+    .header-center p {
+        font-size: 16px;
+        margin: 2px 0 0 0;
+        opacity: 0.9;
+    }
+    
+    .card-body {
+        padding: 25px;
+        display: flex;
+        gap: 20px;
+    }
+
+    /* USER IMAGE RIGHT */
+    .profile-photo {
+        width: 150px;
+        height: 160px;
+        border-radius: 8px;
+        border: 3px solid #b89462;
+        object-fit: cover;
+    }
+
+    .info-section {
+        flex: 1;
+    }
+
+    .info-row {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .info-label {
+        font-weight: bold;
+        width: 180px;
+    }
+    
+    .info-value {
+        flex: 1;
+    }
+    
+    .note-section {
+        padding: 15px;
+        margin: 0 25px 25px;
+        border-radius: 6px;
+        border-left: 4px solid #ffc107;
+        font-size: 14px;
+    }
+    
+    .note-section strong {
+        color: #d35400;
+    }
+    
+    .books-table-section {
+        padding: 0 25px 25px;
+    }
+    
+    .books-table-section h2 {
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #3498db;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    th {
+        background-color: #3498db;
+        color: white;
+        text-align: left;
+        padding: 12px 15px;
+        font-weight: 600;
+        border: 1px solid #2c8cc9;
+    }
+    
+    td {
+        padding: 12px 15px;
+        border: 1px solid #eee;
+    }
+    
+    
+    .overdue {
+        color: #c62828;
+        font-weight: bold;
+    }
+    
+    .footer {
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        font-size: 14px;
+        border-top: 1px solid #eee;
+    }
+    
+    .no-books-message {
+        text-align: center;
+        padding: 30px;
+        color: #666;
+        font-style: italic;
+    }
+</style>
+
+
 <body>
     <div class="membership-card">
+
+        <!-- HEADER WITH LOGO LEFT -->
         <div class="card-header">
-            <h1>विष्णुदास भावे नाट्य ग्रंथालय</h1>
-            <p>सदस्यता कार्ड</p>
+            <div class="header-left">
+                <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}">
+            </div>
+
+            <div class="header-center">
+                <h1>विष्णुदास भावे नाट्य ग्रंथालय</h1>
+                <p>सदस्यता कार्ड</p>
+            </div>
+
+            <div class="header-right"></div>
         </div>
-        
+
         {% if member_details %}
+
+        <!-- BODY: LEFT INFO + RIGHT PHOTO -->
         <div class="card-body">
-            <div class="info-row">
-                <div class="info-label">Name :</div>
-                <div class="info-value" id="memberName">{{ member_details.name|default:"Not available" }}</div>
+
+            <div class="info-section">
+                <div class="info-row">
+                    <div class="info-label">नाव :</div>
+                    <div class="info-value" id="memberName">{{ member_details.name }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">पत्ता :</div>
+                    <div class="info-value">{{ member_details.address }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">मोबाईल क्र :</div>
+                    <div class="info-value">{{ member_details.mobile_no }}</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">सदस्याचा प्रकार :</div>
+                    <div class="info-value">{{ member_details.member_type }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">सदस्याचा तारीख :</div>
+                    <div class="info-value">{{ member_details.membership_from }} to {{ member_details.membership_to }}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">लायब्ररीचा पत्ता :</div>
+                    <div class="info-value">{{ member_details.library_address }}</div>
+                </div>
             </div>
-            
-            <div class="info-row">
-                <div class="info-label">Address :</div>
-                <div class="info-value" id="memberAddress">{{ member_details.address|default:"Not available" }}</div>
+
+            <!-- USER IMAGE -->
+            <div>
+                {% if member_details.user_image_url %}
+                    <img src="{{ member_details.user_image_url }}" class="profile-photo">
+                {% else %}
+                    <img src="{% static 'images/no-image.jpg' %}" class="profile-photo">
+                {% endif %}
             </div>
-            
-            <div class="info-row">
-                <div class="info-label">Mobile No :</div>
-                <div class="info-value" id="memberMobile">{{ member_details.mobile_no|default:"Not available" }}</div>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Membership Date :</div>
-                <div class="info-value" id="membershipDate">{{ member_details.membership_from|default:"Not set" }} to {{ member_details.membership_to|default:"Not set" }}</div>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Library Address :</div>
-                <div class="info-value" id="libraryAddress">{{ member_details.library_address|default:"Not available" }}</div>
-            </div>
+
         </div>
-        
+
         <div class="note-section">
             <strong>Note:</strong> Rows highlighted in red indicate that the book's due date has passed. Returning these books late will incur a fine.
         </div>
-        
+
         <div class="books-table-section">
             <h2>Borrowed Books</h2>
-            
-         {% if transaction_details %}
-            <table id="booksTable" class="display">
-                <thead>
-                    <tr>
-                        <th>BOOK TITLE</th>
-                        <th>AUTHOR</th>
-                        <th>ISSUED DATE</th>
-                        <th>DUE DATE</th>
-                        <th>RETURN DATE</th>
-                    </tr>
-                </thead>
-                <tbody id="booksTableBody">
-                    {% for transaction in transaction_details %}
-                        <tr class="{% if transaction.is_overdue %}overdue{% endif %}">
-                            <td>{{ transaction.book_title }}</td>
-                            <td>{{ transaction.author }}</td>
-                            <td>{{ transaction.issue_date }}</td>
-                            <td>{{ transaction.due_date }}</td>
-                            <td>{{ transaction.return_date }}</td>
+
+            {% if transaction_details %}
+                <table id="booksTable" class="display">
+                    <thead>
+                        <tr>
+                            <th>BOOK TITLE</th>
+                            <th>AUTHOR</th>
+                            <th>ISSUED DATE</th>
+                            <th>DUE DATE</th>
+                            <th>RETURN DATE</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
+                    </thead>
+                    <tbody>
+                        {% for transaction in transaction_details %}
+                            <tr class="{% if transaction.is_overdue %}overdue{% endif %}">
+                                <td>{{ transaction.book_title }}</td>
+                                <td>{{ transaction.author }}</td>
+                                <td>{{ transaction.issue_date }}</td>
+                                <td>{{ transaction.due_date }}</td>
+                                <td>{{ transaction.return_date }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
-            <div class="no-books-message">
-                <p>No books currently borrowed</p>
-            </div>
+                <div class="no-books-message">No books currently borrowed</div>
             {% endif %}
-             {% endif %}
+        </div>
 
-        
+        {% endif %}
+
         <div class="footer">
             <p>Generated on: <span id="currentDate">{{ current_date }}</span></p>
         </div>
     </div>
 
-    
+
 {% block extra_javascript %}
-
-    <script src="{% static 'js/vendor/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'js/vendor/dataTables.bootstrap5.min.js' %}"></script>
-    <script src="{% static 'js/vendor/dataTables.responsive.min.js' %}"></script>
-    <script src="{% static 'js/vendor/responsive.bootstrap5.min.js' %}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('#booksTable').DataTable({
-                responsive: true,
-                pageLength: 5,
-                lengthChange: false,
-                ordering: true,
-                autoWidth: false,
-                language: {
-                    search: "Search:",
-                    zeroRecords: "No matching records found"
-                }
-            });
-        });
-</script>
+<script src="{% static 'js/vendor/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/vendor/dataTables.bootstrap5.min.js' %}"></script>
+<script src="{% static 'js/vendor/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'js/vendor/responsive.bootstrap5.min.js' %}"></script>
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
 {% endblock %}
+<script>
+    $(document).ready(function() {
+        $('#booksTable').DataTable({
+            responsive: true,
+            pageLength: 5,
+            lengthChange: false,
+            ordering: true,
+            autoWidth: false
+        });
+    });
+</script>
+
 
 {% endblock %}

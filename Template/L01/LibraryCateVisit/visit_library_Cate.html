@@ -18,101 +18,107 @@
 {% endblock %}
 
 {% block content %}
-<div class="mt-4">
+    <div class="mt-4">
 
-    <!-- Tabs -->
-    <div class="subject-tabs-wrapper">
-        <ul class="nav nav-pills mb-4 justify-content-start">
-            {% for subject in subjects %}
-            <li class="nav-item me-2 mt-2">
-                <button class="nav-link {% if forloop.first %}active{% endif %}"
-                        data-subject-id="{{ subject.id_enc }}">
-                    {{ subject.subjectNameEnglish }} / {{ subject.subjectNameMarathi }}
-                </button>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- Loader HTML -->
-    <div class="book-loader" id="loaderOverlay">
-        <div class="book">
-            <div class="book__pg-shadow"></div>
-            <div class="book__pg"></div>
-            <div class="book__pg book__pg--2"></div>
-            <div class="book__pg book__pg--3"></div>
-            <div class="book__pg book__pg--4"></div>
-            <div class="book__pg book__pg--5"></div>
-        </div>
-    </div>
-
-    <!-- Search bar -->
-    <div class="mb-3 d-flex justify-content-end">
-        <input type="text" id="bookSearch" class="form-control w-25"
-            placeholder="पुस्तकाचे नाव किंवा शीर्षक शोधा…" autocomplete="off">
-    </div>
-
-    <!-- Books container -->
-    <div id="books-container">
-        {% include "L01/LibraryCateVisit/book_list_partial.html" %}
-    </div>
-
-    <!-- New Arrivals / Recently Added Slider -->
-    {% if new_books %}
-        <div class="new-arrivals-section my-4">
-            <h5 class="section-header mb-3">
-                <i class="ri-book-line me-2"></i>
-                नवीन पुस्तके
-            </h5>
-
-            <div class="slider-wrapper position-relative">
-                <button class="slider-arrow left-arrow">&#10094;</button>
-
-                <div class="new-arrivals-slider d-flex">
-                    {% for book in new_books %}
-                        <div class="card book-card">
-                            {% comment %} <div class="book-img-box">
-                                {% if book.front_page_photo %}
-                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
-                                        alt="{{ book.title }}" 
-                                        class="img-fluid w-100 h-100 object-fit-cover">
-                                {% else %}
-                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
-                                        <span class="text-muted">प्रतिमा उपलब्ध नाही</span>
-                                    </div>
-                                {% endif %}
-                            </div> {% endcomment %}
-                            <div class="book-img-container">
-                                {% if book.front_page_photo %}
-                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
-                                        alt="{{ book.title }}" 
-                                        class="book-img">
-                                {% else %}
-                                    <div class="book-img-placeholder">
-                                        प्रतिमा उपलब्ध नाही
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="card-body p-3">
-                                <h6 class="card-title text-truncate" title="{{ book.title }}">
-                                    {{ book.title }}
-                                </h6>
-                                {% if book.author %}
-                                <p class="mb-0 text-muted">
-                                    <small>लेखक: {{ book.author }}</small>
-                                </p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-
-                <button class="slider-arrow right-arrow">&#10095;</button>
+        <!-- Library Titles -->
+        <div class="library-header-block">
+            <div class="library-header-inner">
+                <h2 class="library-title">
+                    📚 <span class="library-title-text">डिजिटल लायब्ररी</span>
+                </h2>
+                <p class="library-subtitle">शब्दांच्या जगातील अमर्याद सफर...</p>
             </div>
         </div>
-    {% endif %}
 
-</div>
+        <!-- Tabs -->
+        <div class="subject-tabs-wrapper">
+            <ul class="nav nav-pills mb-4 justify-content-start">
+                {% for subject in subjects %}
+                <li class="nav-item me-2 mt-2">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}"
+                            data-subject-id="{{ subject.id_enc }}">
+                        <i class="ri-book-2-line me-1"></i>
+                        {{ subject.subjectNameEnglish }} / {{ subject.subjectNameMarathi }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Loader HTML -->
+        <div class="book-loader" id="loaderOverlay">
+            <div class="book">
+                <div class="book__pg-shadow"></div>
+                <div class="book__pg"></div>
+                <div class="book__pg book__pg--2"></div>
+                <div class="book__pg book__pg--3"></div>
+                <div class="book__pg book__pg--4"></div>
+                <div class="book__pg book__pg--5"></div>
+            </div>
+        </div>
+
+        <!-- Search bar -->
+        <div class="book-search-wrapper mb-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-0" id="search-icon">
+                    <i class="ri-search-line"></i>
+                </span>
+                <input type="text" id="bookSearch" class="form-control"
+                    placeholder="पुस्तकाचे नाव किंवा शीर्षक शोधा…" autocomplete="off">
+            </div>
+        </div>
+
+
+        <!-- Books container -->
+        <div id="books-container">
+            {% include "L01/LibraryCateVisit/book_list_partial.html" %}
+        </div>
+
+        <!-- New Arrivals / Recently Added Slider -->
+        {% if new_books %}
+            <div class="new-arrivals-section my-4">
+                <h5 class="section-header mb-3">
+                    <i class="ri-book-line me-2"></i>
+                    नवीन पुस्तके
+                </h5>
+
+                <div class="slider-wrapper position-relative">
+                    <button class="slider-arrow left-arrow">&#10094;</button>
+
+                    <div class="new-arrivals-slider d-flex">
+                        {% for book in new_books %}
+                            <div class="card book-card">
+                                <div class="book-img-container">
+                                    {% if book.front_page_photo %}
+                                        <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" 
+                                            alt="{{ book.title }}" 
+                                            class="book-img">
+                                    {% else %}
+                                        <div class="book-img-placeholder">
+                                            प्रतिमा उपलब्ध नाही
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body p-3">
+                                    <h6 class="card-title text-truncate" title="{{ book.title }}">
+                                        {{ book.title }}
+                                    </h6>
+                                    {% if book.author %}
+                                    <p class="mb-0 text-muted">
+                                        <small>लेखक: {{ book.author }}</small>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <button class="slider-arrow right-arrow">&#10095;</button>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}
 
 {% block extra_javascript %}

@@ -92,10 +92,19 @@ def authenticate_from_db(request, username, password, db_alias):
 
 @csrf_exempt
 def Login(request):
+
     library_code = request.session.get('library_db', None)
+
+  
     if request.method == "GET":
         next_url = request.GET.get("next", "")
         cat_ref_num = request.GET.get("cat_ref_num", "")
+        encrypted_ebook_id = request.GET.get("ebook_id")
+        encrypted_pdf_url = request.GET.get("pdf_url")
+
+        # --- Decrypt if provided ---
+        ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
+        pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
 
         library = LibraryMaster.objects.using('default').filter(
             is_active=1,
@@ -111,6 +120,7 @@ def Login(request):
             'cat': cat_ref_num,
         })
 
+  
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -118,81 +128,97 @@ def Login(request):
         next_url = request.POST.get('next')
 
         cat_ref_num = request.POST.get("cat")
+        encrypted_ebook_id = request.POST.get("ebook_id")
+        encrypted_pdf_url = request.POST.get("pdf_url")
 
-        db_alias = None
+        # --- Decrypt safely ---
+        ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
+        pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
 
-        if next_url:
-            request.session['service'] = "L01"
-            request.session['library_db'] = "L01"
-            db_alias = "L01"
-        else:
-            request.session['service'] = "L01"
-            request.session['library_db'] = "L01"
-            db_alias = "L01"
+       
+        db_alias = "L01"
+        request.session['service'] = "L01"
+        request.session['library_db'] = "L01"
 
         # Authenticate user
         user = authenticate_from_db(request, username, password, db_alias)
 
-        if user is not None:
+        if user is None:
+            messages.error(request, 'Invalid Credentials')
+            return redirect("Login")
 
-            request.session.cycle_key()
-            request.session["username"] = str(username)
-            request.session["full_name"] = str(user.full_name)
-            request.session["user_id"] = str(user.id)
-            request.session["role_id"] = str(user.role_id)
+       
+        request.session.cycle_key()
+        request.session["username"] = str(username)
+        request.session["full_name"] = str(user.full_name)
+        request.session["user_id"] = str(user.id)
+        request.session["role_id"] = str(user.role_id)
 
-            # --------------------------------------------------------
-            # GET USER'S MEMBERSHIP ID
-            # --------------------------------------------------------
-            member = None
-            membership = None
-            if db_alias != 'default':
-                member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
-                if member:
-                    membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
+       
+        member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
 
-            membership_id = None
-            if member:
+        membership_id = None
+        if member:
+            try:
+                membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
                 membership_id = membership.id
+            except MembershipMaster.DoesNotExist:
+                membership_id = None
 
-            # --------------------------------------------------------
-            # membership_id == 8 → Full access
-            # --------------------------------------------------------
-            if membership_id == 8:
-                if next_url:
-                    return redirect(next_url)
-                else:
-                    # UPSC (L01)
-                    if db_alias == "L01":
-                        return redirect('L01:chapters_index', topic_id=1)
-                    # MPSC (default)
-                    if db_alias == "default":
-                        return redirect('L01:mpsc_chapters_index', topic_id=1)
+        
+        if membership_id == 8:
 
-            # --------------------------------------------------------
-            # membership_id != 8 → redirect to book_info_login WITH cat_ref_num
-            # --------------------------------------------------------
-            elif membership_id is not None and membership_id != 8:
-                if cat_ref_num:
-                    redirect_url = f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}"
-                    return redirect(redirect_url)
-                else:
-                    return redirect('L01:membership_dashboard')  # fallback
+            # If user came from protected content
+            if next_url:
+                return redirect(next_url)
 
-            # --------------------------------------------------------
-            # membership_id missing (None)
-            # --------------------------------------------------------
-            else:
-                request.session.set_expiry(0)  # Browser close
-                return redirect('LMS_Dashboard')
+            # UPSC (L01)
+            if db_alias == "L01":
+                return redirect('L01:chapters_index', topic_id=1)
 
-            # If role-based redirect still needed, keeping your original logic
-            if str(user.role_id) == '3':
-                return redirect('L01:membership_dashboard')
-            else:
-                return redirect('LMS_Dashboard')
+            # MPSC (default)
+            if db_alias == "default":
+                return redirect('L01:mpsc_chapters_index', topic_id=1)
 
-        else:
+      
+        if membership_id is not None and membership_id != 8:
+
+            
+          
+            if ebook_id and pdf_url:
+
+                # Full PDF path
+                final_pdf_url = request.build_absolute_uri(settings.MEDIA_URL + pdf_url)
+
+                # Browser opens PDF directly
+                return redirect(final_pdf_url)
+
+            
+            request.session.set_expiry(0)
+        elif  membership_id == 8 and ebook_id:
+            messages.error(request, "This section is not available for Practitioner Branch (अभ्यासिका शाखा)")
+
+            if cat_ref_num:
+                return redirect(f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}")
+
+            return redirect('L01:membership_dashboard')
+
+        # -------------------------------------------------------------------
+        # NO MEMBERSHIP FOUND
+        # -------------------------------------------------------------------
+        if membership_id is None:
+            request.session.set_expiry(0)
+            return redirect('LMS_Dashboard')
+
+        # -------------------------------------------------------------------
+        # Role-based fallback
+        # -------------------------------------------------------------------
+        if str(user.role_id) == '3':
+            return redirect('L01:membership_dashboard')
+
+        return redirect('LMS_Dashboard')
+
+    else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
 

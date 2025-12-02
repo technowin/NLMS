@@ -14,14 +14,44 @@
     box-shadow: 0 12px 25px rgba(0,0,0,0.25);
 }
 .book-img-box {
-    height: 260px;
-    background: #fafafa;
+    height: 320px; /* slightly bigger for desktop */
+    background: #fafafa; /* light mode */
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     border-bottom: 1px solid #efefef;
 }
+
+/* Large tablets & medium screens */
+@media (max-width: 992px) {
+    .book-img-box {
+        height: 280px; /* a bit smaller */
+    }
+}
+
+/* Small tablets / large phones */
+@media (max-width: 768px) {
+    .book-img-box {
+        height: 240px;
+    }
+}
+
+/* Small mobile phones */
+@media (max-width: 576px) {
+    .book-img-box {
+        height: 200px;
+    }
+}
+
+
+/* Dark mode for book card image box */
+:root[data-bs-theme="dark"] .book-img-box {
+    background-color: #313A46; /* dark mode background */
+    border-bottom: 1px solid #444;
+}
+
+
 .book-img-box img {
     height: 100%;
     width: auto;
@@ -52,6 +82,63 @@
 }
 
 /* Tabs - common styles */
+
+/* Light mode (default) */
+.subject-tabs-wrapper .nav-link {
+    background-color: #f8f9fa; /* light background */
+    color: #333399; /* text color */
+    border-radius: 50px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.subject-tabs-wrapper .nav-link.active {
+    background-color: #333399;
+    color: #fff;
+}
+
+/* Hover effect */
+.subject-tabs-wrapper .nav-link:hover {
+    background-color: #333399;
+    color: #fff;
+}
+
+/* Dark mode */
+:root[data-bs-theme="dark"] .subject-tabs-wrapper .nav-link {
+    background-color: #313A46; /* dark background */
+    color: #ffffff;
+}
+
+:root[data-bs-theme="dark"] .subject-tabs-wrapper .nav-link.active {
+    background-color: #D4AF37; /* gold for active tab */
+    color: #313A46; /* text dark on gold */
+}
+
+:root[data-bs-theme="dark"] .subject-tabs-wrapper .nav-link:hover {
+    background-color: #D4AF37; /* gold hover */
+    color: #313A46;
+}
+
+/* Icon color adjustment */
+.subject-tabs-wrapper .nav-link i {
+    vertical-align: middle;
+}
+
+/* Spacing / responsive adjustments */
+@media (max-width: 768px) {
+    .subject-tabs-wrapper .nav-link {
+        font-size: 0.95rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .subject-tabs-wrapper .nav-link {
+        font-size: 0.9rem;
+        padding: 0.35rem 0.6rem;
+    }
+}
+
 .nav-pills .nav-link {
     white-space: nowrap;
     color: #333;
@@ -248,6 +335,7 @@
 }
 
 /* slider new arrival */
+
 .new-arrivals-section .slider-wrapper {
     position: relative;
     width: 100%;
@@ -303,7 +391,7 @@
 
 /* Book image container */
 .book-img-box {
-    height: 200px;
+    height: 300px;
     overflow: hidden;
 }
 
@@ -371,6 +459,14 @@
     transition: color 0.3s;
 }
 
+:root[data-bs-theme="dark"] .section-header {
+    color: #ffffff !important;
+}
+
+:root[data-bs-theme="dark"] .book-img-container {
+    background-color: #313A46 !important;
+}
+
 .section-header i {
     font-size: 1.5rem;
     color: #ff6b6b;
@@ -417,5 +513,187 @@
 @media (min-width: 768px) and (max-width: 991px) {
     .book-img-container {
         height: 220px;
+    }
+}
+
+/* Header Of Library Section Header Styles */
+/* ===============================
+   LIGHT / DARK MODE COLORS
+   =============================== */
+:root[data-bs-theme="light"] .library-title {
+    color: #333399 !important;
+}
+
+:root[data-bs-theme="light"] .library-subtitle {
+    color: #555 !important;
+}
+
+:root[data-bs-theme="dark"] .library-title {
+    color: #ffffff !important;
+}
+
+:root[data-bs-theme="dark"] .library-subtitle {
+    color: #cccccc !important;
+}
+
+/* ===============================
+   BASE STYLES
+   =============================== */
+.library-header-block {
+    width: 100%;
+    text-align: center;
+    padding-bottom: 12px;
+    position: relative;
+    cursor: default;
+}
+
+/* Inner wrapper = actual width of text */
+.library-header-inner {
+    display: inline-block;
+    position: relative;
+    padding-bottom: 6px; /* room for underline */
+}
+
+.library-title {
+    font-size: 3em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.library-subtitle {
+    font-size: 16px;
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* ===============================
+   UNDERLINE EFFECT (Desktop Only)
+   =============================== */
+@media (min-width: 992px) {
+    .library-header-inner::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0%;
+        height: 3px;
+        background-color: #D4AF37;
+        transition: width 0.35s ease-in-out;
+        border-radius: 2px;
+    }
+
+    /* Hover anywhere → underline shows under text ONLY */
+    .library-header-block:hover .library-header-inner::after {
+        width: 100%;
+    }
+}
+
+/* ===============================
+   RESPONSIVE TEXT SIZES
+   =============================== */
+@media (max-width: 1200px) {
+    .library-title {
+        font-size: 2.6em;
+    }
+}
+
+@media (max-width: 992px) {
+    .library-title {
+        font-size: 2.3em;
+    }
+}
+
+@media (max-width: 768px) {
+    .library-title {
+        font-size: 2em;
+    }
+    .library-subtitle {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .library-title {
+        font-size: 1.7em;
+    }
+    .library-subtitle {
+        font-size: 14px;
+    }
+}
+
+/* search bar css */
+
+.book-search-wrapper {
+    width: 100%;
+    max-width: 600px; /* optional: max width on large screens */
+    margin-left: auto;
+    margin-right: auto; /* center */
+}
+
+.book-search-wrapper .input-group {
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 50px;
+    overflow: hidden;
+    background-color: #fff; /* Light mode background */
+}
+
+.book-search-wrapper .form-control {
+    border: none;
+    border-radius: 0;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background-color: transparent; /* inherit from input-group */
+    color: #333; /* text color */
+}
+
+.book-search-wrapper .form-control::placeholder {
+    color: #888;
+}
+
+.book-search-wrapper .form-control:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+.book-search-wrapper .input-group-text {
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    color: #333399; /* Light mode icon color */
+}
+
+:root[data-bs-theme="dark"] .book-search-wrapper .input-group-text {
+    background-color: transparent !important; /* Important to override Bootstrap default */
+    color: #ffffff; /* Icon white in dark mode */
+}
+
+:root[data-bs-theme="dark"] .book-search-wrapper .form-control {
+    color: #fff; /* text white */
+    background-color: transparent; /* keep input transparent */
+}
+
+:root[data-bs-theme="dark"] .book-search-wrapper .form-control::placeholder {
+    color: #ccc; /* placeholder soft white */
+}
+
+:root[data-bs-theme="dark"] .book-search-wrapper .input-group {
+    background-color: #313A46; /* Dark mode background */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .book-search-wrapper .form-control {
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .book-search-wrapper {
+        max-width: 90%;
+    }
+    .book-search-wrapper .form-control {
+        font-size: 0.9rem;
     }
 }

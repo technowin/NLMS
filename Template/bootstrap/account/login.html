@@ -44,6 +44,8 @@ class="authentication-bg position-relative"
                         <form method="POST" action="Login" novalidate>
                             <input type="hidden" name="next" value="{{ next }}">
                             <input type="hidden" name="cat" value="{{ cat }}">
+                            <input type="hidden" name="ebook_id" value="{{ request.GET.ebook_id }}">
+                            <input type="hidden" name="pdf_url" value="{{ request.GET.pdf_url }}">
                               <div class="mb-3">
                                 {% comment %} <label for="emailaddress" class="form-label">Email address</label> {% endcomment %}
                                 <label for="emailaddress" class="form-label">Username</label>

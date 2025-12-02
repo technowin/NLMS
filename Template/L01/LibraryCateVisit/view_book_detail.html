@@ -1,0 +1,288 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}{{ book.title }} - Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/Master/view_book_detail.css' %}">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='पुस्तक माहिती' sub_title=book.title %}
+{% endblock %}
+
+{% block content %}
+
+<div class="book-detail-container">
+    <!-- HEADER -->
+    <div class="book-header">
+        <h1>{{ book.title }}</h1>
+        <span class="book-category">
+            <i class="ri-bookmark-line me-1"></i>
+            {{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}
+        </span>
+    </div>
+
+    <div class="book-content">
+        <!-- LEFT SIDEBAR: Images & Quick Info -->
+        <div class="book-sidebar">
+            <!-- Main Image -->
+            <div class="zoom-wrapper">
+                <img id="mainBookImage" 
+                    src="{{ MEDIA_URL }}{{ images.0 }}" 
+                    alt="{{ book.title }}">
+            </div>
+
+            <!-- Thumbnails -->
+            {% if images|length > 1 %}
+                <div class="thumbnail-grid">
+                    {% for img in images %}
+                        <img class="thumbnail" 
+                            src="{{ MEDIA_URL }}{{ img }}" 
+                            alt="Thumbnail {{ forloop.counter }}"
+                            onclick="changeMainImage('{{ MEDIA_URL }}{{ img }}', this)">
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Quick Stats -->
+            <div class="book-stats">
+                <h6 class="mb-3 fw-semibold text-uppercase" style="letter-spacing: 1px; color: #4a6fa5;">
+                    <i class="ri-information-line me-2"></i>
+                    द्रुत माहिती
+                </h6>
+                <div class="stat-item">
+                    <span class="stat-label">ISBN/ISSN</span>
+                    <span class="stat-value">{{ book.isbn_issn|default:"-" }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">भाषा</span>
+                    <span class="stat-value">{{ book.language|default:"-" }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">पृष्ठे</span>
+                    <span class="stat-value">{{ book.pages|default:"-" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT: Details -->
+        <div class="book-details">
+            <!-- Basic Information Section -->
+            <h3 class="section-header">
+                <i class="ri-book-open-line me-2"></i>
+                मूलभूत माहिती
+            </h3>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">लेखक</span>
+                    <span class="info-value">{{ book.author|default:"-" }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">प्रकाशक</span>
+                    <span class="info-value">{{ book.publisher|default:"-" }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">आवृत्ती</span>
+                    <span class="info-value">{{ book.edition|default:"-" }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">प्रकाशन वर्ष</span>
+                    <span class="info-value">{{ book.year_of_publication|default:"-" }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">प्रकाशन स्थळ</span>
+                    <span class="info-value">{{ book.publication_place|default:"-" }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">विषय</span>
+                    <span class="info-value">{{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}</span>
+                </div>
+                
+                {% if book.other_authors %}
+                <div class="info-item">
+                    <span class="info-label">इतर लेखक</span>
+                    <span class="info-value">{{ book.other_authors }}</span>
+                </div>
+                {% endif %}
+                
+                {% if book.keywords %}
+                <div class="info-item full-width">
+                    <span class="info-label">Keywords</span>
+                    <span class="info-value">{{ book.keywords }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Additional Information -->
+            {% if book.description or book.remarks %}
+            
+            <div class="info-grid">
+                {% if book.description %}
+                <div class="info-item full-width">
+                    <span class="info-label">विवरण</span>
+                    <span class="info-value">{{ book.description }}</span>
+                </div>
+                {% endif %}
+                
+                {% if book.remarks %}
+                <div class="info-item full-width">
+                    <span class="info-label">टिप्पणी</span>
+                    <span class="info-value">{{ book.remarks }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Circulation Information -->
+            <div class="circulation-section">
+                <h3 class="section-header" style="border-bottom-color: #28a745;">
+                    <i class="ri-refresh-line me-2"></i>
+                    उपलब्धता माहिती
+                </h3>
+
+                <div class="circulation-grid">
+                    <!-- Current Status (first available status) -->
+                    <div class="circulation-item">
+                        <div class="circulation-label">सद्यस्थिती</div>
+                        <div class="circulation-value">
+                            {% if current_status_display != "Not Available" %}
+                                <span class="status-badge status-available">{{ current_status_display }}</span>
+                                <span>{{ availability_text }}</span>
+                            {% else %}
+                                <span class="status-badge status-unavailable">{{ current_status_display }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="circulation-item">
+                        <div class="circulation-label">स्थान</div>
+                        <div class="circulation-value">
+                            {% if location_display != "Unknown" %}
+                                {{ location_display }}
+                            {% else %}
+                                <span class="status-badge status-unavailable">Not on Shelf</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-custom btn-borrow" disabled>
+                    <i class="ri-book-borrow-line"></i>
+                    पुस्तक मागवा
+                </button>
+                <button class="btn btn-custom btn-reserve" disabled>
+                    <i class="ri-bookmark-line"></i>
+                    राखून ठेवा
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_javascript %}
+    
+    <script>
+        // Initialize first thumbnail as active
+        document.addEventListener('DOMContentLoaded', function() {
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            if (thumbnails.length > 0) {
+                thumbnails[0].classList.add('active');
+            }
+        });
+
+        // Change main image function
+        function changeMainImage(src, element) {
+            const mainImage = document.getElementById('mainBookImage');
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            
+            // Update main image
+            mainImage.src = src;
+            
+            // Update active thumbnail
+            thumbnails.forEach(thumb => thumb.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Add zoom effect
+            mainImage.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                mainImage.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        // Zoom functionality for main image
+        document.getElementById('mainBookImage').addEventListener('click', function() {
+            this.classList.toggle('zoomed');
+            if (this.classList.contains('zoomed')) {
+                this.style.cursor = 'zoom-out';
+                this.style.transform = 'scale(1.5)';
+                this.style.zIndex = '1000';
+                this.style.position = 'relative';
+            } else {
+                this.style.cursor = 'zoom-in';
+                this.style.transform = 'scale(1)';
+                this.style.zIndex = '1';
+            }
+        });
+
+        // Keyboard navigation for thumbnails
+        document.addEventListener('keydown', function(e) {
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            const activeIndex = Array.from(thumbnails).findIndex(thumb => thumb.classList.contains('active'));
+            
+            if (e.key === 'ArrowRight' && activeIndex < thumbnails.length - 1) {
+                changeMainImage(thumbnails[activeIndex + 1].src, thumbnails[activeIndex + 1]);
+            } else if (e.key === 'ArrowLeft' && activeIndex > 0) {
+                changeMainImage(thumbnails[activeIndex - 1].src, thumbnails[activeIndex - 1]);
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const zoomBox = document.querySelector(".zoom-wrapper");
+            const zoomImg = zoomBox.querySelector("img");
+            const zoomLevel = 2.2; // your zoom level
+
+            zoomBox.addEventListener("mousemove", function (e) {
+                const rect = zoomBox.getBoundingClientRect();
+
+                const x = e.clientX - rect.left;   // X inside box
+                const y = e.clientY - rect.top;    // Y inside box
+
+                const xPercent = x / rect.width * 100;
+                const yPercent = y / rect.height * 100;
+
+                zoomImg.style.transform = `scale(${zoomLevel})`;
+                zoomImg.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+            });
+
+            zoomBox.addEventListener("mouseleave", function () {
+                zoomImg.style.transform = "scale(1)";
+            });
+        });
+    </script>
+
+{% endblock %}

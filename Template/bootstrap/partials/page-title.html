@@ -5,8 +5,12 @@
             <div class="page-title-right">
                 <ol class="breadcrumb m-0">
                     {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">NLMS</a></li> {% endcomment %}
-                     <li class="breadcrumb-item">
-                        <a href="{% url 'LMS_Dashboard' %}">NLMS</a>
+                      <li class="breadcrumb-item">
+                        {% if role_id == '3' %}
+                            <a href="{% url 'L01:membership_dashboard' %}">NLMS</a>
+                        {% else %}
+                            <a href="{% url 'LMS_Dashboard' %}">NLMS</a>
+                        {% endif %}
                     </li>
                     {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">{{ page_title }}</a></li> {% endcomment %}
                     <li class="breadcrumb-item"><a href="javascript:history.back()">{{ page_title }}</a></li>

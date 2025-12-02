@@ -3569,72 +3569,72 @@ def libraryebook_search(request):
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
 
-        results = LibraryEbook.objects.all()
+        if not query or not search_type:
+            return JsonResponse({"error": "Please provide both query and search type."}, status=400)
 
-        # ---- APPLY SEARCH CONDITIONS ----
-        if query:
-            if search_type in ["title", "book", "ebook"]:
-                results = results.filter(eb_title__icontains=query)
+        # Base queryset
+        results = LibraryEbook.objects.using('L01').all()
 
-            elif search_type == "author":
-                results = results.filter(
-                    Q(eb_author__icontains=query) |
-                    Q(eb_other_authors__icontains=query)
-                )
+        # ---- FILTER BASED ON SEARCH TYPE ----
+        if search_type in ["title", "ebook", "book"]:
+            results = results.filter(eb_title__icontains=query)
 
-            elif search_type == "publisher":
-                results = results.filter(eb_publisher__icontains=query)
+        elif search_type == "author":
+            results = results.filter(
+                Q(eb_author__icontains=query) |
+                Q(eb_other_authors__icontains=query)
+            )
 
-            elif search_type == "keyword":
-                results = results.filter(eb_keywords__icontains=query)
+        elif search_type == "publisher":
+            results = results.filter(eb_publisher__icontains=query)
 
-            elif search_type == "language":
-                results = results.filter(eb_language__icontains=query)
+        elif search_type == "language":
+            results = results.filter(eb_language__icontains=query)
 
-            elif search_type in ["isbn", "issn"]:
-                results = results.filter(eb_isbn_issn__icontains=query)
+        elif search_type == "keyword":
+            results = results.filter(eb_keywords__icontains=query)
 
-            elif search_type == "year":
-                if query.isdigit():
-                    results = results.filter(eb_year_of_publication=int(query))
-                else:
-                    return JsonResponse({"error": "Invalid year format."}, status=400)
+        elif search_type in ["isbn", "issn"]:
+            results = results.filter(eb_isbn_issn__icontains=query)
 
-            else:
-                # Generic search across multiple fields
-                results = results.filter(
-                    Q(eb_title__icontains=query) |
-                    Q(eb_author__icontains=query) |
-                    Q(eb_other_authors__icontains=query) |
-                    Q(eb_publisher__icontains=query) |
-                    Q(eb_keywords__icontains=query) |
-                    Q(eb_language__icontains=query) |
-                    Q(eb_isbn_issn__icontains=query)
-                )
+        elif search_type == "year":
+            year_filters = Q()
+            if query.isdigit():
+                year_filters |= Q(eb_year_of_publication=int(query))
+            year_filters |= Q(eb_year_of_publication__icontains=query)
+            results = results.filter(year_filters)
 
-        # ---- FIELDS TO RETURN ----
+        else:
+            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+
+        # ---- LIMIT AND RETURN FIELDS ----
         results = results.values(
             "ebook_id",
             "eb_title",
             "eb_author",
+            "eb_other_authors",
             "eb_publisher",
-            "eb_year_of_publication",
             "eb_language",
+            "eb_year_of_publication",
             "eb_keywords",
+            "eb_isbn_issn",
             "eb_pdf_url",
             "eb_front_page_photo"
         )[:50]
 
-        # ---- BUILD ABSOLUTE IMAGE URLs ----
+        # ---- FORMAT + ENCRYPT ----
         updated_results = []
         for r in results:
+            # absolute image url
             img = r.get("eb_front_page_photo")
-            if img:
-                full_img_url = request.build_absolute_uri(f"/media/{img}")
-            else:
-                full_img_url = ""
+            r["eb_front_page_photo"] = (
+                request.build_absolute_uri(f"/media/{img}") if img else ""
+            )
 
-            r["eb_front_page_photo"] = full_img_url
+            # Encrypt ID + PDF URL
+            r["encrypted_ebook_id"] = enc(str(r["ebook_id"]))
+            r["encrypted_pdf_url"] = enc(r["eb_pdf_url"]) if r["eb_pdf_url"] else ""
+
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
@@ -3643,7 +3643,91 @@ def libraryebook_search(request):
         return JsonResponse(
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
-        )   
+        )
+
+    
+
+@csrf_exempt
+def index_ebook_search(request):
+    try:
+        library_code = request.session.get('library_db', None)
+        if request.method != "POST":
+            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+
+        query = request.POST.get("query", "").strip()
+        search_type = request.POST.get("searchType", "").strip().lower()
+
+        if not query:
+            return JsonResponse({"error": "Please enter a search term."}, status=400)
+
+        # Base queryset
+        results = LibraryEbook.objects.using('L01').all()
+
+        # ---- FIRST-LETTER SEARCH ----
+        if search_type in ["title", "book", "ebook", ""]:
+            results = results.filter(eb_title__istartswith=query)
+
+        elif search_type == "author":
+            results = results.filter(
+                Q(eb_author__istartswith=query) |
+                Q(eb_other_authors__istartswith=query)
+            )
+
+        elif search_type == "publisher":
+            results = results.filter(eb_publisher__istartswith=query)
+
+        elif search_type == "language":
+            results = results.filter(eb_language__istartswith=query)
+
+        elif search_type == "keyword":
+            results = results.filter(eb_keywords__istartswith=query)
+
+        elif search_type in ["isbn", "issn"]:
+            results = results.filter(eb_isbn_issn__istartswith=query)
+
+        elif search_type == "year":
+            results = results.filter(eb_year_of_publication__istartswith=query)
+
+        else:
+            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+
+        # ---- SELECT FIELDS ----
+        results = results.values(
+            "ebook_id",
+            "eb_title",
+            "eb_author",
+            "eb_other_authors",
+            "eb_publisher",
+            "eb_language",
+            "eb_year_of_publication",
+            "eb_keywords",
+            "eb_isbn_issn",
+            "eb_pdf_url",
+            "eb_front_page_photo",
+        )[:50]
+
+        # ---- FORMAT + ENCRYPT ----
+        updated_results = []
+        for r in results:
+            img = r.get("eb_front_page_photo")
+            r["eb_front_page_photo"] = (
+                request.build_absolute_uri(f"/media/{img}") if img else ""
+            )
+
+            # Encrypt ID + PDF URL
+            r["encrypted_ebook_id"] = enc(str(r["ebook_id"]))
+            r["encrypted_pdf_url"] = enc(r["eb_pdf_url"]) if r["eb_pdf_url"] else ""
+
+            updated_results.append(r)
+
+        return JsonResponse(updated_results, safe=False)
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)},
+            status=500
+        )
+
 
 def upsc_ebook_index(request):
     try:
@@ -4494,6 +4578,62 @@ def visit_Library_catalogue(request):
         return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
 
 @login_required
+def view_book_detail(request):
+    try:
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+        
+        cat_ref_num_enc = request.GET.get('cat_ref_num')
+        if not cat_ref_num_enc:
+            messages.error(request, "Invalid book request.")
+            return redirect("visit_library_catalogue")
+
+        cat_ref_num = dec(cat_ref_num_enc)
+
+        book = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
+
+        # Collect images (only if they exist)
+        images = []
+        if book.front_page_photo:
+            images.append(book.front_page_photo)
+        if book.last_page_photo:
+            images.append(book.last_page_photo)
+
+        # Fetch circulation copies for this book
+        copies = CirculationCopyStatus.objects.filter(bookcatalog=book)
+
+        total_qty = copies.count()
+        available_qty = copies.filter(current_status__status_name='On-Shelf').count()
+
+        # Determine overall availability
+        book_availability = "On-Shelf" if available_qty > 0 else "Not Available"
+
+        # Optional: get individual barcode and status
+        copy_details = copies.values('barcode', 'current_status__status_name')
+
+        context = {
+            'book': book,
+            'images': images,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'total_qty': total_qty,
+            'available_qty': available_qty,
+            'book_availability': book_availability,
+            'copy_details': copy_details,
+        }
+        return render(request, "L01/LibraryCateVisit/view_book_detail.html", context)
+
+    except Exception as e:
+        print("Error in view_book_detail:", e)
+        messages.error(request, "Unable to load book details.")
+        return redirect("visit_library_catalogue")
+
+@login_required
 def get_books_by_subject(request):
     try:
         subject_id_enc = request.GET.get('subject_id')
@@ -4607,13 +4747,14 @@ def membership_card(request):
             # Prepare member details
             member_details = {
                 'id': member.id,
-                'name': f"{member.first_name or ''} {member.middle_name or ''} {member.last_name or ''}".strip(),
+                'name': f"{member.first_name_mar or ''} {member.middle_name_mar or ''} {member.last_name_mar or ''}".strip(),
                 'address': member.local_address or 'Not available',
+                "member_type":member.membership.membership_type,
                 'mobile_no': member.mobile_no or 'Not available',
                 'membership_from': member.from_date.strftime('%d-%b-%Y') if member.from_date else 'Not set',
                 'membership_to': member.to_date.strftime('%d-%b-%Y') if member.to_date else 'Not set',
                 'membership_code': member.membership_code or 'Not available',
-                'library_name': library_name_from_session or member.library_name or 'Not available',
+                'library_name':  member.library_name_mar or 'Not available',
                 'email': member.email or 'Not available',
                 'user_id': member.user_id,
                 'library_address': library_address or 'Not available',
@@ -4638,4 +4779,77 @@ def membership_card(request):
 
     return render(request, "Master/membership_card.html", context)
 
+@login_required
+def view_book_detail(request):
+    try:
+        cat_ref_num_enc = request.GET.get('cat_ref_num')
+        if not cat_ref_num_enc:
+            messages.error(request, "Invalid book request.")
+            return redirect("visit_library_catalogue")
 
+        cat_ref_num = dec(cat_ref_num_enc)
+
+        # Fetch the book
+        book = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
+
+        # Collect images
+        images = []
+        if book.front_page_photo:
+            images.append(book.front_page_photo)
+        if book.last_page_photo:
+            images.append(book.last_page_photo)
+
+        # Fetch all circulation rows for this book
+        circulation_qs = CirculationCopyStatus.objects.filter(bookcatalog_id=book.cat_ref_num)
+        total_qty = circulation_qs.count()
+
+        # Get status master entries for current and processing statuses
+        status_on_shelf = status_master.objects.filter(status_name__iexact="On-Shelf").first()
+        status_unknown = "Not Available"
+
+        # Count how many copies are currently "On-Shelf"
+        current_on_shelf_count = circulation_qs.filter(current_status=status_on_shelf).count() if status_on_shelf else 0
+
+        # Decide display values for availability
+        if total_qty > 0:
+            if current_on_shelf_count > 0:
+                current_status_display = "On-Shelf"
+                availability_text = f"{current_on_shelf_count} of {total_qty} available"
+            else:
+                current_status_display = status_unknown
+                availability_text = f"0 of {total_qty} available"
+        else:
+            current_status_display = status_unknown
+            availability_text = "-"
+
+        # Calculate location display **only for On-Shelf copies**
+        location_counts = {}
+        if status_on_shelf:
+            on_shelf_copies = circulation_qs.filter(current_status=status_on_shelf)
+            for circ in on_shelf_copies:
+                if circ.shelf_location:
+                    loc_name = circ.shelf_location.location_name
+                    location_counts[loc_name] = location_counts.get(loc_name, 0) + 1
+
+        if location_counts:
+            # Join multiple locations with count if multiple exist
+            location_display = ", ".join([f"{loc} ({count})" for loc, count in location_counts.items()])
+        else:
+            location_display = "Unknown"
+
+        context = {
+            'book': book,
+            'images': images,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'total_qty': total_qty,
+            'current_status_display': current_status_display,
+            'availability_text': availability_text,
+            'location_display': location_display,  # <-- filtered for On-Shelf copies
+        }
+
+        return render(request, "L01/LibraryCateVisit/view_book_detail.html", context)
+
+    except Exception as e:
+        print("Error in view_book_detail:", e)
+        messages.error(request, "Unable to load book details.")
+        return redirect("visit_library_catalogue")
