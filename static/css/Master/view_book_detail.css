@@ -780,7 +780,7 @@
 @media (max-width: 768px) {
     .review-section {
         padding: 1rem;
-        margin-left: 0;
+        margin: 0;
     }
     
     .review-card {
@@ -1204,3 +1204,166 @@
     font-size: 0.75rem;
     color: #6c757d;
 }
+
+/* =========================================
+   DARK MODE FIX FOR REVIEW SECTION
+   Bootstrap Theme: data-bs-theme="dark"
+   ========================================= */
+
+:root[data-bs-theme="dark"] .review-section,
+:root[data-bs-theme="dark"] .avg-rating,
+:root[data-bs-theme="dark"] #reviewList {
+    color: #ffffff !important;
+}
+
+/* Override Bootstrap's white card */
+:root[data-bs-theme="dark"] .card {
+    background-color: #2d2d44 !important;
+    border-color: #3d3d5c !important;
+    color: #ffffff !important;
+}
+
+/* Specific cards */
+:root[data-bs-theme="dark"] .review-card,
+:root[data-bs-theme="dark"] .write-review {
+    background-color: #2d2d44 !important;
+    border-color: #3d3d5c !important;
+    color: #ffffff !important;
+}
+
+/* Star colors */
+:root[data-bs-theme="dark"] .star-input i,
+:root[data-bs-theme="dark"] .review-card i {
+    color: #ffce45 !important;
+}
+
+/* Rating number text */
+:root[data-bs-theme="dark"] .avg-rating span {
+    color: #ffffff !important;
+}
+
+/* Textarea inside review */
+:root[data-bs-theme="dark"] #reviewText {
+    background: #3a3a52 !important;
+    color: #ffffff !important;
+    border-color: #4a4a65 !important;
+}
+
+:root[data-bs-theme="dark"] #reviewText::placeholder {
+    color: #cccccc !important;
+}
+
+/* Submit button */
+:root[data-bs-theme="dark"] #submitReviewBtn {
+    background: #6b8cff !important;
+    border-color: #6b8cff !important;
+    color: #ffffff !important;
+}
+
+:root[data-bs-theme="dark"] #submitReviewBtn:hover {
+    background: #5675df !important;
+}
+
+/* Review card hover effect */
+:root[data-bs-theme="dark"] .review-card:hover {
+    border-color: #6b8cff !important;
+    box-shadow: 0 3px 10px rgba(107, 140, 255, 0.3) !important;
+}
+
+/* Date & username */
+:root[data-bs-theme="dark"] .review-header span {
+    color: #dddddd !important;
+}
+
+/* Alerts styled for dark */
+:root[data-bs-theme="dark"] .alert-info {
+    background: rgba(90,140,220,0.25) !important;
+    border-color: rgba(90,140,220,0.5) !important;
+    color: #cfe2ff !important;
+}
+
+:root[data-bs-theme="dark"] .alert-success {
+    background: rgba(72,180,97,0.25) !important;
+    border-color: rgba(72,180,97,0.5) !important;
+    color: #d6f5df !important;
+}
+
+/* Empty state (No reviews yet) */
+:root[data-bs-theme="dark"] .text-center p,
+:root[data-bs-theme="dark"] .text-center h5 {
+    color: #cccccc !important;
+}
+
+:root[data-bs-theme="dark"] .text-center i {
+    color: rgba(255,255,255,0.3) !important;
+}
+
+/* Pagination */
+:root[data-bs-theme="dark"] .page-link {
+    background-color: #3b3b55 !important;
+    color: #ffffff !important;
+    border-color: #4a4a65 !important;
+}
+
+:root[data-bs-theme="dark"] .page-link:hover {
+    background-color: #6b8cff !important;
+    color: #ffffff !important;
+    border-color: #6b8cff !important;
+}
+
+:root[data-bs-theme="dark"] .page-item.active .page-link {
+    background-color: #6b8cff !important;
+    border-color: #6b8cff !important;
+}
+
+:root[data-bs-theme="dark"] .page-item.disabled .page-link {
+    background-color: #2d2d44 !important;
+    color: #888888 !important;
+    border-color: #444444 !important;
+}
+
+/* Pagination info box */
+:root[data-bs-theme="dark"] .pagination-info {
+    background: rgba(255,255,255,0.08) !important;
+    color: #ffffff !important;
+}
+
+:root[data-bs-theme="dark"] .pagination-info .info-item {
+    background: rgba(255,255,255,0.12) !important;
+    color: #ffffff !important;
+}
+
+:root[data-bs-theme="dark"] .review-body p {
+    color: #ffffff !important;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 0;
+    word-break: break-word;
+}
+
+:root[data-bs-theme="dark"] .avg-rating span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+:root[data-bs-theme="dark"] .avg-rating {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.12) !important;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    gap: 0.5rem;
+}
+
+:root[data-bs-theme="dark"] .review-section h3 {
+    font-family: 'Merriweather', serif;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
