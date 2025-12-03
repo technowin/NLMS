@@ -510,6 +510,21 @@ function getStatusBadgeClass(status) {
     }
 }
 </script>
+
+{% if request.session.open_pdf_url %}
+<script>
+
+    let pdfUrl = "{{ request.session.open_pdf_url }}";
+    var win = window.open(pdfUrl, "_blank");
+
+    if (!win) {
+        alert("Popup blocked! Please allow popups for this site.");
+    }
+
+    // Remove session value AFTER using it
+    fetch("{% url 'L01:clear_pdf_session' %}");
+</script>
+{% endif %}
 {% endblock %}
 {% block extra_javascript %}
 

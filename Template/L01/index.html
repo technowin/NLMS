@@ -720,7 +720,9 @@
                                 data-remarks="{{ ebook.remarks }}"
                                 data-language="{{ ebook.eb_language }}"
                                 data-description="{{ ebook.eb_keywords }}"
-                                data-pdf_file="{{ ebook.eb_pdf_url }}">
+                                data-pdf_file="{{ ebook.eb_pdf_url }}"
+                                data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
                         </div>
                         {% endif %}
 
@@ -744,7 +746,9 @@
                                 data-remarks="{{ ebook.remarks }}"
                                 data-language="{{ ebook.eb_language }}"
                                 data-description="{{ ebook.eb_keywords }}"
-                                data-pdf_file="{{ ebook.eb_pdf_url }}">
+                                data-pdf_file="{{ ebook.eb_pdf_url }}"
+                                data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
                         </div>
                         {% endif %}
 
@@ -825,8 +829,13 @@
             <p><strong>Pages:</strong> <span id="zoomBookPages"></span></p>
             <p><strong>Remarks:</strong> <span id="zoomBookRemarks"></span></p>
             <p><strong>Description:</strong> <span id="zoomBookDescription"></span></p>
+            <span id="zoomEncryptedEbookId" style="display:none;"></span>
+            <span id="zoomEncryptedPdfUrl" style="display:none;"></span>
+            <button class="login-btn" onclick="zoomRedirectLogin()">Login to Access</button>
 
-            <button class="login-btn" onclick="window.location.href='{% url 'Login' %}'">Login to Access</button>
+
+
+            {% comment %} <button class="login-btn" onclick="window.location.href='{% url 'Login' %}'">Login to Access</button> {% endcomment %}
         </div>
     </div>
 </div>
@@ -887,6 +896,7 @@
         const modalPages = document.getElementById("zoomBookPages");
         const modalRemarks = document.getElementById("zoomBookRemarks");
         const modalDescription = document.getElementById("zoomBookDescription");
+        
 
         // Show modal
         modal.style.display = "flex";
@@ -906,6 +916,14 @@
         modalPages.textContent = img.getAttribute('data-pages') || "N/A";
         modalRemarks.textContent = img.getAttribute('data-remarks') || "";
         modalDescription.textContent = img.getAttribute('data-description') || "";
+
+        // Set encrypted ebook_id + pdf_url
+        document.getElementById("zoomEncryptedEbookId").textContent =
+            img.getAttribute("data-encrypted-ebook-id") || "";
+
+        document.getElementById("zoomEncryptedPdfUrl").textContent =
+            img.getAttribute("data-encrypted-pdf-url") || "";
+
     }
 
     function closeZoom() {
@@ -944,5 +962,21 @@ function toggleDescription(btn) {
     }
 }
 </script>
+
+<script>
+function zoomRedirectLogin() {
+    let ebookId = document.getElementById("zoomEncryptedEbookId").textContent;
+    let pdfUrl = document.getElementById("zoomEncryptedPdfUrl").textContent;
+
+    if (!ebookId || !pdfUrl) {
+        alert("Access error: Ebook details missing.");
+        return;
+    }
+
+    // Same redirect logic as card button
+    window.location.href = `/Login?ebook_id=${ebookId}&pdf_url=${pdfUrl}`;
+}
+</script>
+
 
 {% endblock %}

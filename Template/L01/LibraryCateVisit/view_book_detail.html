@@ -197,13 +197,241 @@
             </div>
 
         </div>
+
     </div>
+
+</div>
+
+<div class="book-detail-container">
+
+    <!-- Reviews Section -->
+    <div class="review-section">
+        <h3>
+            <i class="ri-chat-3-line"></i>
+            Reviews
+            <small class="text-muted">({{ total_reviews }})</small>
+        </h3>
+        
+        <!-- Average Rating -->
+        <div class="avg-rating">
+            <div class="stars-display">
+                {% for i in "12345"|make_list %}
+                    {% if forloop.counter <= avg_rating|floatformat:0 %}
+                        <i class="ri-star-fill"></i>
+                    {% elif forloop.counter <= avg_rating %}
+                        <i class="ri-star-half-fill"></i>
+                    {% else %}
+                        <i class="ri-star-line"></i>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <span>{{ avg_rating|floatformat:1 }}/5</span>
+        </div>
+
+        <!-- Write Review -->
+        {% if not user_review %}
+            <div class="write-review card p-3 mb-3">
+                <h5><i class="ri-edit-line me-1"></i> Your Review</h5>
+                
+                <div class="star-input mb-2">
+                    <div class="d-flex align-items-center">
+                        {% for i in "12345"|make_list %}
+                            <i class="ri-star-line star me-1" data-value="{{ forloop.counter }}"></i>
+                        {% endfor %}
+                        <small class="ms-2" id="ratingValue">0/5</small>
+                    </div>
+                </div>
+                
+                <textarea id="reviewText" class="form-control mb-2" rows="2" 
+                        placeholder="Share your thoughts..." maxlength="500"></textarea>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted"><span id="charCount">0</span>/500</small>
+                    <button id="submitReviewBtn" class="btn btn-sm btn-primary" 
+                            data-book-id="{{ book.cat_ref_num }}" disabled>
+                        <i class="ri-send-plane-line me-1"></i>Submit
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info mb-3">
+                <i class="ri-check-line me-1"></i> You've already reviewed this book
+            </div>
+        {% endif %}
+
+        <!-- Reviews List -->
+        <div id="reviewList">
+           {% for review in reviews %}
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Updated User Badge -->
+                            <div class="user-badge">
+                                <i class="ri-user-line"></i> 
+                                {% if review.user_obj %}
+                                    {% if review.user_obj.full_name %}
+                                        {{ review.user_obj.full_name }}
+                                    {% elif review.user_obj.get_full_name %}
+                                        {{ review.user_obj.get_full_name }}
+                                    {% elif review.user_obj.username %}
+                                        {{ review.user_obj.username }}
+                                    {% else %}
+                                        User #{{ review.user_id }}
+                                    {% endif %}
+                                {% else %}
+                                    User #{{ review.user_id }}
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Star Rating -->
+                            <div class="stars-display">
+                                {% for i in "12345"|make_list %}
+                                    <i class="ri-star-fill" style="color: {% if forloop.counter <= review.rating %}#ffc107{% else %}#e0e0e0{% endif %};"></i>
+                                {% endfor %}
+                                <span>{{ review.rating }}/5</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Date -->
+                        <small>
+                            <i class="ri-time-line"></i>
+                            {{ review.created_at|date:"M d, Y" }}
+                        </small>
+                    </div>
+                    
+                    <!-- Review Text -->
+                    <div class="review-body">
+                        <p class="mb-0">{{ review.review }}</p>
+                    </div>
+                    
+                    <!-- Library Code (if exists) -->
+                    {% if review.library_code %}
+                    <div class="review-footer">
+                        <small><i class="ri-building-line me-1"></i>{{ review.library_code }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="text-center py-4">
+                    <i class="ri-chat-3-line display-6 text-muted"></i>
+                    <p class="text-muted mb-0 mt-2">No reviews yet. Be the first!</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Beautiful Pagination -->
+        {% if show_pagination and reviews.paginator.num_pages > 1 %}
+            <div class="review-pagination" id="paginationContainer" {% if not show_pagination %}style="display: none;"{% endif %}>
+                <!-- Page Navigation -->
+                <nav aria-label="Reviews pagination">
+                    <ul class="pagination">
+                        <!-- First Page -->
+                        {% if reviews.number > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page=1&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                            aria-label="First">
+                                <i class="ri-skip-left-line"></i>
+                                <span class="d-none d-md-inline ms-1">First</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Previous Page -->
+                        {% if reviews.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.previous_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                            aria-label="Previous">
+                                <i class="ri-arrow-left-line"></i>
+                                <span class="d-none d-md-inline ms-1">Prev</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Page Numbers -->
+                        {% for num in reviews.paginator.page_range %}
+                            {% if num == reviews.number %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            
+                            {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ num }}&cat_ref_num={{ cat_ref_num_enc }}#reviews">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            
+                            {% elif num == reviews.number|add:'-3' or num == reviews.number|add:'3' %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Next Page -->
+                        {% if reviews.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.next_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                            aria-label="Next">
+                                <span class="d-none d-md-inline me-1">Next</span>
+                                <i class="ri-arrow-right-line"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Last Page -->
+                        {% if reviews.number < reviews.paginator.num_pages %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.paginator.num_pages }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                            aria-label="Last">
+                                <span class="d-none d-md-inline me-1">Last</span>
+                                <i class="ri-skip-right-line"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
+                <!-- Page Information -->
+                <div class="pagination-info">
+                    <div class="info-item">
+                        <i class="ri-file-list-line"></i>
+                        <span>Page {{ reviews.number }} of {{ reviews.paginator.num_pages }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="ri-chat-3-line"></i>
+                        <span>{{ reviews.start_index }}-{{ reviews.end_index }} of {{ total_reviews }} reviews</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="ri-star-line"></i>
+                        <span>Avg: {{ avg_rating|floatformat:1 }}/5</span>
+                    </div>
+                </div>
+            </div>
+        {% elif total_reviews > 0 %}
+            <!-- Simple message if 5 or fewer reviews -->
+            <div class="no-pagination-message text-center mt-4">
+                <div class="d-inline-flex align-items-center gap-2 p-3 rounded" style="background: #f8f9fa;">
+                    <i class="ri-checkbox-circle-line text-success"></i>
+                    <span class="text-muted">Showing all {{ total_reviews }} reviews</span>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
 </div>
 
 {% endblock %}
 
 {% block extra_javascript %}
-    
+
     <script>
         // Initialize first thumbnail as active
         document.addEventListener('DOMContentLoaded', function() {
@@ -283,6 +511,430 @@
                 zoomImg.style.transform = "scale(1)";
             });
         });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            const ratingValue = document.getElementById('ratingValue');
+            const reviewText = document.getElementById('reviewText');
+            const charCount = document.getElementById('charCount');
+            const submitBtn = document.getElementById('submitReviewBtn');
+            let selectedRating = 0;
+
+            // Star rating interaction
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    const value = parseInt(this.getAttribute('data-value'));
+                    highlightStars(value);
+                });
+
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.getAttribute('data-value'));
+                    highlightStars(selectedRating);
+                    ratingValue.textContent = `${selectedRating}/5`;
+                    updateSubmitButton();
+                });
+            });
+
+            // Character counter for review text
+            reviewText.addEventListener('input', function() {
+                const length = this.value.length;
+                charCount.textContent = length;
+                charCount.style.color = length > 900 ? '#dc3545' : '#6c757d';
+                updateSubmitButton();
+            });
+
+            // Star highlighting function
+            function highlightStars(upTo) {
+                stars.forEach((star, index) => {
+                    if (index < upTo) {
+                        star.classList.remove('ri-star-line');
+                        star.classList.add('ri-star-fill');
+                        star.style.color = '#ffc107';
+                    } else {
+                        star.classList.remove('ri-star-fill');
+                        star.classList.add('ri-star-line');
+                        star.style.color = '#ddd';
+                    }
+                });
+            }
+
+            // Update submit button state
+            function updateSubmitButton() {
+                const hasRating = selectedRating > 0;
+                const hasText = reviewText.value.trim().length >= 10; // Minimum 10 characters
+                
+                if (hasRating && hasText) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                }
+            }
+
+            // Submit review via AJAX
+            if (submitBtn) {
+                debugger;
+                submitBtn.addEventListener('click', function() {
+                    const bookId = this.getAttribute('data-book-id');
+                    const review = reviewText.value.trim();
+                    
+                    // Validate
+                    if (!selectedRating) {
+                        showNotification('Please select a rating', 'error');
+                        return;
+                    }
+                    
+                    if (review.length < 10) {
+                        showNotification('Review must be at least 10 characters', 'error');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    const originalBtnHTML = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="ri-loader-4-line animate-spin me-2"></i> Submitting...';
+                    submitBtn.disabled = true;
+                    
+                    // Prepare data
+                    const data = {
+                        book_id: bookId,
+                        rating: selectedRating,
+                        review: review
+                    };
+                    debugger;
+                    // Send AJAX request
+                    fetch('{% url "L01:submit_review" %}', {  // Use Django URL tag
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            showNotification(data.message || 'Review submitted successfully!', 'success');
+                            
+                            // Update reviews section
+                            updateReviewsSection(data);
+                            
+                            // Reset form
+                            resetReviewForm();
+                        } else {
+                            showNotification(data.message || 'Failed to submit review', 'error');
+                            submitBtn.innerHTML = originalBtnHTML;
+                            submitBtn.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('Network error. Please try again.', 'error');
+                        submitBtn.innerHTML = originalBtnHTML;
+                        submitBtn.disabled = false;
+                    });
+                });
+            }
+
+            // Function to update reviews section
+            function updateReviewsSection(data) {
+                console.log("Updating reviews with data:", data);
+                
+                // Update average rating
+                const avgRatingElement = document.querySelector('.avg-rating .rating-value');
+                if (avgRatingElement) {
+                    avgRatingElement.textContent = `${data.avg_rating}/5`;
+                }
+                
+                // Update total reviews count
+                const totalReviewsElement = document.querySelector('.review-section h3 small');
+                if (totalReviewsElement) {
+                    totalReviewsElement.textContent = `(${data.total_reviews})`;
+                }
+                
+                // Update reviews list
+                const reviewListContainer = document.getElementById('reviewListContainer') || 
+                                        document.getElementById('reviewList');
+                if (reviewListContainer && data.reviews_html) {
+                    console.log("Updating reviews HTML");
+                    
+                    // Add fade out effect
+                    reviewListContainer.style.opacity = '0.5';
+                    reviewListContainer.style.transition = 'opacity 0.3s';
+                    
+                    setTimeout(() => {
+                        reviewListContainer.innerHTML = data.reviews_html;
+                        reviewListContainer.style.opacity = '1';
+                        
+                        // Highlight the FIRST review (should be the new one)
+                        const reviewCards = reviewListContainer.querySelectorAll('.review-card');
+                        console.log(`Found ${reviewCards.length} review cards`);
+                        
+                        if (reviewCards.length > 0) {
+                            // Add animation to highlight new review
+                            reviewCards[0].classList.add('new-review');
+                            reviewCards[0].style.backgroundColor = '#f8fff8';
+                            
+                            // Add "NEW" badge
+                            const reviewHeader = reviewCards[0].querySelector('.review-header');
+                            if (reviewHeader && !reviewHeader.querySelector('.new-label')) {
+                                const newLabel = document.createElement('span');
+                                newLabel.className = 'new-label ms-2';
+                                newLabel.innerHTML = '<span class="badge bg-success" style="font-size: 0.7rem;">NEW</span>';
+                                reviewHeader.appendChild(newLabel);
+                            }
+                            
+                            // Log the first review's content for debugging
+                            const firstReviewText = reviewCards[0].querySelector('.review-body p');
+                            if (firstReviewText) {
+                                console.log("First review text:", firstReviewText.textContent.substring(0, 50) + "...");
+                            }
+                        }
+                    }, 300);
+                }
+                
+                // Update pagination
+                updatePaginationAfterNewReview(data);
+                
+                // Hide the review form
+                const reviewForm = document.querySelector('.write-review');
+                if (reviewForm) {
+                    reviewForm.style.opacity = '0';
+                    setTimeout(() => {
+                        reviewForm.style.display = 'none';
+                        
+                        // Show success message
+                        const reviewSection = document.querySelector('.review-section');
+                        const existingAlert = reviewSection.querySelector('.alert-success');
+                        if (existingAlert) {
+                            existingAlert.remove();
+                        }
+                        
+                        const alertHTML = `
+                            <div class="alert alert-success fade-in mb-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="ri-checkbox-circle-fill me-2 fs-4"></i>
+                                    <div>
+                                        <strong>Thank you for your review!</strong>
+                                        <div class="small mt-1">Your review has been added successfully and appears at the top.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Insert alert before the reviews
+                        if (reviewListContainer) {
+                            reviewListContainer.insertAdjacentHTML('beforebegin', alertHTML);
+                        } else {
+                            reviewSection.insertAdjacentHTML('afterbegin', alertHTML);
+                        }
+                    }, 300);
+                }
+            }
+
+            // Function to update pagination
+            function updatePaginationAfterNewReview(data) {
+                const paginationContainer = document.getElementById('paginationContainer');
+                
+                if (!paginationContainer) return;
+                
+                // If we now have more than 5 reviews, show/update pagination
+                if (data.total_reviews > 5) {
+                    paginationContainer.style.display = 'block';
+                    
+                    // Update pagination info
+                    const pageInfo = paginationContainer.querySelector('.pagination-info');
+                    if (pageInfo) {
+                        pageInfo.innerHTML = `
+                            <div class="info-item">
+                                <i class="ri-file-list-line"></i>
+                                <span>Page 1 of ${data.total_pages}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="ri-chat-3-line"></i>
+                                <span>1-5 of ${data.total_reviews} reviews</span>
+                            </div>
+                        `;
+                    }
+                    
+                    // Update pagination links - always go to page 1 after new review
+                    const paginationNav = paginationContainer.querySelector('nav');
+                    if (paginationNav) {
+                        let html = '';
+                        
+                        // Previous button (disabled on page 1)
+                        html += `
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="ri-arrow-left-line"></i> Prev</span>
+                            </li>
+                        `;
+                        
+                        // Always show page 1 as active
+                        html += `<li class="page-item active"><span class="page-link">1</span></li>`;
+                        
+                        // Show other pages if exist
+                        for (let i = 2; i <= Math.min(data.total_pages, 3); i++) {
+                            html += `
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=${i}&cat_ref_num={{ cat_ref_num_enc }}#reviewsSection">${i}</a>
+                                </li>
+                            `;
+                        }
+                        
+                        // Show last page if there are more than 3 pages
+                        if (data.total_pages > 3) {
+                            html += `
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=${data.total_pages}&cat_ref_num={{ cat_ref_num_enc }}#reviewsSection">${data.total_pages}</a>
+                                </li>
+                            `;
+                        }
+                        
+                        // Next button
+                        if (data.total_pages > 1) {
+                            html += `
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=2&cat_ref_num={{ cat_ref_num_enc }}#reviewsSection">
+                                        Next <i class="ri-arrow-right-line"></i>
+                                    </a>
+                                </li>
+                            `;
+                        }
+                        
+                        paginationNav.querySelector('.pagination').innerHTML = html;
+                    }
+                } else {
+                    // Hide pagination if 5 or fewer reviews
+                    paginationContainer.style.display = 'none';
+                }
+            }
+
+            // Reset review form
+            function resetReviewForm() {
+                selectedRating = 0;
+                reviewText.value = '';
+                charCount.textContent = '0';
+                charCount.style.color = '#6c757d';
+                
+                // Reset stars
+                stars.forEach(star => {
+                    star.classList.remove('ri-star-fill');
+                    star.classList.add('ri-star-line');
+                    star.style.color = '#ddd';
+                });
+                
+                // Reset button
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="ri-send-plane-fill me-2"></i>Submit Review';
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                }
+            }
+
+            // Utility function to get CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // Notification function
+            function showNotification(message, type) {
+                // Check if SweetAlert2 is available
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: type,
+                        title: message,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        background: type === 'success' ? '#d4edda' : 
+                                type === 'error' ? '#f8d7da' : '#d1ecf1',
+                        color: type === 'success' ? '#155724' : 
+                            type === 'error' ? '#721c24' : '#0c5460'
+                    });
+                } else {
+                    // Custom notification
+                    const notification = document.createElement('div');
+                    notification.className = `alert alert-${type} fixed-top m-3 fade show`;
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        z-index: 9999;
+                        min-width: 300px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    `;
+                    notification.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="ri-${type === 'success' ? 'check' : 'error'}-circle-fill me-2 fs-5"></i>
+                            <span>${message}</span>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(notification);
+                    
+                    // Auto remove after 3 seconds
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+                }
+            }
+
+            // Add CSS for spinner animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                .animate-spin {
+                    animation: spin 1s linear infinite;
+                }
+                .fade-in {
+                    animation: fadeIn 0.5s ease;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(-10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .new-review {
+                    animation: highlightReview 0.5s ease;
+                }
+                @keyframes highlightReview {
+                    from { background-color: #f8fff8; }
+                    to { background-color: white; }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+
     </script>
 
 {% endblock %}

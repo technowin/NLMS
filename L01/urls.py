@@ -11,6 +11,7 @@ urlpatterns = [
     path("book_info_login/", book_info_login, name="book_info_login"),
     path("view_catalogue_login_page",view_catalogue_login_page,name='view_catalogue_login_page'),
     path('mpsc_ebooks_index/', mpsc_ebook_index, name='mpsc_ebooks_index'),
+    path("clear_pdf_session/", clear_pdf_session, name="clear_pdf_session"),
     path('mpsc_topics_index/<int:section_no>/', mpsc_topics_index, name='mpsc_topics_index'),
     path('mpsc_chapters_index/<int:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
     path("index_book_search", index_book_search, name="index_book_search"),
@@ -53,6 +54,7 @@ urlpatterns = [
     path('visit_Library_catalogue', visit_Library_catalogue, name='visit_Library_catalogue'),
     path('view_book_detail/', view_book_detail, name='view_book_detail'),
     path('get_books_by_subject', get_books_by_subject, name='get_books_by_subject'),
+    path('submit_review', submit_review, name='submit_review'),
     
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 

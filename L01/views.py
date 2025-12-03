@@ -71,6 +71,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageFont, ImageDraw
 from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Part First While Filling Membership Form
 
@@ -137,6 +138,8 @@ def index(request):
                     "remarks": ebook.remarks or "",
                     "description": ebook.eb_keywords or "No description available.",
                     "eb_pdf_url": ebook.eb_pdf_url or "",
+                    "encrypted_ebook_id": enc(str(ebook.ebook_id)),
+                    "encrypted_pdf_url": enc(ebook.eb_pdf_url or ""),
                 }
                 for ebook in ebooks
             ]
@@ -195,6 +198,8 @@ def index(request):
                     "remarks": ebook.remarks or "",
                     "description": ebook.eb_keywords or "No description available.",
                     "eb_pdf_url": ebook.eb_pdf_url or "",
+                    "encrypted_ebook_id": enc(str(ebook.ebook_id)),
+                    "encrypted_pdf_url": enc(ebook.eb_pdf_url or ""),
                 }
                 for ebook in ebooks
             ]
@@ -4158,7 +4163,7 @@ def membership_dashboard(request):
             membership_code=membership_code,
             return_date__isnull=True
         ).select_related('catalog').order_by('-issue_date')[:3]
-        
+        open_pdf_url = request.session.get("open_pdf_url")  # saved during login
         for transaction in transactions:
             book_data = {
                 'transaction': transaction,
@@ -4178,6 +4183,7 @@ def membership_dashboard(request):
             'overdue': overdue,
             'latest_books': latest_books,
             'today': today,
+            'open_pdf_url': open_pdf_url,   # send to template
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)
@@ -4789,6 +4795,65 @@ def view_book_detail(request):
             location_display = ", ".join([f"{loc} ({count})" for loc, count in location_counts.items()])
         else:
             location_display = "Unknown"
+            
+        # --- REVIEWS WITH USER JOIN ---
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        # Get all reviews for this book ordered by latest
+        all_reviews = BookReview.objects.filter(book=book).order_by('-created_at')
+        
+        # Get distinct user IDs from reviews
+        user_ids = all_reviews.values_list('user_id', flat=True).distinct()
+        
+        # Fetch all users in one query
+        users = User.objects.filter(id__in=user_ids)
+        
+        # Create a dictionary for quick lookup: user_id -> user object
+        user_dict = {user.id: user for user in users}
+        
+        # Add user objects to reviews
+        reviews_with_users = []
+        for review in all_reviews:
+            # Create a copy of the review with added user information
+            review.user_obj = user_dict.get(review.user_id)
+            reviews_with_users.append(review)
+        
+        # Get current user from session
+        current_user_id = request.session.get('user_id')
+        
+        # Check if current user has reviewed
+        user_review = None
+        if current_user_id:
+            try:
+                user_review = all_reviews.filter(user_id=int(current_user_id)).first()
+                if user_review:
+                    user_review.user_obj = user_dict.get(int(current_user_id))
+            except (ValueError, TypeError):
+                user_review = None
+        
+        # Calculate average rating
+        avg_rating = all_reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0
+        total_reviews = all_reviews.count()
+        
+        # Pagination - Show only 5 reviews per page
+        reviews_per_page = 5
+        show_pagination = total_reviews > reviews_per_page
+        
+        if show_pagination:
+            # Paginate the reviews_with_users list
+            paginator = Paginator(reviews_with_users, reviews_per_page)
+            page_number = request.GET.get('page', 1)
+            
+            try:
+                reviews_page = paginator.page(page_number)
+            except PageNotAnInteger:
+                reviews_page = paginator.page(1)
+            except EmptyPage:
+                reviews_page = paginator.page(paginator.num_pages)
+        else:
+            # If 5 or fewer reviews, show all
+            reviews_page = reviews_with_users
 
         context = {
             'book': book,
@@ -4797,7 +4862,15 @@ def view_book_detail(request):
             'total_qty': total_qty,
             'current_status_display': current_status_display,
             'availability_text': availability_text,
-            'location_display': location_display,  # <-- filtered for On-Shelf copies
+            'location_display': location_display,
+            'reviews': reviews_page,  # Now includes user objects
+            'user_review': user_review,
+            'avg_rating': round(avg_rating, 1),
+            'total_reviews': total_reviews,
+            'show_pagination': show_pagination,
+            'reviews_per_page': reviews_per_page,
+            'current_params': request.GET.copy(),
+            'cat_ref_num_enc': cat_ref_num_enc,
         }
 
         return render(request, "L01/LibraryCateVisit/view_book_detail.html", context)
@@ -4806,3 +4879,128 @@ def view_book_detail(request):
         print("Error in view_book_detail:", e)
         messages.error(request, "Unable to load book details.")
         return redirect("visit_library_catalogue")
+
+@csrf_exempt
+@login_required
+def submit_review(request):
+
+    if request.method == "POST":
+        try:
+            # Get data from request
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                book_id = data.get('book_id')
+                rating = int(data.get('rating'))
+                review_text = data.get('review')
+            else:
+                book_id = request.POST.get('book_id')
+                rating = int(request.POST.get('rating'))
+                review_text = request.POST.get('review')
+            
+            user_id = request.session.get('user_id')
+            library_code = request.session.get('library_db')
+
+            # Validate required fields
+            if not all([book_id, rating, review_text, user_id]):
+                return JsonResponse({
+                    "success": False, 
+                    "message": "Missing required fields"
+                }, status=400)
+
+            # Get book
+            try:
+                book = BookCatalog.objects.get(cat_ref_num=book_id)
+            except BookCatalog.DoesNotExist:
+                return JsonResponse({
+                    "success": False, 
+                    "message": "Book not found"
+                }, status=404)
+
+            # Prevent multiple reviews
+            if BookReview.objects.filter(book=book, user_id=user_id).exists():
+                return JsonResponse({
+                    "success": False, 
+                    "message": "You have already reviewed this book."
+                })
+
+            # Create review
+            BookReview.objects.create(
+                book=book,
+                user_id=user_id,
+                rating=rating,
+                review=review_text,
+                library_code=library_code
+            )
+
+            # Get latest reviews with user information
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            all_reviews = BookReview.objects.filter(book=book).order_by('-created_at')
+            
+            # Get user IDs from reviews
+            user_ids = all_reviews.values_list('user_id', flat=True).distinct()
+            
+            # Fetch users
+            users = User.objects.filter(id__in=user_ids)
+            user_dict = {user.id: user for user in users}
+            
+            # Add user objects to reviews
+            reviews_with_users = []
+            for review in all_reviews:
+                review.user_obj = user_dict.get(review.user_id)
+                reviews_with_users.append(review)
+            
+            # Calculate average rating
+            avg_rating = all_reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0
+            total_reviews = all_reviews.count()
+            
+            # Get only FIRST 5 reviews for display
+            from django.core.paginator import Paginator
+            paginator = Paginator(reviews_with_users, 5)
+            first_page_reviews = paginator.page(1)
+            
+            # Render reviews HTML
+            reviews_html = render_to_string(
+                "L01/LibraryCateVisit/review_list.html", 
+                {
+                    "reviews": first_page_reviews,
+                    "MEDIA_URL": settings.MEDIA_URL
+                }
+            )
+
+            return JsonResponse({
+                "success": True,
+                "message": "Review submitted successfully!",
+                "reviews_html": reviews_html,
+                "avg_rating": round(avg_rating, 1),
+                "total_reviews": total_reviews,
+                "has_next_page": first_page_reviews.has_next(),
+                "total_pages": paginator.num_pages,
+                "current_page": 1
+            })
+            
+        except ValueError as e:
+            print(f"ValueError: {e}")
+            return JsonResponse({
+                "success": False, 
+                "message": "Invalid rating value"
+            }, status=400)
+        except Exception as e:
+            print(f"Error in submit_review: {e}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                "success": False, 
+                "message": f"Server error: {str(e)}"
+            }, status=500)
+    
+    return JsonResponse({
+        "success": False, 
+        "message": "Invalid request method"
+    }, status=405)
+    
+@csrf_exempt
+def clear_pdf_session(request):
+    request.session.pop("open_pdf_url", None)
+    return JsonResponse({"status": "ok"})

@@ -95,14 +95,15 @@ def Login(request):
 
     library_code = request.session.get('library_db', None)
 
-  
+    # ============================================================
+    # GET METHOD
+    # ============================================================
     if request.method == "GET":
         next_url = request.GET.get("next", "")
         cat_ref_num = request.GET.get("cat_ref_num", "")
         encrypted_ebook_id = request.GET.get("ebook_id")
         encrypted_pdf_url = request.GET.get("pdf_url")
 
-        # --- Decrypt if provided ---
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
 
@@ -118,10 +119,15 @@ def Login(request):
             'registration_url': membership_url,
             'next': next_url,
             'cat': cat_ref_num,
+            'ebook_id': encrypted_ebook_id,
+            'pdf_url': encrypted_pdf_url,
         })
 
-  
+    # ============================================================
+    # POST METHOD
+    # ============================================================
     if request.method == "POST":
+
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
@@ -131,30 +137,36 @@ def Login(request):
         encrypted_ebook_id = request.POST.get("ebook_id")
         encrypted_pdf_url = request.POST.get("pdf_url")
 
-        # --- Decrypt safely ---
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
 
-       
+        # ------------------------------------------
+        # Database alias (static for L01)
+        # ------------------------------------------
         db_alias = "L01"
-        request.session['service'] = "L01"
-        request.session['library_db'] = "L01"
+        request.session['service'] = db_alias
+        request.session['library_db'] = db_alias
 
+        # ------------------------------------------
         # Authenticate user
+        # ------------------------------------------
         user = authenticate_from_db(request, username, password, db_alias)
-
         if user is None:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
 
-       
+        # ------------------------------------------
+        # Set session user data
+        # ------------------------------------------
         request.session.cycle_key()
         request.session["username"] = str(username)
         request.session["full_name"] = str(user.full_name)
         request.session["user_id"] = str(user.id)
         request.session["role_id"] = str(user.role_id)
 
-       
+        # ------------------------------------------
+        # Get membership info
+        # ------------------------------------------
         member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
 
         membership_id = None
@@ -165,54 +177,42 @@ def Login(request):
             except MembershipMaster.DoesNotExist:
                 membership_id = None
 
-        
-        if membership_id == 8:
-
-            # If user came from protected content
-            if next_url:
-                return redirect(next_url)
-
-            # UPSC (L01)
-            if db_alias == "L01":
-                return redirect('L01:chapters_index', topic_id=1)
-
-            # MPSC (default)
-            if db_alias == "default":
-                return redirect('L01:mpsc_chapters_index', topic_id=1)
-
-      
-        if membership_id is not None and membership_id != 8:
-
-            
-          
-            if ebook_id and pdf_url:
-
-                # Full PDF path
-                final_pdf_url = request.build_absolute_uri(settings.MEDIA_URL + pdf_url)
-
-                # Browser opens PDF directly
-                return redirect(final_pdf_url)
-
-            
-            request.session.set_expiry(0)
-        elif  membership_id == 8 and ebook_id:
+        # ============================================================
+        # PRACTITIONER (ID = 8) RESTRICTION FOR EBOOKS
+        # ============================================================
+        if membership_id == 8 and ebook_id:
             messages.error(request, "This section is not available for Practitioner Branch (अभ्यासिका शाखा)")
 
             if cat_ref_num:
                 return redirect(f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}")
 
-            return redirect('L01:membership_dashboard')
+            return redirect("L01:membership_dashboard")
 
-        # -------------------------------------------------------------------
+        # ============================================================
+        # VALID MEMBERSHIP (NOT PRACTITIONER)
+        # ============================================================
+        if membership_id is not None and membership_id != 8:
+
+            # If user accessed via ebook link
+            if ebook_id and pdf_url:
+                file_url = settings.MEDIA_URL + pdf_url  
+                final_pdf_url = request.build_absolute_uri(file_url)
+                
+                request.session["open_pdf_url"] = final_pdf_url
+
+            request.session.set_expiry(0)
+            return redirect("L01:membership_dashboard")
+
+        # ============================================================
         # NO MEMBERSHIP FOUND
-        # -------------------------------------------------------------------
+        # ============================================================
         if membership_id is None:
             request.session.set_expiry(0)
             return redirect('LMS_Dashboard')
 
-        # -------------------------------------------------------------------
-        # Role-based fallback
-        # -------------------------------------------------------------------
+        # ============================================================
+        # Role fallback
+        # ============================================================
         if str(user.role_id) == '3':
             return redirect('L01:membership_dashboard')
 

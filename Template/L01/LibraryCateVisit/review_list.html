@@ -1,0 +1,57 @@
+{% for review in reviews %}
+<div class="review-card {% if forloop.first and request.GET.new_review %}new-review{% endif %}">
+    <div class="review-header">
+        <div class="d-flex align-items-center gap-2">
+            <div class="user-badge">
+                <i class="ri-user-line"></i> 
+                {% if review.user_obj %}
+                    {% if review.user_obj.full_name %}
+                        {{ review.user_obj.full_name }}
+                    {% elif review.user_obj.get_full_name %}
+                        {{ review.user_obj.get_full_name }}
+                    {% elif review.user_obj.username %}
+                        {{ review.user_obj.username }}
+                    {% else %}
+                        User #{{ review.user_id }}
+                    {% endif %}
+                {% else %}
+                    User #{{ review.user_id }}
+                {% endif %}
+                
+                <!-- Show user type badge if available -->
+                {% if review.user_obj and review.user_obj.user_type %}
+                    <span class="user-type-badge ms-2">
+                        <small class="badge bg-secondary">{{ review.user_obj.get_user_type_display }}</small>
+                    </span>
+                {% endif %}
+            </div>
+            <div class="stars-display">
+                {% for i in "12345"|make_list %}
+                    <i class="ri-star-fill" style="color: {% if forloop.counter <= review.rating %}#ffc107{% else %}#e0e0e0{% endif %};"></i>
+                {% endfor %}
+                <span>{{ review.rating }}/5</span>
+            </div>
+        </div>
+        <small>
+            <i class="ri-time-line"></i>
+            {{ review.created_at|date:"M d, Y" }}
+            {% if review.created_at|date:"H:i" != "00:00" %}
+                at {{ review.created_at|time:"g:i A" }}
+            {% endif %}
+        </small>
+    </div>
+    <div class="review-body">
+        <p class="mb-0">{{ review.review }}</p>
+    </div>
+    {% if review.library_code %}
+    <div class="review-footer">
+        <small><i class="ri-building-line me-1"></i>{{ review.library_code }}</small>
+    </div>
+    {% endif %}
+</div>
+{% empty %}
+<div class="text-center py-4">
+    <i class="ri-chat-3-line display-6 text-muted"></i>
+    <p class="text-muted mb-0 mt-2">No reviews yet. Be the first!</p>
+</div>
+{% endfor %}

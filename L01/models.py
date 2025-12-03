@@ -492,7 +492,6 @@ class Subjects(models.Model):
     def __str__(self):
         return f"{self.subject_name}" if self.subject_name else f"Subject {self.subject_id}"
 
-
 class Topics(models.Model):
     topic_id = models.AutoField(primary_key=True)
     section_no = models.ForeignKey(
@@ -531,8 +530,6 @@ class Topics(models.Model):
     def __str__(self):
         return f"{self.topic_name}" if self.topic_name else f"Topic {self.topic_id}"
 
-
-
 class Chapters(models.Model):
     chapter_no = models.CharField(max_length=50, primary_key=True)
 
@@ -570,7 +567,6 @@ class Chapters(models.Model):
 
     def __str__(self):
         return f"{self.chapter_no} - {self.chapter_name}" if self.chapter_name else self.chapter_no
-
 
 class MemberEntryExit(models.Model):
     membership_code = models.CharField(max_length=100)
@@ -647,7 +643,6 @@ class LibraryEbook(models.Model):
 
         def __str__(self):
             return f"{self.ebook_id} - {self.title}"
-        
 class EODLog(models.Model):
     date = models.DateField()
     is_eod_done = models.BooleanField(default=False)
@@ -663,7 +658,6 @@ class EODLog(models.Model):
     
     class Meta:
             db_table = 'tbl_eod_log'
-    
 class BookReturnLog(models.Model):
     eod_log = models.ForeignKey(EODLog, on_delete=models.CASCADE, related_name='return_logs')
     cat_rem_num = models.ForeignKey(BookCatalog, on_delete=models.CASCADE, related_name='catalog_returns')
@@ -680,4 +674,19 @@ class BookReturnLog(models.Model):
     class Meta:
             db_table = 'tbl_book_return_log'
 
+class BookReview(models.Model):
+    book = models.ForeignKey(BookCatalog, on_delete=models.SET_NULL, blank=True, null=True, db_column='cat_ref_id', related_name='cat_ref_id_reviews')
+    user_id = models.IntegerField()  # store member id as int
+    rating = models.PositiveSmallIntegerField()  # 1-5
+    review = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    library_code = models.CharField(max_length=50, null=True, blank=True)  # optional
+
+    class Meta:
+        db_table = 'tbl_book_review'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Review by User {self.user_id} for Book {self.book.title}"
 
