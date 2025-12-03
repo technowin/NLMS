@@ -284,47 +284,45 @@
             </div>
 
             <!-- Subject & Place -->
-            <div class="mb-3 row">
-             <div class="col-md-6">
-    <label class="form-label">विषय प्रकार / Subject Type <span class="text-danger">*</span></label>
+           <div class="mb-3 row">
 
-    <select name="subject_id" id="subject_id" class="form-control" required>
-        <option value="">Select Subject</option>
+    <!-- Subject Type -->
+    <div class="col-md-6">
+        <label class="form-label">
+            विषय प्रकार / Subject Type <span class="text-danger">*</span>
+        </label>
 
-        {# ⬇️ Show previously selected subject if not found in list #}
-        {% if selected_subject %}
-            <option value="{{ selected_subject.encrypted_id }}" selected>
-                {{ selected_subject.subjectNameEnglish }} - {{ selected_subject.subjectNameMarathi }}
-            </option>
-        {% endif %}
+        <select name="subject_id" id="subject_id" class="form-control" required>
+            <option value="">Select Subject</option>
 
-        {# ⬇️ Normal iteration #}
-        {% for sub in subjects %}
-            <option value="{{ sub.encrypted_id }}"
-                {% if obj.subject_id == sub.id %}selected{% endif %}>
-                {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
+            {# Loop through subjects (already includes selected_subject if needed) #}
+            {% for s in subjects %}
+                <option value="{{ s.encrypted_id }}"
+                    {% if selected_subject and s.id == selected_subject.id %} selected {% endif %}>
+                    {% comment %} {{ s.subjectTypeEnglish }} - {{ s.subjectTypeMarathi }} {% endcomment %}
+                    {{ s.subjectNameEnglish }} - {{ s.subjectNameMarathi }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
 
 
-           <div class="col-md-6">
+
+                <div class="col-md-6">
     <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
     <select name="publication_place" id="publication_place" class="form-control transliterate">
         <option value="">Select Place</option>
 
-        <!-- If saved value exists but is not in the list, show it at top -->
+        {# ✔ If obj.publication_place exists but not in list, show it first #}
         {% if obj.publication_place and obj.publication_place not in places %}
             <option value="{{ obj.publication_place }}" selected>
                 {{ obj.publication_place }}
             </option>
         {% endif %}
 
-        <!-- Loop through available places -->
+        {# ✔ Loop through places list #}
         {% for place in places %}
-            <option value="{{ place }}" 
-                {% if obj.publication_place == place %}selected{% endif %}>
+            <option value="{{ place }}" {% if obj.publication_place == place %}selected{% endif %}>
                 {{ place }}
             </option>
         {% endfor %}
@@ -332,32 +330,22 @@
 </div>
 
 
-
             </div>
 
             <!-- Material Type & Page Nos -->
             <div class="mb-3 row">
-          <div class="col-md-6">
+        <div class="col-md-6">
     <label class="form-label">साहित्य प्रकार / Material Type <span class="text-danger">*</span></label>
 
-    <select name="material_id" id="material_id" class="form-control" required>
-        <option value="">Select Material Type</option>
-
-        {# ⬇️ If selected material not found in list, show it #}
-        {% if selected_material %}
-            <option value="{{ selected_material.encrypted_id }}" selected>
-                {{ selected_material.materialNameEnglish }} - {{ selected_material.materialNameMarathi }}
-            </option>
-        {% endif %}
-
-        {# ⬇️ Loop through all materials normally #}
-        {% for m in materials %}
-            <option value="{{ m.encrypted_id }}"
-                {% if obj.material_id == m.id %}selected{% endif %}>
-                {{ m.materialNameEnglish }} - {{ m.materialNameMarathi }}
-            </option>
-        {% endfor %}
-    </select>
+  <!-- Material -->
+<select name="material_id" id="material_id" class="form-control" required>
+    <option value="">Select Material Type</option>
+    {% for m in materials %}
+        <option value="{{ m.encrypted_id }}" {% if selected_material and m.id == selected_material.id %} selected {% endif %}>
+            {{ m.materialNameEnglish }} - {{ m.materialNameMarathi }}
+        </option>
+    {% endfor %}
+</select>
 </div>
 
 
@@ -864,50 +852,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Script for Translation -->
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const languageSelect = document.getElementById('language_id');
-        const authorLabel = document.querySelector('label[for="author"]');
-        const authorInput = document.getElementById('author');
-        const authorHelpText = document.querySelector('#author + small');
+document.addEventListener('DOMContentLoaded', function () {
+    const languageSelect = document.getElementById('language_id');
+    const authorLabel = document.querySelector('label[for="author"]');
+    const authorInput = document.getElementById('author');
+    const authorHelpText = document.querySelector('#author + small');
 
-        if (languageSelect && authorLabel && authorHelpText && authorInput) {
-            languageSelect.addEventListener('change', function () {
-                const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
+    if (languageSelect && authorLabel && authorHelpText && authorInput) {
+        languageSelect.addEventListener('change', function () {
+            const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
 
-                if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
-                    // Convert to Marathi
-                    authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
-                    authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
-                    authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
-                } else {
-                    // Revert to English
-                    authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
-                    authorInput.placeholder = 'Type or select author';
-                    authorHelpText.textContent = 'Select an author from the list or type a new one.';
-                }
-            });
-        }
-    });
+            if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
+                // Convert to Marathi
+                authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
+                authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
+                authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
+            } else {
+                // Revert to English
+                authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
+                authorInput.placeholder = 'Type or select author';
+                authorHelpText.textContent = 'Select an author from the list or type a new one.';
+            }
+        });
+    }
+});
 </script>
 
 
 <script>
-    function previewImage(input, previewId) {
-        const file = input.files[0];
-        const preview = document.getElementById(previewId);
+function previewImage(input, previewId) {
+    const file = input.files[0];
+    const preview = document.getElementById(previewId);
 
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove('d-none');
-            };
-            reader.readAsDataURL(file);
-        } else {
-            preview.src = "";
-            preview.classList.add('d-none');
-        }
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = "";
+        preview.classList.add('d-none');
     }
+}
 </script>
 
 <script>

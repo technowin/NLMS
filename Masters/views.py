@@ -532,154 +532,235 @@ def book_catalog_create(request):
 @login_required
 def book_catalog_edit(request):
     try:
-        user = request.user.id
-        cat_ref_num_encrypted = request.GET.get('cat_ref_num', '').strip()
-        obj = None
-        cat_ref_num = None
 
-        # ---------- Try to decrypt and fetch existing record ----------
-        if cat_ref_num_encrypted:
-            try:
-                cat_ref_num = dec(cat_ref_num_encrypted)
-                obj = BookCatalog.objects.filter(cat_ref_num=cat_ref_num).first()
-            except Exception as e:
-                messages.warning(request, f"Could not load existing record: {str(e)}")
+        if request.method == "GET":
+            
+            user = request.user.id
+            obj = None
+            cat_ref_num_encrypted = request.GET.get('cat_ref_num', '').strip()
+            cat_ref_num = None
+            
+            # -------------------- Load Existing Record --------------------
+            if cat_ref_num_encrypted:
+                try:
+                    cat_ref_num = dec(cat_ref_num_encrypted)
+                    obj = BookCatalog.objects.filter(cat_ref_num=cat_ref_num).first()
+                except Exception as e:
+                    messages.warning(request, f"Could not load existing record: {str(e)}")
 
-        # ---------- AJAX endpoint for fetching authors ----------
-        lang_name = obj.language if obj else None
-        authors = []
-        if lang_name:
-            try:
-                if lang_name == "Marathi":
-                    authors = AuthorMaster.objects.filter(is_active=True) \
-                        .exclude(author_name_marathi__isnull=True) \
-                        .exclude(author_name_marathi__exact="") \
-                        .values_list('author_name_marathi', flat=True) \
-                        .distinct().order_by('author_name_marathi')
-                else:
-                    authors = AuthorMaster.objects.filter(is_active=True) \
-                        .exclude(author_name_english__isnull=True) \
-                        .exclude(author_name_english__exact="") \
-                        .values_list('author_name_english', flat=True) \
-                        .distinct().order_by('author_name_english')
-            except Exception:
-                authors = []
+            # -------------------- Authors By Language ---------------------
+            lang_name = obj.language if obj else None
+            authors = []
+            if lang_name:
+                try:
+                    if lang_name == "Marathi":
+                        authors = AuthorMaster.objects.filter(is_active=True) \
+                            .exclude(author_name_marathi__isnull=True) \
+                            .exclude(author_name_marathi__exact="") \
+                            .values_list('author_name_marathi', flat=True) \
+                            .distinct().order_by('author_name_marathi')
+                    else:
+                        authors = AuthorMaster.objects.filter(is_active=True) \
+                            .exclude(author_name_english__isnull=True) \
+                            .exclude(author_name_english__exact="") \
+                            .values_list('author_name_english', flat=True) \
+                            .distinct().order_by('author_name_english')
+                except:
+                    authors = []
 
-        # ---------- Dropdown Data ----------
-        subjects = SubjectTypeMaster.objects.filter(is_active=True)
-        for sub in subjects:
-            sub.encrypted_id = enc(str(sub.id))
+            # -------------------- Dropdown Data ---------------------------
+            subjects = SubjectTypeMaster.objects.filter(is_active=True)
+            for s in subjects:
+                s.encrypted_id = enc(str(s.id))
 
-        materials = MaterialTypeMaster.objects.filter(is_active=True)
-        for mat in materials:
-            mat.encrypted_id = enc(str(mat.id))
+            materials = MaterialTypeMaster.objects.filter(is_active=True)
+            for m in materials:
+                m.encrypted_id = enc(str(m.id))
 
-        publishers = BookCatalog.objects.values('publisher') \
-            .exclude(publisher__isnull=True).exclude(publisher__exact='') \
-            .distinct().order_by('publisher')
-        for pub in publishers:
-            pub['publisher_name'] = pub.pop('publisher')
+            publishers = BookCatalog.objects.values_list('publisher', flat=True) \
+                .exclude(publisher__isnull=True).exclude(publisher__exact='') \
+                .distinct().order_by('publisher')
 
-        places = BookCatalog.objects.values('publication_place') \
-            .exclude(publication_place__isnull=True).exclude(publication_place__exact='') \
-            .distinct().order_by('publication_place')
-        for place in places:
-            place['place_name'] = place.pop('publication_place')
+            places = BookCatalog.objects.values_list('publication_place', flat=True) \
+                .exclude(publication_place__isnull=True).exclude(publication_place__exact='') \
+                .distinct().order_by('publication_place')
 
-        current_year = timezone.now().year
-        years = list(range(current_year, 1899, -1))
+            current_year = timezone.now().year
+            years = list(range(current_year, 1899, -1))
 
-        context = {
-            'subjects': subjects,
-            'materials': materials,
-            'authors': authors,
-            'publishers': publishers,
-            'places': places,
-            'years': years,
-            'obj': obj,
-            'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
-            'MEDIA_URL': settings.MEDIA_URL,
-        }
+            # -------------------- Selected Dropdown Values ----------------
+            selected_subject = None
+            selected_material = None
+            selected_publisher = None
+            selected_place = None
 
-        # ---------- POST: Update book details ----------
+            if obj:
+                obj.refresh_from_db()
+                if obj.subject_id:
+                    selected_subject = SubjectTypeMaster.objects.filter(id=obj.subject_id).first()
+                if obj.material_id:
+                    selected_material = MaterialTypeMaster.objects.filter(id=obj.material_id).first()
+                if obj.publisher:
+                    selected_publisher = obj.publisher
+                if obj.publication_place:
+                    selected_place = obj.publication_place
+
+            # -------------------- Ensure Selected Appears First ----------------
+            # Materials
+            materials_list = list(materials)
+            if selected_material and not any(m.id == selected_material.id for m in materials):
+                materials_list = [selected_material] + materials_list
+
+            # Subjects
+            subjects_list = list(subjects)
+            if selected_subject and not any(s.id == selected_subject.id for s in subjects):
+                subjects_list = [selected_subject] + subjects_list
+
+            # Publishers
+            publishers_list = list(publishers)
+            if selected_publisher and selected_publisher not in publishers:
+                publishers_list = [selected_publisher] + publishers_list
+
+            # Places
+            places_list = list(places)
+            if selected_place and selected_place not in places:
+                places_list = [selected_place] + places_list
+
+            # -------------------- Render Context --------------------------
+            context = {
+                'subjects': subjects_list,
+                'materials': materials_list,
+                'authors': authors,
+                'publishers': publishers_list,
+                'places': places_list,
+                'years': years,
+                'obj': obj,
+                'selected_subject': selected_subject,
+                'selected_material': selected_material,
+                'selected_publisher': selected_publisher,
+                'selected_place': selected_place,
+                'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
+                'MEDIA_URL': settings.MEDIA_URL,
+            }
+            
+            return render(request, 'Master/book_catalog_edit.html', context)
+    
+        # -------------------- Handle POST (Update) --------------------
+        
         if request.method == "POST":
+            
+            user = request.user.id
+            
+            # 🔥 FIX — fetch object first
+            cat_ref_num_encrypted = request.GET.get('cat_ref_num')
+            cat_ref_num = dec(cat_ref_num_encrypted)
+            obj = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
+            
             form_data = {
-                "title": request.POST.get('title', '').strip(),
-                "subtitle": request.POST.get('subtitle', '').strip(),
-                "author": request.POST.get('author', '').strip(),
-                "other_authors": request.POST.get('other_authors', '').strip(),
-                "publisher": request.POST.get('publisher', '').strip(),
-                "isbn": request.POST.get('isbn', '').strip(),
-                "edition": request.POST.get('edition', '').strip(),
-                "subject_id": dec(request.POST.get('subject_id', '').strip()) if request.POST.get('subject_id') else None,
-                "material_id": dec(request.POST.get('material_id', '').strip()) if request.POST.get('material_id') else None,
-                "remarks": request.POST.get('remarks', '').strip(),
-                "keywords": request.POST.get('keywords', '').strip(),
-                "publication_place": request.POST.get('publication_place', '').strip(),
-                "year_of_publication": request.POST.get('year_of_publication', '').strip(),
-                "page_nos": request.POST.get('page_nos', '').strip(),
+                "title": request.POST.get("title", "").strip(),
+                "subtitle": request.POST.get("subtitle", "").strip(),
+                "author": request.POST.get("author", "").strip(),
+                "other_authors": request.POST.get("other_authors", "").strip(),
+                "publisher": request.POST.get("publisher", "").strip(),
+                "isbn": request.POST.get("isbn", "").strip(),
+                "edition": request.POST.get("edition", "").strip(),
+                "subject_id": dec(request.POST.get("subject_id", "").strip()) if request.POST.get("subject_id") else None,
+                "material_id": dec(request.POST.get("material_id", "").strip()) if request.POST.get("material_id") else None,
+                "remarks": request.POST.get("remarks", "").strip(),
+                "keywords": request.POST.get("keywords", "").strip(),
+                "publication_place": request.POST.get("publication_place", "").strip(),
+                "year_of_publication": request.POST.get("year_of_publication", "").strip(),
+                "page_nos": request.POST.get("page_nos", "").strip(),
+                "front_page_photo": request.FILES.get("front_page_image"),
+                "last_page_photo": request.FILES.get("last_page_image"),
+            }
+            
+            field_map = {
+                "title": "title",
+                "subtitle": "subtitle",
+                "author": "author",
+                "other_authors": "other_authors",
+                "publisher": "publisher",
+                "isbn": "isbn_issn",
+                "edition": "edition",
+                "subject_id": "subject_id",
+                "material_id": "material_id",
+                "remarks": "remarks",
+                "keywords": "keywords",
+                "publication_place": "publication_place",
+                "year_of_publication": "year_of_publication",
+                "page_nos": "pages",   # FIXED
+                "front_page_photo": "front_page_photo",
+                "last_page_photo": "last_page_photo",
             }
 
-            required_fields = ["title", "author", "publisher", "subject_id", "material_id"]
-            missing = [f for f in required_fields if not form_data[f]]
+            # Check for changes
+            changes = []
 
-            if missing:
-                messages.error(request, f"Please fill in all required fields: {', '.join(missing)}")
-            else:
-                if obj:
-                    obj.title = form_data["title"]
-                    obj.subtitle = form_data["subtitle"]
-                    obj.author = form_data["author"]
-                    obj.other_authors = form_data["other_authors"]
-                    obj.publisher = form_data["publisher"]
-                    obj.isbn_issn = form_data["isbn"]
-                    obj.edition = form_data["edition"]
-                    obj.subject_id = form_data["subject_id"]
-                    obj.material_id = form_data["material_id"]
-                    obj.remarks = form_data["remarks"]
-                    obj.keywords = form_data["keywords"]
-                    obj.publication_place = form_data["publication_place"]
-                    obj.year_of_publication = form_data["year_of_publication"]
-                    obj.pages = form_data["page_nos"]
-                    obj.updated_by = user
-                    obj.updated_at = timezone.now()
+            for form_field, model_field in field_map.items():
+                new_value = form_data[form_field]
+                old_value = getattr(obj, model_field)
 
-                    # ---------- Image Upload Logic (Corrected for MEDIA_ROOT) ----------
-                    front_photo = request.FILES.get('front_page_image')
-                    last_photo = request.FILES.get('last_page_image')
+                # FILE fields
+                if form_field in ["front_page_photo", "last_page_photo"]:
+                    if new_value:      # user uploaded a file?
+                        changes.append(form_field)
+                    continue
 
-                    if front_photo or last_photo:
+                # Text/normal fields
+                if str(old_value or "") != str(new_value or ""):
+                    changes.append(form_field)
 
-                        # Store inside MEDIA_ROOT/L01/<cat_ref_num>/
-                        book_folder = os.path.join(settings.MEDIA_ROOT, "L01", str(obj.cat_ref_num))
-                        os.makedirs(book_folder, exist_ok=True)
+            if not changes:
+                messages.info(request, "No changes detected. Nothing was updated.")
+                # return render(request, "Master/book_catalog_edit.html", {"obj": obj})
+                return redirect('book_catalog_index')
 
-                        # ---- Front Image ----
-                        if front_photo:
-                            front_filename = f"{obj.cat_ref_num}_front_{front_photo.name}"
-                            front_path = os.path.join(book_folder, front_filename)
+            # Update object
+            obj.title = form_data["title"]
+            obj.subtitle = form_data["subtitle"]
+            obj.author = form_data["author"]
+            obj.other_authors = form_data["other_authors"]
+            obj.publisher = form_data["publisher"]
+            obj.isbn_issn = form_data["isbn"]
+            obj.edition = form_data["edition"]
+            obj.subject_id = form_data["subject_id"]
+            obj.material_id = form_data["material_id"]
+            obj.remarks = form_data["remarks"]
+            obj.keywords = form_data["keywords"]
+            obj.publication_place = form_data["publication_place"]
+            obj.year_of_publication = form_data["year_of_publication"]
+            obj.pages = form_data["page_nos"]
+            obj.updated_by = request.user.id
+            obj.updated_at = timezone.now()
 
-                            with open(front_path, 'wb+') as destination:
-                                for chunk in front_photo.chunks():
-                                    destination.write(chunk)
+            # Handle file uploads
+            front_photo = request.FILES.get('front_page_image')
+            last_photo = request.FILES.get('last_page_image')
+            if front_photo or last_photo:
+                book_folder = os.path.join(settings.MEDIA_ROOT, "L01", str(obj.cat_ref_num))
+                os.makedirs(book_folder, exist_ok=True)
 
-                            obj.front_page_photo = f"L01/{obj.cat_ref_num}/{front_filename}"
+                if front_photo:
+                    front_filename = f"{obj.cat_ref_num}_front_{front_photo.name}"
+                    front_path = os.path.join(book_folder, front_filename)
+                    with open(front_path, 'wb+') as f:
+                        for chunk in front_photo.chunks():
+                            f.write(chunk)
+                    obj.front_page_photo = f"L01/{obj.cat_ref_num}/{front_filename}"
 
-                        # ---- Last Image ----
-                        if last_photo:
-                            last_filename = f"{obj.cat_ref_num}_back_{last_photo.name}"
-                            last_path = os.path.join(book_folder, last_filename)
+                if last_photo:
+                    last_filename = f"{obj.cat_ref_num}_back_{last_photo.name}"
+                    last_path = os.path.join(book_folder, last_filename)
+                    with open(last_path, 'wb+') as f:
+                        for chunk in last_photo.chunks():
+                            f.write(chunk)
+                    obj.last_page_photo = f"L01/{obj.cat_ref_num}/{last_filename}"
 
-                            with open(last_path, 'wb+') as destination:
-                                for chunk in last_photo.chunks():
-                                    destination.write(chunk)
+            obj.save()
+            messages.success(request, "Book catalog updated successfully!")
 
-                            obj.last_page_photo = f"L01/{obj.cat_ref_num}/{last_filename}"
-
-                    obj.save()
-                    messages.success(request, "Book catalog updated successfully!")
-
-        return render(request, 'Master/book_catalog_edit.html', context)
+            return redirect('book_catalog_index')
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -688,164 +769,6 @@ def book_catalog_edit(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect('book_catalog_index')
 
-    try:
-        user = request.user.id
-        cat_ref_num_encrypted = request.GET.get('cat_ref_num', '').strip()
-        obj = None
-        cat_ref_num = None
-
-        # ---------- Try to decrypt and fetch existing record ----------
-        if cat_ref_num_encrypted:
-            try:
-                cat_ref_num = dec(cat_ref_num_encrypted)
-                obj = BookCatalog.objects.filter(cat_ref_num=cat_ref_num).first()
-            except Exception as e:
-                messages.warning(request, f"Could not load existing record: {str(e)}")
-
-        # ---------- AJAX endpoint for fetching authors ----------
-        lang_name = obj.language
-        authors = []
-        if lang_name:
-            try:
-                if lang_name == "Marathi":
-                    authors = AuthorMaster.objects.filter(is_active=True) \
-                        .exclude(author_name_marathi__isnull=True) \
-                        .exclude(author_name_marathi__exact="") \
-                        .values_list('author_name_marathi', flat=True) \
-                        .distinct().order_by('author_name_marathi')
-                else:
-                    authors = AuthorMaster.objects.filter(is_active=True) \
-                        .exclude(author_name_english__isnull=True) \
-                        .exclude(author_name_english__exact="") \
-                        .values_list('author_name_english', flat=True) \
-                        .distinct().order_by('author_name_english')
-            except Exception:
-                authors = []
-                
-        # ---------- Dropdown Data ----------
-        
-
-        subjects = SubjectTypeMaster.objects.filter(is_active=True)
-        for sub in subjects:
-            sub.encrypted_id = enc(str(sub.id))
-
-        materials = MaterialTypeMaster.objects.filter(is_active=True)
-        for mat in materials:
-            mat.encrypted_id = enc(str(mat.id))
-
-        # ✅ Updated: Preload authors based on selected language (if obj exists)
-        
-
-        publishers = BookCatalog.objects.values('publisher') \
-            .exclude(publisher__isnull=True).exclude(publisher__exact='') \
-            .distinct().order_by('publisher')
-        for pub in publishers:
-            pub['publisher_name'] = pub.pop('publisher')
-
-        places = BookCatalog.objects.values('publication_place') \
-            .exclude(publication_place__isnull=True).exclude(publication_place__exact='') \
-            .distinct().order_by('publication_place')
-        for place in places:
-            place['place_name'] = place.pop('publication_place')
-
-        current_year = timezone.now().year
-        years = list(range(current_year, 1899, -1))
-
-        context = {
-            # 'languages': languages,
-            'subjects': subjects,
-            'materials': materials,
-            'authors': authors,
-            'publishers': publishers,
-            'places': places,
-            'years': years,
-            'obj': obj,
-            'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
-            'MEDIA_URL': settings.MEDIA_URL,
-        }
-
-
-        # ---------- POST: Update book details ----------
-        if request.method == "POST":
-            form_data = {
-                "title": request.POST.get('title', '').strip(),
-                "subtitle": request.POST.get('subtitle', '').strip(),
-                "author": request.POST.get('author', '').strip(),
-                "other_authors": request.POST.get('other_authors', '').strip(),
-                "publisher": request.POST.get('publisher', '').strip(),
-                "isbn": request.POST.get('isbn', '').strip(),
-                "edition": request.POST.get('edition', '').strip(),
-                "subject_id": dec(request.POST.get('subject_id', '').strip()) if request.POST.get('subject_id', '').strip() else None,
-                "material_id": dec(request.POST.get('material_id', '').strip()) if request.POST.get('material_id', '').strip() else None,
-                "remarks": request.POST.get('remarks', '').strip(),
-                "keywords": request.POST.get('keywords', '').strip(),
-                "publication_place": request.POST.get('publication_place', '').strip(),
-                "year_of_publication": request.POST.get('year_of_publication', '').strip(),
-                "page_nos": request.POST.get('page_nos', '').strip(),
-            }
-
-            required_fields = ["title", "author", "publisher", "subject_id", "material_id"]
-            missing = [f for f in required_fields if not form_data[f]]
-            if missing:
-                messages.error(request, f"Please fill in all required fields: {', '.join(missing)}")
-            else:
-                if obj:
-                    obj.title = form_data["title"]
-                    obj.subtitle = form_data["subtitle"]
-                    obj.author = form_data["author"]
-                    obj.other_authors = form_data["other_authors"]
-                    obj.publisher = form_data["publisher"]
-                    obj.isbn_issn = form_data["isbn"]
-                    obj.edition = form_data["edition"]
-                    obj.subject_id = form_data["subject_id"]
-                    obj.material_id = form_data["material_id"]
-                    obj.remarks = form_data["remarks"]
-                    obj.keywords = form_data["keywords"]
-                    obj.publication_place = form_data["publication_place"]
-                    obj.year_of_publication = form_data["year_of_publication"]
-                    obj.pages = form_data["page_nos"]
-                    obj.updated_by = user
-                    obj.updated_at = timezone.now()
-
-                    # ---------- Image Upload Logic ----------
-                    front_photo = request.FILES.get('front_page_image')
-                    last_photo = request.FILES.get('last_page_image')
-
-                    if front_photo or last_photo:
-                        BASE_DIR = Path(__file__).resolve().parent.parent
-                        MEDIA_FOLDER = os.path.join(BASE_DIR, 'D:/Python Project/Documents/L01/')
-                        book_folder = os.path.join(MEDIA_FOLDER, str(obj.cat_ref_num))
-                        os.makedirs(book_folder, exist_ok=True)
-
-                        if front_photo:
-                            front_filename = f"{obj.cat_ref_num}_front_{front_photo.name}"
-                            front_path = os.path.join(book_folder, front_filename)
-                            with open(front_path, 'wb+') as destination:
-                                for chunk in front_photo.chunks():
-                                    destination.write(chunk)
-                            obj.front_page_photo = f"L01/{obj.cat_ref_num}/{front_filename}"
-
-                        if last_photo:
-                            last_filename = f"{obj.cat_ref_num}_back_{last_photo.name}"
-                            last_path = os.path.join(book_folder, last_filename)
-                            with open(last_path, 'wb+') as destination:
-                                for chunk in last_photo.chunks():
-                                    destination.write(chunk)
-                            obj.last_page_photo = f"L01/{obj.cat_ref_num}/{last_filename}"
-
-                    obj.save()
-                    messages.success(request, "Book catalog updated successfully!")
-
-        
-
-        return render(request, 'Master/book_catalog_edit.html', context)
-
-    except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name
-        callproc("stp_error_log", [fun, str(e), user])
-        messages.error(request, 'Oops...! Something went wrong!')
-        return redirect('book_catalog_index')
 
 # Book Accession Index     
 @login_required
