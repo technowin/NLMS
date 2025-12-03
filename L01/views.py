@@ -4578,62 +4578,6 @@ def visit_Library_catalogue(request):
         return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
 
 @login_required
-def view_book_detail(request):
-    try:
-        library_code = request.session.get('library_db')
-        username = request.session.get('username')
-        user_id = request.session.get('user_id')
-        role_id = request.session.get('role_id')
-
-        if not all([library_code, username, user_id, role_id]):
-            messages.warning(request, "Session expired or invalid. Please login again.")
-            return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
-        
-        cat_ref_num_enc = request.GET.get('cat_ref_num')
-        if not cat_ref_num_enc:
-            messages.error(request, "Invalid book request.")
-            return redirect("visit_library_catalogue")
-
-        cat_ref_num = dec(cat_ref_num_enc)
-
-        book = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
-
-        # Collect images (only if they exist)
-        images = []
-        if book.front_page_photo:
-            images.append(book.front_page_photo)
-        if book.last_page_photo:
-            images.append(book.last_page_photo)
-
-        # Fetch circulation copies for this book
-        copies = CirculationCopyStatus.objects.filter(bookcatalog=book)
-
-        total_qty = copies.count()
-        available_qty = copies.filter(current_status__status_name='On-Shelf').count()
-
-        # Determine overall availability
-        book_availability = "On-Shelf" if available_qty > 0 else "Not Available"
-
-        # Optional: get individual barcode and status
-        copy_details = copies.values('barcode', 'current_status__status_name')
-
-        context = {
-            'book': book,
-            'images': images,
-            'MEDIA_URL': settings.MEDIA_URL,
-            'total_qty': total_qty,
-            'available_qty': available_qty,
-            'book_availability': book_availability,
-            'copy_details': copy_details,
-        }
-        return render(request, "L01/LibraryCateVisit/view_book_detail.html", context)
-
-    except Exception as e:
-        print("Error in view_book_detail:", e)
-        messages.error(request, "Unable to load book details.")
-        return redirect("visit_library_catalogue")
-
-@login_required
 def get_books_by_subject(request):
     try:
         subject_id_enc = request.GET.get('subject_id')
@@ -4782,6 +4726,15 @@ def membership_card(request):
 @login_required
 def view_book_detail(request):
     try:
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+        
         cat_ref_num_enc = request.GET.get('cat_ref_num')
         if not cat_ref_num_enc:
             messages.error(request, "Invalid book request.")
