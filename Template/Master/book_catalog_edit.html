@@ -938,4 +938,34 @@ function previewImage(input, previewId) {
     });
 </script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // For barcode scanners that send Enter key
+        document.querySelector('input[name="isbn"]').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                // Trigger blur to ensure any onblur events fire
+                this.blur();
+                
+                // Small delay then focus next field
+                setTimeout(() => {
+                    const nextField = this.closest('.col-md-6').nextElementSibling?.querySelector('input, select, textarea');
+                    if (nextField) {
+                        nextField.focus();
+                    } else {
+                        // If no next field in same row, find next in form
+                        const form = this.closest('form');
+                        const inputs = Array.from(form.querySelectorAll('input, select, textarea:not([type="hidden"])'));
+                        const idx = inputs.indexOf(this);
+                        if (idx < inputs.length - 1) {
+                            inputs[idx + 1].focus();
+                        }
+                    }
+                }, 50);
+            }
+        });
+    });
+</script>
+
 {% endblock %}
