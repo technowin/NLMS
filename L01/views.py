@@ -1872,7 +1872,7 @@ def bar_code_index(request):
                 try:
                     font_large = ImageFont.truetype(font_path, 28)
                     font_medium = ImageFont.truetype(font_path, 28)
-                    font_small = ImageFont.truetype(font_path, 28)
+                    font_small = ImageFont.truetype(font_path, 22)
                 except:
                     font_large = ImageFont.load_default()
                     font_medium = ImageFont.load_default()
