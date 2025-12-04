@@ -4542,6 +4542,11 @@ def visit_Library_catalogue(request):
         username = request.session.get('username')
         user_id = request.session.get('user_id')
         role_id = request.session.get('role_id')
+        
+        if library_code != 'L01':
+            messages.error(request, "Invalid library access.")
+            request.session.flush()   # Clear everything
+            return redirect('library_list')
 
         if not all([library_code, username, user_id, role_id]):
             messages.warning(request, "Session expired or invalid. Please login again.")
@@ -4579,6 +4584,24 @@ def visit_Library_catalogue(request):
 
         for b in new_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            
+        from django.db.models import Avg, Count
+
+        most_reviewed_books = (
+            BookCatalog.objects.annotate(
+                review_count=Count('cat_ref_id_reviews'),
+                avg_rating=Avg('cat_ref_id_reviews__rating')
+            )
+            .filter(review_count__gt=0)
+            .order_by('-avg_rating', '-review_count')[:10]  # avg_rating first, then review_count
+        )
+
+        # Prepare for template
+        for b in most_reviewed_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            avg = b.avg_rating or 0
+            b.avg_rating = round(avg, 1)
+            b.stars = [True if i < round(avg) else False for i in range(5)]
 
         context = {
             'subjects': subjects,
@@ -4588,6 +4611,7 @@ def visit_Library_catalogue(request):
             'first_subject_id_enc': first_subject.id_enc if first_subject else None,
             'MEDIA_URL': settings.MEDIA_URL,
             'new_books': new_books,  # Pass to template
+            'most_reviewed_books': most_reviewed_books,
         }
 
         return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", context)
@@ -4603,32 +4627,66 @@ def get_books_by_subject(request):
         subject_id = dec(subject_id_enc)
 
         search = request.GET.get('search', '').strip()
+        searching = request.GET.get('searching', '').strip()
+        
+        if searching:
+            
+            # Base queryset
+            all_books = BookCatalog.objects.all().select_related('subject', 'material')
 
-        # Base queryset
-        all_books = BookCatalog.objects.filter(subject_id=subject_id).select_related('subject', 'material')
+            if search:
+                # Search across all subjects
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+            elif subject_id:
+                # Filter by subject only if no search
+                all_books = all_books.filter(subject_id=subject_id)
 
-        # Search filter
-        if search:
-            all_books = all_books.filter(
-                Q(title__icontains=search) |
-                Q(author__icontains=search)
-            )
+            # Encode book IDs
+            for b in all_books:
+                b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
 
-        # Encode book IDs
-        for b in all_books:
-            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            # Pagination
+            paginator = Paginator(all_books, 8)
+            page_number = request.GET.get('page', 1)
+            books_page = paginator.get_page(page_number)
 
-        # Pagination
-        paginator = Paginator(all_books, 8)
-        page_number = request.GET.get('page', 1)
-        books_page = paginator.get_page(page_number)
+            context = {
+                'books': books_page,
+                'MEDIA_URL': settings.MEDIA_URL,
+                'subject_id_enc': subject_id_enc
+            }
+            return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
 
-        context = {
-            'books': books_page,
-            'MEDIA_URL': settings.MEDIA_URL,
-            'subject_id_enc': subject_id_enc
-        }
-        return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
+        else:
+            # Base queryset
+            all_books = BookCatalog.objects.filter(subject_id=subject_id).select_related('subject', 'material')
+
+            # Search filter
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+
+            # Encode book IDs
+            for b in all_books:
+                b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+            # Pagination
+            paginator = Paginator(all_books, 8)
+            page_number = request.GET.get('page', 1)
+            books_page = paginator.get_page(page_number)
+
+            context = {
+                'books': books_page,
+                'MEDIA_URL': settings.MEDIA_URL,
+                'subject_id_enc': subject_id_enc
+            }
+            
+            return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
 
     except Exception as e:
         print("Error fetching books for subject:", e)
@@ -4763,6 +4821,9 @@ def view_book_detail(request):
 
         # Fetch the book
         book = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
+        
+        for b in [book]:
+            b.bookIdEnc = enc(str(b.cat_ref_num))
 
         # Collect images
         images = []
@@ -4902,11 +4963,11 @@ def submit_review(request):
             # Get data from request
             if request.content_type == 'application/json':
                 data = json.loads(request.body)
-                book_id = data.get('book_id')
+                book_id = dec(data.get('book_id'))
                 rating = int(data.get('rating'))
                 review_text = data.get('review')
             else:
-                book_id = request.POST.get('book_id')
+                book_id = dec(request.POST.get('book_id'))
                 rating = int(request.POST.get('rating'))
                 review_text = request.POST.get('review')
             

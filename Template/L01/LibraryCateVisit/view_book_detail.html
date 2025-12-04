@@ -12,6 +12,62 @@
 <link rel="stylesheet" href="{% static 'css/Master/view_book_detail.css' %}">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+</style>
+
 {% endblock %}
 
 {% block page_title %}
@@ -248,7 +304,8 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <small class="text-muted"><span id="charCount">0</span>/500</small>
                     <button id="submitReviewBtn" class="btn btn-sm btn-primary" 
-                            data-book-id="{{ book.cat_ref_num }}" disabled>
+                            {% comment %} data-book-id="{{ book.cat_ref_num }}" disabled> {% endcomment %}
+                            data-book-id="{{ book.bookIdEnc }}" disabled>
                         <i class="ri-send-plane-line me-1"></i>Submit
                     </button>
                 </div>
@@ -418,7 +475,7 @@
         {% elif total_reviews > 0 %}
             <!-- Simple message if 5 or fewer reviews -->
             <div class="no-pagination-message text-center mt-4">
-                <div class="d-inline-flex align-items-center gap-2 p-3 rounded" style="background: #f8f9fa;">
+                <div class="d-inline-flex align-items-center gap-2 p-3 rounded">
                     <i class="ri-checkbox-circle-line text-success"></i>
                     <span class="text-muted">Showing all {{ total_reviews }} reviews</span>
                 </div>
@@ -427,6 +484,11 @@
     </div>
 
 </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
 
 {% endblock %}
 
@@ -935,6 +997,27 @@
             document.head.appendChild(style);
         });
 
+    </script>
+
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
     </script>
 
 {% endblock %}

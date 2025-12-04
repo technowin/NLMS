@@ -10,6 +10,61 @@
 <link rel="stylesheet" href="{% static 'css/Master/visitLibraryCate.css' %}">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+</style>
 
 {% endblock %}
 
@@ -24,7 +79,7 @@
         <div class="library-header-block">
             <div class="library-header-inner">
                 <h2 class="library-title">
-                    📚 <span class="library-title-text">डिजिटल लायब्ररी</span>
+                    📚 <span class="library-title-text">डिजिटल ग्रंथालय</span>
                 </h2>
                 <p class="library-subtitle">शब्दांच्या जगातील अमर्याद सफर...</p>
             </div>
@@ -118,7 +173,64 @@
             </div>
         {% endif %}
 
+        {% if most_reviewed_books %}
+            <div class="most-reviewed-section my-4 mt-5">
+                <h5 class="section-header mb-3">
+                    📖 सर्वाधिक रिव्ह्यू झालेली पुस्तके
+                </h5>
+
+                <div class="slider-wrapper-mostreview position-relative">
+                    <button class="most-reviewed-left-arrow">&#10094;</button>
+                    <div class="most-reviewed-slider d-flex">
+                        {% for book in most_reviewed_books %}
+                            <div class="card most-reviewed-card">
+                                <div class="book-img-container">
+                                    {% if book.front_page_photo %}
+                                        <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" alt="{{ book.title }}" class="book-img">
+                                    {% else %}
+                                        <div class="book-img-placeholder">प्रतिमा उपलब्ध नाही</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="card-body p-3">
+                                    <h6 class="card-title text-truncate" title="{{ book.title }}">{{ book.title }}</h6>
+                                    
+                                    {% if book.author %}
+                                    <p class="mb-0 text-muted"><small>लेखक: {{ book.author }}</small></p>
+                                    {% endif %}
+
+                                    <!-- ⭐ Show average rating -->
+                                    <p class="mb-1">
+                                        {% for star in book.stars %}
+                                            {% if star %}
+                                                <span style="color:#FFD700;">&#9733;</span>
+                                            {% else %}
+                                                <span style="color:#ccc;">&#9733;</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <small>({{ book.avg_rating }})</small>
+                                    </p>
+
+                                    <!-- Marathi button -->
+                                    <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
+                                    class="btn btn-sm btn-primary mt-2 w-100">
+                                        अधिक पहा
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="most-reviewed-right-arrow">&#10095;</button>
+                </div>
+            </div>
+        {% endif %}
+
     </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
 {% endblock %}
 
 {% block extra_javascript %}
@@ -221,7 +333,8 @@
             type: "GET",
             data: {
                 subject_id: subjectId,
-                search: search
+                search: search,
+                searching: 'Searching'  // to differentiate from pagination
             },
             success: function (html) {
                 $("#books-container").html(html);
@@ -349,6 +462,96 @@
             }
         }
     });
+</script>
+
+{% comment %} most reviewed book slider {% endcomment %}
+<script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const mrSlider = document.querySelector(".most-reviewed-slider");
+        const mrLeftArrow = document.querySelector(".most-reviewed-left-arrow");
+        const mrRightArrow = document.querySelector(".most-reviewed-right-arrow");
+
+        if (!mrSlider || !mrLeftArrow || !mrRightArrow) return;
+
+        // Scroll calculation
+        function calculateMRScrollAmount() {
+            const card = mrSlider.querySelector(".most-reviewed-card"); // <-- use unique card class
+            if (!card) return 0;
+            const cardWidth = card.offsetWidth;
+            const computedStyle = window.getComputedStyle(mrSlider);
+            const gap = parseInt(computedStyle.gap) || 15;
+            return cardWidth + gap;
+        }
+
+        // Arrow click events
+        mrRightArrow.addEventListener("click", () => {
+            const scrollAmount = calculateMRScrollAmount();
+            mrSlider.scrollBy({ left: scrollAmount, behavior: "smooth" });
+        });
+
+        mrLeftArrow.addEventListener("click", () => {
+            const scrollAmount = calculateMRScrollAmount();
+            mrSlider.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+        });
+
+        // Arrow visibility
+        function updateMRArrowVisibility() {
+            const scrollLeft = mrSlider.scrollLeft;
+            const maxScroll = mrSlider.scrollWidth - mrSlider.clientWidth;
+
+            mrLeftArrow.style.opacity = scrollLeft <= 10 ? "0.5" : "1";
+            mrLeftArrow.style.pointerEvents = scrollLeft <= 10 ? "none" : "auto";
+
+            mrRightArrow.style.opacity = scrollLeft >= maxScroll - 10 ? "0.5" : "1";
+            mrRightArrow.style.pointerEvents = scrollLeft >= maxScroll - 10 ? "none" : "auto";
+        }
+
+        mrSlider.addEventListener("scroll", updateMRArrowVisibility);
+        window.addEventListener("resize", updateMRArrowVisibility);
+        updateMRArrowVisibility();
+
+        // Keyboard support
+        document.addEventListener("keydown", (e) => {
+            if (mrSlider.offsetParent !== null) {
+                if (e.key === "ArrowLeft") mrLeftArrow.click();
+                if (e.key === "ArrowRight") mrRightArrow.click();
+            }
+        });
+
+        // Touch swipe support
+        let touchStartX = 0, touchEndX = 0;
+        mrSlider.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+        mrSlider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            const swipeThreshold = 50;
+            if (touchEndX < touchStartX - swipeThreshold) mrRightArrow.click();
+            if (touchEndX > touchStartX + swipeThreshold) mrLeftArrow.click();
+        });
+    });
+
+
+</script>
+
+<script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
 </script>
 
 {% endblock %}

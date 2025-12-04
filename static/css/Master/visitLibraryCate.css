@@ -697,3 +697,69 @@
         font-size: 0.9rem;
     }
 }
+
+
+/* Container must be relative for absolute children */
+.most-reviewed-section .slider-wrapper-mostreview {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Slider itself */
+.most-reviewed-slider {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 10px 0; /* optional spacing */
+    -ms-overflow-style: none;  /* IE & Edge */
+    scrollbar-width: none; 
+}
+
+/* Cards inside the slider */
+.most-reviewed-card {
+    flex: 0 0 auto;
+    width: 200px; /* adjust as needed */
+}
+
+/* Arrows */
+.most-reviewed-left-arrow,
+.most-reviewed-right-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.7);  /* slightly transparent dark background */
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;            /* circular */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s;          /* smooth hover */
+    padding: 0;                    /* padding handled by width/height */
+}
+
+/* Left & right positions */
+.most-reviewed-left-arrow { left: 5px; }
+.most-reviewed-right-arrow { right: 5px; }
+
+/* Optional hover effect */
+.most-reviewed-left-arrow:hover,
+.most-reviewed-right-arrow:hover {
+    background: rgba(0,0,0,0.9);
+    transform: translateY(-50%) scale(1.1);
+}
+
+
+.most-reviewed-slider::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari, Opera */
+}
+
+.most-reviewed-card {
+    flex: 0 0 calc((100% - 45px) / 4);  /* 4 cards per row, 15px gap between cards */
+    max-width: calc((100% - 45px) / 4);
+}

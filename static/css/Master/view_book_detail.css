@@ -1367,3 +1367,14 @@
     gap: 0.5rem;
 }
 
+.no-pagination-message {
+    background: #f8f9fa; /* light mode background */
+    color: #000;          /* light mode text color */
+}
+
+:root[data-bs-theme="dark"] .no-pagination-message {
+    background: rgba(255, 255, 255, 0.12) !important; /* dark mode background */
+    color: #fff !important;                             /* dark mode text color */
+}
+
+
