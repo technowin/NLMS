@@ -1767,11 +1767,24 @@ def bar_code_index(request):
             
             # barcode for bulk download
             
+            # circulation_accessions = list(
+            #     CirculationCopyStatus.objects
+            #     .filter(accession_no__isnull=False)
+            #     .values('id', 'accession_no', 'accession_id')
+            # )
+            
             circulation_accessions = list(
                 CirculationCopyStatus.objects
                 .filter(accession_no__isnull=False)
+                .annotate(
+                    accession_no_int=Cast('accession_no', IntegerField())
+                )
+                .order_by('accession_no_int')
                 .values('id', 'accession_no', 'accession_id')
             )
+
+            for circ in circulation_accessions:
+                circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
 
             for circ in circulation_accessions:
                 circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
