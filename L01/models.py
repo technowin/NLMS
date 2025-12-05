@@ -713,7 +713,7 @@ class BookDetails(models.Model):
     published_date = models.CharField(max_length=20, null=True, blank=True)
     page_count = models.IntegerField(null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True)
-    preview_link = models.URLField(null=True, blank=True)
+    preview_link = models.TextField(null=True, blank=True)
     edition = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

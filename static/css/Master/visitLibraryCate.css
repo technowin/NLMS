@@ -700,6 +700,7 @@
 
 
 /* Container must be relative for absolute children */
+
 .most-reviewed-section .slider-wrapper-mostreview {
     position: relative;
     overflow: hidden;
@@ -720,6 +721,11 @@
 .most-reviewed-card {
     flex: 0 0 auto;
     width: 200px; /* adjust as needed */
+}
+
+.most-reviewed-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.25);
 }
 
 /* Arrows */
@@ -764,6 +770,31 @@
     max-width: calc((100% - 45px) / 4);
 }
 
+/* Mobile: Show 1 card */
+@media (max-width: 576px) {
+    .most-reviewed-card {
+        flex: 0 0 calc(100% - 20px);
+        max-width: calc(100% - 20px);
+    }
+}
+
+/* Tablets: Show 2 cards */
+@media (min-width: 577px) and (max-width: 768px) {
+    .most-reviewed-card {
+        flex: 0 0 calc((100% - 15px) / 2);
+        max-width: calc((100% - 15px) / 2);
+    }
+}
+
+/* Medium screens: Show 3 cards */
+@media (min-width: 769px) and (max-width: 992px) {
+    .most-reviewed-card {
+        flex: 0 0 calc((100% - 30px) / 3);
+        max-width: calc((100% - 30px) / 3);
+    }
+}
+
+
 /* Slider wrapper */
 .slider-wrapper-unique {
     position: relative;
@@ -772,45 +803,76 @@
 }
 
 /* Slider */
-.new-arrivals-slider-unique {
-    display: flex;
-    gap: 15px;
-    scroll-behavior: smooth;
-    overflow-x: auto;
-    padding-bottom: 10px; /* prevent scrollbar overlay */
+
+/* Wrapper */
+.new-arrivals-section-unique .slider-wrapper-unique {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
 }
 
-/* Card */
+/* Slider track */
+.new-arrivals-slider-unique {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 5px 0;
+}
+
+.new-arrivals-slider-unique::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile: 1 card */
 .book-card-unique {
-    flex: 0 0 calc(25% - 15px); /* 4 cards in a row */
-    min-width: 200px; /* fallback */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    border-radius: 6px;
-    background: #fff;
+    flex: 0 0 calc(100% - 10px);
+    max-width: calc(100% - 10px);
+    scroll-snap-align: start;
+    margin: 0 5px;
+}
+
+.book-card-unique:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.25);
+}
+
+/* Tablet: 2 cards (≥768px) */
+@media (min-width: 768px) {
+    .book-card-unique {
+        flex: 0 0 calc(50% - 12px);
+        max-width: calc(50% - 12px);
+    }
+}
+
+/* Desktop: 3 cards (≥992px) */
+@media (min-width: 992px) {
+    .book-card-unique {
+        flex: 0 0 calc(33.333% - 10px);
+        max-width: calc(33.333% - 10px);
+    }
+}
+
+/* Large desktop: 4 cards (≥1200px) */
+@media (min-width: 1200px) {
+    .book-card-unique {
+        flex: 0 0 calc(25% - 12px);
+        max-width: calc(25% - 12px);
+    }
 }
 
 /* Image container */
 .book-img-container {
-    height: 220px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 300px;
     overflow: hidden;
 }
 
-.book-img-container img {
-    max-height: 100%;
-    width: auto;
-}
-
-/* Placeholder */
-.book-img-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: #777;
-    height: 100%;
+@media (max-width: 767px) {
+    .book-img-container {
+        height: 180px;
+    }
 }
 
 /* Arrows */
@@ -819,30 +881,35 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 28px;
-    background: rgba(0,0,0,0.1);
+    background: rgba(0,0,0,0.7);
+    color: white;
     border: none;
-    padding: 6px 10px;
-    cursor: pointer;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    z-index: 10;
-    transition: 0.2s;
+    cursor: pointer;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
 }
 
 .slider-arrow-left-unique:hover,
 .slider-arrow-right-unique:hover {
-    background: rgba(0,0,0,0.25);
-    color: #fff;
+    background: rgba(0,0,0,0.9);
 }
 
-.slider-arrow-left-unique { left: 5px; }
-.slider-arrow-right-unique { right: 5px; }
+/* Position */
+.slider-arrow-left-unique { left: 10px; }
+.slider-arrow-right-unique { right: 10px; }
 
-/* Hide default scrollbar */
-.new-arrivals-slider-unique::-webkit-scrollbar {
-    display: none;
-}
-.new-arrivals-slider-unique {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+/* Mobile arrow sizing */
+@media (max-width: 767px) {
+    .slider-arrow-left-unique,
+    .slider-arrow-right-unique {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
 }
