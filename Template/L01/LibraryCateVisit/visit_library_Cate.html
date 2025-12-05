@@ -224,6 +224,40 @@
                 </div>
             </div>
         {% endif %}
+        
+        {% if new_arrivals_qs %}
+            <div class="new-arrivals-section-unique my-4 mt-5">
+                <h5 class="section-header mb-3">
+                    <i class="ri-book-line me-2"></i> नवीन पुस्तके
+                </h5>
+
+                <div class="slider-wrapper-unique position-relative">
+                    <button class="slider-arrow-left-unique">&#10094;</button>
+
+                    <div class="new-arrivals-slider-unique d-flex">
+                        {% for book in new_arrivals_qs %}
+                        <div class="book-card-unique card">
+                            <div class="book-img-container">
+                                {% if book.front_page_photo %}
+                                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" alt="{{ book.title }}" class="book-img">
+                                {% else %}
+                                    <div class="book-img-placeholder">प्रतिमा उपलब्ध नाही</div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-3">
+                                <h6 class="card-title text-truncate" title="{{ book.title }}">{{ book.title }}</h6>
+                                {% if book.author %}
+                                    <p class="mb-0 text-muted"><small>लेखक: {{ book.author }}</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button class="slider-arrow-right-unique">&#10095;</button>
+                </div>
+            </div>
+        {% endif %}
 
     </div>
 
@@ -552,6 +586,70 @@
                 behavior: 'smooth'
             });
         });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    const slider = document.querySelector(".new-arrivals-slider-unique");
+    const leftArrow = document.querySelector(".slider-arrow-left-unique");
+    const rightArrow = document.querySelector(".slider-arrow-right-unique");
+
+    if (!slider || !leftArrow || !rightArrow) return;
+
+    // Calculate scroll amount per click
+    function getScrollAmount() {
+        const card = slider.querySelector(".book-card-unique");
+        if (!card) return 0;
+        const cardWidth = card.offsetWidth;
+        const computedStyle = window.getComputedStyle(slider);
+        const gap = parseInt(computedStyle.gap) || 15;
+        return cardWidth + gap;
+    }
+
+    // Arrow click events
+    rightArrow.addEventListener("click", () => {
+        slider.scrollBy({ left: getScrollAmount(), behavior: "smooth" });
+    });
+
+    leftArrow.addEventListener("click", () => {
+        slider.scrollBy({ left: -getScrollAmount(), behavior: "smooth" });
+    });
+
+    // Update arrow visibility
+    function updateArrows() {
+        const scrollLeft = slider.scrollLeft;
+        const maxScroll = slider.scrollWidth - slider.clientWidth;
+
+        leftArrow.style.opacity = scrollLeft <= 10 ? "0.5" : "1";
+        leftArrow.style.pointerEvents = scrollLeft <= 10 ? "none" : "auto";
+
+        rightArrow.style.opacity = scrollLeft >= maxScroll - 10 ? "0.5" : "1";
+        rightArrow.style.pointerEvents = scrollLeft >= maxScroll - 10 ? "none" : "auto";
+    }
+
+    slider.addEventListener("scroll", updateArrows);
+    window.addEventListener("resize", updateArrows);
+    updateArrows();
+
+    // Touch support
+    let touchStartX = 0, touchEndX = 0;
+    slider.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+    slider.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const threshold = 50;
+        if (touchEndX < touchStartX - threshold) rightArrow.click();
+        if (touchEndX > touchStartX + threshold) leftArrow.click();
+    });
+
+    // Keyboard support when visible
+    document.addEventListener("keydown", (e) => {
+        if (slider.offsetParent !== null) {
+            if (e.key === "ArrowLeft") leftArrow.click();
+            if (e.key === "ArrowRight") rightArrow.click();
+        }
+    });
+});
+
 </script>
 
 {% endblock %}

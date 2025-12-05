@@ -4574,14 +4574,31 @@ def visit_Library_catalogue(request):
         for b in page_obj:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
             
-        # --- NEW ARRIVALS LOGIC ---
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        new_books = BookCatalog.objects.filter(created_at__gte=thirty_days_ago).order_by('-created_at')
+        # --- UPCOMING ARRIVALS LOGIC ---
+        
+        from django.db.models import Max
 
-        if not new_books.exists():
-            # Fallback: last 10 books
-            new_books = BookCatalog.objects.all().order_by('-cat_ref_num')[:10]
+        # 1️⃣ Find the latest created_at date (ignore NULLs)
+        latest_created_at = BookCatalog.objects.aggregate(latest=Max('created_at'))['latest']
 
+        if latest_created_at:
+            # 2️⃣ Get all books with that latest created_at date
+            recent_books = BookCatalog.objects.filter(created_at=latest_created_at)
+        else:
+            recent_books = BookCatalog.objects.none()
+
+        # 3️⃣ Fill up remaining slots (up to 10) with last inserted books by cat_ref_num
+        remaining_count = 10 - recent_books.count()
+        if remaining_count > 0:
+            fallback_books = BookCatalog.objects.exclude(cat_ref_num__in=recent_books.values_list('cat_ref_num', flat=True))\
+                                                .order_by('-cat_ref_num')[:remaining_count]
+        else:
+            fallback_books = BookCatalog.objects.none()
+
+        # 4️⃣ Combine both querysets
+        new_books = list(recent_books) + list(fallback_books)
+
+        # 5️⃣ Encode book IDs
         for b in new_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
             
@@ -4602,6 +4619,20 @@ def visit_Library_catalogue(request):
             avg = b.avg_rating or 0
             b.avg_rating = round(avg, 1)
             b.stars = [True if i < round(avg) else False for i in range(5)]
+            
+        # --- NEW ARRIVALS LOGIC ---
+        
+        from django.db.models import Exists, OuterRef
+
+        new_arrivals_qs = BookCatalog.objects.annotate(
+            in_circulation=Exists(
+                CirculationCopyStatus.objects.filter(bookcatalog_id=OuterRef('cat_ref_num'))
+            )
+        ).filter(in_circulation=True).order_by('-cat_ref_num')[:10]  # using cat_ref_num descending
+
+        # Encode book IDs
+        for b in new_arrivals_qs:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
 
         context = {
             'subjects': subjects,
@@ -4612,6 +4643,7 @@ def visit_Library_catalogue(request):
             'MEDIA_URL': settings.MEDIA_URL,
             'new_books': new_books,  # Pass to template
             'most_reviewed_books': most_reviewed_books,
+            'new_arrivals_qs': new_arrivals_qs,
         }
 
         return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", context)

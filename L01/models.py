@@ -689,4 +689,43 @@ class BookReview(models.Model):
 
     def __str__(self):
         return f"Review by User {self.user_id} for Book {self.book.title}"
+    
+class BookMaster(models.Model):
+    isbn_10 = models.CharField(max_length=20, null=True, blank=True)
+    isbn_13 = models.CharField(max_length=20, null=True, blank=True)
+    title = models.CharField(max_length=500)
+    description = models.TextField(null=True, blank=True)
+    language = models.CharField(max_length=10, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+    def __str__(self):
+        return self.title
+    class Meta:
+        db_table = 'tbl_book_master'
+
+
+class BookDetails(models.Model):
+    master = models.ForeignKey(BookMaster, on_delete=models.CASCADE, related_name='details')
+    author = models.CharField(max_length=255, null=True, blank=True)
+    publisher = models.CharField(max_length=255, null=True, blank=True)
+    published_date = models.CharField(max_length=20, null=True, blank=True)
+    page_count = models.IntegerField(null=True, blank=True)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    preview_link = models.URLField(null=True, blank=True)
+    edition = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+    def __str__(self):
+        return f"{self.master.title} - {self.author}"
+    
+    class Meta:
+        db_table = 'tbl_book_detail'
+
+
+
+
 
