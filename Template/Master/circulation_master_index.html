@@ -10,6 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 {% endblock %}
 
 {% block page_title %}
@@ -17,6 +19,7 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="mt-4">
 
     <div class="table-responsive">
@@ -36,20 +39,20 @@
                     <th>क्रिया</th>
                 </tr>
 
-                <!-- 🔽 Dropdown Filter Row -->
+                <!-- Filter Row -->
                 <tr class="filter-row">
-                    <th></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="1"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="2"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="3"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="4"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="5"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="6"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="7"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="8"><option value="">सर्व</option></select></th>
-                    <th><select class="form-select form-select-sm column-filter" data-col="9"><option value="">सर्व</option></select></th>
-                    <th></th>
-                </tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
             </thead>
 
             <tbody>
@@ -66,147 +69,130 @@
                         <td>{{ item.current_status_name|default:"-" }}</td>
                         <td>{{ item.processing_status_name|default:"-" }}</td>
                         <td>
-                            <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">संपादन करा</a>
-                            <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-info">तपशील पहा</a>
+                            <a href="{% url 'circulation_master_edit' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-primary">संपादन</a>
+                            <a href="{% url 'circulation_master_view' %}?circulationid={{ item.circulation_id_enc }}" class="btn btn-sm btn-info">तपशील</a>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="11" class="text-center fw-bold">
-                            उपलब्ध माहिती आढळली नाही
-                        </td>
+                        <td colspan="11" class="text-center fw-bold">उपलब्ध माहिती आढळली नाही</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Back to Top Button -->
-    <a href="#" class="back-to-top" id="backToTop">
-        <i class="fas fa-arrow-up"></i>
-    </a>
-
 </div>
+
 {% endblock %}
 
+
 {% block extra_javascript %}
-    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Add these in your <head> or before </body> -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="{% static 'js/vendor/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'js/vendor/dataTables.bootstrap5.min.js' %}"></script>
-    <script src="{% static 'js/vendor/dataTables.responsive.min.js' %}"></script>
-    <script src="{% static 'js/vendor/responsive.bootstrap5.min.js' %}"></script>
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<script src="{% static 'js/vendor/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/vendor/dataTables.bootstrap5.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script>
-        $(document).ready(function() {
-            $('#circulationTable').DataTable({
-                responsive: true,
-                pageLength: 5,
-                lengthChange: false,
-                ordering: true,
-                autoWidth: false,
-                language: {
-                    search: "Search:",
-                    zeroRecords: "No matching records found"
-                }
-            });
+{% comment %} <script>
+$(document).ready(function () {
+
+    var table = $('#circulationTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+        lengthChange: false,
+        ordering: true,
+        autoWidth: false,
+        searching: true
+    });
+
+    // Populate dropdowns with unique values
+    table.columns().every(function (index) {
+        let column = this;
+        let select = $(`select[data-col="${index}"]`);
+
+        if (select.length === 0) return;
+
+        // Add unique values
+        column.data().unique().sort().each(function (d) {
+            if (d && d !== "-") {
+                select.append(`<option value="${d}">${d}</option>`);
+            }
         });
-</script>
+    });
 
-    <script>
-        $(document).ready(function() {
-            const $table = $("#circulationTable");
+    // FIXED FILTER LOGIC
+    $(".dt-filter").on("change", function () {
+        let colIndex = $(this).data("col");
+        let value = $(this).val();
 
-            // Add hidden "No Data" row
-            //const noDataRow = `<tr class="no-data text-center table-warning"><td colspan="11">कोणतीही माहिती उपलब्ध नाही</td></tr>`;
-            const noDataRow = `<tr class="no-data text-center table-warning"><td colspan="10">कोणतीही माहिती उपलब्ध नाही</td></tr>`;
-            $table.find("tbody").append(noDataRow);
-            $table.find(".no-data").hide();
+        if (value === "" || value === null) {
+            // Reset filter → show ALL rows
+            table.column(colIndex).search("").draw();
+        } else {
+            // Exact match filter
+            table.column(colIndex).search("^" + value + "$", true, false).draw();
+        }
+    });
 
-            // Build dropdown options dynamically
-            $table.find("thead tr.filter-row select.column-filter").each(function() {
-                let colIndex = $(this).data("col");
-                let uniqueValues = new Set();
+    // Select2
+    $(".dt-filter").select2({
+        placeholder: "शोधा...",
+        allowClear: true,
+        width: "100%"
+    });
 
-                $table.find("tbody tr").each(function() {
-                    let cellValue = $(this).find("td").eq(colIndex).text().trim();
-                    if (cellValue && cellValue !== "-" && !$(this).hasClass("no-data")) {
-                        uniqueValues.add(cellValue);
-                    }
-                });
+});
 
-                Array.from(uniqueValues).sort().forEach(val => {
-                    $(this).append(`<option value="${val}">${val}</option>`);
-                });
-            });
+</script> {% endcomment %}
 
-            // Activate Select2 (searchable dropdown)
-            $(".column-filter").select2({
-                placeholder: "शोधा...",
-                allowClear: true,
-                width: 'resolve'
-            });
+ <script>
+        $(document).ready(function () {
 
-            // Filter rows when dropdown value changes
-            $(".column-filter").on("change", function() {
-                let filters = {};
-                $(".column-filter").each(function() {
-                    let col = $(this).data("col");
-                    let val = $(this).val();
-                    if (val) filters[col] = val.toLowerCase();
-                });
+            var table = $('#circulationTable').DataTable({
+                pageLength: 10,
+                lengthChange: false,
+                search: true,
+                ordering: true,
+                info: true,
+                orderCellsTop: true,   // very important when extra header row exists
 
-                let visibleCount = 0;
+                initComplete: function () {
+                    let api = this.api();
 
-                $table.find("tbody tr").not(".no-data").each(function() {
-                    let show = true;
-                    for (let col in filters) {
-                        let cellText = $(this).find("td").eq(col).text().toLowerCase();
-                        if (!cellText.includes(filters[col])) {
-                            show = false;
-                            break;
+                    api.columns().every(function (colIdx) {
+
+                        let column = this;
+                        let th = $('.filter-row th').eq(colIdx);
+
+                        // Skip "कृती" column (last index)
+                        if (colIdx === api.columns().nodes().length - 1) {
+                            th.html(""); // keep empty
+                            return;
                         }
-                    }
-                    $(this).toggle(show);
-                    if (show) visibleCount++;
-                });
 
-                if (visibleCount === 0) {
-                    $table.find(".no-data").show();
-                } else {
-                    $table.find(".no-data").hide();
+                        // Create dropdown
+                        let select = $('<select class="form-select form-select-sm"><option value="">सर्व</option></select>')
+                            .appendTo(th)
+                            .on('change', function () {
+                                let val = $.fn.dataTable.util.escapeRegex($(this).val());
+                                column.search(val ? '^' + val + '$' : '', true, false).draw();
+                            });
+
+                        // Read unique values from the column
+                        column.data().unique().sort().each(function (d) {
+                            // Strip HTML badges (like <span>)
+                            let clean = $("<div>").html(d).text().trim();
+
+                            if (clean !== "") {
+                                select.append(`<option value="${clean}">${clean}</option>`);
+                            }
+                        });
+
+                    });
                 }
             });
+
         });
     </script>
-
-    {% if messages %}
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-                {% for message in messages %}
-                    Swal.fire({
-                        title: "{{ message.tags|title }}",
-                        text: "{{ message|escapejs }}",
-                        icon: "{{ message.tags }}",
-                        confirmButtonText: "OK",
-                        background: theme === 'dark' ? '#343a40' : '#ffffff',
-                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
-                        confirmButtonColor: '#0d6efd',
-                        customClass: {
-                            popup: 'rounded-4 shadow',
-                            confirmButton: 'btn btn-primary px-4 py-2'
-                        }
-                    });
-                {% endfor %}
-            });
-        </script>
-    {% endif %}
-
-  
 
 {% endblock %}
