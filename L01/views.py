@@ -4534,106 +4534,90 @@ def save_eod_log(request):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
 
+# Cate list notepad view 440
+from django.db.models import Max, Count, Avg, Exists, OuterRef
+
 @login_required
 def visit_Library_catalogue(request):
     try:
-        # Session checks
+        # --- SESSION CHECKS ---
         library_code = request.session.get('library_db')
         username = request.session.get('username')
         user_id = request.session.get('user_id')
         role_id = request.session.get('role_id')
-        
+
         if library_code != 'L01':
             messages.error(request, "Invalid library access.")
-            request.session.flush()   # Clear everything
+            request.session.flush()
             return redirect('library_list')
 
         if not all([library_code, username, user_id, role_id]):
             messages.warning(request, "Session expired or invalid. Please login again.")
             return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
 
+        # --- SUBJECTS ---
         subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
         subjects = []
         for s in subjects_qs:
-            s.id_enc = enc(str(s.id))  # your encoding function
+            s.id_enc = enc(str(s.id))  # encoding function
             subjects.append(s)
 
         first_subject = subjects[0] if subjects else None
 
+        # --- BOOKS BY FIRST SUBJECT (use indexed subject_id) ---
         if first_subject:
-            books = BookCatalog.objects.filter(subject=first_subject).select_related('subject', 'material')
+            books = BookCatalog.objects.filter(subject_id=first_subject.id)\
+                                       .select_related('subject', 'material')
         else:
             books = BookCatalog.objects.none()
 
-        # Pagination: 8 books per page
+        # --- PAGINATION ---
         paginator = Paginator(books, 8)
         page_number = request.GET.get('page', 1)
         page_obj = paginator.get_page(page_number)
 
-        # Encode book IDs
         for b in page_obj:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
-            
-        # --- UPCOMING ARRIVALS LOGIC ---
-        
-        from django.db.models import Max
 
-        # 1️⃣ Find the latest created_at date (ignore NULLs)
+        # --- UPCOMING / LATEST BOOKS (use indexed cat_ref_num & created_at if indexed) ---
         latest_created_at = BookCatalog.objects.aggregate(latest=Max('created_at'))['latest']
+        recent_books = BookCatalog.objects.filter(created_at=latest_created_at) if latest_created_at else BookCatalog.objects.none()
 
-        if latest_created_at:
-            # 2️⃣ Get all books with that latest created_at date
-            recent_books = BookCatalog.objects.filter(created_at=latest_created_at)
-        else:
-            recent_books = BookCatalog.objects.none()
-
-        # 3️⃣ Fill up remaining slots (up to 10) with last inserted books by cat_ref_num
         remaining_count = 10 - recent_books.count()
-        if remaining_count > 0:
-            fallback_books = BookCatalog.objects.exclude(cat_ref_num__in=recent_books.values_list('cat_ref_num', flat=True))\
-                                                .order_by('-cat_ref_num')[:remaining_count]
-        else:
-            fallback_books = BookCatalog.objects.none()
+        fallback_books = BookCatalog.objects.exclude(cat_ref_num__in=recent_books.values_list('cat_ref_num', flat=True))\
+                                           .order_by('-cat_ref_num')[:remaining_count] if remaining_count > 0 else BookCatalog.objects.none()
 
-        # 4️⃣ Combine both querysets
         new_books = list(recent_books) + list(fallback_books)
-
-        # 5️⃣ Encode book IDs
         for b in new_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
-            
-        from django.db.models import Avg, Count
 
+        # --- MOST REVIEWED BOOKS (use indexed cat_ref_id in BookReview) ---
         most_reviewed_books = (
             BookCatalog.objects.annotate(
                 review_count=Count('cat_ref_id_reviews'),
                 avg_rating=Avg('cat_ref_id_reviews__rating')
             )
             .filter(review_count__gt=0)
-            .order_by('-avg_rating', '-review_count')[:10]  # avg_rating first, then review_count
+            .order_by('-avg_rating', '-review_count')[:10]
         )
 
-        # Prepare for template
         for b in most_reviewed_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
             avg = b.avg_rating or 0
             b.avg_rating = round(avg, 1)
             b.stars = [True if i < round(avg) else False for i in range(5)]
-            
-        # --- NEW ARRIVALS LOGIC ---
-        
-        from django.db.models import Exists, OuterRef
 
+        # --- NEW ARRIVALS IN CIRCULATION (use indexed bookcatalog_id in circulation) ---
         new_arrivals_qs = BookCatalog.objects.annotate(
             in_circulation=Exists(
                 CirculationCopyStatus.objects.filter(bookcatalog_id=OuterRef('cat_ref_num'))
             )
-        ).filter(in_circulation=True).order_by('-cat_ref_num')[:10]  # using cat_ref_num descending
+        ).filter(in_circulation=True).order_by('-cat_ref_num')[:10]
 
-        # Encode book IDs
         for b in new_arrivals_qs:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
 
+        # --- CONTEXT ---
         context = {
             'subjects': subjects,
             'books': page_obj,
@@ -4641,7 +4625,7 @@ def visit_Library_catalogue(request):
             'page_number': int(page_number),
             'first_subject_id_enc': first_subject.id_enc if first_subject else None,
             'MEDIA_URL': settings.MEDIA_URL,
-            'new_books': new_books,  # Pass to template
+            'new_books': new_books,
             'most_reviewed_books': most_reviewed_books,
             'new_arrivals_qs': new_arrivals_qs,
         }
@@ -4651,6 +4635,7 @@ def visit_Library_catalogue(request):
     except Exception as e:
         print(f"Error: {e}")
         return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+
 
 @login_required
 def get_books_by_subject(request):
