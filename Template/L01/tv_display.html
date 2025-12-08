@@ -1,0 +1,204 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}पुस्तक सूची{% endblock title %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/Master/visitLibraryCate.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+
+        .panel-title {
+            font-size: 70px;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 2px;
+            color: #f5f5f5;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .card-tv {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Merriweather', serif;
+            font-size: 50px;
+            letter-spacing: 1px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255,255,255,0.2);
+        }
+
+        .card-tv img {
+            max-height: 60vh;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+
+        img {
+            max-height: 60vh;
+            max-width: 45vw;
+            margin: 10px;
+            border-radius: 15px;
+        }
+
+        body {
+            margin: 0;
+            background: black;
+            color: white;
+            font-family: 'Merriweather', serif;
+            overflow: hidden;
+        }
+
+        .panel {
+            height: 100vh;
+            width: 100vw;
+            display: none;
+            padding: 60px;
+        }
+
+        .active {
+            display: block;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        h1 {
+            font-size: 70px;
+            margin-bottom: 30px;
+        }
+
+        .info {
+            font-size: 50px;
+            line-height: 1.4;
+        }
+
+        img {
+            max-height: 70vh;
+            border-radius: 20px;
+            margin-top: 30px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='पुस्तक सूची' %}
+{% endblock %}
+
+{% block content %}
+    <!-- Panel 1: Latest Book -->
+    <div id="panel1" class="panel">
+        <h1 class="panel-title">📘 Latest Book Added</h1>
+        <div class="card card-tv">
+            <div class="row g-0">
+                <div class="col-md-4 d-flex flex-column align-items-center justify-content-center">
+                    <img id="latest_book_front" src="" class="img-fluid rounded m-2" alt="Front Page">
+                    <img id="latest_book_last" src="" class="img-fluid rounded m-2" alt="Last Page">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body" id="latest_book_info">
+                        <!-- Info will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 2: Author Info -->
+    <div id="panel2" class="panel">
+        <h1>👤 Author Information</h1>
+        <div class="info" id="author_info"></div>
+    </div>
+
+    <!-- Panel 3: Most Reviewed Book -->
+    <div id="panel3" class="panel">
+        <h1>⭐ Most Reviewed Book</h1>
+        <div class="info" id="most_reviewed"></div>
+        <img id="most_reviewed_img" src="" alt="">
+    </div>
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+
+        function loadData() {
+            $.ajax({
+                url: "{% url 'L01:tv_api' %}",
+                method: "GET",
+                dataType: "json",
+                success: function(data) {
+                    // Latest Book info in card
+                    $("#latest_book_info").html(`
+                        <div><strong>Title:</strong> ${data.latest_book.title}</div>
+                        <div><strong>Author:</strong> ${data.latest_book.author}</div>
+                        <div><strong>Publisher:</strong> ${data.latest_book.publisher}</div>
+                        <div><strong>Subject:</strong> ${data.latest_book.subject}</div>
+                        <div><strong>Added On:</strong> ${data.latest_book.created_at}</div>
+                    `);
+                    $("#latest_book_front").attr("src", "{{ MEDIA_URL }}" + data.latest_book.cover);
+                    $("#latest_book_last").attr("src", "{{ MEDIA_URL }}" + data.latest_book.last_page);
+
+                    // Author Info panel
+                    $("#author_info").html(`
+                        <div class="card card-tv p-4">
+                            <div><strong>Name:</strong> ${data.author_info.name}</div>
+                            <div><strong>Co-Authors:</strong> ${data.author_info.other_authors}</div>
+                        </div>
+                    `);
+
+                    // Most Reviewed panel
+                    $("#most_reviewed").html(`
+                        <div class="card card-tv p-4">
+                            <div><strong>Title:</strong> ${data.most_reviewed_book.title}</div>
+                            <div><strong>Author:</strong> ${data.most_reviewed_book.author}</div>
+                            <div><strong>Total Reviews:</strong> ${data.most_reviewed_book.reviews}</div>
+                            <img src="{{ MEDIA_URL }}${data.most_reviewed_book.cover}" class="img-fluid rounded mt-3" />
+                        </div>
+                    `);
+                },
+                error: function(err) {
+                    console.error("Failed to load TV data", err);
+                }
+            });
+        }
+
+
+        // Initial load
+        loadData();
+
+        // Auto refresh every 1 minute
+        setInterval(loadData, 60000);
+
+        // Slide Panels
+        let index = 0;
+        const panels = ["panel1", "panel2", "panel3"];
+
+        function showSlide() {
+            panels.forEach(id => $("#" + id).removeClass("active"));
+            $("#" + panels[index]).addClass("active");
+            index = (index + 1) % panels.length;
+        }
+
+        // Slide every 10 seconds
+        setInterval(showSlide, 10000);
+        showSlide();
+        
+    </script>
+
+{% endblock %}

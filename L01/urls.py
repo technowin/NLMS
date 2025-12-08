@@ -73,7 +73,14 @@ urlpatterns = [
     path('membership_dashboard/', membership_dashboard, name='membership_dashboard'),
     path('get-borrowing-history/',get_borrowing_history, name='get_borrowing_history'),
     
-     path("save-eod-log/", save_eod_log, name="save_eod_log"),
-     path("membership_card/", membership_card, name="membership_card"),
+    path("save-eod-log/", save_eod_log, name="save_eod_log"),
+    path("membership_card/", membership_card, name="membership_card"),
     # ... your other URLs
+    
+    # urls.py
+    
+    path("tv-display/", tv_display, name="tv_display"),
+    path("tv_api", tv_api, name="tv_api"),
+    path("insert-book/<str:isbn>/", insert_book_by_isbn,name="insert_book_by_isbn"),
+
 ]

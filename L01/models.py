@@ -724,6 +724,39 @@ class BookDetails(models.Model):
     
     class Meta:
         db_table = 'tbl_book_detail'
+        
+        
+class StockYearMaster(models.Model):
+    year_name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.year_name
+    
+    class Meta:
+        db_table = 'tbl_stock_year'
+
+class StockMaster(models.Model):
+    stock_year = models.ForeignKey(StockYearMaster, on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'tbl_stock_master'
+
+class StockDetail(models.Model):
+    stock = models.ForeignKey('L01.StockMaster', on_delete=models.CASCADE)
+    stock_year = models.ForeignKey(StockYearMaster, on_delete=models.CASCADE)
+    circulation = models.ForeignKey(CirculationCopyStatus, on_delete=models.CASCADE)
+    barcode = models.CharField(max_length=200)
+    scanned_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.barcode} - {self.stock_year.year_name}"
+    
+    class Meta:
+        db_table = 'tbl_stock_detail'
+
 
 
 

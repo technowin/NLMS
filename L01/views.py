@@ -4636,7 +4636,6 @@ def visit_Library_catalogue(request):
         print(f"Error: {e}")
         return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
 
-
 @login_required
 def get_books_by_subject(request):
     try:
@@ -5095,3 +5094,155 @@ def submit_review(request):
 def clear_pdf_session(request):
     request.session.pop("open_pdf_url", None)
     return JsonResponse({"status": "ok"})
+
+from django.http import HttpResponseServerError
+
+def tv_display(request):
+    try:
+        context = {
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+        return render(request, "L01/tv_display.html", context)
+    except Exception as e:
+        logger.error(f"Error loading TV display page: {e}", exc_info=True)
+        return HttpResponseServerError("Something went wrong while loading the TV display.")
+
+
+from django.http import JsonResponse
+from django.db.models import Count
+
+def tv_api(request):
+    # 1️⃣ Latest added book
+    latest_book = BookCatalog.objects.order_by('-created_at').first()
+
+    # 2️⃣ Most reviewed book
+    most_reviewed = (
+        BookReview.objects.values('book')
+        .annotate(total_reviews=Count('id'))
+        .order_by('-total_reviews')
+        .first()
+    )
+
+    most_reviewed_book = None
+    if most_reviewed:
+        most_reviewed_book = BookCatalog.objects.filter(
+            cat_ref_num=most_reviewed['book']
+        ).first()
+
+    response = {
+        "latest_book": {
+            "title": latest_book.title if latest_book else "",
+            "author": latest_book.author if latest_book else "",
+            "publisher": latest_book.publisher if latest_book else "",
+            "cover": latest_book.front_page_photo if latest_book else "",
+            "last_page": latest_book.last_page_photo if latest_book else "",
+            "created_at": latest_book.created_at.strftime("%d %b %Y") if latest_book else "",
+            "subject": latest_book.subject.subjectNameEnglish if latest_book and latest_book.subject else "",
+        },
+        "author_info": {
+            "name": latest_book.author if latest_book else "",
+            "other_authors": latest_book.other_authors if latest_book else "",
+        },
+        "most_reviewed_book": {
+            "title": most_reviewed_book.title if most_reviewed_book else "",
+            "author": most_reviewed_book.author if most_reviewed_book else "",
+            "reviews": most_reviewed['total_reviews'] if most_reviewed else 0,
+            "cover": most_reviewed_book.front_page_photo if most_reviewed_book else "",
+        }
+    }
+
+    return JsonResponse(response)
+
+
+def insert_book_by_isbn(request, isbn):
+    try:
+        # 1. Call Google Books API
+        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
+        response = requests.get(url).json()
+
+        if response.get("totalItems", 0) == 0:
+            return JsonResponse({"status": "error", "message": "Book not found in Google Books API"})
+
+        book_data = response["items"][0]["volumeInfo"]
+
+        # 2. Extract identifiers
+        isbn_10 = isbn_13 = None
+        for iden in book_data.get("industryIdentifiers", []):
+            if iden["type"] == "ISBN_10":
+                isbn_10 = iden["identifier"]
+            elif iden["type"] == "ISBN_13":
+                isbn_13 = iden["identifier"]
+
+        title = book_data.get("title", "")
+        description = book_data.get("description", "")
+        language = book_data.get("language", "")
+
+        # 3. Save or update BookMaster in L01
+        with transaction.atomic(using="L01"):
+            master_qs = BookMaster.objects.using("L01").filter(isbn_13=isbn_13)
+            if master_qs.exists():
+                master = master_qs.first()
+                master.title = title or master.title
+                master.description = description or master.description
+                master.language = language or master.language
+                master.updated_by = "System"
+                master.save(using="L01")
+            else:
+                master = BookMaster.objects.using("L01").create(
+                    isbn_10=isbn_10,
+                    isbn_13=isbn_13,
+                    title=title,
+                    description=description,
+                    language=language,
+                    created_by="System"
+                )
+
+        # 4. Save BookDetails in L01
+        authors = book_data.get("authors", ["Unknown Author"])
+        publisher = book_data.get("publisher", "")
+        published_date = book_data.get("publishedDate", "")
+        page_count = book_data.get("pageCount", None)
+        image_links = book_data.get("imageLinks", {})
+        preview_link = image_links.get("thumbnail", "") 
+        categories = book_data.get("categories", [])
+        category = categories[0] if categories else None
+
+        # Use the master's primary key instead of the object
+        master_pk = master.pk
+
+        for author in authors:
+            # Check if this author already exists for this master
+            detail_qs = BookDetails.objects.using("L01").filter(master_id=master_pk, author=author)
+            if detail_qs.exists():
+                detail = detail_qs.first()
+                detail.publisher = publisher or detail.publisher
+                detail.published_date = published_date or detail.published_date
+                detail.page_count = page_count or detail.page_count
+                detail.category = category or detail.category
+                detail.preview_link = preview_link or detail.preview_link
+                detail.updated_by = "System"
+                detail.save(using="L01")
+            else:
+                # Create using the foreign key ID directly
+                BookDetails.objects.using("L01").create(
+                    master_id=master_pk,  # Use the ID instead of the object
+                    author=author,
+                    publisher=publisher,
+                    published_date=published_date,
+                    page_count=page_count,
+                    category=category,
+                    preview_link=preview_link,
+                    edition=None,
+                    created_by="System"
+                )
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Book inserted successfully",
+            "book_title": title,
+            "authors": authors
+        })
+
+    except Exception as e:
+        print("Error in insert_book_by_isbn:", e)
+        return JsonResponse({"status": "error", "message": str(e)})
