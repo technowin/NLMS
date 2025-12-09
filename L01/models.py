@@ -772,6 +772,52 @@ class StockReport(models.Model):
     class Meta:
         db_table = 'tbl_stock_report'
 
+class Advertisement(models.Model):
+    adv_title = models.CharField(max_length=255)   
 
+    # Videos are NOT stored in media → storing external/local path
+    video_path = models.TextField(blank=True, null=True)
+
+    organization_name = models.CharField(max_length=255, blank=True, null=True)
+
+    status = models.BooleanField(default=True)
+
+    campaign_date_from = models.DateField(blank=True, null=True)
+    campaign_date_to = models.DateField(blank=True, null=True)
+
+    reported_at = models.DateTimeField(blank=True, null=True)
+    reported_by = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.adv_title
+    
+    class Meta:
+        db_table = 'tbl_advertisements'
+
+class EventAnnouncement(models.Model):
+    event_title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+
+    status = models.BooleanField(default=True)
+
+    event_from_date = models.DateField(blank=True, null=True)
+    event_to_date = models.DateField(blank=True, null=True)
+
+    reported_at = models.DateTimeField(blank=True, null=True)
+    reported_by = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    created_by = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.event_title
+    
+    class Meta:
+        db_table = 'tbl_eventannouncements'
 
 

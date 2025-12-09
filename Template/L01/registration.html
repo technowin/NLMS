@@ -357,14 +357,6 @@
                     </div>
 
                     <!-- From Date -->
-                    {% comment %} <div class="col-md-6">
-                        <label class="form-label">
-                            Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                        </label>
-                        <input type="date" id="fromDate" name="fromDate" class="form-control" >
-                    </div> {% endcomment %}
-
-                    <!-- From Date -->
                     <div class="col-md-6">
                         <label class="form-label">
                             Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
@@ -973,8 +965,6 @@
 
         $("#membershiptype").change(function () {
             var encId = $(this).val();
-
-            // Always reset everything first
             resetMembershipForm();
 
             if (encId) {
@@ -992,38 +982,13 @@
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
                             $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
-                            // Check for Lifetime (5) or Patron (6)
-                            /*
-                            if (encId == "5" || encId == "6") {
-                                // Show only membership details + amount fields
-                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
-                                $("#membershipDuration").hide();
-
-                                // Set subscription directly (no month multiplier)
-                                $("#depositInput").val(baseDeposit);
-                                $("#entryFeesInput").val(baseEntryFees);
-                                $("#subscriptionInput").val(baseSubscription);
-
-                                $("#depositHidden").val(baseDeposit);
-                                $("#entryFeesHidden").val(baseEntryFees);
-                                $("#subscriptionHidden").val(baseSubscription);
-                                
-                            } else {
-                                // Show everything
-                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
-
-                                updateAmountFields(); // update initial amounts
-                            }
-                            */
-
                             if (encId == "5" || encId == "6") {
                                 // Show only membership details + amount fields
                                 $("#membershipDetails, #amountFields").fadeIn();
-                                $("#membershipDuration").show(); // keep the container visible
-                                $("#months, #toDate").closest(".col-md-6").hide(); // hide these fields
-                                $("#fromDate").closest(".col-md-6").show(); // ensure From Date is visible
+                                $("#membershipDuration").show();
+                                $("#months, #toDate").closest(".col-md-6").hide();
+                                $("#fromDate").closest(".col-md-6").show();
 
-                                // Set subscription directly (no month multiplier)
                                 $("#depositInput").val(baseDeposit);
                                 $("#entryFeesInput").val(baseEntryFees);
                                 $("#subscriptionInput").val(baseSubscription);
@@ -1032,7 +997,6 @@
                                 $("#entryFeesHidden").val(baseEntryFees);
                                 $("#subscriptionHidden").val(baseSubscription);
 
-                                // Add a red bold note dynamically
                                 let noteText = "";
                                 if (encId == "5") {
                                     noteText = "Note: For Lifetime Branch (आजीव शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
@@ -1042,15 +1006,11 @@
                                 $("#durationNote").html(noteText).fadeIn();
 
                             } else {
-                                // Show everything for other memberships
                                 $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
                                 $("#months, #toDate").closest(".col-md-6").show();
-                                $("#durationNote").hide(); // hide note if previously shown
-                                updateAmountFields(); // update initial amounts
+                                $("#durationNote").hide();
+                                updateToDate();
                             }
-
-
-                            // updateAmountFields(); // update initial amounts
                         } else {
                             $("#membershipDetails, #membershipDuration, #amountFields").hide();
                             alert("Membership not found");
@@ -1064,76 +1024,107 @@
 
         $("#months").on("input change", function() {
             let val = parseInt($(this).val());
-
             if (val > 12) $(this).val(12);
             else if (val < 1) $(this).val("");
-
-            updateAmountFields();
+            updateToDate();
         });
 
         $("#fromDate").on("change", function() {
             updateToDate();
         });
 
-        function updateToDate() {
-            let months = parseInt($("#months").val());
-            let fromDate = $("#fromDate").val();
+        function monthsSpannedInclusive(startDate, endDate) {
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth();
+            const endYear = endDate.getFullYear();
+            const endMonth = endDate.getMonth();
+            let monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
+            return monthsDiff + 1; // inclusive
+        }
 
-            if (months && fromDate) {
-                let from = new Date(fromDate);
-                let to = new Date(from);
-                to.setMonth(to.getMonth() + months);
-                $("#toDate").val(to.toISOString().split("T")[0]);
-            } else {
+        function updateToDate() {
+            let requestedMonths = parseInt($("#months").val());
+            let fromDateStr = $("#fromDate").val();
+
+            if (!requestedMonths || !fromDateStr) {
                 $("#toDate").val("");
+                $("#subscriptionInput").val("");
+                $("#subscriptionHidden").val("");
+                $("#durationNote").hide();
+                return;
             }
+
+            let from = new Date(fromDateStr);
+
+            // normal month-end calculation
+            let temp = new Date(from);
+            temp.setMonth(temp.getMonth() + requestedMonths);
+            let normalToDateUTC = new Date(Date.UTC(temp.getFullYear(), temp.getMonth(), 0));
+
+            // FY cap = 31 March next year if fromMonth > 3 else current year
+            let fromYear = from.getFullYear();
+            let fromMonth = from.getMonth() + 1;
+            let capYear = (fromMonth <= 3) ? fromYear : fromYear + 1;
+            let fyCapDateUTC = new Date(Date.UTC(capYear, 2, 31)); // 31 March
+
+            let finalDateUTC = (normalToDateUTC > fyCapDateUTC) ? fyCapDateUTC : normalToDateUTC;
+            let finalLocalDate = new Date(finalDateUTC.getUTCFullYear(), finalDateUTC.getUTCMonth(), finalDateUTC.getUTCDate());
+
+            // calculate effective months
+            let effectiveMonths = monthsSpannedInclusive(from, finalLocalDate);
+
+            // overwrite months input if FY cap reduces it
+            if (effectiveMonths !== requestedMonths) {
+                $("#months").val(effectiveMonths);
+                $("#durationNote").html(
+                    `⚠ Requested: ${requestedMonths} month(s) — Effective: ${effectiveMonths} month(s) (Cannot extend beyond 31-Mar-${capYear})`
+                ).css({color: 'red', 'font-weight': 'bold'}).fadeIn();
+            } else {
+                $("#durationNote").hide();
+            }
+
+            // update toDate input
+            const yyyy = finalLocalDate.getFullYear();
+            const mm = String(finalLocalDate.getMonth() + 1).padStart(2, "0");
+            const dd = String(finalLocalDate.getDate()).padStart(2, "0");
+            $("#toDate").val(`${yyyy}-${mm}-${dd}`);
+
+            updateAmountFields();
         }
 
         function updateAmountFields() {
             let months = parseInt($("#months").val()) || 0;
 
-            // Ensure base values are always numeric
-            const deposit = parseInt(baseDeposit.toString().replace(/[^0-9]/g, '')) || 0;
-            const entryFees = parseInt(baseEntryFees.toString().replace(/[^0-9]/g, '')) || 0;
-            const subscription = (parseInt(baseSubscription.toString().replace(/[^0-9]/g, '')) || 0) * months;
+            let deposit = Number(baseDeposit) || 0;
+            let entry = Number(baseEntryFees) || 0;
+            let subscription = (Number(baseSubscription) || 0) * months;
 
-            // Show plain numbers in readonly inputs
             $("#depositInput").val(deposit);
-            $("#entryFeesInput").val(entryFees);
+            $("#entryFeesInput").val(entry);
             $("#subscriptionInput").val(subscription);
 
-            // Save raw numeric values in hidden fields for form POST
             $("#depositHidden").val(deposit);
-            $("#entryFeesHidden").val(entryFees);
+            $("#entryFeesHidden").val(entry);
             $("#subscriptionHidden").val(subscription);
-
-            updateToDate();
         }
 
         function resetMembershipForm() {
-            // Hide all initially
             $("#membershipDetails, #membershipDuration, #amountFields").hide();
-
-            // Reset text inside the table
             $("#depositCell, #entryFeesCell, #subscriptionCell").text("");
-
-            // Reset input fields
             $("#months").val("");
             $("#fromDate").val("");
             $("#toDate").val("");
-
             $("#depositInput, #entryFeesInput, #subscriptionInput").val("");
             $("#depositHidden, #entryFeesHidden, #subscriptionHidden").val("");
-
-            // Reset base values
+            $("#durationNote").hide();
             baseDeposit = 0;
             baseEntryFees = 0;
             baseSubscription = 0;
         }
 
-
     });
 </script>
+
 
 {% comment %} Employee ID Upload (NMMC Employee + Membership Type 3 or 4) {% endcomment %}
 <script>
