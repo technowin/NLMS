@@ -513,7 +513,6 @@
 {% endif %}
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {% comment %} Word translate {% endcomment %}
@@ -1003,14 +1002,22 @@
 
     $(document).ready(function () {
 
+        // --- Create FY Cap note container dynamically ---
+        if ($("#membershipDuration").length && $("#notesContainer").length === 0) {
+            let notesContainer = $(`
+                <div id="notesContainer" style="margin-top:5px;">
+                    <div id="fyCapNote" style="display:none; color:red; font-weight:bold;"></div>
+                </div>
+            `);
+            $("#membershipDuration").append(notesContainer);
+        }
+
         let baseDeposit = 0;
         let baseEntryFees = 0;
         let baseSubscription = 0;
 
         $("#membershiptype").change(function () {
             var encId = $(this).val();
-
-            // Always reset everything first
             resetMembershipForm();
 
             if (encId) {
@@ -1019,6 +1026,7 @@
                     type: "GET",
                     data: { id: encId },
                     success: function (response) {
+                        debugger;
                         if (response.success) {
                             baseDeposit = parseFloat(response.data.deposit) || 0;
                             baseEntryFees = parseFloat(response.data.entry_fees) || 0;
@@ -1028,44 +1036,24 @@
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
                             $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
-                            // Check for Lifetime (5) or Patron (6)
-                            /*if (encId == "5" || encId == "6") {
-                                // Show only membership details + amount fields
-                                $("#membershipDetails, #amountFields").fadeIn();
-                                $("#membershipDuration").hide();
-
-                                // Set subscription directly (no month multiplier)
-                                $("#depositInput").val(baseDeposit);
-                                $("#entryFeesInput").val(baseEntryFees);
-                                $("#subscriptionInput").val(baseSubscription);
-
-                                $("#depositHidden").val(baseDeposit);
-                                $("#entryFeesHidden").val(baseEntryFees);
-                                $("#subscriptionHidden").val(baseSubscription);
-                                
-                            } else {
-                                // Show everything
-                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
-
-                                updateAmountFields(); // update initial amounts
-                            }*/
                             if (encId == "5" || encId == "6") {
-                                // Show only membership details + amount fields
+                                // Lifetime or Patron Branch
                                 $("#membershipDetails, #amountFields").fadeIn();
-                                $("#membershipDuration").show(); // keep the container visible
-                                $("#months, #toDate").closest(".col-md-6").hide(); // hide these fields
-                                $("#fromDate").closest(".col-md-6").show(); // ensure From Date is visible
+                                $("#membershipDuration").show();
+                                $("#months, #toDate").closest(".col-md-6").hide();
+                                $("#fromDate").closest(".col-md-6").show();
 
-                                // Set subscription directly (no month multiplier)
+                                // Set amounts
                                 $("#depositInput").val(baseDeposit);
                                 $("#entryFeesInput").val(baseEntryFees);
-                                $("#subscriptionInput").val(baseSubscription);
-
+                                $("#subscriptionInput").val(baseSubscription); // show fixed subscription
                                 $("#depositHidden").val(baseDeposit);
                                 $("#entryFeesHidden").val(baseEntryFees);
                                 $("#subscriptionHidden").val(baseSubscription);
 
-                                // Add a red bold note dynamically
+                                // Ensure input fields are visible
+                                $("#subscriptionInput").closest(".col-md-6").show();
+
                                 let noteText = "";
                                 if (encId == "5") {
                                     noteText = "Note: For Lifetime Branch (आजीव शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
@@ -1075,11 +1063,11 @@
                                 $("#durationNote").html(noteText).fadeIn();
 
                             } else {
-                                // Show everything for other memberships
+                                // Normal membership types
                                 $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
                                 $("#months, #toDate").closest(".col-md-6").show();
-                                $("#durationNote").hide(); // hide note if previously shown
-                                updateAmountFields(); // update initial amounts
+                                $("#durationNote").hide();
+                                updateToDate();
                             }
                         } else {
                             $("#membershipDetails, #membershipDuration, #amountFields").hide();
@@ -1094,73 +1082,124 @@
 
         $("#months").on("input change", function() {
             let val = parseInt($(this).val());
-
             if (val > 12) $(this).val(12);
             else if (val < 1) $(this).val("");
-
-            updateAmountFields();
+            updateToDate();
         });
 
         $("#fromDate").on("change", function() {
             updateToDate();
         });
 
-        function updateToDate() {
-            let months = parseInt($("#months").val());
-            let fromDate = $("#fromDate").val();
+        function monthsSpannedInclusive(startDate, endDate) {
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth();
+            const endYear = endDate.getFullYear();
+            const endMonth = endDate.getMonth();
+            let monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
+            return monthsDiff + 1; // inclusive
+        }
 
-            if (months && fromDate) {
-                let from = new Date(fromDate);
-                let to = new Date(from);
-                to.setMonth(to.getMonth() + months);
-                $("#toDate").val(to.toISOString().split("T")[0]);
-            } else {
+        function updateToDate() {
+            let requestedMonths = parseInt($("#months").val());
+            let fromDateStr = $("#fromDate").val();
+
+            if (!fromDateStr) {
                 $("#toDate").val("");
+                $("#subscriptionInput").val("");
+                $("#subscriptionHidden").val("");
+                $("#fyCapNote").hide();
+                return;
+            }
+
+            let from = new Date(fromDateStr);
+
+            // Normal month-end calculation
+            let temp = new Date(from);
+            if (!isNaN(requestedMonths)) temp.setMonth(temp.getMonth() + requestedMonths);
+            let normalToDateUTC = new Date(Date.UTC(temp.getFullYear(), temp.getMonth(), 0));
+
+            // FY cap = 31 March next year if fromMonth > 3 else current year
+            let fromYear = from.getFullYear();
+            let fromMonth = from.getMonth() + 1;
+            let capYear = (fromMonth <= 3) ? fromYear : fromYear + 1;
+            let fyCapDateUTC = new Date(Date.UTC(capYear, 2, 31)); // 31 March
+
+            let finalDateUTC;
+            if (!isNaN(requestedMonths) && normalToDateUTC > fyCapDateUTC) {
+                finalDateUTC = fyCapDateUTC;
+            } else if (!isNaN(requestedMonths)) {
+                finalDateUTC = normalToDateUTC;
+            } else {
+                finalDateUTC = from; // For memberships 5 or 6 without months
+            }
+
+            let finalLocalDate = new Date(finalDateUTC.getUTCFullYear(), finalDateUTC.getUTCMonth(), finalDateUTC.getUTCDate());
+
+            // calculate effective months only if months input exists
+            let effectiveMonths = (!isNaN(requestedMonths)) ? monthsSpannedInclusive(from, finalLocalDate) : null;
+
+            // overwrite months input if FY cap reduces it
+            if (!isNaN(requestedMonths) && finalDateUTC.getTime() === fyCapDateUTC.getTime() && normalToDateUTC > fyCapDateUTC) {
+                $("#months").val(effectiveMonths);
+                $("#fyCapNote").html(
+                    `⚠ FY cap applied: Membership cannot extend beyond 31-Mar-${capYear}. Please see the librarian for further options.`
+                ).fadeIn();
+            } else {
+                $("#fyCapNote").hide();
+            }
+
+            // update toDate input
+            const yyyy = finalLocalDate.getFullYear();
+            const mm = String(finalLocalDate.getMonth() + 1).padStart(2, "0");
+            const dd = String(finalLocalDate.getDate()).padStart(2, "0");
+            $("#toDate").val(`${yyyy}-${mm}-${dd}`);
+
+            // Only update amounts if membership is NOT 5 or 6
+            let membershipType = $("#membershiptype").val();
+            if (membershipType !== "5" && membershipType !== "6") {
+                updateAmountFields();
             }
         }
 
         function updateAmountFields() {
             let months = parseInt($("#months").val()) || 0;
 
-            // Ensure base values are always numeric
-            const deposit = parseInt(baseDeposit.toString().replace(/[^0-9]/g, '')) || 0;
-            const entryFees = parseInt(baseEntryFees.toString().replace(/[^0-9]/g, '')) || 0;
-            const subscription = (parseInt(baseSubscription.toString().replace(/[^0-9]/g, '')) || 0) * months;
+            let deposit = Number(baseDeposit) || 0;
+            let entry = Number(baseEntryFees) || 0;
+            let subscription;
 
-            // Show plain numbers in readonly inputs
+            // If membership is 5 or 6, subscription is fixed
+            let encId = $("#membershiptype").val();
+            if (encId == "5" || encId == "6") {
+                subscription = Number(baseSubscription) || 0;
+            } else {
+                subscription = (Number(baseSubscription) || 0) * months;
+            }
+
             $("#depositInput").val(deposit);
-            $("#entryFeesInput").val(entryFees);
+            $("#entryFeesInput").val(entry);
             $("#subscriptionInput").val(subscription);
 
-            // Save raw numeric values in hidden fields for form POST
             $("#depositHidden").val(deposit);
-            $("#entryFeesHidden").val(entryFees);
+            $("#entryFeesHidden").val(entry);
             $("#subscriptionHidden").val(subscription);
-
-            updateToDate();
         }
 
+
         function resetMembershipForm() {
-            // Hide all initially
             $("#membershipDetails, #membershipDuration, #amountFields").hide();
-
-            // Reset text inside the table
             $("#depositCell, #entryFeesCell, #subscriptionCell").text("");
-
-            // Reset input fields
             $("#months").val("");
             $("#fromDate").val("");
             $("#toDate").val("");
-
             $("#depositInput, #entryFeesInput, #subscriptionInput").val("");
             $("#depositHidden, #entryFeesHidden, #subscriptionHidden").val("");
-
-            // Reset base values
+            $("#fyCapNote").hide();
             baseDeposit = 0;
             baseEntryFees = 0;
             baseSubscription = 0;
         }
-
 
     });
 </script>
