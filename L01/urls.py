@@ -79,8 +79,19 @@ urlpatterns = [
     
     # urls.py
     
-    path("tv-display/", tv_display, name="tv_display"),
-    path("tv_api", tv_api, name="tv_api"),
+    # for tv display
+    
+    path("tv/dashboard/", tv_dashboard_page, name="tv_dashboard_page"),
+    path("tv/api/popular-books/", tv_popular_books_api, name="tv_popular_books_api"),
+    path("tv/api/categories/", tv_categories_api, name="tv_categories_api"),
+    path("tv/api/new-arrivals/", tv_new_arrivals_api, name="tv_new_arrivals_api"),
+    path("tv/api/all-books/", tv_all_books_api, name="tv_all_books_api"),
     path("insert-book/<str:isbn>/", insert_book_by_isbn,name="insert_book_by_isbn"),
+    
+    # stock Checking By Imran
+    path("scan-barcode/",scan_barcode, name="scan_barcode"),
+    path("get_recent_scans/",get_recent_scans, name="get_recent_scans"),
+    path('stock-report/', StockReportView.as_view(), name='stock_report'),
+    path('export-stock-report/', ExportStockReportView.as_view(), name='export_stock_report'),
 
 ]

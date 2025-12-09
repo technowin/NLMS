@@ -584,23 +584,20 @@ class MemberEntryExit(models.Model):
 
     def __str__(self):
         return f"{self.membership_code} - Entry/Exit"
-    
 
-    class EbookTypeMaster(models.Model):
-        type_id = models.AutoField(primary_key=True)
-        ebookTypeCode = models.TextField(blank=True, null=True)
-        ebookTypeNameEnglish = models.TextField(blank=True, null=True)
-        ebookTypeNameMarathi = models.TextField(blank=True, null=True)
-        is_active = models.IntegerField(null=True, blank=True, default=1)
-        created_at = models.DateTimeField(auto_now_add=True)
-        updated_at = models.DateTimeField(auto_now=True)
-        created_by = models.TextField(blank=True, null=True)
-        updated_by = models.TextField(blank=True, null=True)
-
-        class Meta:
+class EbookTypeMaster(models.Model):
+    type_id = models.AutoField(primary_key=True)
+    ebookTypeCode = models.TextField(blank=True, null=True)
+    ebookTypeNameEnglish = models.TextField(blank=True, null=True)
+    ebookTypeNameMarathi = models.TextField(blank=True, null=True)
+    is_active = models.IntegerField(null=True, blank=True, default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.TextField(blank=True, null=True)
+    updated_by = models.TextField(blank=True, null=True)
+    class Meta:
             db_table = 'tbl_ebooktypemaster'
-
-        def __str__(self):
+    def __str__(self):
             return (
                 self.ebookTypeNameMarathi 
                 or self.ebookTypeNameEnglish 
@@ -757,7 +754,23 @@ class StockDetail(models.Model):
     class Meta:
         db_table = 'tbl_stock_detail'
 
-
+class StockReport(models.Model):
+    stock_year = models.ForeignKey(StockYearMaster,on_delete=models.CASCADE)
+    barcode = models.CharField(max_length=100, unique=True)
+    title = models.TextField()
+    shelf_location = models.ForeignKey(ResourceLocationMaster, on_delete=models.CASCADE)
+    current_status = models.TextField()
+    stock_status = models.TextField()
+    date_processed = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.TextField(null=True, blank=True)
+    updated_by = models.TextField(null=True, blank=True)
+    def __str__(self):
+        return f"{self.title} ({self.barcode})"
+    
+    class Meta:
+        db_table = 'tbl_stock_report'
 
 
 

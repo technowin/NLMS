@@ -137,6 +137,9 @@ urlpatterns = [
     path('circulation_master_index/', circulation_master_index, name='circulation_master_index'),
     path('circulation_master_edit/', circulation_master_edit, name='circulation_master_edit'),
     path('circulation_master_view/', circulation_master_view, name='circulation_master_view'),
+    path('ebook_catalog_index/', ebook_catalog_index, name='ebook_catalog_index'),
+    path('ebook_create/', ebook_create, name='ebook_create'),
+    path('ebook_edit/', ebook_edit, name='ebook_edit'),
 
     #Reports 
     path('payment_report', payment_report, name='payment_report'),

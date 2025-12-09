@@ -1,204 +1,449 @@
-{% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library TV Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/tv_dashboard.css' %}">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="tv-root">
+    <header class="tv-header">
+      <div class="title">{{ library_name_marathi }}</div>
+      <div id="clock" class="clock">--</div>
+    </header>
 
-{% block title %}पुस्तक सूची{% endblock title %}
-
-{% block extra_css %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/Master/visitLibraryCate.css' %}">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-    <style>
-
-        .panel-title {
-            font-size: 70px;
-            margin-bottom: 30px;
-            text-align: center;
-            letter-spacing: 2px;
-            color: #f5f5f5;
-            text-shadow: 2px 2px 4px #000;
-        }
-
-        .card-tv {
-            background-color: #1a1a1a;
-            color: #fff;
-            font-family: 'Merriweather', serif;
-            font-size: 50px;
-            letter-spacing: 1px;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 0 50px rgba(255,255,255,0.2);
-        }
-
-        .card-tv img {
-            max-height: 60vh;
-            object-fit: cover;
-            border-radius: 15px;
-        }
-
-
-        img {
-            max-height: 60vh;
-            max-width: 45vw;
-            margin: 10px;
-            border-radius: 15px;
-        }
-
-        body {
-            margin: 0;
-            background: black;
-            color: white;
-            font-family: 'Merriweather', serif;
-            overflow: hidden;
-        }
-
-        .panel {
-            height: 100vh;
-            width: 100vw;
-            display: none;
-            padding: 60px;
-        }
-
-        .active {
-            display: block;
-            animation: fadeIn 1s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        h1 {
-            font-size: 70px;
-            margin-bottom: 30px;
-        }
-
-        .info {
-            font-size: 50px;
-            line-height: 1.4;
-        }
-
-        img {
-            max-height: 70vh;
-            border-radius: 20px;
-            margin-top: 30px;
-        }
-    </style>
-{% endblock %}
-
-{% block page_title %}
-{% include "bootstrap/partials/page-title.html" with page_title='पुस्तक सूची' %}
-{% endblock %}
-
-{% block content %}
-    <!-- Panel 1: Latest Book -->
-    <div id="panel1" class="panel">
-        <h1 class="panel-title">📘 Latest Book Added</h1>
-        <div class="card card-tv">
-            <div class="row g-0">
-                <div class="col-md-4 d-flex flex-column align-items-center justify-content-center">
-                    <img id="latest_book_front" src="" class="img-fluid rounded m-2" alt="Front Page">
-                    <img id="latest_book_last" src="" class="img-fluid rounded m-2" alt="Last Page">
-                </div>
-                <div class="col-md-8">
-                    <div class="card-body" id="latest_book_info">
-                        <!-- Info will be injected by JS -->
-                    </div>
-                </div>
-            </div>
+    <main class="tv-main">
+      <!-- LEFT COLUMN: Popular Books -->
+      <section class="col left-col">
+        <h2 class="col-title">Most Popular Books</h2>
+        <div class="scroll-viewport" id="popular-scroll">
+          <ul id="popular-list" class="stack-list"></ul>
         </div>
-    </div>
+      </section>
 
-    <!-- Panel 2: Author Info -->
-    <div id="panel2" class="panel">
-        <h1>👤 Author Information</h1>
-        <div class="info" id="author_info"></div>
-    </div>
+      <!-- RIGHT COLUMN: Book Details -->
+      <section class="col right-col">
+        <h2 class="col-title">Book Details</h2>
+          <div class="scroll-viewport" id="book-details-scroll">
+              <!-- Book Details Container -->
+              <div class="book-details-container">
+                <!-- Main Book Display Section -->
+                <div class="book-display-section">
+                  <!-- Book Cover on the Left -->
+                  <div class="book-cover-container">
+                    <img id="book-cover-img" class="book-cover-image" src="" alt="Book Cover" style="display: none;">
+                    <div id="no-cover" class="no-cover">
+                      📚<br>No Cover Available
+                    </div>
+                  </div>
+                  
+                  <!-- All Book Details on the Right -->
+                  <div class="book-info-section">
+                    <!-- Title Section -->
+                    <div class="book-title-section">
+                      <div id="book-title" class="meta-value">Select a book to view details</div>
+                      <div id="book-subtitle" class="meta-value empty"></div>
+                    </div>
+                    
+                    <!-- All Book Information in a Grid -->
+                    <div class="combined-details-grid">
+                      <!-- Primary Details -->
+                      <div class="meta-group">
+                        <div class="meta-label">Author</div>
+                        <div id="book-author" class="meta-value empty">Not specified</div>
+                      </div>
+                      <div class="meta-group">
+                        <div class="meta-label">Publisher</div>
+                        <div id="book-publisher" class="meta-value empty">Not specified</div>
+                      </div>
+                      <div class="meta-group">
+                        <div class="meta-label">ISBN/ISSN</div>
+                        <div id="book-isbn" class="meta-value empty">Not specified</div>
+                      </div>
+                      <div class="meta-group">
+                        <div class="meta-label">Edition</div>
+                        <div id="book-edition" class="meta-value empty">Not specified</div>
+                      </div>
+                      
+                      <!-- Additional Details -->
+                      <div class="detail-group">
+                        <div class="detail-label">Subject</div>
+                        <div id="book-subject" class="detail-value empty">Not specified</div>
+                      </div>
+                      <div class="detail-group">
+                        <div class="detail-label">Language</div>
+                        <div id="book-language" class="detail-value empty">Not specified</div>
+                      </div>
+                      <div class="detail-group">
+                        <div class="detail-label">Publication Year</div>
+                        <div id="book-pub-year" class="detail-value empty">Not specified</div>
+                      </div>
+                      <div class="detail-group">
+                        <div class="detail-label">Publication Place</div>
+                        <div id="book-pub-place" class="detail-value empty">Not specified</div>
+                      </div>
+                      <div class="detail-group">
+                        <div class="detail-label">Pages</div>
+                        <div id="book-pages" class="detail-value empty">Not specified</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
+      </section>
+    </main>
 
-    <!-- Panel 3: Most Reviewed Book -->
-    <div id="panel3" class="panel">
-        <h1>⭐ Most Reviewed Book</h1>
-        <div class="info" id="most_reviewed"></div>
-        <img id="most_reviewed_img" src="" alt="">
-    </div>
-{% endblock %}
+    <!-- Bottom New Arrivals ticker -->
+    <footer class="tv-footer">
+      <div class="ticker-title">New Arrivals</div>
+      <div class="ticker" id="newarrivals-ticker"></div>
+    </footer>
+  </div>
 
-{% block extra_javascript %}
+  <script>
+    // Configuration
+    const API = {
+      popular: "{% url 'L01:tv_popular_books_api' %}",
+      categories: "{% url 'L01:tv_categories_api' %}",
+      new_arrivals: "{% url 'L01:tv_new_arrivals_api' %}",
+      all_books: "{% url 'L01:tv_all_books_api' %}"
+    };
 
-    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    const REFRESH_INTERVAL_MS = 60 * 1000;
+    const SCROLL_INTERVAL_MS = 4000;
+    const SCROLL_STEP_PX = 180;
+    const BOOK_DETAILS_INTERVAL_MS = 10000; // Rotate book details every 10 seconds
 
-    <script>
+    // Add MEDIA_URL to your context in Django view
+    // context = {
+    //     "library_name_marathi": library_name,
+    //     "MEDIA_URL": settings.MEDIA_URL,
+    // }
 
-        function loadData() {
-            $.ajax({
-                url: "{% url 'L01:tv_api' %}",
-                method: "GET",
-                dataType: "json",
-                success: function(data) {
-                    // Latest Book info in card
-                    $("#latest_book_info").html(`
-                        <div><strong>Title:</strong> ${data.latest_book.title}</div>
-                        <div><strong>Author:</strong> ${data.latest_book.author}</div>
-                        <div><strong>Publisher:</strong> ${data.latest_book.publisher}</div>
-                        <div><strong>Subject:</strong> ${data.latest_book.subject}</div>
-                        <div><strong>Added On:</strong> ${data.latest_book.created_at}</div>
-                    `);
-                    $("#latest_book_front").attr("src", "{{ MEDIA_URL }}" + data.latest_book.cover);
-                    $("#latest_book_last").attr("src", "{{ MEDIA_URL }}" + data.latest_book.last_page);
+    // Clock function
+    function setClock() {
+      const el = document.getElementById("clock");
+      function tick(){
+        const now = new Date();
+        el.textContent = now.toLocaleString('en-GB', { hour12: false });
+      }
+      tick();
+      setInterval(tick, 1000);
+    }
 
-                    // Author Info panel
-                    $("#author_info").html(`
-                        <div class="card card-tv p-4">
-                            <div><strong>Name:</strong> ${data.author_info.name}</div>
-                            <div><strong>Co-Authors:</strong> ${data.author_info.other_authors}</div>
-                        </div>
-                    `);
+    async function fetchJson(url){
+      try {
+        const res = await fetch(url, {cache: "no-store"});
+        if (!res.ok) throw new Error("Network error");
+        return await res.json();
+      } catch (e) {
+        console.error("Fetch error", url, e);
+        return null;
+      }
+    }
 
-                    // Most Reviewed panel
-                    $("#most_reviewed").html(`
-                        <div class="card card-tv p-4">
-                            <div><strong>Title:</strong> ${data.most_reviewed_book.title}</div>
-                            <div><strong>Author:</strong> ${data.most_reviewed_book.author}</div>
-                            <div><strong>Total Reviews:</strong> ${data.most_reviewed_book.reviews}</div>
-                            <img src="{{ MEDIA_URL }}${data.most_reviewed_book.cover}" class="img-fluid rounded mt-3" />
-                        </div>
-                    `);
-                },
-                error: function(err) {
-                    console.error("Failed to load TV data", err);
-                }
-            });
+    function escapeHtml(s){
+      if(!s) return "";
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Current book index for rotation
+    let currentBookIndex = 0;
+    let allBooksData = [];
+
+    // Populate Popular Books
+    async function loadPopular() {
+      const data = await fetchJson(API.popular);
+      const list = document.getElementById("popular-list");
+      if(!data || !data.popular_books) return;
+      list.innerHTML = "";
+      for(const b of data.popular_books){
+        const li = document.createElement("li");
+        li.className = "popular-item";
+        li.innerHTML = `
+          <div class="pop-title">${escapeHtml(b.title)}</div>
+          <div class="pop-author">${escapeHtml(b.author)}</div>
+          <div class="pop-meta">⭐ ${b.avg_rating} • ${b.review_count} reviews</div>
+        `;
+        list.appendChild(li);
+      }
+    }
+
+    // Load All Books and store for rotation
+    async function loadAllBooks() {
+      const data = await fetchJson(API.all_books);
+      if(!data || !data.all_books) {
+        console.error("No books data received");
+        return;
+      }
+      
+      allBooksData = data.all_books;
+      console.log(`Loaded ${allBooksData.length} books`);
+      
+      // Start showing book details
+      if (allBooksData.length > 0) {
+        showBookDetails(0); // Show first book
+        startBookRotation();
+      } else {
+        showNoBooksMessage();
+      }
+    }
+
+    // Show book details
+    // In your JavaScript
+    const MEDIA_URL = "{{ MEDIA_URL }}"; // Make sure this is in your context
+
+    // Show book details function - FIXED IMAGE HANDLING
+    function showBookDetails(index) {
+        if (!allBooksData || allBooksData.length === 0) {
+            showNoBooksMessage();
+            return;
         }
-
-
-        // Initial load
-        loadData();
-
-        // Auto refresh every 1 minute
-        setInterval(loadData, 60000);
-
-        // Slide Panels
-        let index = 0;
-        const panels = ["panel1", "panel2", "panel3"];
-
-        function showSlide() {
-            panels.forEach(id => $("#" + id).removeClass("active"));
-            $("#" + panels[index]).addClass("active");
-            index = (index + 1) % panels.length;
-        }
-
-        // Slide every 10 seconds
-        setInterval(showSlide, 10000);
-        showSlide();
         
-    </script>
+        currentBookIndex = index % allBooksData.length;
+        const book = allBooksData[currentBookIndex];
+        
+        console.log("Book data:", book);
+        console.log("Image path:", book.front_page_photo);
+        
+        // Get elements
+        const imgElement = document.getElementById('book-cover-img');
+        const noCoverElement = document.getElementById('no-cover');
+        
+        // Reset display
+        imgElement.style.display = 'none';
+        imgElement.src = '';
+        noCoverElement.style.display = 'flex';
+        
+        // Handle image display
+        if (book.front_page_photo && book.front_page_photo.trim() !== '') {
+            let imageUrl = book.front_page_photo.trim();
+            
+            // Check if it's already a full URL or needs MEDIA_URL prepended
+            if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/') && !imageUrl.includes('media/')) {
+                // If it's just a filename, prepend MEDIA_URL
+                imageUrl = MEDIA_URL + imageUrl;
+            }
+            
+            console.log("Final image URL:", imageUrl);
+            
+            // Set image source
+            imgElement.src = imageUrl;
+            imgElement.style.display = 'block';
+            noCoverElement.style.display = 'none';
+            
+            // Handle image loading errors
+            imgElement.onerror = function() {
+                console.error("Image failed to load:", imageUrl);
+                imgElement.style.display = 'none';
+                noCoverElement.style.display = 'flex';
+                noCoverElement.innerHTML = '📚<br>Cover Image Not Found';
+                
+                // Try alternative path
+                if (imageUrl.includes(settings.MEDIA_URL)) {
+                    const altUrl = imageUrl.replace(settings.MEDIA_URL, '/media/');
+                    console.log("Trying alternative URL:", altUrl);
+                    // You could try loading with altUrl here
+                }
+            };
+            
+            // Handle successful load
+            imgElement.onload = function() {
+                console.log("Image loaded successfully");
+            };
+        } else {
+            console.log("No front page photo available");
+            noCoverElement.innerHTML = '📚<br>No Cover Available';
+        }
+        
+        // Helper function to display text
+        function setDetail(elementId, value, isMainTitle = false) {
+            const element = document.getElementById(elementId);
+            if (value && value.toString().trim() !== '') {
+                element.textContent = value.toString().trim();
+                element.classList.remove('empty');
+            } else {
+                if (isMainTitle) {
+                    element.textContent = 'Select a book to view details';
+                } else {
+                    element.textContent = 'Not specified';
+                }
+                element.classList.add('empty');
+            }
+        }
+        
+        // Update all book details
+        setDetail('book-title', book.title, true);
+        setDetail('book-subtitle', book.subtitle);
+        setDetail('book-author', book.author);
+        setDetail('book-publisher', book.publisher);
+        setDetail('book-isbn', book.isbn_issn);
+        setDetail('book-edition', book.edition);
+        setDetail('book-subject', book.subject);
+        setDetail('book-language', book.language);
+        setDetail('book-pub-year', book.publication_year || book.year_of_publication);
+        setDetail('book-pub-place', book.publication_place);
+        setDetail('book-call-number', book.call_number);
+        setDetail('book-cutter-number', book.cutter_number);
+        setDetail('book-pages', book.pages);
+        setDetail('book-keywords', book.keywords);
+        setDetail('book-remarks', book.remarks);
+    }
 
-{% endblock %}
+    // Show message when no books are available
+    function showNoBooksMessage() {
+      document.getElementById('book-title').textContent = 'No Books Available';
+      document.getElementById('book-title').classList.add('empty');
+      
+      // Hide image
+      document.getElementById('book-cover-img').style.display = 'none';
+      document.getElementById('no-cover').style.display = 'flex';
+      document.getElementById('no-cover').textContent = '📚 No Books in Library';
+    }
+
+    // Rotate through books
+    let bookRotationInterval;
+    function startBookRotation() {
+      if (bookRotationInterval) {
+        clearInterval(bookRotationInterval);
+      }
+      
+      bookRotationInterval = setInterval(() => {
+        if (allBooksData.length > 0) {
+          currentBookIndex = (currentBookIndex + 1) % allBooksData.length;
+          showBookDetails(currentBookIndex);
+        }
+      }, BOOK_DETAILS_INTERVAL_MS);
+    }
+
+    // New arrivals ticker
+    async function loadNewArrivalsTicker() {
+      const data = await fetchJson(API.new_arrivals);
+      const el = document.getElementById("newarrivals-ticker");
+      if(!data || !data.new_arrivals) return;
+      
+      const items = data.new_arrivals.map(b => {
+        const title = escapeHtml(b.title).substring(0, 40) + (b.title.length > 40 ? '...' : '');
+        const author = escapeHtml(b.author).substring(0, 20) + (b.author.length > 20 ? '...' : '');
+        return `${title} — ${author}`;
+      });
+      
+      el.innerHTML = '';
+      const marqueeContent = document.createElement('div');
+      marqueeContent.className = 'marquee-content';
+      marqueeContent.innerHTML = items.join('<span class="separator"> • </span>');
+      el.appendChild(marqueeContent);
+      
+      const clone = marqueeContent.cloneNode(true);
+      el.appendChild(clone);
+    }
+
+    // Scroller functions (only for popular books now)
+    let scrollerIntervals = [];
+
+    function startScroller(containerId, stepPx = 180, intervalMs = 4000) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        if (container._scroller_interval) {
+            clearInterval(container._scroller_interval);
+            container._scroller_interval = null;
+        }
+        
+        const list = container.querySelector('.stack-list');
+        if (!list || list.children.length === 0) {
+            console.log('No content to scroll in', containerId);
+            return;
+        }
+        
+        container.scrollTop = 0;
+        let scrollPosition = 0;
+        
+        container._scroller_interval = setInterval(() => {
+            const maxScroll = list.scrollHeight - container.clientHeight;
+            
+            if (container.scrollTop >= maxScroll) {
+                container.scrollTop = 0;
+                scrollPosition = 0;
+            } else {
+                scrollPosition += stepPx;
+                container.scrollTop = scrollPosition;
+            }
+        }, intervalMs);
+        
+        scrollerIntervals.push(container._scroller_interval);
+    }
+
+    function restartScrollers() {
+        scrollerIntervals.forEach(interval => {
+            if (interval) clearInterval(interval);
+        });
+        scrollerIntervals = [];
+        
+        setTimeout(() => {
+            startScroller("popular-scroll", 180, 4000);
+        }, 1000);
+    }
+
+    // Main load function
+    async function doLoadAll() {
+        console.log('Loading all data...');
+        
+        await Promise.all([
+            loadPopular(),
+            loadAllBooks(),
+            loadNewArrivalsTicker()
+        ]);
+        
+        console.log('Data loaded, starting scrollers...');
+        
+        void document.body.offsetHeight;
+        
+        setTimeout(restartScrollers, 500);
+    }
+
+    // Page load event
+    window.addEventListener("load", async () => {
+        console.log('Page loaded, initializing...');
+        setClock();
+        
+        await doLoadAll();
+        
+        setInterval(async () => {
+            console.log('Refreshing data...');
+            await doLoadAll();
+        }, REFRESH_INTERVAL_MS);
+    });
+
+    // Debug function
+    function debugScrolling() {
+        console.log('=== DEBUG SCROLLING ===');
+        ['popular-scroll'].forEach(id => {
+            const container = document.getElementById(id);
+            if (container) {
+                const list = container.querySelector('.stack-list');
+                console.log(`${id}:`, {
+                    containerHeight: container.clientHeight,
+                    containerScrollHeight: container.scrollHeight,
+                    listHeight: list ? list.scrollHeight : 0,
+                    itemCount: list ? list.children.length : 0,
+                    scrollTop: container.scrollTop
+                });
+            }
+        });
+    }
+
+    setTimeout(debugScrolling, 3000);
+    
+  </script> 
+
+</body>
+</html>

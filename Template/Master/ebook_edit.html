@@ -1,0 +1,907 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}ई-बुक तयार करा / Create E-Book{% endblock title %}
+
+{% block extra_css %}
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+    
+    <style>
+        /* General Styles */
+        .ebook-form-wrapper {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+        
+        body.dark-mode .ebook-form-wrapper {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        body.dark-mode .form-label {
+            color: #e2e8f0;
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+        
+        /* File Upload Styling */
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #4e73df;
+            background: #f1f5ff;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #4e73df;
+            background: #e8f4ff;
+        }
+        
+        .file-upload-icon {
+            font-size: 48px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        
+        .file-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+        
+        /* Author Dropdown */
+        .author-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .author-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .author-item:hover {
+            background: #f1f5ff;
+        }
+        
+        body.dark-mode .author-suggestions {
+            background: #2d3748;
+            border-color: #4a5568;
+        }
+        
+        body.dark-mode .author-item:hover {
+            background: #4a5568;
+        }
+        
+        /* Buttons */
+        .btn-submit {
+            background: linear-gradient(135deg, #6c8eff 0%, #4a6bff 100%);
+            color: white  !important;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 142, 255, 0.3);
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #5a7eff 0%, #3a5aff 100%);
+            color: white  !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 142, 255, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+                
+        .btn-go-back {
+            background: #6c757d;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-go-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Field groups */
+        .field-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4e73df;
+        }
+        
+        body.dark-mode .field-group {
+            background: #4a5568;
+            border-left-color: #6c63ff;
+        }
+        
+        /* Help text */
+        .help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        body.dark-mode .help-text {
+            color: #cbd5e0;
+        }
+        
+        @media (max-width: 768px) {
+            .ebook-form-wrapper {
+                padding: 15px;
+            }
+            
+            .file-upload-area {
+                padding: 20px 15px;
+            }
+        }
+
+
+    
+    .upload-container {
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        border: 2px dashed #888;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+    .upload-container.dragover {
+        border-color: #007bff;
+        background: #eef6ff;
+    }
+
+    #browseBtn {
+        margin-top: 10px;
+        padding: 8px 16px;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+
+    </style>
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='ई-बुक व्यवस्थापन' sub_title='ई-बुक अपडेट करा' %}
+{% endblock %}
+
+{% block content %}
+<div class="ebook-form-wrapper">
+    <form method="post" enctype="multipart/form-data" id="ebookForm">
+        {% csrf_token %}
+        
+        <!-- Hidden field for encrypted ID -->
+        <input type="hidden" name="encrypted_id" value="{{ encrypted_id }}"> 
+        
+        <!-- Basic Information Section -->
+        <div class="field-group">
+            <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>मूलभूत माहिती / Basic Information</h5>
+            
+            <!-- Row 1: Title & Subtitle -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label required-field">पुस्तकाचे नाव / Title</label>
+                    <input type="text" name="eb_title" id="eb_title" class="form-control" 
+                           placeholder="Enter book title" required value="{{ ebook.eb_title|default:'' }}">
+                    <small class="help-text">ई-बुकचे मुख्य शीर्षक / Main title of the e-book</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">उपशिर्षक / Subtitle</label>
+                    <input type="text" name="eb_subtitle" id="eb_subtitle" class="form-control" 
+                           placeholder="Optional subtitle" value="{{ ebook.eb_subtitle|default:'' }}">
+                </div>
+            </div>
+            
+            <!-- Row 2: Author (MANDATORY) -->
+            <div class="mb-3 row">
+                <div class="col-md-6 position-relative">
+                    <label class="form-label required-field">लेखक / Author</label>
+                    <input type="text" name="eb_author" id="eb_author" class="form-control" 
+                           placeholder="Enter author name" required autocomplete="off" value="{{ ebook.eb_author|default:'' }}">
+                    <div class="author-suggestions" id="authorSuggestions"></div>
+                    <small class="help-text">लेखकाचे नाव टाइप करा किंवा यादीतून निवडा</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">सह-लेखक / Other Authors</label>
+                    <input type="text" name="eb_other_authors" id="eb_other_authors" class="form-control" 
+                           placeholder="Co-authors, editors, etc." value="{{ ebook.eb_other_authors|default:'' }}">
+                </div>
+            </div>
+            
+            <!-- Row 3: Language & Publication Details -->
+            <div class="mb-3 row">
+                <div class="col-md-4">
+                    <label class="form-label required-field">भाषा / Language</label>
+                    <select name="eb_language" id="eb_language" class="form-control" required>
+                        <option value="">Select Language</option>
+                        {% for lang in languages %}
+                            <option value="{{ lang.language_name }}" 
+                                    {% if ebook.eb_language == lang.language_name %}selected{% endif %}>
+                                {{ lang.language_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">प्रकाशक / Publisher</label>
+                    <input type="text" name="eb_publisher" id="eb_publisher" class="form-control" 
+                           placeholder="Publisher name" value="{{ ebook.eb_publisher|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">प्रकाशन वर्ष / Publication Year</label>
+                    <input type="number" name="eb_year_of_publication" id="eb_year_of_publication" 
+                           class="form-control" min="1000" max="{% now 'Y' %}" 
+                           placeholder="e.g., 2024" value="{{ ebook.eb_year_of_publication|default:'' }}">
+                </div>
+            </div>
+            
+            <!-- Row 4: Publication Place & Edition -->
+           <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">प्रकाशन स्थळ / Publication Place</label>
+                    <input type="text" name="eb_publication_place" id="eb_publication_place" 
+                        class="form-control" placeholder="e.g., Mumbai, Delhi, Pune" 
+                        value="{{ ebook.eb_publication_place|default:'' }}">
+                    <small class="help-text">प्रकाशनाचे शहर/राज्य / City/State of publication</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">आवृत्ती / Edition</label>
+                    <input type="text" name="eb_edition" id="eb_edition" class="form-control" 
+                           placeholder="e.g., First Edition, Revised Edition" value="{{ ebook.eb_edition|default:'' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- E-Book File & Technical Information -->
+        <div class="field-group">
+            <h5 class="mb-3"><i class="fas fa-file-alt me-2"></i>ई-बुक फाइल / E-Book File</h5>
+            <div class="col-md-12 mb-3">
+                <label class="form-label fw-bold">PDF File</label>
+
+                {% if ebook.eb_pdf_url %}
+                    <div class="mb-2">
+                        <a href="/media/{{ ebook.eb_pdf_url }}" target="_blank" class="btn btn-sm btn-primary">
+                            View Current PDF
+                        </a>
+                    </div>
+                {% endif %}
+            
+            <!-- File Upload -->
+            <div class="mb-3">
+                <label class="form-label">ई-बुक फाइल अपलोड करा / Upload E-Book File</label>
+                <div class="file-upload-area" id="fileUploadArea">
+    
+                <input type="file" name="ebook_file" id="ebook_file"
+                    accept=".pdf,.epub,.mobi,.azw,.azw3" hidden>
+
+                <div id="filePreview">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h6>फाइल ड्रॅग आणि ड्रॉप करा / Drag & Drop File Here</h6>
+                    <p class="text-muted mb-3">किंवा फाइल निवडण्यासाठी क्लिक करा / Or click to browse</p>
+                    <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                        <i class="fas fa-folder-open me-2"></i>फाइल निवडा / Browse Files
+                    </button>
+                    <div class="file-info">
+                        <strong>नोंद / Note:</strong> फाइल अपलोड केल्यास URL दुर्लक्षित केले जाईल<br>
+                        स्वीकार्य फॉरमॅट: PDF, EPUB, MOBI, AZW<br>
+                        कमाल आकार: 50 MB
+                    </div>
+                </div>
+
+            </div>
+
+            </div>
+            
+            <!-- Row 5: External URL -->
+            <div class="mb-3">
+                <label class="form-label">किंवा बाह्य URL प्रदान करा / OR Provide External URL</label>
+                <input type="url" name="eb_pdf_url" id="eb_pdf_url" class="form-control" 
+                    placeholder="https://example.com/ebook.pdf" 
+                    value="{{ ebook.eb_pdf_url|default:'' }}">
+                <small class="help-text text-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    फक्त जर फाइल अपलोड करत नसाल तर वापरा. फाइल अपलोड केल्यास हे दुर्लक्षित केले जाईल.<br>
+                    Use only if you are NOT uploading a file. Will be ignored if file is uploaded.
+                </small>
+            </div>
+            
+            <!-- Row 6: E-Book Type -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">ई-बुक प्रकार / E-Book Type</label>
+                    <select name="ebook_type" id="ebook_type" class="form-control">
+                        <option value="">Select E-Book Type</option>
+                        {% for etype in ebook_types %}
+                            <option value="{{ etype.encrypted_id }}"
+                                    {% if ebook.ebook_type.type_id == etype.type_id %}selected{% endif %}>
+                                {{ etype.ebookTypeCode|default:"No Code" }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <!-- You can add another field here if needed -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Classification & Cataloging -->
+        <div class="field-group">
+            <h5 class="mb-3"><i class="fas fa-tags me-2"></i>वर्गीकरण आणि कॅटलॉगिंग / Classification & Cataloging</h5>
+            
+            <!-- Row 6: Subject & ISBN -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label required-field">विषय / Subject</label>
+                    <select name="eb_subject" id="eb_subject" class="form-control" required>
+                        <option value="">Select Subject</option>
+                        {% for sub in subjects %}
+                            <option value="{{ sub.encrypted_id }}"
+                                    data-code="{{ sub.subjectCode|default:'000' }}"
+                                    {% if ebook.eb_subject.id == sub.id %}selected{% endif %}>
+                                {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">ISBN/ISSN</label>
+                    <input type="text" name="eb_isbn_issn" id="eb_isbn_issn" class="form-control" 
+                           placeholder="ISBN or ISSN number" value="{{ ebook.eb_isbn_issn|default:'' }}">
+                </div>
+            </div>
+            
+            <!-- Row 7: Call Number & Cutter Number -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">कॉल नंबर / Call Number</label>
+                    <input type="text" name="call_number" id="call_number" class="form-control" 
+                           placeholder="Auto-generated or manual" value="{{ ebook.call_number|default:'' }}">
+                    <small class="help-text">स्वयं-निर्मित होईल: विषय कोड.लेखक कोड.वर्ष</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">कट्टर नंबर / Cutter Number</label>
+                    <input type="text" name="cutter_number" id="cutter_number" class="form-control" 
+                           placeholder="First 3 letters of author's name" value="{{ ebook.cutter_number|default:'' }}">
+                </div>
+            </div>
+            
+            <!-- Row 8: Classification & Pages -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">वर्गीकरण क्रमांक / Classification Number</label>
+                    <input type="text" name="eb_classification_number" id="eb_classification_number" 
+                           class="form-control" placeholder="Classification number" 
+                           value="{{ ebook.eb_classification_number|default:'' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">पृष्ठे / Pages</label>
+                    <input type="text" name="eb_pages" id="eb_pages" class="form-control" 
+                           placeholder="e.g., 250, xii+350" value="{{ ebook.eb_pages|default:'' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Information -->
+        <div class="field-group">
+            <h5 class="mb-3"><i class="fas fa-notes me-2"></i>अतिरिक्त माहिती / Additional Information</h5>
+            
+            <!-- Row 9: Keywords & E-Publication Year -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">कीवर्ड्स / Keywords</label>
+                    <input type="text" name="eb_keywords" id="eb_keywords" class="form-control" 
+                           placeholder="comma, separated, keywords, कीवर्ड" 
+                           value="{{ ebook.eb_keywords|default:'' }}">
+                    <small class="help-text">शोधासाठी कीवर्ड्स (स्वल्पविरामाने विभक्त)</small>
+                </div>
+                
+            </div>
+            
+            <!-- Row 10: Images -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
+                    <input type="file" name="eb_front_page_photo" id="eb_front_page_photo" 
+                           class="form-control" accept="image/*">
+                    {% if ebook.eb_front_page_photo %}
+                    <div class="mt-2">
+                        <small>Current: {{ ebook.eb_front_page_photo|default:"None" }}</small>
+                    </div>
+                    {% endif %}
+                    <small class="help-text">मुखपृष्ठाची प्रतिमा / Front cover image (JPG, PNG)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
+                    <input type="file" name="eb_last_page_photo" id="eb_last_page_photo" 
+                           class="form-control" accept="image/*">
+                    {% if ebook.eb_last_page_photo %}
+                    <div class="mt-2">
+                        <small>Current: {{ ebook.eb_last_page_photo|default:"None" }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Row 11: Remarks & Date -->
+            <div class="mb-3 row">
+                <div class="col-md-8">
+                    <label class="form-label">टीप / Remarks</label>
+                    <textarea name="remarks" id="remarks" class="form-control" rows="2" 
+                              placeholder="Any additional notes or comments">{{ ebook.remarks|default:'' }}</textarea>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">नोंदणी दिनांक / Registration Date</label>
+                    <input type="date" name="eb_date_of_registration" id="eb_date_of_registration" 
+                           class="form-control" value="{{ ebook.eb_date_of_registration|date:'Y-m-d'|default:'' }}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Submit Buttons -->
+        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+            <button type="submit" class="btn btn-submit" id="submitBtn">
+                <i class="fas fa-save me-2"></i>ई-बुक अपडेट करा / Update E-Book
+            </button>
+            <a href="{% url 'ebook_catalog_index' %}" class="btn-go-back">
+                <i class="fas fa-arrow-left me-2"></i>मागे जा / Go Back
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_javascript %}
+    <!-- jQuery -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+        const authorInput = document.getElementById('eb_author');
+        const authorSuggestions = document.getElementById('authorSuggestions');
+        const ebookForm = document.getElementById('ebookForm');
+        const fileInput = document.getElementById('ebook_file');
+        const browseBtn = document.getElementById('browseBtn');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+
+          // Check if we're in edit mode by checking if any fields are pre-filled
+    const isEditMode = document.getElementById('eb_title').value !== '';
+    
+    // If in edit mode, update all auto-generated fields
+    if (isEditMode) {
+        updateCallNumber();
+        updateClassificationNumber();
+        
+        // Don't auto-generate cutter number if it already has a value
+        const cutterField = document.getElementById('cutter_number');
+        if (cutterField && !cutterField.value.trim()) {
+            updateCutterFromAuthor();
+        }
+        
+        // ========== FILE UPLOAD FUNCTIONALITY ==========
+        browseBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+
+        fileUploadArea.addEventListener('click', function (e) {
+            if (e.target.id !== "browseBtn") {
+                fileInput.click();
+            }
+        });
+
+
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const fileName = file.name;
+                const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                const fileType = fileName.split('.').pop().toUpperCase();
+
+                filePreview.innerHTML = `
+                    <div class="text-success">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h6>File Selected: ${fileName}</h6>
+                        <p class="mb-1">Size: ${fileSize} MB | Type: ${fileType}</p>
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeFileBtn">
+                            <i class="fas fa-times me-1"></i>Remove File
+                        </button>
+                    </div>
+                `;
+
+                // Re-bind remove button
+                document.getElementById("removeFileBtn").addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInput.value = "";
+                    resetPreview();
+                });
+            }
+        });
+
+
+        ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ["dragenter", "dragover"].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, () => {
+                fileUploadArea.classList.add("dragover");
+            });
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, () => {
+                fileUploadArea.classList.remove("dragover");
+            });
+        });
+
+        fileUploadArea.addEventListener("drop", function (e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event("change"));
+        });
+
+        function resetPreview() {
+            filePreview.innerHTML = `
+                <div class="file-upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h6>फाइल ड्रॅग आणि ड्रॉप करा / Drag & Drop File Here</h6>
+                <p class="text-muted mb-3">किंवा फाइल निवडण्यासाठी क्लिक करा / Or click to browse</p>
+
+                <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                    <i class="fas fa-folder-open me-2"></i>फाइल निवडा / Browse Files
+                </button>
+
+                <div class="file-info mt-3">
+                    <strong>नोंद / Note:</strong> फाइल अपलोड केल्यास URL दुर्लक्षित केले जाईल<br>
+                    स्वीकार्य फॉरमॅट: PDF, EPUB, MOBI, AZW<br>
+                    कमाल आकार: 50 MB
+                </div>
+            `;
+
+            // Re-assign & re-bind browse button
+            browseBtn = document.getElementById("browseBtn");
+            browseBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            });
+        }
+        // ========== AUTHOR SEARCH FUNCTIONALITY ==========
+        
+        let searchTimeout;
+        let lastSearchTerm = '';
+        
+        // Function to search authors via AJAX
+        function searchAuthors(searchTerm) {
+            if (searchTerm === lastSearchTerm) return;
+            lastSearchTerm = searchTerm;
+            
+            if (searchTerm.length < 2) {
+                authorSuggestions.style.display = 'none';
+                return;
+            }
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetch(`/ebook_create/?action=search_authors&search=${encodeURIComponent(searchTerm)}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayAuthorSuggestions(data.data, searchTerm);
+                })
+                .catch(err => {
+                    console.error('Error searching authors:', err);
+                    authorSuggestions.style.display = 'none';
+                });
+            }, 300); // 300ms delay for typing
+        }
+        
+        // Function to display suggestions
+        function displayAuthorSuggestions(authors, searchTerm) {
+            authorSuggestions.innerHTML = '';
+            
+            if (!authors || authors.length === 0) {
+                authorSuggestions.style.display = 'none';
+                return;
+            }
+            
+            // Limit to 15 suggestions
+            const limitedAuthors = authors.slice(0, 15);
+            
+            limitedAuthors.forEach(author => {
+                const div = document.createElement('div');
+                div.className = 'author-item';
+                div.textContent = author;
+                
+                // Highlight matching text
+                if (searchTerm && searchTerm.length > 0) {
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    div.innerHTML = author.replace(regex, '<strong>$1</strong>');
+                }
+                
+                div.onclick = () => selectAuthor(author);
+                authorSuggestions.appendChild(div);
+            });
+            
+            authorSuggestions.style.display = 'block';
+        }
+        
+        // Function to select an author
+        function selectAuthor(authorName) {
+            authorInput.value = authorName;
+            authorSuggestions.style.display = 'none';
+            
+            // Update cutter number
+            if (authorName.length >= 3) {
+                const cutterField = document.getElementById('cutter_number');
+                if (cutterField && !cutterField.value.trim()) {
+                    const authorClean = authorName.replace(/[^a-zA-Z]/g, '');
+                    cutterField.value = authorClean.substring(0, 3).toUpperCase();
+                }
+            }
+            updateCallNumber();
+        }
+        
+        // Event Listeners for author input
+        authorInput.addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            searchAuthors(searchTerm);
+            updateCutterFromAuthor();
+            updateCallNumber();
+        });
+        
+        authorInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2) {
+                searchAuthors(this.value.trim());
+            }
+        });
+        
+        authorInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                if (!authorSuggestions.matches(':hover')) {
+                    authorSuggestions.style.display = 'none';
+                }
+            }, 200);
+        });
+        
+        // Prevent dropdown from closing when clicking inside
+        authorSuggestions.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+        });
+        
+        // ========== AUTO-GENERATION FUNCTIONS ==========
+        
+        // Update cutter from author
+        function updateCutterFromAuthor() {
+            const cutterField = document.getElementById('cutter_number');
+            if (!cutterField) return;
+            
+            const authorName = authorInput.value.trim();
+            if (authorName.length >= 3 && !cutterField.value.trim()) {
+                const authorClean = authorName.replace(/[^a-zA-Z]/g, '');
+                cutterField.value = authorClean.substring(0, 3).toUpperCase();
+            }
+        }
+        
+        // Auto-generate call number
+        function updateCallNumber() {
+            const callField = document.getElementById('call_number');
+            if (!callField) return;
+            
+            const subjectSelect = document.getElementById('eb_subject');
+            const subjectOption = subjectSelect.options[subjectSelect.selectedIndex];
+            const subjectCode = subjectOption ? subjectOption.dataset.code || '' : '';
+            const cutter = document.getElementById('cutter_number').value.trim();
+            const year = document.getElementById('eb_year_of_publication').value.trim();
+            
+            if (subjectCode && cutter && year) {
+                callField.value = `${subjectCode}.${cutter}.${year}`;
+            } else if (subjectCode && cutter) {
+                callField.value = `${subjectCode}.${cutter}`;
+            } else if (subjectCode) {
+                callField.value = subjectCode;
+            }
+        }
+        
+        // Auto-generate classification number
+        function updateClassificationNumber() {
+            const classificationField = document.getElementById('eb_classification_number');
+            if (!classificationField) return;
+            
+            const subjectSelect = document.getElementById('eb_subject');
+            const subjectOption = subjectSelect.options[subjectSelect.selectedIndex];
+            if (subjectOption && subjectOption.dataset.code && !classificationField.value.trim()) {
+                classificationField.value = subjectOption.dataset.code;
+            }
+        }
+        
+        // ========== FORM VALIDATION ==========
+        
+        ebookForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate required fields
+            const requiredFields = [
+                { id: 'eb_title', name: 'Title' },
+                { id: 'eb_author', name: 'Author' },
+                { id: 'eb_language', name: 'Language' },
+                { id: 'eb_subject', name: 'Subject' }
+            ];
+            
+            let missingFields = [];
+            let firstMissingField = null;
+            
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (!element) return;
+                
+                let isValid = true;
+                if (element.tagName === 'SELECT') {
+                    isValid = element.value !== '';
+                } else if (element.type === 'text' || element.type === 'textarea') {
+                    isValid = element.value.trim() !== '';
+                }
+                
+                if (!isValid) {
+                    missingFields.push(field.name);
+                    if (!firstMissingField) firstMissingField = element;
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                const message = `कृपया खालील आवश्यक फील्ड भरा:\nPlease fill the following required fields:\n\n${missingFields.join(', ')}`;
+                
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Required Fields Missing',
+                    html: message.replace(/\n/g, '<br>'),
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#0d6efd'
+                }).then(() => {
+                    if (firstMissingField) {
+                        firstMissingField.focus();
+                    }
+                });
+                return false;
+            }
+            
+            // File validation if file is selected
+            if (fileInput && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+                const allowedTypes = ['.pdf', '.epub', '.mobi', '.azw', '.azw3'];
+                
+                if (!allowedTypes.includes(fileExt)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid File Type',
+                        text: `Allowed file types: ${allowedTypes.join(', ')}`,
+                        confirmButtonText: 'OK'
+                    });
+                    return false;
+                }
+                
+                if (file.size > 50 * 1024 * 1024) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'File Too Large',
+                        text: 'File size should be less than 50MB',
+                        confirmButtonText: 'OK'
+                    });
+                    return false;
+                }
+            }
+            
+            // If all validations pass, submit the form
+            this.submit();
+        });
+        
+        // ========== EVENT LISTENERS FOR AUTO-GENERATION ==========
+        
+        document.getElementById('eb_subject').addEventListener('change', function() {
+            updateCallNumber();
+            updateClassificationNumber();
+        });
+        
+        document.getElementById('eb_year_of_publication').addEventListener('input', updateCallNumber);
+        document.getElementById('cutter_number').addEventListener('input', updateCallNumber);
+        
+        // ========== INITIALIZATION ==========
+        
+        // Initialize date field with today's date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('eb_date_of_registration').value = today;
+        
+        // Set default values for auto-generated fields
+        updateCutterFromAuthor();
+        updateCallNumber();
+        updateClassificationNumber();
+        
+        // Re-attach browse button event listener
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'browseBtn') {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            }
+        });
+    });
+    </script>
+{% endblock %}

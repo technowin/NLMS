@@ -61,6 +61,7 @@ from django.core.exceptions import ObjectDoesNotExist
 logger = logging.getLogger(__name__)
 from django.db import transaction as db_transaction
 from PIL import Image, ImageDraw, ImageFont
+from django.views import View
 from barcode import Code128
 from reportlab.lib.utils import ImageReader
 from django.db.models import IntegerField
@@ -72,6 +73,12 @@ from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageFont, ImageDraw
 from django.core.paginator import Paginator
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Max, Count, Avg, Exists, OuterRef
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+import io
+import csv
+import pandas as pd
 
 # Part First While Filling Membership Form
 
@@ -4535,7 +4542,6 @@ def save_eod_log(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 # Cate list notepad view 440
-from django.db.models import Max, Count, Avg, Exists, OuterRef
 
 @login_required
 def visit_Library_catalogue(request):
@@ -5095,64 +5101,132 @@ def clear_pdf_session(request):
     request.session.pop("open_pdf_url", None)
     return JsonResponse({"status": "ok"})
 
-from django.http import HttpResponseServerError
+# for tv display view and api
 
-def tv_display(request):
-    try:
-        context = {
-            'MEDIA_URL': settings.MEDIA_URL,
-        }
-        return render(request, "L01/tv_display.html", context)
-    except Exception as e:
-        logger.error(f"Error loading TV display page: {e}", exc_info=True)
-        return HttpResponseServerError("Something went wrong while loading the TV display.")
-
-
-from django.http import JsonResponse
-from django.db.models import Count
-
-def tv_api(request):
-    # 1️⃣ Latest added book
-    latest_book = BookCatalog.objects.order_by('-created_at').first()
-
-    # 2️⃣ Most reviewed book
-    most_reviewed = (
-        BookReview.objects.values('book')
-        .annotate(total_reviews=Count('id'))
-        .order_by('-total_reviews')
-        .first()
-    )
-
-    most_reviewed_book = None
-    if most_reviewed:
-        most_reviewed_book = BookCatalog.objects.filter(
-            cat_ref_num=most_reviewed['book']
-        ).first()
-
-    response = {
-        "latest_book": {
-            "title": latest_book.title if latest_book else "",
-            "author": latest_book.author if latest_book else "",
-            "publisher": latest_book.publisher if latest_book else "",
-            "cover": latest_book.front_page_photo if latest_book else "",
-            "last_page": latest_book.last_page_photo if latest_book else "",
-            "created_at": latest_book.created_at.strftime("%d %b %Y") if latest_book else "",
-            "subject": latest_book.subject.subjectNameEnglish if latest_book and latest_book.subject else "",
-        },
-        "author_info": {
-            "name": latest_book.author if latest_book else "",
-            "other_authors": latest_book.other_authors if latest_book else "",
-        },
-        "most_reviewed_book": {
-            "title": most_reviewed_book.title if most_reviewed_book else "",
-            "author": most_reviewed_book.author if most_reviewed_book else "",
-            "reviews": most_reviewed['total_reviews'] if most_reviewed else 0,
-            "cover": most_reviewed_book.front_page_photo if most_reviewed_book else "",
-        }
+def book_to_dict(b):
+    # Construct the full image URL
+    photo_url = ""
+    if b.front_page_photo:
+        # Clean the photo path
+        photo_path = b.front_page_photo
+        if photo_path.startswith('/'):
+            photo_path = photo_path[1:]
+        photo_url = f"{settings.MEDIA_URL}{photo_path}"
+    
+    return {
+        "cat_ref_num": b.cat_ref_num,
+        "title": b.title or "",
+        "subtitle": b.subtitle or "",
+        "author": b.author or "",
+        "publisher": b.publisher or "",
+        "publication_year": b.publication_year or "",
+        "year_of_publication": b.year_of_publication or "",
+        "subject": getattr(b.subject, "subjectNameMarathi", "") if b.subject else "",
+        "front_page_photo": photo_url,  # Return full URL
+        "isbn_issn": b.isbn_issn or "",
+        "edition": b.edition or "",
+        "language": b.language or "",
+        "publication_place": b.publication_place or "",
+        "call_number": b.call_number or "",
+        "cutter_number": b.cutter_number or "",
+        "pages": b.pages or "",
+        "keywords": b.keywords or "",
+        "remarks": b.remarks or "",
+        "classification_number": b.classification_number or "",
+        "other_authors": b.other_authors or "",
     }
 
-    return JsonResponse(response)
+def tv_dashboard_page(request):
+    library_code = request.session.get('library_db')
+    username = request.session.get('username')
+    user_id = request.session.get('user_id')
+    role_id = request.session.get('role_id')
+    
+    if library_code != 'L01':
+        messages.error(request, "Invalid library access.")
+        request.session.flush()
+        return redirect('library_list')
+    
+    libraryDetails = tbl_librarymasterL01.objects.filter(library_code__iexact=library_code).first()
+    library_name = libraryDetails.library_name_mar if libraryDetails else "लायब्ररी"
+    
+    context = {
+        "library_name_marathi": library_name,
+        "MEDIA_URL": settings.MEDIA_URL,  # Add this line
+    }
+    return render(request, "L01/tv_display.html", context)
 
+def tv_popular_books_api(request):
+    qs = (
+        BookCatalog.objects.annotate(
+            review_count=Count('cat_ref_id_reviews'),
+            avg_rating=Avg('cat_ref_id_reviews__rating')
+        )
+        .filter(review_count__gt=0)
+        .order_by('-avg_rating', '-review_count')[:10]
+    )
+
+    data = []
+    for b in qs:
+        data.append({
+            "cat_ref_num": b.cat_ref_num,
+            "title": b.title or "",
+            "author": b.author or "",
+            "avg_rating": round(b.avg_rating or 0, 1),
+            "review_count": b.review_count or 0,
+            "subject": getattr(b.subject, "subjectNameMarathi", "") if b.subject else "",
+            "front_page_photo": b.front_page_photo or "",
+        })
+
+    return JsonResponse({"popular_books": data}, safe=True)
+
+def tv_categories_api(request):
+    qs = SubjectTypeMaster.objects.filter(is_active=1).order_by('subjectNameMarathi')
+    data = [{"id": s.id, "name_marathi": s.subjectNameMarathi or s.subjectNameEnglish or ""} for s in qs]
+    return JsonResponse({"categories": data}, safe=True)
+
+def tv_new_arrivals_api(request):
+    latest_created_at = BookCatalog.objects.aggregate(latest=Max('created_at'))['latest']
+    recent_books = BookCatalog.objects.none()
+    if latest_created_at:
+        recent_books = BookCatalog.objects.filter(created_at=latest_created_at)[:10]
+
+    remaining = 10 - recent_books.count()
+    fallback = BookCatalog.objects.exclude(cat_ref_num__in=recent_books.values_list('cat_ref_num', flat=True)) \
+                                  .order_by('-cat_ref_num')[:remaining] if remaining > 0 else BookCatalog.objects.none()
+
+    books = list(recent_books) + list(fallback)
+    data = [book_to_dict(b) for b in books]
+    return JsonResponse({"new_arrivals": data}, safe=True)
+
+def tv_all_books_api(request):
+    qs = BookCatalog.objects.select_related('subject', 'material').order_by('-cat_ref_num')[:50]
+    data = []
+    for b in qs:
+        # Include all necessary fields for book details display
+        data.append({
+            "cat_ref_num": b.cat_ref_num,
+            "title": b.title or "",
+            "subtitle": b.subtitle or "",  # Add subtitle
+            "author": b.author or "",
+            "publisher": b.publisher or "",
+            "publication_year": b.publication_year or "",
+            "year_of_publication": b.year_of_publication or "",
+            "subject": getattr(b.subject, "subjectNameMarathi", "") if b.subject else "",
+            "front_page_photo": b.front_page_photo or "",  # ADD THIS LINE - CRITICAL!
+            "isbn_issn": b.isbn_issn or "",
+            "edition": b.edition or "",
+            "language": b.language or "",
+            "publication_place": b.publication_place or "",
+            "call_number": b.call_number or "",
+            "cutter_number": b.cutter_number or "",
+            "pages": b.pages or "",
+            "keywords": b.keywords or "",
+            "remarks": b.remarks or "",
+            "classification_number": b.classification_number or "",
+            "other_authors": b.other_authors or "",
+        })
+    return JsonResponse({"all_books": data}, safe=True)
 
 def insert_book_by_isbn(request, isbn):
     try:
@@ -5246,3 +5320,389 @@ def insert_book_by_isbn(request, isbn):
     except Exception as e:
         print("Error in insert_book_by_isbn:", e)
         return JsonResponse({"status": "error", "message": str(e)})
+
+
+# Stock Checking by Imran
+
+@csrf_exempt
+def scan_barcode(request):
+    try:
+        if request.method == "GET":
+            stock_year = StockYearMaster.objects.filter(is_active = 1)
+
+            return render(request, "L01/Stock/stock_check.html", {"stock_year":stock_year})
+
+        if request.method == "POST":
+            barcode = request.POST.get("barcode")
+            stock_year_id = request.POST.get("stock_year_id")
+
+            # Validate stock year
+            try:
+                stock_year = StockYearMaster.objects.get(id=stock_year_id)
+            except StockYearMaster.DoesNotExist:
+                return JsonResponse({"error": "Invalid Stock Year"}, status=400)
+
+            stock_master, created = StockMaster.objects.get_or_create(
+                stock_year=stock_year,
+                defaults={"is_completed": False}             
+            )
+            try:
+                circulation = CirculationCopyStatus.objects.get(barcode=barcode)
+            except CirculationCopyStatus.DoesNotExist:
+                return JsonResponse(
+                    {"error": f"Barcode {barcode} not found in circulation"},
+                    status=404
+                )
+
+            if StockDetail.objects.filter(stock=stock_master, barcode=barcode).exists():
+                return JsonResponse(
+                    {"error": f"Barcode {barcode} already scanned"},
+                    status=400
+                )
+
+            StockDetail.objects.create(
+                stock=stock_master,
+                stock_year=stock_year,
+                circulation=circulation,
+                barcode=barcode
+            )
+
+            return JsonResponse({
+                "message": f"Barcode {barcode} scanned successfully",
+                "stock_master_id": stock_master.id
+            })
+
+        return JsonResponse({"error": "Invalid request"}, status=400)
+    except Exception as e:
+        print("Error in insert_book_by_isbn:", e)
+        return JsonResponse({"status": "error", "message": str(e)})
+    
+
+def get_recent_scans(request):
+    year_id = request.GET.get("stock_year_id")
+
+    scans = StockDetail.objects.filter(stock_year_id=year_id).order_by('-id')[:20]
+
+    data = []
+    for s in scans:
+        data.append({
+            "barcode": s.barcode,
+            "time": s.scanned_at.strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    return JsonResponse({"data": data})
+
+class StockReportView(View):
+    def get(self, request):
+        """
+        Handle GET request - Display the stock report page automatically
+        """
+        try:
+            # Get active stock year (where is_active = True)
+            active_stock_year = StockYearMaster.objects.filter(is_active=True).first()
+            
+            if not active_stock_year:
+                # No active stock year found
+                report_data = self.create_empty_report_data("No active stock year found")
+                context = {
+                    'report_data': report_data,
+                    'active_year_name': 'No Active Year',
+                }
+                return render(request, 'L01/Stock/stock_report.html', context)
+            
+            # Generate report for active stock year
+            try:
+                report_data = self.generate_report_data(active_stock_year.id, 'all')
+            except Exception as e:
+                report_data = self.create_empty_report_data(f"Error generating report: {str(e)}")
+            
+            context = {
+                'report_data': report_data,
+                'active_year_name': active_stock_year.year_name,
+            }
+            
+            return render(request, 'L01/Stock/stock_report.html', context)
+            
+        except Exception as e:
+            # Handle unexpected errors
+            context = {
+                'report_data': self.create_empty_report_data(f"System error: {str(e)}"),
+                'active_year_name': 'Error',
+            }
+            return render(request, 'L01/Stock/stock_report.html', context)
+    
+    def generate_report_data(self, year_id, status_filter='all'):
+        """
+        Generate stock verification report data
+        """
+        # Get stock year
+        stock_year = StockYearMaster.objects.get(id=year_id)
+        
+        # Get all books from CirculationCopyStatus with annotations
+        all_books = CirculationCopyStatus.objects.select_related(
+            'bookcatalog',
+            'shelf_location',
+            'current_status'
+        ).annotate(
+            # Check if book is in stock details for this year
+            is_in_stock=Exists(
+                StockDetail.objects.filter(
+                    stock_year_id=year_id,
+                    circulation__barcode=OuterRef('barcode')
+                )
+            ),
+            # Check if book is borrowed (has active transaction)
+            is_borrowed=Exists(
+                CirculationTransaction.objects.filter(
+                    circulation_copy__barcode=OuterRef('barcode'),
+                    return_date__isnull=True
+                )
+            ) if hasattr(CirculationCopyStatus, 'circulationtransaction_set') else 
+            Exists(
+                CirculationTransaction.objects.filter(
+                    barcode=OuterRef('barcode'),
+                    return_date__isnull=True
+                )
+            )
+        ).order_by('barcode')
+        
+        # Prepare report data
+        report_data = []
+        status_counts = {
+            'available': 0,
+            'borrowed': 0,
+            'missing': 0,
+            'total': 0
+        }
+        
+        for book in all_books:
+            # Determine status based on annotations
+            if book.is_in_stock:
+                status = 'Available on Shelf'
+                status_key = 'available'
+            elif book.is_borrowed:
+                status = 'Currently Borrowed'
+                status_key = 'borrowed'
+            else:
+                status = 'Missing'
+                status_key = 'missing'
+            
+            # Update counts
+            status_counts[status_key] += 1
+            status_counts['total'] += 1
+            
+            # Get book catalog details
+            title = 'N/A'
+            author = 'N/A'
+            if book.bookcatalog:
+                title = book.bookcatalog.title
+                author = book.bookcatalog.author
+            
+            # Get shelf location
+            shelf_location = 'N/A'
+            if book.shelf_location:
+                shelf_location = book.shelf_location.location_name
+            
+            # Get current status
+            current_status = 'N/A'
+            if book.current_status:
+                current_status = book.current_status.status_name
+            
+            # Format date processed
+            date_processed = 'N/A'
+            if book.date_processed:
+                date_processed = book.date_processed.strftime('%Y-%m-%d')
+            
+            book_data = {
+                'barcode': book.barcode,
+                'accession_no': book.accession_no or 'N/A',
+                'title': title,
+                'author': author,
+                'shelf_location': shelf_location,
+                'current_status': current_status,
+                'stock_status': status,
+                'date_processed': date_processed,
+                'remarks': book.remarks or ''
+            }
+            
+            report_data.append(book_data)
+        
+        return {
+            'books': report_data,
+            'summary': status_counts,
+            'stock_year': stock_year.year_name,
+            'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+    
+    def create_empty_report_data(self, message="No data available"):
+        """
+        Create empty report data structure
+        """
+        return {
+            'books': [],
+            'summary': {
+                'total': 0,
+                'available': 0,
+                'borrowed': 0,
+                'missing': 0
+            },
+            'stock_year': message,
+            'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+class ExportStockReportView(View):
+    """
+    View for exporting stock reports in different formats
+    """
+    def post(self, request):
+        try:
+            # Parse JSON data
+            data = json.loads(request.body)
+            format_type = data.get('format', 'excel')
+            
+            # Get active stock year
+            active_stock_year = StockYearMaster.objects.filter(is_active=True).first()
+            
+            if not active_stock_year:
+                return JsonResponse({'error': 'No active stock year found'}, status=400)
+            
+            # Generate report data for active stock year
+            report_view = StockReportView()
+            report_data = report_view.generate_report_data(active_stock_year.id, 'all')
+            
+            # Export based on format
+            if format_type == 'excel':
+                return self.export_to_excel(report_data)
+            elif format_type == 'pdf':
+                return self.export_to_pdf(report_data)
+            elif format_type == 'csv':
+                return self.export_to_csv(report_data)
+            else:
+                return JsonResponse({'error': 'Invalid export format'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    def export_to_excel(self, report_data):
+        """
+        Export report to Excel format
+        """
+        
+        # Create DataFrame from report data
+        df = pd.DataFrame(report_data['books'])
+        
+        # Create response
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        filename = f"Stock_Report_{report_data['stock_year']}_{timezone.now().strftime('%Y%m%d')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Write to Excel
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            # Main data sheet
+            df.to_excel(writer, sheet_name='Stock Verification', index=False)
+            
+            # Summary sheet
+            summary_data = {
+                'Stock Year': [report_data['stock_year']],
+                'Generated At': [report_data['generated_at']],
+                'Total Books': [report_data['summary']['total']],
+                'Available': [report_data['summary']['available']],
+                'Borrowed': [report_data['summary']['borrowed']],
+                'Missing': [report_data['summary']['missing']]
+            }
+            summary_df = pd.DataFrame(summary_data)
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+            
+            # Adjust column widths
+            worksheet = writer.sheets['Stock Verification']
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 30)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        return response
+    
+    def export_to_csv(self, report_data):
+        """
+        Export report to CSV format
+        """
+        
+        # Create DataFrame from report data
+        df = pd.DataFrame(report_data['books'])
+        
+        # Create CSV response
+        response = HttpResponse(content_type='text/csv')
+        filename = f"Stock_Report_{report_data['stock_year']}_{timezone.now().strftime('%Y%m%d')}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Write CSV
+        df.to_csv(response, index=False, encoding='utf-8-sig')
+        
+        return response
+    
+    def export_to_pdf(self, report_data):
+        """
+        Export report to PDF format
+        Note: This is a basic implementation. You might want to use a proper PDF library.
+        """
+        
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Title
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(50, height - 50, f"Stock Verification Report")
+        p.setFont("Helvetica", 12)
+        p.drawString(50, height - 70, f"Stock Year: {report_data['stock_year']}")
+        p.drawString(50, height - 90, f"Generated: {report_data['generated_at']}")
+        
+        # Summary
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(50, height - 120, "Summary")
+        p.setFont("Helvetica", 12)
+        p.drawString(50, height - 140, f"Total Books: {report_data['summary']['total']}")
+        p.drawString(50, height - 155, f"Available: {report_data['summary']['available']}")
+        p.drawString(50, height - 170, f"Borrowed: {report_data['summary']['borrowed']}")
+        p.drawString(50, height - 185, f"Missing: {report_data['summary']['missing']}")
+        
+        # Table headers
+        y_position = height - 220
+        headers = ["Sr", "Barcode", "Title", "Status", "Location"]
+        
+        p.setFont("Helvetica-Bold", 10)
+        for i, header in enumerate(headers):
+            p.drawString(50 + (i * 100), y_position, header)
+        
+        y_position -= 20
+        
+        # Table data
+        p.setFont("Helvetica", 8)
+        for i, book in enumerate(report_data['books'][:30]):  # Limit to 30 records for PDF
+            if y_position < 50:
+                p.showPage()
+                y_position = height - 50
+                p.setFont("Helvetica", 8)
+            
+            p.drawString(50, y_position, str(i + 1))
+            p.drawString(100, y_position, book['barcode'][:15])
+            p.drawString(200, y_position, book['title'][:20])
+            p.drawString(300, y_position, book['stock_status'][:15])
+            p.drawString(400, y_position, book['shelf_location'][:10])
+            y_position -= 15
+        
+        p.save()
+        
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        filename = f"Stock_Report_{report_data['stock_year']}_{timezone.now().strftime('%Y%m%d')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
