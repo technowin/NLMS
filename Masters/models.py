@@ -258,6 +258,7 @@ class AuthorMaster(models.Model):
     author_name_other_english = models.TextField(null=True, blank=True)
     author_name_marathi = models.TextField(null=True, blank=True)
     author_name_other_marathi = models.TextField(null=True, blank=True)
+    detail_entered = models.TextField(null=True, blank=True)
     is_active = models.IntegerField(default=1, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.TextField(null=True, blank=True)

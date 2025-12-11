@@ -1,0 +1,957 @@
+
+{% load static %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+
+<!-- Popup Animation -->
+<style>
+/* ============================
+   GLOBAL
+=============================== */
+html, body {
+    font-size: 22px;
+    background: #1f1f2e; /* dark modern background */
+    margin: 0;
+    padding: 0;
+    font-family: 'Merriweather', serif;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* ============================
+   MAIN FLEX CONTAINER
+=============================== */
+.catalogue-main-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 60px 80px;
+}
+
+/* LEFT: books and details */
+.catalogue-left {
+    flex: 0 1 75%;
+}
+
+/* RIGHT: ads + events */
+.catalogue-right {
+    flex: 0 0 25%;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    margin-top:150px;
+    /* Changed from sticky to fixed */
+    position: fixed;               /* Keep panel fixed on scroll */
+    top: 60px;                     /* Distance from top (adjust if needed) */
+    right: 80px;                   /* Matches container padding */
+    width: 25%;                    /* Maintain same width */
+    max-height: calc(100vh - 80px); /* Prevent overflow beyond viewport */
+    overflow-y: auto;              /* Scroll internally if content is taller */
+    z-index: 9999;                 /* Ensure panel stays on top */
+}
+
+/* Optional: smooth scrollbar for fixed panel */
+.catalogue-right::-webkit-scrollbar {
+    width: 8px;
+}
+
+
+
+/* ============================
+   ADVERTISEMENT + EVENTS CARDS
+=============================== */
+.advertisement, .events {
+    background: linear-gradient(145deg, #2e2e55, #1f1f2e); /* slightly lighter gradient for depth */
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+
+
+.advertisement h3, .events h3 {
+    font-size: 42px;
+    font-weight: 700;
+    color: #ff6f61;
+    border-bottom: 2px solid #ff6f61;
+    padding-bottom: 5px;
+    margin-bottom: 20px;
+}
+
+.ad-item, .event-item {
+    background: #3a3a6e; /* slightly brighter background for card contrast */
+    padding: 15px 20px;
+    margin-bottom: 18px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+
+.ad-title, .event-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffde59;
+    margin-top: 10px;
+}
+
+.ad-org, .event-date, .event-desc {
+    font-size: 20px;
+    color: #ffffffcc;
+    font-weight: 500;
+    margin-top: 5px;
+}
+
+/* ============================
+   VIDEO STYLING
+=============================== */
+.ad-video {
+    width: 80%;             /* keeps width of its container */
+    height: auto;            /* maintains aspect ratio */
+    max-height: 700px;       /* limit height */
+    border-radius: 12px;
+    background: #000;
+    display: block;          /* makes margin auto work */
+    margin: 0 auto 15px auto; /* center horizontally and keep bottom margin */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ad-video:hover {
+    transform: scale(1.02);
+    box-shadow: 0 18px 50px rgba(0,0,0,0.6);
+}
+
+
+/* ============================
+   CATALOGUE TITLE
+=============================== */
+.catalogue-title {
+    font-size: 80px;
+    font-weight: 900;
+    text-align: center;
+    background: linear-gradient(90deg, #ff6f61, #ffde59, #6a82fb);
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 80px;
+    letter-spacing: 3px;
+    text-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+
+
+/* ============================
+   BOOK GRID
+=============================== */
+.book-grid {
+    display: flex;
+    gap: 35px;
+    overflow-x: auto;
+    padding-bottom: 25px;
+}
+
+.book-grid::-webkit-scrollbar {
+    height: 12px;
+}
+
+.book-grid::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #ff6f61, #6a82fb);
+    border-radius: 8px;
+}
+
+.book-grid::-webkit-scrollbar-track {
+    background: #1f1f2e;
+}
+
+/* ============================
+   BOOK CARD
+=============================== */
+.book-card {
+    flex: 0 0 auto;
+    width: 340px;
+    border-radius: 30px;
+    overflow: hidden;
+    background: linear-gradient(145deg, #1f1f2e, #2c2c54);
+    box-shadow: 0 15px 60px rgba(0,0,0,0.6);
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+    cursor: pointer;
+}
+
+.book-card:hover {
+    transform: translateY(-20px) scale(1.06);
+    box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+}
+
+.book-img {
+    width: 100%;
+    height: 520px;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.book-card:hover .book-img {
+    transform: scale(1.05);
+}
+
+.book-title {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.8);
+}
+
+/* ============================
+   BOOK DETAIL CARD
+=============================== */
+.book-detail-card {
+    display: flex;
+    gap: 30px;           /* reduced gap between image and info */
+    padding: 30px;       /* reduced padding */
+    max-width: 3500px;   /* limit max width to prevent overlapping */
+    background: linear-gradient(145deg, #2c2c54, #1f1f2e);
+    border-radius: 25px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.5);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    flex-wrap: wrap;
+    margin-bottom:40px;
+}
+
+.book-detail-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 50px 120px rgba(0,0,0,0.7);
+}
+
+.book-detail-image {
+    flex: 1 1 300px;     /* smaller image width */
+    max-width: 350px;    /* reduced max width */
+    border-radius: 20px;
+    overflow: hidden;
+    background: #1f1f2e;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    perspective: 1800px;
+}
+
+.book-detail-info {
+    flex: 2 1 400px;     /* reduced info width */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 15px;       /* slightly smaller padding inside */
+}
+
+.book-detail-info h2 {
+    font-size: 60px;     /* slightly smaller title */
+    font-weight: 900;
+    color: #ffde59;
+    margin-bottom: 15px;
+    text-shadow: 0 6px 15px rgba(0,0,0,0.7);
+}
+
+.book-detail-info p,
+.book-detail-info ul {
+    font-size: 35px;     /* smaller text to fit content */
+    line-height: 1.6;
+    color: #ffffffcc;
+    font-weight:bold;
+}
+
+.flip-card {
+    perspective: 1000px;
+}
+
+.flip-inner {
+    width: 100%;
+    height: 100%;
+    transition: transform 1s;
+    transform-style: preserve-3d;
+}
+
+.flip-front, .flip-back {
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.flip-back {
+    transform: rotateY(180deg);
+}
+
+.flip-inner.flipped {
+    transform: rotateY(180deg);
+}
+
+
+.book-detail-image:hover img {
+    transform: scale(1.05);
+}
+
+/* IMAGE STYLE – THE MOST IMPORTANT PART */
+.flip-front img,
+.flip-back img {
+    width: 100%;
+    height: 100%;
+    background: #00000030;    /* optional soft background behind book */
+    padding: 8px;             /* optional, gives breathing space */
+    display: block;
+}
+
+/* ============================
+   LATEST REVIEWS
+=============================== */
+.latest-reviews {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.review-line {
+    background: linear-gradient(120deg, #6a82fb, #ff6f61);
+    padding: 14px 20px;
+    border-radius: 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    font-size: 18px;
+    color: #ffffff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.review-line i {
+    color: #ffd700;
+    margin-right: 8px;
+}
+
+.review-line:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.no-review {
+    font-style: italic;
+    color: #bbbbbb;
+    padding: 12px;
+    background: #2c2c54;
+    border-radius: 18px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+/* ============================
+   Average Rating
+============================ */
+.avg-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* space between star rating and review count */
+    font-size: 35px; /* adjust as needed */
+    color: #ffcc00; /* star color */
+    margin-top: 8px;
+    font-weight: bold;
+}
+
+.avg-rating span {
+    display: inline-block;
+    font-weight: bold;
+    color: #ffffffff; /* text color for review count */
+    font-size: 35px;
+}
+
+.avg-rating span:first-child {
+    color: #ffcc00; /* star rating color */
+}
+
+
+/* ============================
+   RESPONSIVE
+=============================== */
+@media (max-width: 1600px) {
+    .catalogue-main-container { flex-direction: column; padding: 40px; }
+    .catalogue-right { width: 100%; top: 0; gap: 30px; position: relative; }
+    .book-detail-card { flex-direction: column; padding: 40px; }
+    .book-detail-image { max-width: 100%; margin-bottom: 40px; }
+    .catalogue-title { font-size: 70px; margin-bottom: 60px; }
+}
+
+@media (max-width: 1200px) {
+    .book-detail-info h2 { font-size: 36px; }
+    .book-detail-info p { font-size: 16px; }
+}
+
+@media (max-width: 768px) {
+    .book-card { width: 300px; }
+    .book-img { height: 400px; }
+    .catalogue-title { font-size: 50px; margin-bottom: 40px; }
+    .ad-title, .event-title { font-size: 16px; }
+    .ad-org, .event-date, .event-desc { font-size: 12px; }
+}
+
+</style>
+
+<div class="catalogue-main-container">
+
+    <!-- LEFT: books and details -->
+    <div class="catalogue-left">
+
+        <!-- ============================= -->
+        <!-- 1️⃣ POPULAR BOOKS SECTION     -->
+        <!-- ============================= -->
+        <h2 class="catalogue-title">Popular Books</h2>
+
+        <div class="book-grid">
+            {% for b in popular_books %}
+                {% if b.front_page_photo %}
+                <div class="book-card">
+                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                   
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+
+{% for book in popular_books %}
+<div class="book-detail-card">
+
+    <!-- Sub-card 1: Book Image with Flip Effect -->
+    <div class="book-detail-image flip-card">
+        <div class="flip-inner">
+            <div class="flip-front">
+                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+            </div>
+            <div class="flip-back">
+                {% if book.last_page_photo %}
+                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                {% else %}
+                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sub-card 2: Book Details -->
+    <div class="book-detail-info">
+
+        <!-- Hidden cat_ref_num -->
+        <input type="hidden" class="book-cat-ref" value="{{ book.cat_ref_num }}">
+
+        <h2>{{ book.title }}</h2>
+
+        {% if book.author %}
+            <p class="author">by {{ book.author }}</p>
+        {% endif %}
+
+        <!-- ⭐ Average Rating + Review Count -->
+        {% if book.avg_rating %}
+        <div class="avg-rating">
+            <span>⭐ {{ book.avg_rating|floatformat:1 }} / 5</span>
+            <span>({{ book.review_count }} Reviews)</span>
+        </div>
+        {% endif %}
+
+        <!-- 📝 Recent 2 Reviews -->
+     <div class="latest-reviews">
+    {% if book.recent_reviews %}
+        {% for r in book.recent_reviews %}
+        <div class="review" style="margin-bottom: 10px;">
+            <p class="review-line" style="margin:0; line-height:1.4;">
+                <i class="fa fa-user" aria-hidden="true"></i>
+                &nbsp;{{ r.username }}&nbsp;:&nbsp;
+                {{ r.review|truncatewords:25 }}
+            </p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="no-review">No recent reviews</p>
+    {% endif %}
+</div>
+
+
+        <!-- Book Features -->
+        <ul class="features">
+            {% if book.pages %}<li>{{ book.pages }} Pages</li>{% endif %}
+            {% if book.publication_year %}<li>Published in {{ book.publication_year }}</li>{% endif %}
+            {% if book.publisher %}<li>Publisher: {{ book.publisher }}</li>{% endif %}
+            {% if book.language %}<li>Language: {{ book.language }}</li>{% endif %}
+        </ul>
+
+    </div>
+
+</div>
+{% endfor %}
+
+
+
+        <!-- ============================= -->
+        <!-- 2️⃣ NEW ARRIVALS SECTION      -->
+        <!-- ============================= -->
+        <h2 class="catalogue-title">New Arrivals</h2>
+
+        <div class="book-grid">
+            {% for b in new_arrivals %}
+                {% if b.front_page_photo %}
+                <div class="book-card">
+                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                   
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+    {% for book in new_arrivals %}
+<div class="book-detail-card">
+
+    <!-- Sub-card 1: Book Image with Flip Effect -->
+    <div class="book-detail-image flip-card">
+        <div class="flip-inner">
+            <div class="flip-front">
+                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+            </div>
+            <div class="flip-back">
+                {% if book.last_page_photo %}
+                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                {% else %}
+                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sub-card 2: Book Details -->
+    <div class="book-detail-info">
+
+        <!-- Hidden cat_ref_num -->
+        <input type="hidden" class="book-cat-ref" value="{{ book.cat_ref_num }}">
+
+        <h2>{{ book.title }}</h2>
+
+        {% if book.author %}
+            <p class="author">by {{ book.author }}</p>
+        {% endif %}
+
+        <!-- ⭐ Average Rating + Review Count -->
+        {% if book.avg_rating %}
+        <div class="avg-rating">
+            <span>⭐ {{ book.avg_rating|floatformat:1 }} / 5</span>
+            <span>({{ book.cat_ref_id_reviews.count }} Reviews)</span>
+        </div>
+        {% else %}
+        <div class="avg-rating">
+            <span>No rating yet</span>
+        </div>
+        {% endif %}
+
+        <!-- 📝 Recent 2 Reviews -->
+        <div class="latest-reviews">
+            {% if book.recent_reviews %}
+                {% for r in book.recent_reviews %}
+                <div class="review" style="margin-bottom: 10px;">
+                    <p class="review-line" style="margin:0; line-height:1.4;">
+                        <i class="fa fa-user" aria-hidden="true"></i>
+                        &nbsp;{{ r.username }}&nbsp;:&nbsp;
+                        {{ r.review|truncatewords:25 }}
+                    </p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-review">No recent reviews</p>
+            {% endif %}
+        </div>
+
+        <!-- Book Features -->
+        <ul class="features">
+            {% if book.pages %}<li>{{ book.pages }} Pages</li>{% endif %}
+            {% if book.publication_year %}<li>Published in {{ book.publication_year }}</li>{% endif %}
+            {% if book.publisher %}<li>Publisher: {{ book.publisher }}</li>{% endif %}
+            {% if book.language %}<li>Language: {{ book.language }}</li>{% endif %}
+        </ul>
+
+    </div>
+
+</div>
+{% endfor %}
+
+
+
+        <!-- ============================= -->
+        <!-- 3️⃣ UPCOMING BOOKS SECTION     -->
+        <!-- ============================= -->
+        <h2 class="catalogue-title">Upcoming Books</h2>
+
+        <div class="book-grid">
+            {% for b in upcoming_books %}
+                {% if b.front_page_photo %}
+                <div class="book-card">
+                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                   
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+     {% for book in upcoming_books %}
+<div class="book-detail-card">
+
+    <!-- Sub-card 1: Book Image with Flip Effect -->
+    <div class="book-detail-image flip-card">
+        <div class="flip-inner">
+            <div class="flip-front">
+                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+            </div>
+            <div class="flip-back">
+                {% if book.last_page_photo %}
+                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                {% else %}
+                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sub-card 2: Book Details -->
+    <div class="book-detail-info">
+
+        <!-- Hidden cat_ref_num -->
+        <input type="hidden" class="book-cat-ref" value="{{ book.cat_ref_num }}">
+
+        <h2>{{ book.title }}</h2>
+
+        {% if book.author %}
+            <p class="author">by {{ book.author }}</p>
+        {% endif %}
+
+        <!-- ⭐ Average Rating + Review Count -->
+        {% if book.avg_rating %}
+        <div class="avg-rating">
+            <span>⭐ {{ book.avg_rating|floatformat:1 }} / 5</span>
+            <span>({{ book.cat_ref_id_reviews.count }} Reviews)</span>
+        </div>
+        {% else %}
+        <div class="avg-rating">
+            <span>No rating yet</span>
+        </div>
+        {% endif %}
+
+        <!-- 📝 Recent 2 Reviews -->
+        <div class="latest-reviews">
+            {% if book.recent_reviews %}
+                {% for r in book.recent_reviews %}
+                <div class="review" style="margin-bottom: 10px;">
+                    <p class="review-line" style="margin:0; line-height:1.4;">
+                        <i class="fa fa-user" aria-hidden="true"></i>
+                        &nbsp;{{ r.username }}&nbsp;:&nbsp;
+                        {{ r.review|truncatewords:25 }}
+                    </p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-review">No recent reviews</p>
+            {% endif %}
+        </div>
+
+        <!-- Book Features -->
+        <ul class="features">
+            {% if book.pages %}<li>{{ book.pages }} Pages</li>{% endif %}
+            {% if book.publication_year %}<li>Published in {{ book.publication_year }}</li>{% endif %}
+            {% if book.publisher %}<li>Publisher: {{ book.publisher }}</li>{% endif %}
+            {% if book.language %}<li>Language: {{ book.language }}</li>{% endif %}
+        </ul>
+
+    </div>
+
+</div>
+{% endfor %}
+
+
+    </div>
+
+    <!-- RIGHT: Ads + Events -->
+    <div class="catalogue-right">
+
+       <!-- Advertisement -->
+<div class="advertisement">
+    <h3>Advertisement</h3>
+    {% for ad in advertisements %}
+        <div class="ad-item">
+            {% if ad.video_path %}
+                <video 
+                    src="{{ ad.video_path }}" 
+                    class="ad-video"
+                    data-ad-id="{{ ad.id }}"
+                    muted
+                    preload="auto">
+                </video>
+            {% endif %}
+            <h4 class="ad-title">{{ ad.adv_title }}</h4>
+            {% if ad.organization_name %}
+                <p class="ad-org">{{ ad.organization_name }}</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No advertisements available.</p>
+    {% endfor %}
+</div>
+
+
+
+       <!-- ============================= -->
+<!-- EVENTS / ANNOUNCEMENTS       -->
+<!-- ============================= -->
+<div class="events">
+    <h3>Events / Announcements</h3>
+
+    {% for e in events %}
+    <div class="event-item">
+        <h4 class="event-title">{{ e.event_title }}</h4>
+
+        <p class="event-date">
+            {% if e.event_from_date %}
+                {{ e.event_from_date|date:"M d, Y" }}
+            {% endif %}
+            {% if e.event_to_date %}
+                - {{ e.event_to_date|date:"M d, Y" }}
+            {% endif %}
+        </p>
+
+        <p class="event-desc">
+            {{ e.description }}
+        </p>
+    </div>
+    {% empty %}
+
+    {% endfor %}
+</div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+<script>
+    $(document).ready(function() {
+        const memberId = $("#memberId").val();
+        const libraryCode = $("#libraryCode").val();
+
+        if (!memberId || !libraryCode) {
+            return;
+        }
+
+        $.ajax({
+            url: "{% url 'L01:view_catalogue_login_page' %}",
+            type: "GET",
+            data: { 
+                member_id: memberId,
+                library_code: libraryCode
+            },
+            success: function(response) {
+                console.log("AJAX RESPONSE:", response);
+                // No HTML updates - just making the AJAX call
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX ERROR:", status, error);
+                // No error messages displayed
+            }
+        });
+    });
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const videos = Array.from(document.querySelectorAll(".ad-video"));
+
+    if (videos.length === 0) return;
+
+    // Sort videos by advertisement ID
+    videos.sort((a, b) => parseInt(a.dataset.adId) - parseInt(b.dataset.adId));
+
+    let current = 0;
+
+    function playNextVideo(index) {
+        videos.forEach(v => {
+            v.pause();
+            v.currentTime = 0;
+            v.onended = null; // Remove previous handler
+        });
+
+        const video = videos[index];
+        video.play();
+
+        video.onended = function () {
+            const nextIndex = (index + 1) % videos.length;  // Loop to first
+            playNextVideo(nextIndex);
+        };
+    }
+
+    // Start autoplay from first video
+    playNextVideo(current);
+});
+</script>
+
+ <script>
+document.addEventListener("DOMContentLoaded", () => {
+    const sections = [
+        { title: "Popular Books", lastIdx: 0, duration: 1 * 60 * 1000 }, // 1 min
+        { title: "New Arrivals", lastIdx: 0, duration: 1 * 60 * 1000 },
+        { title: "Upcoming Books", lastIdx: 0, duration: 1 * 60 * 1000 },
+    ];
+
+    let currentSection = 0;
+    let scrollInterval;
+
+    // Get all scrollable items in a section (grid + detail cards)
+    function getBooksInSection(sectionTitle) {
+        const headers = document.querySelectorAll(".catalogue-title");
+        for (let header of headers) {
+            if (header.textContent.trim() === sectionTitle) {
+                const books = [];
+                let sibling = header.nextElementSibling;
+                while (sibling && !sibling.classList.contains("catalogue-title")) {
+
+                    // Include book-grid cards first
+                    if (sibling.classList.contains("book-grid")) {
+                        const gridCards = sibling.querySelectorAll(".book-card");
+                        gridCards.forEach(card => books.push(card));
+                    }
+
+                    // Include detail cards
+                    if (sibling.classList.contains("book-detail-card")) {
+                        books.push(sibling);
+                    }
+
+                    sibling = sibling.nextElementSibling;
+                }
+                return books;
+            }
+        }
+        return [];
+    }
+
+    // Highlight CSS for active book
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .book-card.highlight, .book-detail-card.highlight {
+            box-shadow: 0 10px 30px rgba(255, 215, 0);
+            transform: scale(1.03);
+            transition: all 0.5s;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function scrollSection() {
+        const section = sections[currentSection];
+        const books = getBooksInSection(section.title);
+        if (!books.length) {
+            currentSection = (currentSection + 1) % sections.length;
+            setTimeout(scrollSection, 500);
+            return;
+        }
+
+        const totalBooks = books.length;
+        let bookIdx = section.lastIdx; // start from last scrolled book
+
+        // Calculate interval per book to complete section duration in 1 min
+        const stepInterval = section.duration / totalBooks;
+
+        function scrollStep() {
+            if (bookIdx >= totalBooks) bookIdx = 0; // loop within section
+
+            const book = books[bookIdx];
+            if (book) {
+                book.scrollIntoView({ behavior: "smooth", block: "start" });
+                // highlight currently visible book
+                books.forEach(b => b.classList.remove("highlight"));
+                book.classList.add("highlight");
+            }
+
+            bookIdx++;
+        }
+
+        // Scroll to section top at start
+        const sectionHeader = Array.from(document.querySelectorAll(".catalogue-title"))
+            .find(h => h.textContent.trim() === section.title);
+        if (sectionHeader) sectionHeader.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        scrollStep(); // initial scroll
+
+        let steps = 0;
+        const maxSteps = totalBooks; // only one pass in 1 minute
+
+        scrollInterval = setInterval(() => {
+            steps++;
+            if (steps >= maxSteps) {
+                clearInterval(scrollInterval);
+                // Save last book for next cycle
+                section.lastIdx = bookIdx % totalBooks;
+                currentSection = (currentSection + 1) % sections.length;
+                setTimeout(scrollSection, 500); // move to next section
+                return;
+            }
+            scrollStep();
+        }, stepInterval);
+    }
+
+    scrollSection();
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const flipCards = document.querySelectorAll(".flip-inner");
+    let flipState = true;
+
+    setInterval(() => {
+        flipState = !flipState;
+
+        flipCards.forEach(card => {
+            if (flipState) {
+                card.classList.add("flipped");
+            } else {
+                card.classList.remove("flipped");
+            }
+        });
+
+    }, 3000); // 3 seconds interval
+});
+</script>
+
+
+
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+{% include "bootstrap/partials/syntax-highlight.html" %}
+
+<!-- Third party js -->
+<script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
+<script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
+<script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
+<!-- Third party js ends -->
+
+<script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
+
+<!-- Init js -->
+<script src="{% static 'js/pages/demo.typehead.js' %}"></script>
+<script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
+<!-- Init js end -->
+
+<!-- Selectize.js JS -->
+<script src="{% static 'js/selectize.min.js' %}"></script>
+<script src="{% static 'js/vendor/select2.min.js' %}"></script>
+
+{% endblock %}

@@ -15,6 +15,7 @@ urlpatterns = [
     path('mpsc_topics_index/<int:section_no>/', mpsc_topics_index, name='mpsc_topics_index'),
     path('mpsc_chapters_index/<int:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
     path("index_book_search", index_book_search, name="index_book_search"),
+    path("led_tv_index/", led_tv_index, name="led_tv_index"),
     path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
     path("libraryebook_search", libraryebook_search, name="libraryebook_search"),
     path("index_ebook_search", index_ebook_search, name="index_ebook_search"),

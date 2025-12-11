@@ -5706,3 +5706,90 @@ class ExportStockReportView(View):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
+    
+@login_required
+def led_tv_index(request):
+
+    # ============================================
+    # 1️⃣ POPULAR BOOKS (with rating and reviews)
+    # ============================================
+    popular_books = (
+        BookCatalog.objects
+        .annotate(
+            avg_rating=Avg('cat_ref_id_reviews__rating'),
+            review_count=Count('cat_ref_id_reviews')
+        )
+        .filter(avg_rating__isnull=False)
+        .order_by('-avg_rating', '-created_at')[:10]
+    )
+
+    # ============================================
+    # 2️⃣ NEW ARRIVALS
+    # ============================================
+    new_arrivals = (
+        BookCatalog.objects
+        .annotate(
+            avg_rating=Avg('cat_ref_id_reviews__rating'),
+            review_count=Count('cat_ref_id_reviews')
+        )
+        .filter(transactions__isnull=False)
+        .order_by('-avg_rating')[:10]
+    )
+
+    # ============================================
+    # 3️⃣ UPCOMING BOOKS
+    # ============================================
+    upcoming_books = (
+        BookCatalog.objects
+        .annotate(
+            avg_rating=Avg('cat_ref_id_reviews__rating'),
+            review_count=Count('cat_ref_id_reviews')
+        )
+        .filter(transactions__isnull=True)
+        .order_by('-avg_rating')[:10]
+    )
+
+    # ============================================
+    # ADS + EVENTS (only status=1)
+    # ============================================
+    advertisements = Advertisement.objects.filter(status=1).order_by('-created_at')[:5]
+
+    # ============================================
+    # FIX video_path → add MEDIA_URL
+    # ============================================
+    for ad in advertisements:
+        if ad.video_path:
+            ad.video_path = settings.MEDIA_URL + ad.video_path.replace("\\", "/")
+
+    events = EventAnnouncement.objects.filter(status=1).order_by('-event_from_date')[:10]
+
+    # ============================================
+    # USER REVIEWS HANDLING
+    # ============================================
+    user_ids = set()
+    for book_list in [popular_books, new_arrivals, upcoming_books]:
+        for book in book_list:
+            reviews_for_book = BookReview.objects.filter(
+                book__cat_ref_num=book.cat_ref_num
+            ).order_by('-created_at')[:2]
+
+            for review in reviews_for_book:
+                user_ids.add(review.user_id)
+
+            book.recent_reviews = list(reviews_for_book)
+
+    users = CustomUser.objects.filter(id__in=user_ids)
+    user_dict = {user.id: user.username for user in users}
+
+    for book_list in [popular_books, new_arrivals, upcoming_books]:
+        for book in book_list:
+            for review in getattr(book, 'recent_reviews', []):
+                review.username = user_dict.get(review.user_id, "Unknown")
+
+    return render(request, "L01/led_tv_index.html", {
+        "popular_books": popular_books,
+        "new_arrivals": new_arrivals,
+        "upcoming_books": upcoming_books,
+        "advertisements": advertisements,
+        "events": events,
+    })
