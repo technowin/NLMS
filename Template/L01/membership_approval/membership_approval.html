@@ -1,6 +1,5 @@
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
-
 {% block title %}सदस्यत्व अर्ज पडताळणी{% endblock title %}
 
 {% block extra_css %}
@@ -30,116 +29,104 @@
             </div>
         </div>
 
-        <!-- membership_approval.html -->
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered" id="membershipTable">
-                <thead>
-                    <tr>
-                        <th>क्रमांक</th>
-                        <th>सदस्य नाव</th>
-                        <th>पूर्ण नाव</th>
-                        <th>मोबाईल क्रमांक</th>
-                        <th>पत्ता</th>
-                        <th>स्थिती</th>
-                        <th>सदस्यत्व कालावधी</th>
-                        <th>पासून - पर्यंत</th>
-                        <th>सदस्यता शुल्क</th>
-                        <th>कृती</th>
-                    </tr>
-                    <tr class="filter-row">
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for m in memberships %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ m.user_id }}</td>
-                            <td>{{ m.first_name }} {{ m.middle_name }} {{ m.last_name }}</td>
-                            <td>{{ m.mobile_no }}</td>
-                            <td>{{ m.local_address }}</td>
-                            <td>
-                                {% if m.status.status_code == "APPROVED" %}
-                                    <span class="badge bg-success px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "REJECT" %}
-                                    <span class="badge bg-danger px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "APP_SUB" %}
-                                    <span class="badge bg-secondary px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "PAY_PENDING" %}
-                                    <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "PAY_SUCCESS" %}
-                                    <span class="badge bg-primary px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "PAY_FAIL" %}
-                                    <span class="badge bg-danger px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "PAY_PROGRESS" %}
-                                    <span class="badge bg-info text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "PAY_OFFLINE" %}
-                                    <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "APP_RENEW" %}
-                                    <span class="badge bg-success text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "APP_CANCEL" %}
-                                    <span class="badge bg-dark text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
+        <!-- Tabs navigation -->
+        <ul class="nav nav-tabs" id="statusTabs" role="tablist">
+            {% for tab in tabs %}
+                <!-- Create a unique ID for each tab based on its index or title -->
+                {% with tab_id=forloop.counter0|stringformat:"s" %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                            id="tab-{{ tab_id }}" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#content-{{ tab_id }}" 
+                            type="button" role="tab">
+                        {{ tab.tab_title }} ({{ tab.memberships|length }})
+                    </button>
+                </li>
+                {% endwith %}
+            {% endfor %}
+        </ul>
+
+        <!-- Tabs content -->
+        <div class="tab-content mt-3" id="membershipTable">
+            {% for tab in tabs %}
+                {% with tab_id=forloop.counter0|stringformat:"s" %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                    id="content-{{ tab_id }}" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered status-table" id="table-{{ tab_id }}">
+                            <thead>
+                                <tr>
+                                    <th>क्रमांक</th>
+                                    <th>सदस्य नाव</th>
+                                    <th>पूर्ण नाव</th>
+                                    <th>स्थिती</th>
+                                    <th>सदस्यत्व कालावधी</th>
+                                    <th>पासून - पर्यंत</th>
+                                    <th>सदस्यता शुल्क</th>
+                                    <th>कृती</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if tab.memberships %}
+                                    {% for m in tab.memberships %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ m.user_id }}</td>
+                                            <td>{{ m.first_name }} {{ m.middle_name }} {{ m.last_name }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if m.status.status_code == 'APPROVED' %}bg-success
+                                                    {% elif m.status.status_code == 'REJECT' %}bg-danger
+                                                    {% elif m.status.status_code == 'APP_SUB' %}bg-secondary
+                                                    {% elif m.status.status_code == 'PAY_PENDING' %}bg-warning text-dark
+                                                    {% elif m.status.status_code == 'PAY_SUCCESS' %}bg-primary
+                                                    {% elif m.status.status_code == 'PAY_FAIL' %}bg-danger
+                                                    {% elif m.status.status_code == 'PAY_PROGRESS' %}bg-info text-dark
+                                                    {% elif m.status.status_code == 'PAY_OFFLINE' %}bg-warning text-dark
+                                                    {% elif m.status.status_code == 'APP_RENEW' %}bg-success text-white
+                                                    {% elif m.status.status_code == 'APP_CANCEL' %}bg-dark text-white
+                                                    {% else %}bg-light text-dark{% endif %} 
+                                                    px-3 py-2">
+                                                    {{ m.status.status_name }}
+                                                </span>
+                                            </td>
+                                            <td>{% if m.membership_duration %}{{ m.membership_duration }} महिने{% else %}-{% endif %}</td>
+                                            <td>{% if m.from_date and m.to_date %}{{ m.from_date|date:"d-m-Y" }} ते {{ m.to_date|date:"d-m-Y" }}{% else %}-{% endif %}</td>
+                                            <td>{{ m.subscription }}</td>
+                                            <td>
+                                                {% if m.status.status_code == "APP_SUB" or m.status.status_code == "REJECT" %}
+                                                    <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
+                                                    class="btn btn-success btn-sm">संपादित करा</a>
+                                                {% endif %}
+
+                                                <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
+                                                class="btn btn-primary btn-sm ms-2">फॉर्म तपासा</a>
+
+                                                {% if m.status.status_code == "APP_CANCEL" %}
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="openCancelModal('{{ m.membership_id_enc }}')">
+                                                        सभासदत्व रद्द करणे स्वीकारा
+                                                    </button>
+                                                {% endif %}
+
+                                                {% if m.status.status_code == "PAY_SUCCESS" %}
+                                                    <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
+                                                    class="btn btn-success btn-sm">देयक पावती डाउनलोड करा</a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
                                 {% else %}
-                                    <span class="badge bg-light text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
+                                    <tr>
+                                        <td colspan="8" class="text-center">कोणताही सदस्यत्व अर्ज उपलब्ध नाही</td>
+                                    </tr>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {% if m.membership_duration == none %} 
-                                    -
-                                {% else %}
-                                    {{ m.membership_duration }} महिने
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if m.from_date and m.to_date %}
-                                    {{ m.from_date|date:"d-m-Y" }} ते {{ m.to_date|date:"d-m-Y" }}
-                                {% else %}-{% endif %}
-                            </td>
-                            <td>{{ m.subscription }}</td>
-                            <td>
-                                {% if m.status.status_code in "APP_SUB,REJECT" %} 
-                                    <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
-                                        class="btn btn-success btn-sm">
-                                            संपादित करा
-                                    </a>
-                                {% endif %}
-
-                                <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
-                                    class="btn btn-primary btn-sm ms-2">
-                                        फॉर्म तपासा
-                                </a>
-
-                                {% if m.status.status_code == "APP_CANCEL" %}
-                                    <!-- Librarian Accept Cancellation -->
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="openCancelModal('{{ m.membership_id_enc }}')">
-                                        सभासदत्व रद्द करणे स्वीकारा
-                                    </button>
-                                {% endif %}
-
-                                {% if m.status.status_code == "PAY_SUCCESS" %}
-                                    <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
-                                        class="btn btn-success btn-sm" >
-                                        देयक पावती डाउनलोड करा
-                                    </a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="16" class="text-center">कोणताही सदस्यत्व अर्ज उपलब्ध नाही</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
         </div>
 
         <div class="modal fade" id="cancelMembershipModal" tabindex="-1" aria-labelledby="cancelMembershipLabel" aria-hidden="true">
@@ -223,18 +210,6 @@
             });
         </script>
     {% endif %}
-
-    <script>
-        {% comment %} $(document).ready(function () {
-            $('#membershipTable').DataTable({
-                "pageLength": 10,
-                "lengthChange": false,
-                "searching": true, 
-                "ordering": true,    
-                "info": true,       
-            });
-        }); {% endcomment %}
-    </script>
 
     {% comment %} function for cancel modal {% endcomment %}
     <script>
@@ -328,57 +303,43 @@
             });
         }
 
-
     </script>
-
+    
     <script>
         $(document).ready(function () {
-
-            var table = $('#membershipTable').DataTable({
-                pageLength: 10,
-                lengthChange: false,
-                search: true,
-                ordering: true,
-                info: true,
-                orderCellsTop: true,   // very important when extra header row exists
-
-                initComplete: function () {
-                    let api = this.api();
-
-                    api.columns().every(function (colIdx) {
-
-                        let column = this;
-                        let th = $('.filter-row th').eq(colIdx);
-
-                        // Skip "कृती" column (last index)
-                        if (colIdx === api.columns().nodes().length - 1) {
-                            th.html(""); // keep empty
-                            return;
-                        }
-
-                        // Create dropdown
-                        let select = $('<select class="form-select form-select-sm"><option value="">सर्व</option></select>')
-                            .appendTo(th)
-                            .on('change', function () {
-                                let val = $.fn.dataTable.util.escapeRegex($(this).val());
-                                column.search(val ? '^' + val + '$' : '', true, false).draw();
-                            });
-
-                        // Read unique values from the column
-                        column.data().unique().sort().each(function (d) {
-                            // Strip HTML badges (like <span>)
-                            let clean = $("<div>").html(d).text().trim();
-
-                            if (clean !== "") {
-                                select.append(`<option value="${clean}">${clean}</option>`);
+            // Initialize all tables at once
+            $('table.status-table').each(function() {
+                var $table = $(this);
+                var rowCount = $table.find('tbody tr').not(':has(td[colspan])').length;
+                
+                if (rowCount > 0) {
+                    $table.DataTable({
+                        pageLength: 10,
+                        lengthChange: true,  // Changed from false to true to show page length options
+                        searching: true,     // Changed from false to true to enable search
+                        ordering: true,
+                        info: true,
+                        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                        language: {
+                            emptyTable: "कोणताही डेटा उपलब्ध नाही",
+                            info: "एकूण _TOTAL_ पैकी _START_ ते _END_ दाखवत आहे",
+                            infoEmpty: "0 पैकी 0 ते 0 दाखवत आहे",
+                            infoFiltered: "(_MAX_ एकूण रेकॉर्डपैकी शोधले)",
+                            search: "शोधा:",  // Marathi label for search
+                            lengthMenu: "प्रति पृष्ठ _MENU_ रेकॉर्ड दाखवा",  // Marathi for "Show _MENU_ entries per page"
+                            zeroRecords: "जुळणारे रेकॉर्ड सापडले नाहीत",
+                            paginate: {
+                                first: "पहिले",
+                                last: "शेवटचे",
+                                next: "पुढे",
+                                previous: "मागे"
                             }
-                        });
-
+                        }
                     });
                 }
             });
-
         });
     </script>
 
 {% endblock %}
+

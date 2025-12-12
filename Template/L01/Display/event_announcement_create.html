@@ -1,0 +1,390 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Create Event Announcement{% endblock title %}
+
+{% block extra_css %}
+    <!-- SweetAlert CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Flatpickr for datepicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+
+        /* Character counter */
+        .char-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .char-counter.warning {
+            color: #ffc107;
+        }
+        
+        .char-counter.danger {
+            color: #dc3545;
+        }
+        
+        /* Date input styling */
+        .date-input-group {
+            position: relative;
+        }
+        
+        .date-input-group .form-control {
+            padding-right: 40px;
+        }
+        
+        .date-input-group i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            pointer-events: none;
+        }
+        
+        /* Form switch styling */
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+        }
+        
+        .form-switch .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+    </style>
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='Event Announcement' sub_title='Create New Event Announcement' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        <form method="post" id="eventAnnouncementForm">
+            {% csrf_token %}
+
+            <!-- Event Title -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-heading me-2"></i>Event Title <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" 
+                           name="event_title" 
+                           id="id_event_title" 
+                           class="form-control" 
+                           placeholder="Enter event title"
+                           maxlength="255"
+                           required
+                           value="{{ request.POST.event_title|default:'' }}">
+                    <div class="char-counter">
+                        <span id="titleCharCount">0</span>/255 characters
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-align-left me-2"></i>Description
+                    </label>
+                    <textarea name="description" 
+                              id="id_description" 
+                              class="form-control" 
+                              rows="4" 
+                              placeholder="Enter event description (optional)"
+                              maxlength="2000">{{ request.POST.description|default:'' }}</textarea>
+                    <div class="char-counter">
+                        <span id="descCharCount">0</span>/2000 characters
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Dates -->
+            <div class="mb-3 row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-day me-2"></i>Event Start Date
+                    </label>
+                    <div class="date-input-group">
+                        <input type="text" 
+                               name="event_from_date" 
+                               id="id_event_from_date" 
+                               class="form-control datepicker" 
+                               placeholder="Select start date"
+                               value="{{ request.POST.event_from_date|default:'' }}">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-day me-2"></i>Event End Date (Optional)
+                    </label>
+                    <div class="date-input-group">
+                        <input type="text" 
+                               name="event_to_date" 
+                               id="id_event_to_date" 
+                               class="form-control datepicker" 
+                               placeholder="Select end date (optional)"
+                               value="{{ request.POST.event_to_date|default:'' }}">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-toggle-on me-2"></i>Status
+                    </label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               name="status" 
+                               id="id_status" 
+                               role="switch" 
+                               {% if request.POST.status == 'on' or not request.POST %}checked{% endif %}>
+                        <label class="form-check-label" for="id_status">
+                            <span id="statusText">Active</span> - Event announcement will be visible to users
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reported Information -->
+            <div class="mb-3 row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-user me-2"></i>Reported By
+                    </label>
+                    <input type="text" 
+                           name="reported_by" 
+                           id="id_reported_by" 
+                           class="form-control" 
+                           placeholder="Enter reporter name"
+                           value="{% if request.POST.reported_by %}{{ request.POST.reported_by }}{% elif user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-clock me-2"></i>Reported At
+                    </label>
+                    <input type="datetime-local" 
+                           name="reported_at" 
+                           id="id_reported_at" 
+                           class="form-control"
+                           value="{{ request.POST.reported_at|default:'' }}">
+                </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Create Event Announcement
+                </button>
+                <a href="{% url 'L01:event_announcement_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Back to List
+                </a>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- jQuery -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Flatpickr for datepicker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{{ message.tags|title }}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{{ message.tags }}",
+                        confirmButtonText: "OK",
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize date pickers
+            flatpickr('.datepicker', {
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                minDate: 'today',
+                onChange: function(selectedDates, dateStr, instance) {
+                    // If from date is selected, set min date for to date
+                    if (instance.input.id === 'id_event_from_date' && dateStr) {
+                        flatpickr('#id_event_to_date', {
+                            minDate: dateStr
+                        });
+                    }
+                }
+            });
+            
+            // Character counters
+            function updateCharCounters() {
+                const titleLength = $('#id_event_title').val().length;
+                const descLength = $('#id_description').val().length;
+                
+                $('#titleCharCount').text(titleLength);
+                $('#descCharCount').text(descLength);
+                
+                // Add warning classes
+                if (titleLength > 200) {
+                    $('#titleCharCount').addClass('warning');
+                } else {
+                    $('#titleCharCount').removeClass('warning');
+                }
+                
+                if (descLength > 1800) {
+                    $('#descCharCount').addClass('warning');
+                } else {
+                    $('#descCharCount').removeClass('warning');
+                }
+            }
+            
+            // Update counters on input
+            $('#id_event_title, #id_description').on('input', updateCharCounters);
+            updateCharCounters(); // Initial update
+            
+            // Status toggle text
+            $('#id_status').on('change', function() {
+                $('#statusText').text(this.checked ? 'Active' : 'Inactive');
+            });
+            
+            // Set current date/time for reported_at if empty
+            if (!$('#id_reported_at').val()) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                $('#id_reported_at').val(formattedDateTime);
+            }
+        });
+    </script>
+
+{% endblock %}

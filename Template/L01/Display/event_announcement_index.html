@@ -1,0 +1,559 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Event Announcements{% endblock title %}
+
+{% block extra_css %}
+  <!-- SweetAlert CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+  <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+
+  <style>
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        min-width: 80px;
+        text-align: center;
+    }
+    
+    .status-active {
+        background-color: #d1f7c4;
+        color: #0d6b0d;
+        border: 1px solid #a3e89b;
+    }
+    
+    .status-inactive {
+        background-color: #ffeaea;
+        color: #c00;
+        border: 1px solid #ffb3b3;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        min-width: 150px;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+    
+    /* Toggle button colors */
+    .btn-toggle-active {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+    
+    .btn-toggle-active:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+        color: #000;
+    }
+    
+    .btn-toggle-inactive {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+    
+    .btn-toggle-inactive:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        color: white;
+    }
+    
+    /* Event date badges */
+    .date-badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        margin: 1px;
+    }
+    
+    /* Dark mode adjustments */
+    body.dark-mode .status-active {
+        background-color: #155724;
+        color: #d4edda;
+        border-color: #28a745;
+    }
+    
+    body.dark-mode .status-inactive {
+        background-color: #721c24;
+        color: #f8d7da;
+        border-color: #dc3545;
+    }
+    
+    /* Compact table styling */
+    #announcementTable th, 
+    #announcementTable td {
+        padding: 0.75rem 0.5rem;
+        vertical-align: middle;
+    }
+    
+    /* Search box styling */
+    .dataTables_filter input {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px 12px;
+        width: 250px !important;
+    }
+    
+    body.dark-mode .dataTables_filter input {
+        background-color: #495057;
+        border-color: #6c757d;
+        color: #f8f9fa;
+    }
+    
+    /* Title truncation */
+    .title-cell {
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Description truncation */
+    .description-cell {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Created at date styling */
+    .date-cell {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    body.dark-mode .date-cell {
+        color: #adb5bd;
+    }
+    
+    /* Quick stats styling */
+    .quick-stats .stat-item {
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .quick-stats .stat-item:last-child {
+        border-right: none;
+    }
+    
+    body.dark-mode .quick-stats .stat-item {
+        border-right-color: #495057;
+    }
+    
+    /* Status colors for event dates */
+    .status-upcoming {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .status-ongoing {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-past {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    body.dark-mode .status-upcoming {
+        background-color: #0c5460;
+        color: #d1ecf1;
+        border-color: #17a2b8;
+    }
+    
+    body.dark-mode .status-ongoing {
+        background-color: #155724;
+        color: #d4edda;
+        border-color: #28a745;
+    }
+    
+    body.dark-mode .status-past {
+        background-color: #721c24;
+        color: #f8d7da;
+        border-color: #dc3545;
+    }
+    
+    /* Hidden status column */
+    .status-column {
+        display: none;
+    }
+  </style>
+{% endblock %}
+
+{% block page_title %}
+    {% include "bootstrap/partials/page-title.html" with page_title='Event Announcements' sub_title='Event Announcement Management' %}
+{% endblock %}
+
+{% block content %}
+   <div class="mt-2"> 
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-1">Event Announcement List</h2> 
+            <p class="text-muted mb-2">Manage event announcements and schedules</p>
+        </div>
+        <div class="col-md-6 text-end">
+             <a href="{% url 'L01:event_announcement_create' %}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-2"></i> Create New Announcement
+            </a> 
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body py-1">
+                    <div class="row quick-stats">
+                        <div class="col-md-4 text-center stat-item">
+                            <small class="text-muted d-block">Total Events</small>
+                            <h5 class="mb-0">{{ total_count }}</h5>
+                        </div>
+                        <div class="col-md-4 text-center stat-item">
+                            <small class="text-muted d-block">Active</small>
+                            <h5 class="mb-0 text-success">{{ active_count }}</h5>
+                        </div>
+                        <div class="col-md-4 text-center stat-item">
+                            <small class="text-muted d-block">Upcoming</small>
+                            <h5 class="mb-0 text-info">{{ upcoming_count }}</h5>
+                        </div>
+                        {% comment %} <div class="col-md-3 text-center">
+                            <small class="text-muted d-block">Today</small>
+                            <h5 class="mb-0 text-warning">{{ today_count }}</h5>
+                        </div> {% endcomment %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Filter Buttons -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary" id="filter-all">
+                    <i class="fas fa-list me-1"></i> All
+                </button>
+                <button type="button" class="btn btn-outline-success" id="filter-active">
+                    <i class="fas fa-toggle-on me-1"></i> Active
+                </button>
+                <button type="button" class="btn btn-outline-danger" id="filter-inactive">
+                    <i class="fas fa-toggle-off me-1"></i> Inactive
+                </button>
+                <button type="button" class="btn btn-outline-info" id="filter-upcoming">
+                    <i class="fas fa-clock me-1"></i> Upcoming
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered" id="announcementTable">
+            <thead>
+                <tr>
+                    <th width="5%">Sr. No</th>
+                    <th width="25%">Event Title</th>
+                    <th width="20%">Description</th>
+                    <th width="15%">Event Dates</th>
+                    <th width="15%">Created At</th>
+                    <th class="status-column">Status</th> <!-- Hidden status column -->
+                    <th width="20%">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for announcement in announcements %}
+                {% now "Y-m-d" as today %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="title-cell" title="{{ announcement.event_title }}">
+                        <strong>{{ announcement.event_title|truncatechars:50 }}</strong>
+                    </td>
+                    <td class="description-cell" title="{{ announcement.description|default:'No description' }}">
+                        {{ announcement.description|default:"-"|truncatechars:60 }}
+                    </td>
+                    <td>
+                        {% if announcement.event_from_date %}
+                            <div class="d-flex flex-column gap-1">
+                                <span class="badge 
+                                    {% if announcement.event_from_date|date:'Y-m-d' > today %}status-upcoming
+                                    {% elif announcement.event_to_date and today < announcement.event_to_date|date:'Y-m-d' %}status-ongoing
+                                    {% else %}status-past{% endif %} date-badge">
+                                    {{ announcement.event_from_date|date:"Y-m-d" }}
+                                </span>
+                                {% if announcement.event_to_date %}
+                                    <span class="badge bg-secondary date-badge">
+                                        to {{ announcement.event_to_date|date:"Y-m-d" }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">Not set</span>
+                        {% endif %}
+                    </td>
+                    <td class="date-cell">
+                        {{ announcement.created_at|date:"Y-m-d" }}
+                        <br>
+                        <small class="text-muted">{{ announcement.created_at|date:"H:i" }}</small>
+                    </td>
+                    <td class="status-column">
+                        {% if announcement.status %}Active{% else %}Inactive{% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <!-- Edit Button -->
+                             <a href="{% url 'L01:event_announcement_edit' announcement.encrypted_id %}" 
+                               class="btn btn-sm btn-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a> 
+                            
+                            <!-- Toggle Status Button -->
+                            <form method="post" action="{% url 'L01:event_announcement_toggle_status' announcement.encrypted_id %}" 
+                                  style="display: inline;" class="toggle-form">
+                                {% csrf_token %}
+                                {% if announcement.status %}
+                                    <button type="submit" class="btn btn-sm btn-toggle-active" 
+                                            title="Deactivate">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-toggle-inactive" 
+                                            title="Activate">
+                                        <i class="fas fa-toggle-off"></i>
+                                    </button>
+                                {% endif %}
+                            </form>
+                            
+                            <!-- Delete Button -->
+                            {% comment %} <form method="post" action="{% url 'L01:event_announcement_delete' announcement.encrypted_id %}" 
+                                  style="display: inline;" class="delete-form">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-sm btn-danger delete-btn" 
+                                        data-title="{{ announcement.event_title }}" 
+                                        data-id="{{ announcement.encrypted_id }}" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form> {% endcomment %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                            <h5>No event announcements found</h5>
+                            <p>Click the "Create New Announcement" button to add your first event announcement.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block extra_javascript %}
+    <!-- jQuery -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Bootstrap Tooltips -->
+    <script>
+        // Initialize tooltips
+        $(document).ready(function() {
+            $('[title]').tooltip();
+        });
+    </script>
+
+    {% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message.tags|title }}",
+                    text: "{{ message|escapejs }}",
+                    icon: "{{ message.tags }}",
+                    confirmButtonText: "OK",
+                    background: theme === 'dark' ? '#343a40' : '#ffffff',
+                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                    confirmButtonColor: '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+
+    <script>
+    $(document).ready(function () {
+        // Initialize DataTable
+        var table = $('#announcementTable').DataTable({
+            "pageLength": 10,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "order": [[4, 'desc']], // Sort by Created At descending (column index 4)
+            "language": {
+                "search": "Search announcements:",
+                "zeroRecords": "No matching announcements found",
+                "info": "Showing _START_ to _END_ of _TOTAL_ announcements",
+                "infoEmpty": "Showing 0 to 0 of 0 announcements",
+                "infoFiltered": "(filtered from _MAX_ total announcements)",
+                "paginate": {
+                    "first": "First",
+                    "last": "Last",
+                    "next": "Next",
+                    "previous": "Previous"
+                }
+            },
+            "columnDefs": [
+                {
+                    "targets": [0, 6], // Sr.No (0) and Actions (6) columns
+                    "orderable": false
+                },
+                {
+                    "targets": 4, // Created At column (index 4)
+                    "type": "date"  // Tell DataTables this is a date column for proper sorting
+                },
+                {
+                    "targets": 5, // Hidden Status column (index 5)
+                    "visible": false, // Hide from view
+                    "searchable": true // But keep it searchable
+                }
+            ]
+        });
+        
+        // Quick filter buttons
+        $('#filter-all').on('click', function() {
+            table.search('').columns().search('').draw();
+            resetFilterButtons();
+            $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+        });
+        
+        // Filter by active status - FIXED
+        $('#filter-active').on('click', function() {
+            // Clear any existing search first
+            table.search('');
+            // Search in column index 5 (status column) for "Active"
+            table.column(5).search('^Active$', true, false).draw(); // Exact match
+            resetFilterButtons();
+            $(this).removeClass('btn-outline-success').addClass('btn-success');
+        });
+        
+        // Filter by inactive status - FIXED
+        $('#filter-inactive').on('click', function() {
+            // Clear any existing search first
+            table.search('');
+            // Search in column index 5 (status column) for "Inactive"
+            table.column(5).search('^Inactive$', true, false).draw(); // Exact match
+            resetFilterButtons();
+            $(this).removeClass('btn-outline-danger').addClass('btn-danger');
+        });
+        
+        // Helper function to reset all filter buttons
+        function resetFilterButtons() {
+            $('#filter-all').removeClass('btn-primary').addClass('btn-outline-primary');
+            $('#filter-active').removeClass('btn-success').addClass('btn-outline-success');
+            $('#filter-inactive').removeClass('btn-danger').addClass('btn-outline-danger');
+            $('#filter-upcoming').removeClass('btn-info').addClass('btn-outline-info');
+        }
+        
+        // Upcoming filter button functionality
+        $('#filter-upcoming').on('click', function() {
+            // Clear all filters first
+            table.search('').columns().search('').draw();
+            
+            // Add custom filter for upcoming events
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                // Check if the status-upcoming class exists in the event dates column
+                var row = table.row(dataIndex).node();
+                var hasUpcoming = $(row).find('.status-upcoming').length > 0;
+                return hasUpcoming;
+            });
+            
+            table.draw();
+            $.fn.dataTable.ext.search.pop(); // Remove the custom filter
+            
+            resetFilterButtons();
+            $(this).removeClass('btn-outline-info').addClass('btn-info');
+        });
+        
+        // Toggle status confirmation
+        $('.toggle-form').on('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const isActive = $(this).find('button').hasClass('btn-toggle-active');
+            const action = isActive ? 'deactivate' : 'activate';
+            const actionText = isActive ? 'Deactivate' : 'Activate';
+            
+            Swal.fire({
+                title: `${actionText} Announcement?`,
+                html: `Are you sure you want to <strong>${action}</strong> this event announcement?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: isActive ? '#ffc107' : '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: `Yes, ${action} it!`,
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+        
+        // Delete confirmation
+        $('.delete-btn').on('click', function() {
+            const title = $(this).data('title');
+            const form = $(this).closest('form');
+            
+            Swal.fire({
+                title: 'Delete Event Announcement?',
+                html: `Are you sure you want to delete <strong>"${title}"</strong>?<br><small class="text-danger">This action cannot be undone.</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

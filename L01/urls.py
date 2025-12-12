@@ -89,10 +89,22 @@ urlpatterns = [
     path("tv/api/all-books/", tv_all_books_api, name="tv_all_books_api"),
     path("insert-book/<str:isbn>/", insert_book_by_isbn,name="insert_book_by_isbn"),
     
+    path("advertisement_index/", advertisement_index, name="advertisement_index"),
+    path('advertisement_toggle_status/<str:encrypted_id>/',advertisement_toggle_status,name='advertisement_toggle_status'),
+    path("advertisement_create/", advertisement_create, name="advertisement_create"),
+    path('advertisement_edit/<str:encrypted_id>/', advertisement_edit, name='advertisement_edit'),
+    path("event_announcement_index/", event_announcement_index, name="event_announcement_index"),
+    path('event_announcement_toggle_status/<str:encrypted_id>/',event_announcement_toggle_status,name='event_announcement_toggle_status'),
+    path("event_announcement_create/", event_announcement_create, name="event_announcement_create"),
+    path('event_announcement_edit/<str:encrypted_id>/', event_announcement_edit, name='event_announcement_edit'),
+    
     # stock Checking By Imran
     path("scan-barcode/",scan_barcode, name="scan_barcode"),
     path("get_recent_scans/",get_recent_scans, name="get_recent_scans"),
     path('stock-report/', StockReportView.as_view(), name='stock_report'),
     path('export-stock-report/', ExportStockReportView.as_view(), name='export_stock_report'),
+    path('complete-stock-batch/', complete_stock_batch, name='complete_stock_batch'),
+    path('generate-final-report/', generate_final_report, name='generate_final_report'),
+    path('generate-stock-report-api/', GenerateStockReportAPI.as_view(), name='generate_stock_report_api'),
 
 ]

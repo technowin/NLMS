@@ -1,0 +1,625 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Create Advertisement{% endblock title %}
+
+{% block extra_css %}
+    <!-- SweetAlert CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+
+        /* Character counter */
+        .char-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .char-counter.warning {
+            color: #ffc107;
+        }
+        
+        .char-counter.danger {
+            color: #dc3545;
+        }
+        
+        /* File upload styling */
+        .file-upload-wrapper {
+            margin-bottom: 15px;
+        }
+        
+        .file-upload-input {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-input:hover {
+            border-color: #4e73df;
+            background-color: #f8f9fa;
+        }
+        
+        .file-upload-label {
+            display: block;
+            cursor: pointer;
+        }
+        
+        .file-upload-label i {
+            font-size: 48px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .selected-file-info {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+        
+        .selected-file-info.active {
+            display: block;
+        }
+        
+        /* Video preview */
+        .video-preview-container {
+            max-height: 300px;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .video-preview-container video {
+            width: 100%;
+            max-height: 280px;
+            object-fit: contain;
+        }
+    </style>
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='Advertisements' sub_title='Create New Advertisement' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        <form method="post" enctype="multipart/form-data" id="advertisementForm">
+            {% csrf_token %}
+
+            <!-- Advertisement Title -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-heading me-2"></i>Advertisement Title <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" 
+                           name="adv_title" 
+                           id="adv_title" 
+                           class="form-control" 
+                           placeholder="Enter advertisement title"
+                           maxlength="255"
+                           required
+                           value="{{ request.POST.adv_title|default:'' }}">
+                    <div class="char-counter">
+                        <span id="titleCharCount">0</span>/255 characters
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Upload -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-video me-2"></i>Video File <span class="text-danger">*</span>
+                    </label>
+                    
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-input" id="fileUploadArea">
+                            <label class="file-upload-label" for="video_file">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <h5>Click to upload or drag and drop</h5>
+                                <p>MP4, WebM, OGG, MOV, AVI, WMV, FLV, MKV (Max: 200MB)</p>
+                            </label>
+                            <input type="file" 
+                                   name="video_file" 
+                                   id="video_file" 
+                                   accept="video/*,.mp4,.webm,.ogg,.mov,.avi,.wmv,.flv,.mkv"
+                                   required>
+                        </div>
+                        
+                        <div class="selected-file-info" id="selectedFileInfo">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file-video me-2"></i>
+                                    <span class="file-name" id="fileName"></span>
+                                    <span class="file-size ms-2" id="fileSize"></span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Video Preview -->
+                        <div id="videoPreview" class="video-preview-container">
+                            <video id="previewVideo" controls>
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organization Name -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-building me-2"></i>Organization Name
+                    </label>
+                    <input type="text" 
+                           name="organization_name" 
+                           id="organization_name" 
+                           class="form-control" 
+                           placeholder="Enter organization name"
+                           maxlength="255"
+                           value="{{ request.POST.organization_name|default:'' }}">
+                    <div class="char-counter">
+                        <span id="orgCharCount">0</span>/255 characters
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-toggle-on me-2"></i>Status
+                    </label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               name="status" 
+                               id="status" 
+                               role="switch" 
+                               {% if request.POST.status == 'on' or not request.POST %}checked{% endif %}>
+                        <label class="form-check-label" for="status">
+                            <span id="statusText">Active</span> - Advertisement will be visible on homepage
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campaign Dates -->
+            <div class="mb-3 row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-day me-2"></i>Campaign Start Date
+                    </label>
+                    <input type="date" 
+                           name="campaign_date_from" 
+                           id="campaign_date_from" 
+                           class="form-control" 
+                           value="{{ request.POST.campaign_date_from|default:'' }}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-day me-2"></i>Campaign End Date
+                    </label>
+                    <input type="date" 
+                           name="campaign_date_to" 
+                           id="campaign_date_to" 
+                           class="form-control" 
+                           value="{{ request.POST.campaign_date_to|default:'' }}">
+                </div>
+            </div>
+
+            <!-- Reported Information -->
+            <div class="mb-3 row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-user me-2"></i>Reported By
+                    </label>
+                    <input type="text" 
+                           name="reported_by" 
+                           id="reported_by" 
+                           class="form-control" 
+                           placeholder="Enter reporter name"
+                           value="{% if request.POST.reported_by %}{{ request.POST.reported_by }}{% elif user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-clock me-2"></i>Reported At
+                    </label>
+                    <input type="datetime-local" 
+                           name="reported_at" 
+                           id="reported_at" 
+                           class="form-control"
+                           value="{{ request.POST.reported_at|default:'' }}">
+                </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-paper-plane"></i> Create Advertisement
+                </button>
+                <a href="{% url 'L01:advertisement_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Back to List
+                </a>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- jQuery -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{{ message.tags|title }}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{{ message.tags }}",
+                        confirmButtonText: "OK",
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Character counters
+            function updateCharCounters() {
+                const titleLength = $('#adv_title').val().length;
+                const orgLength = $('#organization_name').val().length;
+                
+                $('#titleCharCount').text(titleLength);
+                $('#orgCharCount').text(orgLength);
+                
+                // Add warning classes
+                if (titleLength > 200) {
+                    $('#titleCharCount').addClass('warning');
+                } else {
+                    $('#titleCharCount').removeClass('warning');
+                }
+                
+                if (orgLength > 200) {
+                    $('#orgCharCount').addClass('warning');
+                } else {
+                    $('#orgCharCount').removeClass('warning');
+                }
+            }
+            
+            // Update counters on input
+            $('#adv_title, #organization_name').on('input', updateCharCounters);
+            updateCharCounters(); // Initial update
+            
+            {% comment %} // Status toggle text
+            $('#status').on('change', function() {
+                $('#statusText').text(this.checked ? 'Active' : 'Inactive');
+            }); {% endcomment %}
+            
+            // Set current date/time for reported_at if empty
+            if (!$('#reported_at').val()) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                $('#reported_at').val(formattedDateTime);
+            }
+            
+            // Set default campaign dates if empty
+            if (!$('#campaign_date_from').val()) {
+                const today = new Date().toISOString().split('T')[0];
+                $('#campaign_date_from').val(today);
+            }
+            
+            if (!$('#campaign_date_to').val()) {
+                const nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                $('#campaign_date_to').val(nextMonth.toISOString().split('T')[0]);
+            }
+            
+            // File upload functionality
+            let selectedFile = null;
+            const maxFileSize = 200 * 1024 * 1024; // 100MB in bytes
+            const previewVideo = $('#previewVideo')[0];
+            
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // File selection handler
+            $('#video_file').on('change', function(e) {
+                const file = e.target.files[0];
+                handleFileSelection(file);
+            });
+            
+            // Drag and drop functionality
+            const fileUploadArea = $('#fileUploadArea');
+            
+            fileUploadArea.on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).css('border-color', '#4e73df');
+                $(this).css('background-color', '#f8f9fa');
+            });
+            
+            fileUploadArea.on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).css('border-color', '#dee2e6');
+                $(this).css('background-color', 'transparent');
+            });
+            
+            fileUploadArea.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).css('border-color', '#dee2e6');
+                $(this).css('background-color', 'transparent');
+                
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelection(files[0]);
+                    // Set the file input value
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(files[0]);
+                    $('#video_file')[0].files = dataTransfer.files;
+                }
+            });
+            
+            // Handle file selection
+            function handleFileSelection(file) {
+                if (!file) {
+                    hidePreview();
+                    return;
+                }
+                
+                // Validate file type
+                const validTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv', 'video/x-flv', 'video/x-matroska'];
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                const validExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'wmv', 'flv', 'mkv'];
+                
+                if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid File Type',
+                        text: 'Please select a valid video file (MP4, WebM, OGG, MOV, AVI, WMV, FLV, MKV)',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                // Validate file size
+                if (file.size > maxFileSize) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'File Too Large',
+                        text: `File size exceeds 100MB limit. Selected file: ${formatFileSize(file.size)}`,
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                // Store the file
+                selectedFile = file;
+                
+                // Update UI
+                $('#fileName').text(file.name);
+                $('#fileSize').text(`(${formatFileSize(file.size)})`);
+                $('#selectedFileInfo').addClass('active');
+                
+                // Create object URL for preview
+                const objectURL = URL.createObjectURL(file);
+                
+                // Load video for preview
+                previewVideo.src = objectURL;
+                previewVideo.load();
+                
+                // Show preview
+                $('#videoPreview').show();
+            }
+            
+            // Remove file
+            $('#removeFile').on('click', function() {
+                selectedFile = null;
+                $('#video_file').val('');
+                $('#selectedFileInfo').removeClass('active');
+                hidePreview();
+            });
+            
+            // Hide preview
+            function hidePreview() {
+                $('#videoPreview').hide();
+                if (previewVideo.src) {
+                    URL.revokeObjectURL(previewVideo.src);
+                    previewVideo.src = '';
+                }
+            }
+            
+            // Form validation
+            $('#advertisementForm').on('submit', function(e) {
+                // Validate required fields
+                const title = $('#adv_title').val().trim();
+                if (!title) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Missing Information',
+                        text: 'Please enter Advertisement Title',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    $('#adv_title').focus();
+                    return false;
+                }
+                
+                // Check if file is selected
+                if (!selectedFile) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'No Video Selected',
+                        text: 'Please select a video file to upload',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    $('#video_file').focus();
+                    return false;
+                }
+                
+                // Validate dates if provided
+                const dateFrom = $('#campaign_date_from').val();
+                const dateTo = $('#campaign_date_to').val();
+                
+                if (dateFrom && dateTo) {
+                    const from = new Date(dateFrom);
+                    const to = new Date(dateTo);
+                    
+                    if (to < from) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid Dates',
+                            text: 'End date cannot be earlier than start date',
+                            confirmButtonColor: '#dc3545'
+                        });
+                        $('#campaign_date_to').focus();
+                        return false;
+                    }
+                }
+                
+                // Show loading on submit button
+                $('.btn-submit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Creating...');
+                
+                return true;
+            });
+        });
+    </script>
+
+{% endblock %}

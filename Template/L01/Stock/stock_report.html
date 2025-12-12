@@ -7,8 +7,9 @@
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
 <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
     .status-badge {
         padding: 5px 10px;
@@ -28,6 +29,14 @@
         background-color: #f8d7da;
         color: #721c24;
     }
+    .status-unknown {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    .status-scanned {
+        background-color: #d4edda;
+        color: #155724;
+    }
     .summary-card {
         border-radius: 10px;
         border: none;
@@ -38,14 +47,56 @@
         transform: translateY(-5px);
     }
     .card-total { background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%); }
-    .card-available { background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%); }
-    .card-borrowed { background: linear-gradient(45deg, #f7971e 0%, #ffd200 100%); }
-    .card-missing { background: linear-gradient(45deg, #ff416c 0%, #ff4b2b 100%); }
+    .card-scanned { background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%); }
+    .card-unknown { background: linear-gradient(45deg, #757575 0%, #9e9e9e 100%); }
     .page-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 10px;
         padding: 20px;
         margin-bottom: 30px;
+        color: white;
+    }
+    .year-selector {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .form-select-lg {
+        font-size: 1.1rem;
+        padding: 0.75rem 1rem;
+    }
+    .btn-generate {
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .report-section {
+        display: none; /* Hidden by default, shown when report is generated */
+    }
+    .filter-select {
+        width: 100%;
+        margin-top: 5px;
+    }
+    /* Button group alignment */
+    .button-group-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+    .main-action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .complete-batch-btn {
+        background: linear-gradient(45deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+    }
+    .complete-batch-btn:hover {
+        background: linear-gradient(45deg, #218838 0%, #1aa179 100%);
         color: white;
     }
 </style>
@@ -67,165 +118,222 @@
                             <i class="bi bi-file-earmark-bar-graph me-2"></i>Stock Verification Report
                         </h2>
                         <p class="mb-0 opacity-75">
-                            <i class="bi bi-calendar3 me-1"></i> Active Stock Year: {{ active_year_name }}
-                            <span class="ms-3">
-                                <i class="bi bi-clock me-1"></i> Generated: {{ report_data.generated_at }}
-                            </span>
+                            <i class="bi bi-info-circle me-1"></i> Select a stock year to generate report
                         </p>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-light" id="exportExcel">
-                            <i class="bi bi-file-excel me-1"></i>Excel
-                        </button>
-                        <button class="btn btn-light" id="exportPdf">
-                            <i class="bi bi-file-pdf me-1"></i>PDF
-                        </button>
-                        <button class="btn btn-light" id="exportCsv">
-                            <i class="bi bi-file-earmark-text me-1"></i>CSV
-                        </button>
-                        <button class="btn btn-light" id="refreshReport">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                        </button>
                     </div>
                 </div>
             </div>
             
-            <!-- Summary Cards -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card summary-card card-total text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">TOTAL BOOKS</h6>
-                                    <h2 class="mb-0">{{ report_data.summary.total }}</h2>
+            <!-- Year Selection Form -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-calendar-range me-2"></i>Select Stock Year
+                    </h4>
+                </div>
+               <div class="card-body">
+                    <form id="reportForm" method="POST">
+                        {% csrf_token %}
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="stock_year" class="form-label">
+                                        <i class="bi bi-calendar3 me-1"></i> Stock Year
+                                    </label>
+                                    <select class="form-select form-select-lg" id="stock_year" name="stock_year" required>
+                                        <option value="">-- Select Stock Year --</option>
+                                        {% for year in stock_years %}
+                                        <option value="{{ year.id }}" 
+                                                data-is-completed="{{ year.is_completed|yesno:'true,false' }}"
+                                                {% if selected_year_id == year.id %}selected{% endif %}>
+                                            {{ year.year_name }}
+                                            {% if year.is_active %}<span class="badge bg-success ms-2">Active</span>{% endif %}
+                                            {% if year.is_completed %}<span class="badge bg-info ms-2">Completed</span>{% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Select the stock year for which you want to generate the report</div>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-book display-4 opacity-50"></i>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="button-group-container">
+                                    <div class="main-action-buttons">
+                                        <!-- Regular buttons (visible when is_completed = 0) -->
+                                      {% with item=stock_data.first %}
+                                        {% if item and item.is_completed == False %}
+                                            <div class="regular-buttons" id="regularButtons">
+                                                <button type="submit" class="btn btn-primary btn-generate" id="generateReport">
+                                                    <i class="bi bi-gear me-1"></i> Generate Report
+                                                </button>
+
+                                                <button type="button" class="btn btn-outline-secondary" id="resetForm">
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                                                </button>
+
+                                                <button type="button" class="btn btn-success complete-batch-btn" id="completeBatch">
+                                                    <i class="bi bi-check-circle me-1"></i> Complete Stock Batch
+                                                </button>
+                                            </div>
+
+                                        {% elif item and item.is_completed == True %}
+                                            <div class="final-report-button" id="finalReportButton">
+                                                <button type="button" class="btn btn-warning btn-generate-final" id="generateFinalReport">
+                                                    <i class="bi bi-file-earmark-pdf me-1"></i> Generate Final Report
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Report Section (Initially Hidden) -->
+            <div id="reportSection" class="report-section">
+                <!-- Report Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 class="mb-1">
+                            <i class="bi bi-bar-chart-line me-2"></i>Stock Report
+                            <span class="badge bg-primary fs-6 ms-2" id="reportYearBadge"></span>
+                        </h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-clock me-1"></i> Generated: <span id="reportGeneratedAt"></span>
+                        </p>
+                    </div>
+                    <div class="button-group-container">
+                        <div class="main-action-buttons">
+                            <button class="btn btn-light" id="exportExcel">
+                                <i class="bi bi-file-excel me-1"></i>Excel
+                            </button>
+                            <button class="btn btn-light" id="exportPdf">
+                                <i class="bi bi-file-pdf me-1"></i>PDF
+                            </button>
+                            <button class="btn btn-light" id="exportCsv">
+                                <i class="bi bi-file-earmark-text me-1"></i>CSV
+                            </button>
+                            <button class="btn btn-light" id="refreshReport">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mb-4" id="summaryCards">
+                    <div class="col-xl-4 col-md-6 mb-4">
+                        <div class="card summary-card card-total text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">TOTAL BOOKS</h6>
+                                        <h2 class="mb-0" id="totalBooks">0</h2>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="bi bi-book display-4 opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-4 col-md-6 mb-4">
+                        <div class="card summary-card card-scanned text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">SCANNED</h6>
+                                        <h2 class="mb-0" id="scannedBooks">0</h2>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="bi bi-check-circle display-4 opacity-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-4 col-md-6 mb-4">
+                        <div class="card summary-card card-unknown text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">UNKNOWN</h6>
+                                        <h2 class="mb-0" id="unknownBooks">0</h2>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="bi bi-question-circle display-4 opacity-50"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card summary-card card-available text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">AVAILABLE</h6>
-                                    <h2 class="mb-0">{{ report_data.summary.available }}</h2>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-check-circle display-4 opacity-50"></i>
-                                </div>
-                            </div>
-                        </div>
+
+                <!-- Report Table -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h4 class="card-title mb-0">
+                            <i class="bi bi-table me-2"></i>Stock Verification Details
+                            <span class="badge bg-secondary" id="recordCountBadge">
+                                <!-- Record count will be loaded dynamically -->
+                            </span>
+                        </h4>
                     </div>
-                </div>
-                
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card summary-card card-borrowed text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">BORROWED</h6>
-                                    <h2 class="mb-0">{{ report_data.summary.borrowed }}</h2>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-arrow-clockwise display-4 opacity-50"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card summary-card card-missing text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">MISSING</h6>
-                                    <h2 class="mb-0">{{ report_data.summary.missing }}</h2>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="bi bi-exclamation-triangle display-4 opacity-50"></i>
-                                </div>
-                            </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped" id="reportTable">
+                                <thead>
+                                    <tr>
+                                        <th>Sr No.</th>
+                                        <th>Barcode</th>
+                                        <th>Title</th>
+                                        <th>Shelf Location</th>
+                                        <th>Current Status</th>
+                                        <th>Stock Status</th>
+                                        <th>Date Processed</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody">
+                                    <!-- Table body will be loaded dynamically -->
+                                    {% if report_data %}
+                                        {% for book in report_data.books %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ book.barcode }}</td>
+                                            <td>{{ book.title }}</td>
+                                            <td>{{ book.shelf_location }}</td>
+                                            <td>{{ book.current_status }}</td>
+                                            <td>
+                                                <span class="status-badge 
+                                                    {% if book.stock_status == 'Scanned' %}status-scanned
+                                                    {% else %}status-unknown{% endif %}">
+                                                    {{ book.stock_status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ book.date_processed }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Report Table -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-bottom">
-                    <h4 class="card-title mb-0">
-                        <i class="bi bi-table me-2"></i>Stock Verification Details
-                        <span class="badge bg-secondary">
-                            Showing {{ report_data.books|length }} records for {{ report_data.stock_year }}
-                        </span>
-
-                    </h4>
+            
+            <!-- Empty State (Shown when no report generated) -->
+            <div id="emptyState" class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-file-earmark-bar-graph display-1 text-muted"></i>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped" id="reportTable">
-                            <thead>
-                                <tr>
-                                    <th>Sr No.</th>
-                                    <th>Barcode</th>
-                                    <th>Title</th>
-                                    <th>Shelf Location</th>
-                                    <th>Current Status</th>
-                                    <th>Stock Status</th>
-                                    <th>Date Processed</th>
-                                </tr>
-                                <tr class="filter-row">
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if report_data.books %}
-                                    {% for book in report_data.books %}
-                                    <tr>
-                                        <td>{{ forloop.counter }}</td>
-                                        <td>{{ book.barcode }}</td>
-                                        <td>{{ book.title }}</td>
-                                        <td>{{ book.shelf_location }}</td>
-                                        <td>{{ book.current_status }}</td>
-                                        <td>
-                                            <span class="status-badge 
-                                                {% if book.stock_status == 'Available on Shelf' %}status-available
-                                                {% elif book.stock_status == 'Currently Borrowed' %}status-borrowed
-                                                {% else %}status-missing{% endif %}">
-                                                {{ book.stock_status }}
-                                            </span>
-                                        </td>
-                                        <td>{{ book.date_processed }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-5">
-                                        <i class="bi bi-database-slash display-6 mb-3"></i>
-                                        <p class="mb-0">No books found in the stock verification report</p>
-                                        {% if report_data.stock_year != 'No active stock year found' %}
-                                            <small class="text-info">Stock Year: {{ report_data.stock_year }}</small>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <h3 class="mb-3">No Report Generated</h3>
+                <p class="text-muted mb-4">Please select a stock year and click "Generate Report" to view the stock verification report.</p>
             </div>
         </div>
     </div>
@@ -239,8 +347,8 @@
                 <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <h5>Refreshing Report...</h5>
-                <p class="text-muted">Please wait while we update the report.</p>
+                <h5>Generating Report...</h5>
+                <p class="text-muted">Please wait while we generate the stock verification report.</p>
             </div>
         </div>
     </div>
@@ -255,105 +363,325 @@
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
-    $(document).ready(function () {
-
-    // make sure Buttons extension files are loaded BEFORE this init
-
-    let dataTable = $('#reportTable').DataTable({
-
-        pageLength: 10,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
-        dom: '<"row"<"col-md-6"l><"col-md-6"f>>Brt<"row"<"col-md-6"i><"col-md-6"p>>',
-        orderCellsTop: true,
-        buttons: [
-            { extend: 'copy', className: 'btn btn-secondary' },
-            { extend: 'print', className: 'btn btn-secondary' }
-        ],
-
-        // important: make DataTables use plain text when filtering/sorting/searching
-        columnDefs: [
-            {
-                targets: 5, // Stock Status column index (0-based)
-                render: function (data, type, row, meta) {
-                    // when DataTables asks for the 'filter' (or sort) type, return stripped text
-                    if (type === 'filter' || type === 'sort' || type === 'type') {
-                        return $('<div>').html(data).text().trim();
-                    }
-                    // for 'display' keep the HTML so badges remain visible
-                    return data;
-                }
+    let dataTable = null;
+    let currentYearId = null;
+    
+    // Check if report data exists on page load (for form submissions)
+    {% if report_data %}
+        showReportSection();
+        loadReportData({
+            success: true,
+            report_data: {
+                books: {{ report_data.books|safe }},
+                summary: {{ report_data.summary|safe }},
+                stock_year: "{{ report_data.stock_year }}",
+                stock_year_id: "{{ report_data.stock_year_id }}",
+                generated_at: "{{ report_data.generated_at }}"
             }
-        ],
-
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search books...",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "Showing 0 to 0 of 0 entries",
-            infoFiltered: "(filtered from _MAX_ total entries)"
-        },
-
-        initComplete: function () {
-            var api = this.api();
-
-            api.columns().every(function (colIdx) {
-                var column = this;
-                var th = $('.filter-row th').eq(colIdx);
-
-                // If last column (actions) or no filter cell, skip
-                if (!th.length) {
-                    th.html('');
-                    return;
-                }
-
-
-                // Build a set of unique visible texts from the column cells (strip HTML)
-                var values = column.nodes().to$().map(function () {
-                    return $(this).text().trim();
-                }).get();
-
-                // unique + sort
-                values = Array.from(new Set(values)).filter(v => v !== '').sort(function(a,b){
-                    return a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'});
-                });
-
-                // create select and append options from visible text
-                var select = $('<select class="form-select form-select-sm"><option value="">सर्व</option></select>')
-                    .appendTo(th)
-                    .on('change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                        // use exact match (^...$) so badge text matches
-                        column.search(val ? '^' + val + '$' : '', true, false).draw();
-                    });
-
-                values.forEach(function (v) {
-                    select.append($('<option>').attr('value', v).text(v));
-                });
-
-            }); // end each column
-        } // end initComplete
+        });
+    {% endif %}
+    
+    // Form submission
+    $('#reportForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const yearId = $('#stock_year').val();
+        if (!yearId) {
+            alert('Please select a stock year');
+            return;
+        }
+        
+        generateReport(yearId);
     });
-
-});
-
-
-
-    // Refresh Report Button
+    
+    // Reset form
+    $('#resetForm').on('click', function() {
+        $('#stock_year').val('');
+        hideReportSection();
+    });
+    
+    // Refresh report
     $('#refreshReport').on('click', function() {
+        if (currentYearId) {
+            generateReport(currentYearId);
+        }
+    });
+    
+    // Complete Stock Batch
+    $('#completeBatch').on('click', function() {
+        if (!currentYearId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Report Selected',
+                text: 'Please generate a report first before completing the stock batch.',
+            });
+            return;
+        }
+        
+        const stockYearName = $('#reportYearBadge').text();
+        
+        Swal.fire({
+            title: 'Complete Stock Batch',
+            html: `Are you sure you want to mark the stock batch for <strong>${stockYearName}</strong> as completed?<br><br>
+                  <div class="text-start">
+                    <p><i class="bi bi-check-circle-fill text-success me-2"></i>Please ensure:</p>
+                    <ul>
+                        <li>All books have been scanned properly</li>
+                        <li>Stock verification is complete</li>
+                        <li>Report has been reviewed</li>
+                        <li>Any discrepancies have been resolved</li>
+                    </ul>
+                  </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Complete Batch',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                completeStockBatch(currentYearId);
+            }
+        });
+    });
+    
+    function generateReport(yearId) {
         $('#loadingModal').modal('show');
         
-        // Simple page reload
-        setTimeout(function() {
-            window.location.reload();
-        }, 1000);
-    });
-
+        // Using AJAX to generate report
+        $.ajax({
+            url: '{% url "L01:generate_stock_report_api" %}',
+            method: 'POST',
+            contentType: 'application/json',
+            headers: {
+                "X-CSRFToken": '{{ csrf_token }}'
+            },
+            data: JSON.stringify({
+                'year_id': yearId
+            }),
+            success: function(response) {
+                $('#loadingModal').modal('hide');
+                if (response.success) {
+                    currentYearId = yearId;
+                    showReportSection();
+                    loadReportData(response);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.error || 'Error generating report.',
+                    });
+                }
+            },
+            error: function(xhr) {
+                $('#loadingModal').modal('hide');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error generating report. Please try again.',
+                });
+            }
+        });
+    }
+    
+    function completeStockBatch(yearId) {
+        $('#loadingModal').modal('show');
+        
+        $.ajax({
+            url: '{% url "L01:complete_stock_batch" %}',
+            method: 'POST',
+            contentType: 'application/json',
+            headers: {
+                "X-CSRFToken": '{{ csrf_token }}'
+            },
+            data: JSON.stringify({
+                'year_id': yearId
+            }),
+            success: function(response) {
+                $('#loadingModal').modal('hide');
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Stock Batch Completed!',
+                        text: response.message || 'Stock batch has been marked as completed successfully.',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                   
+                    // Update the button state or UI if needed
+                    $('#completeBatch').prop('disabled', true).html('<i class="bi bi-check-circle me-1"></i>Batch Completed');
+                    
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.error || 'Error completing stock batch.',
+                    });
+                }
+            },
+            error: function(xhr) {
+                $('#loadingModal').modal('hide');
+                const error = xhr.responseJSON?.error || 'Error completing stock batch. Please try again.';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error,
+                });
+            }
+        });
+    }
+    
+    function showReportSection() {
+        $('#emptyState').hide();
+        $('#reportSection').show();
+    }
+    
+    function hideReportSection() {
+        $('#emptyState').show();
+        $('#reportSection').hide();
+        if (dataTable) {
+            dataTable.destroy();
+            dataTable = null;
+        }
+    }
+    
+    function loadReportData(response) {
+        const reportData = response.report_data;
+        
+        // Update report header
+        $('#reportYearBadge').text(reportData.stock_year);
+        $('#reportGeneratedAt').text(reportData.generated_at);
+        
+        // Update summary cards
+        updateSummaryCards(reportData.summary);
+        
+        // Update record count badge
+        $('#recordCountBadge').text(`Showing ${reportData.books.length} records`);
+        
+        // Update table data
+        updateTableData(reportData.books);
+        
+        // Initialize DataTable
+        initializeDataTable();
+    }
+    
+    function updateSummaryCards(summary) {
+        $('#totalBooks').text(summary.total || 0);
+        $('#scannedBooks').text(summary.scanned || 0);
+        $('#unknownBooks').text(summary.unknown || 0);
+    }
+    
+    function updateTableData(books) {
+        let tableHtml = '';
+        
+        if (books && books.length > 0) {
+            books.forEach((book, index) => {
+                const statusClass = getStatusClass(book.stock_status);
+                
+                tableHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${book.barcode || 'N/A'}</td>
+                        <td>${book.title || 'N/A'}</td>
+                        <td>${book.shelf_location || 'N/A'}</td>
+                        <td>${book.current_status || 'N/A'}</td>
+                        <td>
+                            <span class="status-badge ${statusClass}">
+                                ${book.stock_status || 'Unknown'}
+                            </span>
+                        </td>
+                        <td>${book.date_processed || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            tableHtml = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-5">
+                        <i class="bi bi-database-slash display-6 mb-3"></i>
+                        <p class="mb-0">No books found in the stock verification report</p>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        $('#reportTableBody').html(tableHtml);
+    }
+    
+    function getStatusClass(status) {
+        const statusLower = (status || '').toLowerCase();
+        if (statusLower.includes('scanned')) {
+            return 'status-scanned';
+        } else {
+            return 'status-unknown';
+        }
+    }
+    
+    function initializeDataTable() {
+        if (dataTable) {
+            dataTable.destroy();
+        }
+        
+        dataTable = $('#reportTable').DataTable({
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            dom: '<"row"<"col-md-6"l><"col-md-6"f>>Brt<"row"<"col-md-6"i><"col-md-6"p>>',
+            buttons: [
+                {
+                    extend: 'copy',
+                    className: 'btn btn-secondary',
+                    text: '<i class="bi bi-files"></i> Copy'
+                },
+                {
+                    extend: 'excel',
+                    className: 'btn btn-success',
+                    text: '<i class="bi bi-file-excel"></i> Excel'
+                },
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-danger',
+                    text: '<i class="bi bi-file-pdf"></i> PDF'
+                },
+                {
+                    extend: 'print',
+                    className: 'btn btn-info',
+                    text: '<i class="bi bi-printer"></i> Print'
+                }
+            ],
+            columnDefs: [
+                {
+                    targets: 5, // Stock Status column
+                    render: function (data, type, row, meta) {
+                        if (type === 'filter' || type === 'sort' || type === 'type') {
+                            var tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = data;
+                            return tempDiv.textContent || tempDiv.innerText || '';
+                        }
+                        return data;
+                    }
+                }
+            ],
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search books...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+    }
+    
     // Export Functions
     $('#exportExcel').on('click', function() {
         exportReport('excel');
@@ -368,6 +696,15 @@ $(document).ready(function() {
     });
 
     function exportReport(format) {
+        if (!currentYearId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Report Selected',
+                text: 'Please generate a report first before exporting.',
+            });
+            return;
+        }
+        
         $('#loadingModal').modal('show');
         
         $.ajax({
@@ -379,7 +716,7 @@ $(document).ready(function() {
             },
             data: JSON.stringify({
                 'format': format,
-                'auto_generate': true  // Flag to indicate auto-generated report
+                'year_id': currentYearId
             }),
             xhrFields: {
                 responseType: 'blob'
@@ -387,27 +724,20 @@ $(document).ready(function() {
             success: function(blob) {
                 $('#loadingModal').modal('hide');
                 
-                // Create download link
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 
-                // Set filename
                 let extension = '';
-                let formatName = '';
-                
                 if (format === 'excel') {
                     extension = 'xlsx';
-                    formatName = 'Excel';
                 } else if (format === 'pdf') {
                     extension = 'pdf';
-                    formatName = 'PDF';
                 } else {
                     extension = 'csv';
-                    formatName = 'CSV';
                 }
                 
-                const stockYearName = '{{ report_data.stock_year|slugify }}';
+                const stockYearName = $('#reportYearBadge').text().replace(/\s+/g, '_');
                 const date = new Date().toISOString().split('T')[0];
                 a.download = `Stock_Report_${stockYearName}_${date}.${extension}`;
                 
@@ -419,17 +749,87 @@ $(document).ready(function() {
             error: function(xhr) {
                 $('#loadingModal').modal('hide');
                 const error = xhr.responseJSON?.error || 'Export failed';
-                alert('Error: ' + error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Export Error',
+                    text: error,
+                });
             }
         });
     }
+});
 
-    // Auto-refresh every 5 minutes (optional)
-    // setInterval(function() {
-    //     if (document.visibilityState === 'visible') {
-    //         window.location.reload();
-    //     }
-    // }, 300000); // 5 minutes
+    // Generate Final Report button
+$('#generateFinalReport').on('click', function() {
+    debugger;
+    currentYearId = $('#stock_year').val()
+    if (!currentYearId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Report Selected',
+            text: 'Please select a stock year first.',
+        });
+        return;
+    }
+    
+    $('#loadingModal').modal('show');
+    
+    // Call API to generate final report
+    $.ajax({
+        url: '{% url "L01:generate_final_report" %}',
+        method: 'POST',
+        contentType: 'application/json',
+        headers: {
+            "X-CSRFToken": '{{ csrf_token }}'
+        },
+        data: JSON.stringify({
+            'year_id': currentYearId
+        }),
+        xhrFields: {
+            responseType: 'blob'  // Important for file download
+        },
+        success: function(blob, status, xhr) {
+            $('#loadingModal').modal('hide');
+            
+            // Get filename from Content-Disposition header
+            const contentDisposition = xhr.getResponseHeader('Content-Disposition');
+            let filename = 'stock_final_report.pdf';
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Report Downloaded!',
+                text: 'Final PDF report has been generated and downloaded.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        },
+        error: function(xhr) {
+            $('#loadingModal').modal('hide');
+            const error = xhr.responseJSON?.error || 'Error generating final report.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error,
+            });
+        }
+    });
 });
 </script>
 {% endblock %}

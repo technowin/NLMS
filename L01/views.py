@@ -78,6 +78,7 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 import io
 import csv
+from django.utils.dateparse import parse_date, parse_datetime
 import pandas as pd
 
 # Part First While Filling Membership Form
@@ -512,45 +513,93 @@ def registration(request):
 
 # Part Second After Filling Membership Form Approval by Admin
 
-@login_required
+from collections import defaultdict
+
 def membership_approval(request):
     Db.closeConnection()
     m = Db.get_connection()
     cursor = m.cursor()
-    try:
-        print("Membership Approval Page Accessed")
-        library_code = request.session.get('library_db', None)
+    library_code = request.session.get('library_db', None)
 
-        # memberships = (MembershipDetails.objects.select_related("status").all().order_by("-created_at"))
+    # Main 5 Tabs (Static but grouping uses DB statuses)
+    TAB_GROUPS = {
+        "Application Submitted": ["APP_SUB", "APPROVED"],
+        "Payment Offline": ["PAY_OFFLINE", "PAY_SUCCESS", "PAY_PENDING", "PAY_PROGRESS", "PAY_FAIL"],
+        "Renewal Submitted": ["APP_RENEW"],
+        "Application Cancelled": ["APP_CANCEL"],
+        "Rejected": ["REJECT"],
+    }
+
+    try:
+        # Load all membership records
         memberships = (
             MembershipDetails.objects
             .select_related("status")
             .all()
-            .order_by("-updated_at")
+            .order_by("-created_at")  # sort by created_at
         )
 
-        library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
-        library_name_mar = library.library_name_mar if library else ""
-        # Encrypt membership IDs
+        # DEBUG: Print total records and their statuses
+        print(f"Total memberships: {memberships.count()}")
+        for mem in memberships:
+            print(f"ID: {mem.id}, Name: {mem.first_name}, Status: {mem.status.status_code}")
+        
+        # Encrypt IDs
         for mem in memberships:
             mem.membership_id_enc = enc(str(mem.id))
 
-        return render(
-            request,
-            "L01/membership_approval/membership_approval.html",
-            {
-                "MEDIA_URL": settings.MEDIA_URL,
-                "library_code": library_code,
-                "memberships": memberships,
-                "library_name_mar": library_name_mar,
-            }
-        )
+        # Group by status_code
+        memberships_by_status = defaultdict(list)
+        for mem in memberships:
+            memberships_by_status[mem.status.status_code].append(mem)
+
+        # DEBUG: Print grouped data
+        print("\nGrouped by status:")
+        for status_code, mem_list in memberships_by_status.items():
+            print(f"Status {status_code}: {len(mem_list)} records")
+
+        # ---------- Prepare final tab data ----------
+        tabs = []
+
+        for tab_title, status_codes in TAB_GROUPS.items():
+            # 1. Combine all records for all status codes
+            combined_members = []
+            for code in status_codes:
+                combined_members += memberships_by_status.get(code, [])
+
+            # 2. Sort inside group using created_at desc
+            combined_members = sorted(combined_members, key=lambda x: x.created_at, reverse=True)
+
+            # 3. Append final structured tab
+            tabs.append({
+                "tab_title": tab_title,
+                "status_codes": status_codes,  # Add this for debugging
+                "memberships": combined_members,
+            })
+            
+            # DEBUG: Print tab info
+            print(f"\nTab: {tab_title}")
+            print(f"  Status codes: {status_codes}")
+            print(f"  Total records: {len(combined_members)}")
+            for mem in combined_members[:3]:  # Show first 3
+                print(f"  - {mem.first_name} {mem.last_name}: {mem.status.status_code}")
+
+        # Get library name
+        library = tbl_librarymasterL01.objects.filter(
+            library_code=library_code, is_active=1
+        ).first()
+        library_name_mar = library.library_name_mar if library else ""
+
+        return render(request, "L01/membership_approval/membership_approval.html", {
+            "tabs": tabs,
+            "library_name_mar": library_name_mar,
+            "MEDIA_URL": settings.MEDIA_URL,
+        })
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name if tb else "library_list"
+        fun = tb[0].name if tb else "membership_approval"
         cursor.callproc("stp_error_log", [fun, str(e), library_code])
-        print(f"error: {e}")
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/membership_approval/membership_approval.html", {})
 
@@ -5392,121 +5441,175 @@ def get_recent_scans(request):
 
     return JsonResponse({"data": data})
 
+
+# Stock Report Imran
+
+def complete_stock_batch(request):
+    try:
+        data = json.loads(request.body)
+        year_id = data.get('year_id')
+        
+        if not year_id:
+            return JsonResponse({'success': False, 'error': 'Year ID is required'})
+        
+        
+        try:
+            stock_year = StockMaster.objects.get(id=year_id)
+            stock_year.is_completed = True
+            stock_year.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Stock batch has been marked as completed.'
+            })
+            
+        except StockYearMaster.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Stock year not found'})
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
 class StockReportView(View):
     def get(self, request):
         """
-        Handle GET request - Display the stock report page automatically
+        Handle GET request - Display stock year selection form
         """
         try:
-            # Get active stock year (where is_active = True)
-            active_stock_year = StockYearMaster.objects.filter(is_active=True).first()
-            
-            if not active_stock_year:
-                # No active stock year found
-                report_data = self.create_empty_report_data("No active stock year found")
-                context = {
-                    'report_data': report_data,
-                    'active_year_name': 'No Active Year',
-                }
-                return render(request, 'L01/Stock/stock_report.html', context)
-            
-            # Generate report for active stock year
-            try:
-                report_data = self.generate_report_data(active_stock_year.id, 'all')
-            except Exception as e:
-                report_data = self.create_empty_report_data(f"Error generating report: {str(e)}")
-            
+            # Stock years for dropdown
+            stock_years = StockYearMaster.objects.all().order_by('-year_name')
+
+            # Get active year safely (NO 404 break)
+            active_year = StockYearMaster.objects.filter(is_active=1).first()
+
+            if active_year:
+                stock_data = StockMaster.objects.filter(stock_year=active_year)
+                active_year_name = active_year.year_name
+            else:
+                stock_data = []
+                active_year_name = "Select a year"
+
             context = {
-                'report_data': report_data,
-                'active_year_name': active_stock_year.year_name,
+                'stock_years': stock_years,
+                'active_year_name': active_year_name,
+                'stock_data': stock_data,
+                'report_data': None,
             }
-            
+
             return render(request, 'L01/Stock/stock_report.html', context)
-            
+
         except Exception as e:
-            # Handle unexpected errors
             context = {
-                'report_data': self.create_empty_report_data(f"System error: {str(e)}"),
+                'stock_years': [],
                 'active_year_name': 'Error',
+                'stock_data': [],
+                'report_data': self.create_empty_report_data(f"System error: {str(e)}"),
             }
             return render(request, 'L01/Stock/stock_report.html', context)
     
-    def generate_report_data(self, year_id, status_filter='all'):
+    def post(self, request):
+        """
+        Handle POST request - Generate report for selected year
+        """
+        try:
+            year_id = request.POST.get('stock_year')
+            
+            if not year_id:
+                return redirect('L01:stock_report')
+            
+            # Get selected stock year
+            stock_year = StockYearMaster.objects.get(id=year_id)
+            
+            # Get all stock years for dropdown (to keep dropdown populated)
+            stock_years = StockYearMaster.objects.all().order_by('-year_name')
+            
+            # Generate report for selected stock year
+            report_data = self.generate_report_data(year_id)
+
+            save_data = self.save_report_to_database(report_data, request.user, stock_year)
+            
+            context = {
+                'stock_years': stock_years,
+                'selected_year_id': int(year_id),
+                'active_year_name': stock_year.year_name,
+                'report_data': report_data,
+            }
+            
+            return render(request, 'L01/Stock/stock_report.html', context)
+            
+        except StockYearMaster.DoesNotExist:
+            return redirect('L01:stock_report')
+        except Exception as e:
+            # Get all stock years for dropdown
+            stock_years = StockYearMaster.objects.all().order_by('-year_name')
+            
+            context = {
+                'stock_years': stock_years,
+                'active_year_name': 'Error',
+                'report_data': self.create_empty_report_data(f"Error: {str(e)}"),
+            }
+            return render(request, 'L01/Stock/stock_report.html', context)
+    
+    def generate_report_data(self, year_id):
         """
         Generate stock verification report data
+        Compare CirculationCopyStatus (all books) with StockDetail (scanned books)
         """
         # Get stock year
         stock_year = StockYearMaster.objects.get(id=year_id)
         
-        # Get all books from CirculationCopyStatus with annotations
+        # Get ALL books from CirculationCopyStatus
         all_books = CirculationCopyStatus.objects.select_related(
             'bookcatalog',
             'shelf_location',
             'current_status'
-        ).annotate(
-            # Check if book is in stock details for this year
-            is_in_stock=Exists(
-                StockDetail.objects.filter(
-                    stock_year_id=year_id,
-                    circulation__barcode=OuterRef('barcode')
-                )
-            ),
-            # Check if book is borrowed (has active transaction)
-            is_borrowed=Exists(
-                CirculationTransaction.objects.filter(
-                    circulation_copy__barcode=OuterRef('barcode'),
-                    return_date__isnull=True
-                )
-            ) if hasattr(CirculationCopyStatus, 'circulationtransaction_set') else 
-            Exists(
-                CirculationTransaction.objects.filter(
-                    barcode=OuterRef('barcode'),
-                    return_date__isnull=True
-                )
-            )
         ).order_by('barcode')
+        
+        # Get books that were scanned in stock verification for this year
+        scanned_book_ids = StockDetail.objects.filter(
+            stock_year_id=year_id
+        ).values_list('circulation_id', flat=True)
+        
+        # Convert to set for faster lookup
+        scanned_books_set = set(scanned_book_ids)
         
         # Prepare report data
         report_data = []
         status_counts = {
-            'available': 0,
-            'borrowed': 0,
-            'missing': 0,
+            'scanned': 0,
+            'unknown': 0,
             'total': 0
         }
         
         for book in all_books:
-            # Determine status based on annotations
-            if book.is_in_stock:
-                status = 'Available on Shelf'
-                status_key = 'available'
-            elif book.is_borrowed:
-                status = 'Currently Borrowed'
-                status_key = 'borrowed'
-            else:
-                status = 'Missing'
-                status_key = 'missing'
-            
-            # Update counts
-            status_counts[status_key] += 1
-            status_counts['total'] += 1
+            # Check if this book was scanned during stock verification
+            is_scanned = book.id in scanned_books_set
             
             # Get book catalog details
             title = 'N/A'
-            author = 'N/A'
             if book.bookcatalog:
                 title = book.bookcatalog.title
-                author = book.bookcatalog.author
             
             # Get shelf location
             shelf_location = 'N/A'
             if book.shelf_location:
                 shelf_location = book.shelf_location.location_name
             
-            # Get current status
+            # Get current status from StatusMaster
             current_status = 'N/A'
             if book.current_status:
                 current_status = book.current_status.status_name
+            
+            # Determine Stock Status
+            if is_scanned:
+                stock_status = 'Scanned'
+                status_key = 'scanned'
+            else:
+                stock_status = 'Unknown'
+                status_key = 'unknown'
+            
+            # Update counts
+            status_counts[status_key] += 1
+            status_counts['total'] += 1
             
             # Format date processed
             date_processed = 'N/A'
@@ -5515,22 +5618,22 @@ class StockReportView(View):
             
             book_data = {
                 'barcode': book.barcode,
-                'accession_no': book.accession_no or 'N/A',
                 'title': title,
-                'author': author,
                 'shelf_location': shelf_location,
                 'current_status': current_status,
-                'stock_status': status,
+                'stock_status': stock_status,
                 'date_processed': date_processed,
-                'remarks': book.remarks or ''
             }
             
             report_data.append(book_data)
+
+            
         
         return {
             'books': report_data,
             'summary': status_counts,
             'stock_year': stock_year.year_name,
+            'stock_year_id': year_id,
             'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
         }
     
@@ -5542,13 +5645,101 @@ class StockReportView(View):
             'books': [],
             'summary': {
                 'total': 0,
-                'available': 0,
-                'borrowed': 0,
-                'missing': 0
+                'scanned': 0,
+                'unknown': 0
             },
             'stock_year': message,
+            'stock_year_id': None,
             'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
         }
+    
+    def save_report_to_database(self, report_data, user, stock_year):
+        """
+        Save generated report to StockReport table (optimized for speed)
+        """
+        try:
+            # Delete old reports for this stock year
+            StockReport.objects.filter(stock_year=stock_year).delete()
+
+            username = user.username if user else "system"
+
+            # 🔥 Load ALL locations in one query
+            all_locations = ResourceLocationMaster.objects.all()
+
+            # 🔥 Create dictionary: location_name → object
+            location_map = {loc.location_name: loc for loc in all_locations}
+
+            report_objects = []
+
+            for book in report_data["books"]:
+                loc_name = book["shelf_location"]
+
+                # Lookup location without DB query
+                shelf_location = location_map.get(loc_name)
+
+                if not shelf_location:
+                    print(f"Warning: Shelf location not found: {loc_name}")
+                    continue
+
+                report_objects.append(
+                    StockReport(
+                        stock_year=stock_year,
+                        barcode=book["barcode"],
+                        title=book["title"],
+                        shelf_location=shelf_location,
+                        current_status=book["current_status"],
+                        stock_status=book["stock_status"],
+                        date_processed=book["date_processed"],
+                        created_by=username,
+                        updated_by=username,
+                    )
+                )
+
+            # 🔥 Bulk insert (FAST!)
+            StockReport.objects.bulk_create(report_objects, batch_size=500)
+
+            print(
+                f"Successfully saved {len(report_objects)} records to StockReport "
+                f"for stock year {stock_year.year_name}"
+            )
+
+        except Exception as e:
+            print(f"Error saving report: {str(e)}")
+            print(traceback.format_exc())
+
+
+
+
+class GenerateStockReportAPI(View):
+    """
+    API endpoint for AJAX report generation
+    """
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            year_id = data.get('year_id')
+            
+            if not year_id:
+                return JsonResponse({'error': 'Year ID is required'}, status=400)
+            
+            stock_year = get_object_or_404(StockYearMaster, id = year_id )
+            
+            # Create an instance of StockReportView to use its methods
+            report_view = StockReportView()
+            report_data = report_view.generate_report_data(year_id)
+            save_data = report_view.save_report_to_database(report_data, request.user, stock_year)
+            
+            
+            return JsonResponse({
+                'success': True,
+                'report_data': report_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+
 
 class ExportStockReportView(View):
     """
@@ -5559,16 +5750,20 @@ class ExportStockReportView(View):
             # Parse JSON data
             data = json.loads(request.body)
             format_type = data.get('format', 'excel')
+            year_id = data.get('year_id')
             
-            # Get active stock year
-            active_stock_year = StockYearMaster.objects.filter(is_active=True).first()
+            if not year_id:
+                return JsonResponse({'error': 'Year ID is required'}, status=400)
             
-            if not active_stock_year:
-                return JsonResponse({'error': 'No active stock year found'}, status=400)
+            # Get stock year
+            try:
+                stock_year = StockYearMaster.objects.get(id=year_id)
+            except StockYearMaster.DoesNotExist:
+                return JsonResponse({'error': 'Stock year not found'}, status=404)
             
-            # Generate report data for active stock year
+            # Generate report data for selected stock year
             report_view = StockReportView()
-            report_data = report_view.generate_report_data(active_stock_year.id, 'all')
+            report_data = report_view.generate_report_data(year_id)
             
             # Export based on format
             if format_type == 'excel':
@@ -5587,125 +5782,1131 @@ class ExportStockReportView(View):
         """
         Export report to Excel format
         """
-        
         # Create DataFrame from report data
-        df = pd.DataFrame(report_data['books'])
-        
-        # Create response
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        filename = f"Stock_Report_{report_data['stock_year']}_{timezone.now().strftime('%Y%m%d')}.xlsx"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        # Write to Excel
-        with pd.ExcelWriter(response, engine='openpyxl') as writer:
-            # Main data sheet
-            df.to_excel(writer, sheet_name='Stock Verification', index=False)
+        try:
+            df = pd.DataFrame(report_data['books'])
+            columns_order = ['barcode', 'title', 'shelf_location', 'current_status', 'stock_status', 'date_processed']
+            df = df[columns_order]
             
-            # Summary sheet
-            summary_data = {
-                'Stock Year': [report_data['stock_year']],
-                'Generated At': [report_data['generated_at']],
-                'Total Books': [report_data['summary']['total']],
-                'Available': [report_data['summary']['available']],
-                'Borrowed': [report_data['summary']['borrowed']],
-                'Missing': [report_data['summary']['missing']]
-            }
-            summary_df = pd.DataFrame(summary_data)
-            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+            # Rename columns for better display
+            df.columns = ['बारकोड', 'शीर्षक', 'शेल्फ स्थान', 'सध्याची स्थिती', 'स्टॉक स्थिती', 'प्रक्रिया दिनांक']
+            
+            # Create response
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            filename = f"स्टॉक_सत्यापन_अहवाल_{report_data['stock_year'].replace(' ', '_')}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            # Create workbook directly
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment, PatternFill
+            from openpyxl.utils import get_column_letter
+            
+            # Create workbook and worksheet
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "स्टॉक सत्यापन"
+            
+            # Header rows
+            # Row 1: Logo space (we'll leave it empty or try to add later)
+            ws.merge_cells('A1:F1')
+            
+            # Row 2: Title
+            ws.merge_cells('A2:F2')
+            ws['A2'] = 'विष्णुदास भावे नाट्य ग्रंथालय'
+            ws['A2'].font = Font(size=16, bold=True, name='Arial')
+            ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Row 3: Report Title
+            ws.merge_cells('A3:F3')
+            ws['A3'] = 'स्टॉक सत्यापन अहवाल'
+            ws['A3'].font = Font(size=14, bold=True, name='Arial')
+            ws['A3'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            # Row 4-7: Report Info
+            ws['A4'] = f'स्टॉक वर्ष: {report_data["stock_year"]}'
+            ws['A5'] = f'निर्मिती दिनांक: {report_data["generated_at"]}'
+            ws['A6'] = f'एकूण पुस्तके: {report_data["summary"]["total"]}'
+            ws['A7'] = f'स्कॅन केलेली: {report_data["summary"]["scanned"]}'
+            ws['D6'] = f'अज्ञात स्थिती: {report_data["summary"]["unknown"]}'
+            
+            # Apply styling to info cells
+            for row in range(4, 8):
+                for col in range(1, 7):
+                    cell = ws.cell(row=row, column=col)
+                    if cell.value:
+                        cell.font = Font(name='Arial', size=11)
+            
+            # Row 8: Empty row
+            ws.row_dimensions[8].height = 15
+            
+            # Row 9: Table Headers (starting from row 9)
+            headers = ['बारकोड', 'शीर्षक', 'शेल्फ स्थान', 'सध्याची स्थिती', 'स्टॉक स्थिती', 'प्रक्रिया दिनांक']
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=9, column=col_num)
+                cell.value = header
+                cell.font = Font(bold=True, name='Arial')
+                cell.alignment = Alignment(horizontal='center')
+                cell.fill = PatternFill(start_color='CCCCCC', end_color='CCCCCC', fill_type='solid')
+            
+            # Row 10 onwards: Data
+            start_row = 10
+            for idx, row in df.iterrows():
+                for col_num, (col_name, value) in enumerate(row.items(), 1):
+                    cell = ws.cell(row=start_row, column=col_num)
+                    cell.value = value
+                    cell.font = Font(name='Arial')
+                
+                # Alternate row coloring
+                if start_row % 2 == 0:
+                    for col_num in range(1, 7):
+                        ws.cell(row=start_row, column=col_num).fill = PatternFill(
+                            start_color='F2F2F2', end_color='F2F2F2', fill_type='solid'
+                        )
+                
+                start_row += 1
             
             # Adjust column widths
-            worksheet = writer.sheets['Stock Verification']
-            for column in worksheet.columns:
+            for col_num, column_title in enumerate(headers, 1):
                 max_length = 0
-                column_letter = column[0].column_letter
-                for cell in column:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                adjusted_width = min(max_length + 2, 30)
-                worksheet.column_dimensions[column_letter].width = adjusted_width
+                column_letter = get_column_letter(col_num)
+                
+                # Check header length
+                if len(str(column_title)) > max_length:
+                    max_length = len(str(column_title))
+                
+                # Check data length in this column
+                for row in range(10, start_row):
+                    cell_value = ws.cell(row=row, column=col_num).value
+                    if cell_value:
+                        cell_length = len(str(cell_value))
+                        if cell_length > max_length:
+                            max_length = cell_length
+                
+                # Set column width (with some padding)
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Save workbook to response
+            wb.save(response)
         
-        return response
+            return response
+        except Exception as e:
+            return JsonResponse(
+                {"error": "An unexpected error occurred.", "details": str(e)},
+                status=500
+                )
     
     def export_to_csv(self, report_data):
         """
         Export report to CSV format
         """
-        
+        try:
         # Create DataFrame from report data
-        df = pd.DataFrame(report_data['books'])
-        
-        # Create CSV response
-        response = HttpResponse(content_type='text/csv')
-        filename = f"Stock_Report_{report_data['stock_year']}_{timezone.now().strftime('%Y%m%d')}.csv"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        # Write CSV
-        df.to_csv(response, index=False, encoding='utf-8-sig')
-        
-        return response
+            df = pd.DataFrame(report_data['books'])
+            
+            # Reorder and rename columns
+            columns_order = ['barcode', 'title', 'shelf_location', 'current_status', 'stock_status', 'date_processed']
+            df = df[columns_order]
+            df.columns = ['बारकोड', 'शीर्षक', 'शेल्फ स्थान', 'सध्याची स्थिती', 'स्टॉक स्थिती', 'प्रक्रिया दिनांक']
+            
+            # Create CSV response
+            response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+            filename = f"स्टॉक_सत्यापन_अहवाल_{report_data['stock_year'].replace(' ', '_')}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            # Write CSV with BOM for UTF-8
+            response.write('\ufeff')  # UTF-8 BOM
+            
+            # Write header
+            header_lines = [
+                'विष्णुदास भावे नाट्य ग्रंथालय',
+                'स्टॉक सत्यापन अहवाल',
+                '',
+                f'स्टॉक वर्ष: {report_data["stock_year"]}',
+                f'निर्मिती दिनांक: {report_data["generated_at"]}',
+                f'एकूण पुस्तके: {report_data["summary"]["total"]}',
+                f'स्कॅन केलेली: {report_data["summary"]["scanned"]}',
+                f'अज्ञात स्थिती: {report_data["summary"]["unknown"]}',
+                '',
+                'तपशीलवार अहवाल',
+                ''
+            ]
+            
+            for line in header_lines:
+                response.write(line + '\n')
+            
+            # Write data
+            df.to_csv(response, index=False, encoding='utf-8-sig', mode='a')
+            
+            return response
+        except Exception as e:
+            return JsonResponse(
+                {"error": "An unexpected error occurred.", "details": str(e)},
+                status=500
+            )
     
     def export_to_pdf(self, report_data):
         """
-        Export report to PDF format
-        Note: This is a basic implementation. You might want to use a proper PDF library.
+        Export report to PDF format using WeasyPrint for better Marathi support
+        """
+        try:
+            from weasyprint import HTML, CSS
+        except ImportError:
+            # Fallback to ReportLab if WeasyPrint is not installed
+            return self.export_to_pdf_fallback(report_data)
+        
+        import io
+        import html
+        
+        # Create HTML content with Marathi text
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="mr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>स्टॉक सत्यापन अहवाल - {report_data['stock_year']}</title>
+            <style>
+                @page {{
+                    size: A4;
+                    margin: 1.5cm;
+                    
+                    @top-center {{
+                        content: "विष्णुदास भावे नाट्य ग्रंथालय";
+                        font-size: 14px;
+                        color: #2c3e50;
+                        margin-top: 0.5cm;
+                    }}
+                    
+                    @bottom-center {{
+                        content: "पृष्ठ " counter(page) " / " counter(pages);
+                        font-size: 10px;
+                        margin-bottom: 0.5cm;
+                    }}
+                }}
+                
+                body {{
+                    font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', 'Nirmala UI', sans-serif;
+                    line-height: 1.4;
+                    color: #333;
+                }}
+                
+                .header-container {{
+                    text-align: center;
+                    margin-bottom: 25px;
+                }}
+                
+                .library-name {{
+                    font-size: 22px;
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin: 10px 0;
+                }}
+                
+                .report-title {{
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #2980b9;
+                    margin: 5px 0 20px 0;
+                }}
+                
+                .report-info {{
+                    background-color: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border-left: 4px solid #3498db;
+                    margin-bottom: 25px;
+                }}
+                
+                .info-row {{
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                }}
+                
+                .info-label {{
+                    font-weight: bold;
+                    color: #2c3e50;
+                    display: inline-block;
+                    width: 140px;
+                }}
+                
+                .info-value {{
+                    color: #555;
+                }}
+                
+                .data-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                    font-size: 11px;
+                }}
+                
+                .data-table th {{
+                    background-color: #2c3e50;
+                    color: white;
+                    padding: 10px 8px;
+                    text-align: left;
+                    font-weight: bold;
+                    border: 1px solid #ddd;
+                }}
+                
+                .data-table td {{
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                }}
+                
+                .data-table tr:nth-child(even) {{
+                    background-color: #f9f9f9;
+                }}
+                
+                .data-table tr:hover {{
+                    background-color: #f5f5f5;
+                }}
+                
+                .footer {{
+                    margin-top: 30px;
+                    padding-top: 15px;
+                    border-top: 1px solid #eee;
+                    font-size: 12px;
+                    text-align: center;
+                }}
+                
+                .summary {{
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                }}
+                
+                .timestamp {{
+                    color: #7f8c8d;
+                    font-size: 11px;
+                }}
+                
+                /* Print styles */
+                @media print {{
+                    body {{
+                        margin: 0;
+                        padding: 0;
+                    }}
+                    
+                    .no-print {{
+                        display: none;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header-container">
+                <!-- Logo would go here if we could embed images -->
+                <div class="library-name">विष्णुदास भावे नाट्य ग्रंथालय</div>
+                <div class="report-title">स्टॉक सत्यापन अहवाल</div>
+            </div>
+            
+            <div class="report-info">
+                <div class="info-row">
+                    <span class="info-label">स्टॉक वर्ष:</span>
+                    <span class="info-value">{html.escape(str(report_data['stock_year']))}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">निर्मिती दिनांक:</span>
+                    <span class="info-value">{html.escape(str(report_data['generated_at']))}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">एकूण पुस्तके:</span>
+                    <span class="info-value">{html.escape(str(report_data['summary']['total']))}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">स्कॅन केलेली:</span>
+                    <span class="info-value">{html.escape(str(report_data['summary']['scanned']))}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">अज्ञात स्थिती:</span>
+                    <span class="info-value">{html.escape(str(report_data['summary']['unknown']))}</span>
+                </div>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="5%">क्र.</th>
+                        <th width="15%">बारकोड</th>
+                        <th width="35%">शीर्षक</th>
+                        <th width="15%">शेल्फ स्थान</th>
+                        <th width="15%">सध्याची स्थिती</th>
+                        <th width="15%">स्टॉक स्थिती</th>
+                    </tr>
+                </thead>
+                <tbody>
         """
         
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
-        
-        # Title
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(50, height - 50, f"Stock Verification Report")
-        p.setFont("Helvetica", 12)
-        p.drawString(50, height - 70, f"Stock Year: {report_data['stock_year']}")
-        p.drawString(50, height - 90, f"Generated: {report_data['generated_at']}")
-        
-        # Summary
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, height - 120, "Summary")
-        p.setFont("Helvetica", 12)
-        p.drawString(50, height - 140, f"Total Books: {report_data['summary']['total']}")
-        p.drawString(50, height - 155, f"Available: {report_data['summary']['available']}")
-        p.drawString(50, height - 170, f"Borrowed: {report_data['summary']['borrowed']}")
-        p.drawString(50, height - 185, f"Missing: {report_data['summary']['missing']}")
-        
-        # Table headers
-        y_position = height - 220
-        headers = ["Sr", "Barcode", "Title", "Status", "Location"]
-        
-        p.setFont("Helvetica-Bold", 10)
-        for i, header in enumerate(headers):
-            p.drawString(50 + (i * 100), y_position, header)
-        
-        y_position -= 20
-        
-        # Table data
-        p.setFont("Helvetica", 8)
-        for i, book in enumerate(report_data['books'][:30]):  # Limit to 30 records for PDF
-            if y_position < 50:
-                p.showPage()
-                y_position = height - 50
-                p.setFont("Helvetica", 8)
+        # Add table rows
+        books = report_data['books']
+        for i, book in enumerate(books):
+            barcode = html.escape(str(book.get('barcode', '')))
+            title = html.escape(str(book.get('title', '')))
+            shelf_location = html.escape(str(book.get('shelf_location', '')))
+            current_status = html.escape(str(book.get('current_status', '')))
+            stock_status = html.escape(str(book.get('stock_status', '')))
             
-            p.drawString(50, y_position, str(i + 1))
-            p.drawString(100, y_position, book['barcode'][:15])
-            p.drawString(200, y_position, book['title'][:20])
-            p.drawString(300, y_position, book['stock_status'][:15])
-            p.drawString(400, y_position, book['shelf_location'][:10])
-            y_position -= 15
+            html_content += f"""
+                    <tr>
+                        <td>{i + 1}</td>
+                        <td>{barcode}</td>
+                        <td>{title}</td>
+                        <td>{shelf_location}</td>
+                        <td>{current_status}</td>
+                        <td>{stock_status}</td>
+                    </tr>
+            """
         
-        p.save()
+        # Close HTML
+        html_content += f"""
+                </tbody>
+            </table>
+            
+            <div class="footer">
+                <div class="summary">एकूण नोंदी: {len(books)}</div>
+                <div class="timestamp">हा अहवाल {timezone.now().strftime('%d/%m/%Y %H:%M:%S')} रोजी निर्माण करण्यात आला</div>
+            </div>
+        </body>
+        </html>
+        """
         
-        buffer.seek(0)
-        response = HttpResponse(buffer, content_type='application/pdf')
-        filename = f"Stock_Report_{report_data['stock_year']}_{timezone.now().strftime('%Y%m%d')}.pdf"
+        try:
+            # Generate PDF with WeasyPrint
+            html = HTML(string=html_content)
+            
+            # Add CSS for better typography
+            css_string = """
+            @font-face {
+                font-family: 'Noto Sans Devanagari';
+                src: local('Noto Sans Devanagari'),
+                    local('NotoSansDevanagari-Regular'),
+                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            
+            @font-face {
+                font-family: 'Noto Sans Devanagari';
+                src: local('Noto Sans Devanagari Bold'),
+                    local('NotoSansDevanagari-Bold'),
+                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf') format('truetype');
+                font-weight: bold;
+                font-style: normal;
+            }
+            
+            body {
+                font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'Sanskrit Text', 'Arial Unicode MS', sans-serif;
+                text-rendering: optimizeLegibility;
+                -webkit-font-smoothing: antialiased;
+            }
+            """
+            
+            css = CSS(string=css_string)
+            pdf_data = html.write_pdf(stylesheets=[css])
+            
+        except Exception as e:
+            print(f"WeasyPrint generation error: {e}")
+            # Fallback to basic HTML to PDF without CSS
+            try:
+                html = HTML(string=html_content)
+                pdf_data = html.write_pdf()
+            except Exception as e2:
+                print(f"Even basic WeasyPrint failed: {e2}")
+                return self.export_to_pdf_fallback(report_data)
+        
+        # Create HTTP response
+        response = HttpResponse(pdf_data, content_type='application/pdf')
+        
+        # Create filename
+        from django.utils.text import slugify
+        safe_year = slugify(report_data['stock_year'])
+        filename = f"stock_verification_report_{safe_year}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
+
+    def export_to_pdf_fallback(self, report_data):
+        """
+        Fallback PDF export using ReportLab if WeasyPrint fails
+        """
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+        from reportlab.lib.styles import getSampleStyleSheet
+        import io
+        
+        buffer = io.BytesIO()
+        
+        # Create simple PDF with ReportLab
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=40
+        )
+        
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Title in English
+        title = Paragraph("Vishnudas Bhave Natya Granthalay", styles['Heading1'])
+        story.append(title)
+        
+        subtitle = Paragraph("Stock Verification Report", styles['Heading2'])
+        story.append(subtitle)
+        
+        # Add spacer
+        from reportlab.platypus import Spacer
+        story.append(Spacer(1, 20))
+        
+        # Report info
+        info_text = f"""
+        <b>Stock Year:</b> {report_data['stock_year']}<br/>
+        <b>Generated:</b> {report_data['generated_at']}<br/>
+        <b>Total Books:</b> {report_data['summary']['total']}<br/>
+        <b>Scanned:</b> {report_data['summary']['scanned']}<br/>
+        <b>Unknown:</b> {report_data['summary']['unknown']}<br/>
+        """
+        info = Paragraph(info_text, styles['Normal'])
+        story.append(info)
+        
+        story.append(Spacer(1, 20))
+        
+        # Create table
+        table_data = []
+        headers = ['Sr', 'Barcode', 'Title', 'Shelf Location', 'Current Status', 'Stock Status']
+        table_data.append(headers)
+        
+        books = report_data['books'][:50]  # Limit rows for PDF
+        for i, book in enumerate(books):
+            row = [
+                str(i + 1),
+                str(book.get('barcode', ''))[:15],
+                str(book.get('title', ''))[:30],
+                str(book.get('shelf_location', ''))[:15],
+                str(book.get('current_status', ''))[:15],
+                str(book.get('stock_status', ''))[:15]
+            ]
+            table_data.append(row)
+        
+        table = Table(table_data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        
+        story.append(table)
+        
+        # Footer
+        story.append(Spacer(1, 20))
+        footer = Paragraph(f"<b>Total Records:</b> {len(report_data['books'])}", styles['Normal'])
+        story.append(footer)
+        
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        pdf_data = buffer.getvalue()
+        
+        # Create response
+        response = HttpResponse(pdf_data, content_type='application/pdf')
+        filename = f"stock_report_{report_data['stock_year'].replace(' ', '_')}_{timezone.now().strftime('%Y%m%d')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+    
+
+def generate_final_report(request):
+    """
+    Generate final PDF report from StockReport table data
+    """
+    try:
+        data = json.loads(request.body)
+        year_id = data.get('year_id')
+         
+        if not year_id:
+            return JsonResponse({'success': False, 'error': 'Year ID is required'})
+        
+        # Get the stock year
+        stock_year = StockYearMaster.objects.get(id=year_id)
+        
+        # if not stock_year.is_completed:
+        #     return JsonResponse({'success': False, 'error': 'Stock batch must be completed first'})
+        
+        # Fetch data from StockReport table
+        stock_reports = StockReport.objects.filter(
+            stock_year=stock_year
+        ).select_related('shelf_location').order_by('barcode')
+        
+        if not stock_reports.exists():
+            return JsonResponse({'success': False, 'error': 'No report data found for this stock year'})
+        
+        # Prepare report data from StockReport table
+        report_data = prepare_report_data_from_stock_reports(stock_reports, stock_year)
+        
+        # Generate PDF
+        response = export_final_report_to_pdf(report_data)
+        return response
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def prepare_report_data_from_stock_reports(stock_reports, stock_year):
+    """
+    Prepare report data from StockReport queryset
+    """
+    books = []
+    status_counts = {
+        'scanned': 0,
+        'unknown': 0,
+        'total': 0
+    }
+    
+    for report in stock_reports:
+        # Get shelf location name
+        shelf_location = 'N/A'
+        if report.shelf_location:
+            shelf_location = report.shelf_location.location_name
+        
+        # Get date processed as string
+        date_processed = 'N/A'
+        if report.date_processed:
+            date_processed = report.date_processed.strftime('%Y-%m-%d')
+        
+        # Update status counts
+        stock_status_lower = report.stock_status.lower()
+        if 'scanned' in stock_status_lower:
+            status_counts['scanned'] += 1
+        elif 'unknown' in stock_status_lower:
+            status_counts['unknown'] += 1
+        status_counts['total'] += 1
+        
+        book_data = {
+            'barcode': report.barcode,
+            'title': report.title,
+            'shelf_location': shelf_location,
+            'current_status': report.current_status,
+            'stock_status': report.stock_status,
+            'date_processed': date_processed,
+        }
+        books.append(book_data)
+    
+    return {
+        'books': books,
+        'summary': status_counts,
+        'stock_year': stock_year.year_name,
+        'stock_year_id': stock_year.id,
+        'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+    }
+
+
+def export_final_report_to_pdf(report_data):
+    """
+    Export final report to PDF format from StockReport data
+    """
+    try:
+        from weasyprint import HTML, CSS
+        use_weasyprint = True
+    except ImportError:
+        use_weasyprint = False
+    
+    import io
+    import html as html_module  # Import html module with alias to avoid conflict
+    
+    # Create HTML content with Marathi text
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="mr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>स्टॉक सत्यापन अंतिम अहवाल - {report_data['stock_year']}</title>
+        <style>
+            @page {{
+                size: A4;
+                margin: 1.5cm;
+                
+                @top-center {{
+                    content: "विष्णुदास भावे नाट्य ग्रंथालय - अंतिम स्टॉक अहवाल";
+                    font-size: 14px;
+                    color: #2c3e50;
+                    margin-top: 0.5cm;
+                }}
+                
+                @bottom-center {{
+                    content: "पृष्ठ " counter(page) " / " counter(pages);
+                    font-size: 10px;
+                    margin-bottom: 0.5cm;
+                }}
+            }}
+            
+            body {{
+                font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', 'Nirmala UI', sans-serif;
+                line-height: 1.4;
+                color: #333;
+            }}
+            
+            .header-container {{
+                text-align: center;
+                margin-bottom: 25px;
+            }}
+            
+            .library-name {{
+                font-size: 22px;
+                font-weight: bold;
+                color: #2c3e50;
+                margin: 10px 0;
+            }}
+            
+            .report-title {{
+                font-size: 18px;
+                font-weight: bold;
+                color: #d35400;
+                margin: 5px 0 20px 0;
+                border-bottom: 2px solid #d35400;
+                padding-bottom: 10px;
+            }}
+            
+            .report-subtitle {{
+                font-size: 14px;
+                color: #7f8c8d;
+                margin-bottom: 25px;
+                font-style: italic;
+            }}
+            
+            .report-info {{
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 5px;
+                border-left: 4px solid #3498db;
+                margin-bottom: 25px;
+            }}
+            
+            .info-row {{
+                margin-bottom: 8px;
+                font-size: 13px;
+            }}
+            
+            .info-label {{
+                font-weight: bold;
+                color: #2c3e50;
+                display: inline-block;
+                width: 150px;
+            }}
+            
+            .info-value {{
+                color: #555;
+            }}
+            
+            .summary-stats {{
+                display: flex;
+                justify-content: space-around;
+                margin: 25px 0;
+                flex-wrap: wrap;
+            }}
+            
+            .stat-box {{
+                background: linear-gradient(45deg, #3498db, #2980b9);
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                text-align: center;
+                min-width: 150px;
+                margin: 5px;
+            }}
+            
+            .stat-value {{
+                font-size: 24px;
+                font-weight: bold;
+                margin: 5px 0;
+            }}
+            
+            .stat-label {{
+                font-size: 14px;
+            }}
+            
+            .data-table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+                font-size: 11px;
+            }}
+            
+            .data-table th {{
+                background-color: #2c3e50;
+                color: white;
+                padding: 10px 8px;
+                text-align: left;
+                font-weight: bold;
+                border: 1px solid #ddd;
+            }}
+            
+            .data-table td {{
+                padding: 8px;
+                border: 1px solid #ddd;
+                text-align: left;
+            }}
+            
+            .data-table tr:nth-child(even) {{
+                background-color: #f9f9f9;
+            }}
+            
+            .status-scanned {{
+                color: #27ae60;
+                font-weight: bold;
+            }}
+            
+            .status-unknown {{
+                color: #e74c3c;
+                font-weight: bold;
+            }}
+            
+            .footer {{
+                margin-top: 30px;
+                padding-top: 15px;
+                border-top: 1px solid #eee;
+                font-size: 12px;
+                text-align: center;
+            }}
+            
+            .summary {{
+                font-weight: bold;
+                color: #2c3e50;
+                margin-bottom: 5px;
+            }}
+            
+            .timestamp {{
+                color: #7f8c8d;
+                font-size: 11px;
+            }}
+            
+            .completed-badge {{
+                background-color: #27ae60;
+                color: white;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: 11px;
+                margin-left: 10px;
+            }}
+            
+            /* Print styles */
+            @media print {{
+                body {{
+                    margin: 0;
+                    padding: 0;
+                }}
+                
+                .no-print {{
+                    display: none;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="header-container">
+            <div class="library-name">विष्णुदास भावे नाट्य ग्रंथालय</div>
+            <div class="report-title">स्टॉक सत्यापन अंतिम अहवाल</div>
+            <div class="report-subtitle">(Stock Verification Final Report)</div>
+        </div>
+        
+        <div class="report-info">
+            <div class="info-row">
+                <span class="info-label">स्टॉक वर्ष:</span>
+                <span class="info-value">{html_module.escape(str(report_data['stock_year']))}</span>
+                <span class="completed-badge">✓ पूर्ण</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">अहवाल क्र.:</span>
+                <span class="info-value">SR/{report_data['stock_year_id']}/{timezone.now().strftime('%Y%m%d')}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">निर्मिती दिनांक:</span>
+                <span class="info-value">{html_module.escape(str(report_data['generated_at']))}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">डेटा स्रोत:</span>
+                <span class="info-value">स्टॉक अहवाल डेटाबेस</span>
+            </div>
+        </div>
+        
+        <div class="summary-stats">
+            <div class="stat-box">
+                <div class="stat-value">{report_data['summary']['total']}</div>
+                <div class="stat-label">एकूण पुस्तके</div>
+            </div>
+            <div class="stat-box" style="background: linear-gradient(45deg, #27ae60, #229954);">
+                <div class="stat-value">{report_data['summary']['scanned']}</div>
+                <div class="stat-label">स्कॅन केलेली</div>
+            </div>
+            <div class="stat-box" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">
+                <div class="stat-value">{report_data['summary']['unknown']}</div>
+                <div class="stat-label">अज्ञात स्थिती</div>
+            </div>
+            <div class="stat-box" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">
+                <div class="stat-value">{report_data['summary']['scanned'] / report_data['summary']['total'] * 100 if report_data['summary']['total'] > 0 else 0:.1f}%</div>
+                <div class="stat-label">स्कॅन दर</div>
+            </div>
+        </div>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="5%">क्र.</th>
+                    <th width="15%">बारकोड</th>
+                    <th width="30%">शीर्षक</th>
+                    <th width="15%">शेल्फ स्थान</th>
+                    <th width="15%">सध्याची स्थिती</th>
+                    <th width="15%">स्टॉक स्थिती</th>
+                    <th width="10%">तारीख</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    
+    # Add table rows
+    books = report_data['books']
+    for i, book in enumerate(books):
+        barcode = html_module.escape(str(book.get('barcode', '')))
+        title = html_module.escape(str(book.get('title', '')))
+        shelf_location = html_module.escape(str(book.get('shelf_location', '')))
+        current_status = html_module.escape(str(book.get('current_status', '')))
+        stock_status = html_module.escape(str(book.get('stock_status', '')))
+        date_processed = html_module.escape(str(book.get('date_processed', '')))
+        
+        status_class = 'status-scanned' if 'scanned' in book.get('stock_status', '').lower() else 'status-unknown'
+        
+        html_content += f"""
+                <tr>
+                    <td>{i + 1}</td>
+                    <td>{barcode}</td>
+                    <td>{title}</td>
+                    <td>{shelf_location}</td>
+                    <td>{current_status}</td>
+                    <td class="{status_class}">{stock_status}</td>
+                    <td>{date_processed}</td>
+                </tr>
+        """
+    
+    # Close HTML
+    html_content += f"""
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            <div class="summary">एकूण नोंदी: {len(books)}</div>
+            <div class="summary">स्टॉक सत्यापन पूर्ण झाले: {timezone.now().strftime('%d/%m/%Y')}</div>
+            <div class="timestamp">हा अंतिम अहवाल {timezone.now().strftime('%d/%m/%Y %H:%M:%S')} रोजी निर्माण करण्यात आला</div>
+            <div class="timestamp" style="margin-top: 10px;">
+                ** हा एक अधिकृत अहवाल आहे जो स्टॉक सत्यापन प्रक्रिया पूर्ण झाल्यानंतर निर्माण करण्यात आला आहे **
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    pdf_data = None
+    
+    if use_weasyprint:
+        try:
+            # Generate PDF with WeasyPrint
+            weasyprint_html = HTML(string=html_content)  # Use different variable name
+            
+            # Add CSS for better typography
+            css_string = """
+            @font-face {
+                font-family: 'Noto Sans Devanagari';
+                src: local('Noto Sans Devanagari'),
+                    local('NotoSansDevanagari-Regular'),
+                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            
+            @font-face {
+                font-family: 'Noto Sans Devanagari';
+                src: local('Noto Sans Devanagari Bold'),
+                    local('NotoSansDevanagari-Bold'),
+                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf') format('truetype');
+                font-weight: bold;
+                font-style: normal;
+            }
+            
+            body {
+                font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'Sanskrit Text', 'Arial Unicode MS', sans-serif;
+                text-rendering: optimizeLegibility;
+                -webkit-font-smoothing: antialiased;
+            }
+            """
+            
+            css = CSS(string=css_string)
+            pdf_data = weasyprint_html.write_pdf(stylesheets=[css])
+            
+        except Exception as e:
+            print(f"WeasyPrint generation error: {e}")
+            # Fallback to basic HTML to PDF without CSS
+            try:
+                weasyprint_html = HTML(string=html_content)
+                pdf_data = weasyprint_html.write_pdf()
+            except Exception as e2:
+                print(f"Even basic WeasyPrint failed: {e2}")
+                use_weasyprint = False
+    
+    if not use_weasyprint or pdf_data is None:
+        # Fallback to ReportLab
+        pdf_data = export_final_report_fallback(report_data)
+    
+    # Create HTTP response
+    response = HttpResponse(pdf_data, content_type='application/pdf')
+    
+    # Create filename
+    from django.utils.text import slugify
+    safe_year = slugify(report_data['stock_year'])
+    filename = f"final_stock_report_{safe_year}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+
+def export_final_report_fallback(report_data):
+    """
+    Fallback PDF export using ReportLab for final report
+    """
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    import io
+    
+    buffer = io.BytesIO()
+    
+    # Use landscape orientation for more columns
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=40,
+        bottomMargin=40
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        alignment=TA_CENTER,
+        spaceAfter=20,
+        textColor=colors.HexColor('#2c3e50')
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        alignment=TA_CENTER,
+        spaceAfter=30,
+        textColor=colors.HexColor('#2980b9')
+    )
+    
+    info_style = ParagraphStyle(
+        'InfoStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=20
+    )
+    
+    # Create story elements
+    story = []
+    
+    # Title
+    title = Paragraph("VISHNUDAS BHAVE NATYA GRANTHALAYA", title_style)
+    story.append(title)
+    
+    subtitle = Paragraph("STOCK VERIFICATION FINAL REPORT", subtitle_style)
+    story.append(subtitle)
+    
+    # Report info
+    info_text = f"""
+    <b>Stock Year:</b> {report_data['stock_year']} &nbsp;&nbsp; | &nbsp;&nbsp;
+    <b>Report No:</b> SR/{report_data['stock_year_id']}/{timezone.now().strftime('%Y%m%d')} &nbsp;&nbsp; | &nbsp;&nbsp;
+    <b>Generated:</b> {report_data['generated_at']}<br/>
+    <b>Total Books:</b> {report_data['summary']['total']} &nbsp;&nbsp; | &nbsp;&nbsp;
+    <b>Scanned:</b> {report_data['summary']['scanned']} &nbsp;&nbsp; | &nbsp;&nbsp;
+    <b>Unknown:</b> {report_data['summary']['unknown']} &nbsp;&nbsp; | &nbsp;&nbsp;
+    <b>Scan Rate:</b> {report_data['summary']['scanned'] / report_data['summary']['total'] * 100 if report_data['summary']['total'] > 0 else 0:.1f}%
+    """
+    info = Paragraph(info_text, info_style)
+    story.append(info)
+    
+    story.append(Spacer(1, 20))
+    
+    # Create table
+    table_data = []
+    headers = ['Sr', 'Barcode', 'Title', 'Shelf Location', 'Current Status', 'Stock Status', 'Date']
+    table_data.append(headers)
+    
+    books = report_data['books'][:100]  # Limit rows for PDF performance
+    for i, book in enumerate(books):
+        row = [
+            str(i + 1),
+            str(book.get('barcode', ''))[:12],
+            str(book.get('title', ''))[:40],
+            str(book.get('shelf_location', ''))[:15],
+            str(book.get('current_status', ''))[:15],
+            str(book.get('stock_status', ''))[:15],
+            str(book.get('date_processed', ''))[:10]
+        ]
+        table_data.append(row)
+    
+    # Create table with style
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dee2e6')),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+    ]))
+    
+    story.append(table)
+    
+    # Footer
+    story.append(Spacer(1, 20))
+    footer_text = f"""
+    <b>Total Records:</b> {len(report_data['books'])} &nbsp;&nbsp; | &nbsp;&nbsp;
+    <b>Stock Verification Completed On:</b> {timezone.now().strftime('%d/%m/%Y')}<br/>
+    <i>This is an official final report generated after completion of stock verification process.</i>
+    """
+    footer = Paragraph(footer_text, info_style)
+    story.append(footer)
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
     
 @login_required
 def led_tv_index(request):
@@ -5793,3 +6994,460 @@ def led_tv_index(request):
         "advertisements": advertisements,
         "events": events,
     })
+    
+def advertisement_index(request):
+    # Fetch all ads ordered by newest first
+        advertisements = Advertisement.objects.all().order_by('-created_at')
+
+        # --- Stats ---
+        total_count = advertisements.count()
+        active_count = advertisements.filter(status=True).count()
+        inactive_count = advertisements.filter(status=False).count()
+        today_count = advertisements.filter(created_at=date.today()).count()
+
+        # --- Attach encrypted id dynamically (if your template uses ad.encrypted_id) ---
+        # Remove this section if you store encrypted_id directly in DB
+        for ad in advertisements:
+            if not hasattr(ad, 'encrypted_id'):
+                try:
+                    ad.encrypted_id = enc(str(ad.id))   # If you use encryption
+                except:
+                    ad.encrypted_id = ad.id               # fallback (no encryption)
+
+        context = {
+            "advertisements": advertisements,
+            "active_count": active_count,
+            "inactive_count": inactive_count,
+            "today_count": today_count,
+        }
+
+        return render(request, "L01/Display/advertisement_index.html", context)
+    
+@login_required
+def advertisement_toggle_status(request, encrypted_id):
+    if request.method == 'POST':
+
+        # Decrypt the encrypted ID
+        try:
+            pk = int(dec(encrypted_id))   # dec() returns string → convert to int
+        except Exception:
+            messages.error(request, "Invalid advertisement ID.")
+            return redirect('advertisement_index')
+
+        # Fetch advertisement using decrypted primary key
+        advertisement = get_object_or_404(Advertisement, pk=pk)
+
+        # Toggle the status
+        advertisement.status = not advertisement.status
+        advertisement.save()
+
+        # Success messages
+        if advertisement.status:
+            messages.success(request, f'"{advertisement.adv_title}" activated successfully.')
+        else:
+            messages.success(request, f'"{advertisement.adv_title}" deactivated successfully.')
+
+        return redirect('L01:advertisement_index')
+
+    return redirect('L01:advertisement_index')
+
+
+@login_required
+def advertisement_create(request):
+    library_code = request.session.get('library_db', None)
+    if request.method == 'POST':
+        try:
+            # Get form data
+            adv_title = request.POST.get('adv_title')
+            
+            # Handle file upload
+            video_file = request.FILES.get('video_file')
+            video_path = None
+            
+            if video_file:
+                # Validate file size (max 200MB)
+                if video_file.size > 200 * 1024 * 1024:
+                    messages.error(request, 'File size exceeds 100MB limit.')
+                    return render(request, 'L01/Display/advertisement_create.html')
+                
+                # Validate file extension
+                allowed_extensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv']
+                file_extension = os.path.splitext(video_file.name)[1].lower()
+                
+                if file_extension not in allowed_extensions:
+                    messages.error(request, f'Invalid file format. Allowed formats: {", ".join([ext.replace(".", "") for ext in allowed_extensions])}')
+                    return render(request, 'L01/Display/advertisement_create.html')
+                
+                # Generate unique filename
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                
+                clean_filename = video_file.name.replace(' ', '_')
+                filename = f"adv_{timestamp}_{clean_filename}"
+                
+                # Save the file using default_storage
+                file_path = f'{library_code}/Advertisements/{filename}'
+                saved_path = default_storage.save(file_path, video_file)
+                video_path = saved_path  # Store the relative path in the database
+                
+            else:
+                messages.error(request, 'Please select a video file.')
+                return render(request, 'L01/Display/advertisement_create.html')
+            
+            # Parse dates
+            campaign_date_from = request.POST.get('campaign_date_from')
+            campaign_date_to = request.POST.get('campaign_date_to')
+            reported_at = request.POST.get('reported_at')
+            
+            campaign_date_from = parse_date(campaign_date_from) if campaign_date_from else None
+            campaign_date_to = parse_date(campaign_date_to) if campaign_date_to else None
+            reported_at = parse_datetime(reported_at) if reported_at else None
+            
+            # Validate campaign dates
+            if campaign_date_from and campaign_date_to:
+                if campaign_date_to < campaign_date_from:
+                    messages.error(request, 'End date cannot be earlier than start date.')
+                    return render(request, 'L01/Display/advertisement_create.html')
+            
+            # Get organization name
+            organization_name = request.POST.get('organization_name', '').strip()
+            
+            # Get status (checkbox returns 'on' when checked)
+            status = request.POST.get('status') == 'on'
+            
+            # Get reported by (default to current user if not provided)
+            reported_by = request.POST.get('reported_by', '').strip()
+            if not reported_by and request.user.is_authenticated:
+                reported_by = request.user.username
+            
+            # Create advertisement
+            advertisement = Advertisement.objects.create(
+                adv_title=adv_title,
+                video_path=video_path,  # Store the saved file path
+                organization_name=organization_name if organization_name else None,
+                status=status,
+                campaign_date_from=campaign_date_from,
+                campaign_date_to=campaign_date_to,
+                reported_at=reported_at,
+                reported_by=reported_by if reported_by else None,
+                created_by=request.user.username if request.user.is_authenticated else 'Anonymous'
+            )
+            
+            messages.success(request, f'Advertisement "{adv_title}" created successfully!')
+            return redirect('L01:advertisement_index')
+            
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error creating advertisement: {str(e)}')
+            
+            messages.error(request, f'Error creating advertisement: {str(e)}')
+            return render(request, 'L01/Display/advertisement_create.html')
+    
+    # GET request - show the form
+    return render(request, 'L01/Display/advertisement_create.html')
+
+@login_required
+def event_announcement_index(request):
+    # Fetch all events ordered by newest first
+    announcements = EventAnnouncement.objects.all().order_by('-created_at')
+
+    # --- Stats ---
+    total_count = announcements.count()
+    active_count = announcements.filter(status=True).count()
+    inactive_count = announcements.filter(status=False).count()
+    today_count = announcements.filter(created_at__date=date.today()).count()
+    
+    # Count by date status
+    today = date.today()
+    upcoming_count = announcements.filter(
+        event_from_date__gt=today, 
+        status=True
+    ).count()
+    ongoing_count = announcements.filter(
+        event_from_date__lte=today,
+        event_to_date__gte=today,
+        status=True
+    ).count()
+    past_count = announcements.filter(
+        event_to_date__lt=today
+    ).count()
+
+    # --- Attach encrypted id dynamically ---
+    for announcement in announcements:
+        if not hasattr(announcement, 'encrypted_id'):
+            try:
+                announcement.encrypted_id = enc(str(announcement.id))
+            except:
+                announcement.encrypted_id = announcement.id
+
+    context = {
+        "announcements": announcements,
+        "total_count": total_count,
+        "active_count": active_count,
+        "inactive_count": inactive_count,
+        "today_count": today_count,
+        "upcoming_count": upcoming_count,
+        "ongoing_count": ongoing_count,
+        "past_count": past_count,
+    }
+
+    return render(request, "L01/Display/event_announcement_index.html", context)
+
+@login_required
+def event_announcement_toggle_status(request, encrypted_id):
+    if request.method == 'POST':
+        # Decrypt the encrypted ID
+        try:
+            pk = int(dec(encrypted_id))
+        except Exception:
+            messages.error(request, "Invalid event announcement ID.")
+            return redirect('L01:event_announcement_index')
+
+        # Fetch announcement using decrypted primary key
+        announcement = get_object_or_404(EventAnnouncement, pk=pk)
+
+        # Toggle the status
+        announcement.status = not announcement.status
+        announcement.save()
+
+        # Success messages
+        if announcement.status:
+            messages.success(request, f'"{announcement.event_title}" activated successfully.')
+        else:
+            messages.success(request, f'"{announcement.event_title}" deactivated successfully.')
+
+        return redirect('L01:event_announcement_index')
+
+    return redirect('L01:event_announcement_index')
+
+@login_required
+def event_announcement_create(request):
+    if request.method == 'POST':
+        try:
+            # Get form data
+            event_title = request.POST.get('event_title')
+            description = request.POST.get('description', '').strip()
+            
+            # Parse dates
+            event_from_date = request.POST.get('event_from_date')
+            event_to_date = request.POST.get('event_to_date')
+            reported_at = request.POST.get('reported_at')
+            
+            # Convert date strings to date objects
+            from datetime import datetime
+            
+            if event_from_date:
+                event_from_date = datetime.strptime(event_from_date, '%Y-%m-%d').date()
+            if event_to_date:
+                event_to_date = datetime.strptime(event_to_date, '%Y-%m-%d').date()
+            if reported_at:
+                reported_at = datetime.strptime(reported_at, '%Y-%m-%dT%H:%M')
+            
+            # Validate dates
+            if event_from_date and event_to_date:
+                if event_to_date < event_from_date:
+                    messages.error(request, 'Event end date cannot be earlier than start date.')
+                    return render(request, 'L01/Display/event_announcement_create.html')
+            
+            # Get status (checkbox returns 'on' when checked)
+            status = request.POST.get('status') == 'on'
+            
+            # Get reported by (default to current user if not provided)
+            reported_by = request.POST.get('reported_by', '').strip()
+            if not reported_by and request.user.is_authenticated:
+                reported_by = request.user.username
+            
+            # Create event announcement
+            announcement = EventAnnouncement.objects.create(
+                event_title=event_title,
+                description=description if description else None,
+                status=status,
+                event_from_date=event_from_date,
+                event_to_date=event_to_date,
+                reported_at=reported_at,
+                reported_by=reported_by if reported_by else None,
+                created_by=request.user.username if request.user.is_authenticated else 'Anonymous'
+            )
+            
+            messages.success(request, f'Event announcement "{event_title}" created successfully!')
+            return redirect('L01:event_announcement_index')
+            
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error creating event announcement: {str(e)}')
+            
+            messages.error(request, f'Error creating event announcement: {str(e)}')
+            return render(request, 'L01/Display/event_announcement_create.html')
+    
+    # GET request - show the form
+    return render(request, 'L01/Display/event_announcement_create.html')
+
+
+@login_required
+def advertisement_edit(request, encrypted_id):
+    try:
+        # Decrypt advertisement ID
+        adv_id = int(dec(encrypted_id))
+
+        library_code = request.session.get('library_db', None)
+
+        advertisement = get_object_or_404(Advertisement, pk=adv_id)
+
+        if request.method == 'POST':
+            # Get basic fields
+            adv_title = request.POST.get('adv_title')
+            organization_name = request.POST.get('organization_name', '').strip()
+            status = request.POST.get('status') == 'on'
+            reported_by = request.POST.get('reported_by', '').strip()
+
+            if not reported_by and request.user.is_authenticated:
+                reported_by = request.user.username
+
+            # ----- VIDEO FILE HANDLING -----
+            video_file = request.FILES.get('video_file')
+            
+
+            if video_file:
+                # Validate size (max 200 MB)
+                if video_file.size > 200 * 1024 * 1024:
+                    messages.error(request, 'File size exceeds 100MB limit.')
+                    return render(request, 'L01/Display/advertisement_edit.html', {'data': advertisement})
+
+                # Validate extension
+                allowed_extensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv']
+                file_extension = os.path.splitext(video_file.name)[1].lower()
+
+                if file_extension not in allowed_extensions:
+                    messages.error(request, f'Invalid file format. Allowed: {", ".join([ext.replace(".", "") for ext in allowed_extensions])}')
+                    return render(request, 'L01/Display/advertisement_edit.html', {'data': advertisement})
+
+                # Generate unique file name
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                clean_filename = video_file.name.replace(' ', '_')
+                filename = f"adv_{timestamp}_{clean_filename}"
+
+                file_path = f'{library_code}/Advertisements/{filename}'
+                saved_path = default_storage.save(file_path, video_file)
+
+                # OPTIONAL: Delete old file if exists
+                if advertisement.video_path and default_storage.exists(advertisement.video_path):
+                    default_storage.delete(advertisement.video_path)
+
+                # Set new video path
+                advertisement.video_path = saved_path
+
+            # ----- DATE HANDLING -----
+            campaign_date_from = request.POST.get('campaign_date_from')
+            campaign_date_to = request.POST.get('campaign_date_to')
+            reported_at = request.POST.get('reported_at')
+
+            campaign_date_from = parse_date(campaign_date_from) if campaign_date_from else None
+            campaign_date_to = parse_date(campaign_date_to) if campaign_date_to else None
+            reported_at = parse_datetime(reported_at) if reported_at else None
+
+            if campaign_date_from and campaign_date_to:
+                if campaign_date_to < campaign_date_from:
+                    messages.error(request, 'End date cannot be earlier than start date.')
+                    return render(request, 'L01/Display/advertisement_edit.html', {'data': advertisement})
+
+            # ----- UPDATE FIELDS -----
+            advertisement.adv_title = adv_title
+            advertisement.organization_name = organization_name if organization_name else None
+            advertisement.status = status
+            advertisement.campaign_date_from = campaign_date_from
+            advertisement.campaign_date_to = campaign_date_to
+            advertisement.reported_at = reported_at
+            advertisement.reported_by = reported_by
+            advertisement.updated_by = request.user.username if request.user.is_authenticated else 'Anonymous'
+            advertisement.save()
+
+            messages.success(request, f'Advertisement "{adv_title}" updated successfully!')
+            return redirect('L01:advertisement_index')
+
+        # GET request → load edit page
+        return render(request, 'L01/Display/advertisement_edit.html', {'data': advertisement})
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error editing advertisement: {str(e)}")
+        messages.error(request, f"Error editing advertisement: {str(e)}")
+        return redirect('L01:advertisement_index')
+
+
+@login_required
+def event_announcement_edit(request, encrypted_id):
+    try:
+        # Decrypt event announcement ID
+        announcement_id = int(dec(encrypted_id))
+        announcement = get_object_or_404(EventAnnouncement, pk=announcement_id)
+
+        if request.method == 'POST':
+            # Get form data
+            event_title = request.POST.get('event_title')
+            description = request.POST.get('description', '').strip()
+            
+            # Parse dates
+            event_from_date = request.POST.get('event_from_date')
+            event_to_date = request.POST.get('event_to_date')
+            reported_at = request.POST.get('reported_at')
+            
+            # Convert date strings to date objects
+            from datetime import datetime
+            
+            if event_from_date:
+                event_from_date = datetime.strptime(event_from_date, '%Y-%m-%d').date()
+            else:
+                event_from_date = None
+                
+            if event_to_date:
+                event_to_date = datetime.strptime(event_to_date, '%Y-%m-%d').date()
+            else:
+                event_to_date = None
+                
+            if reported_at:
+                reported_at = datetime.strptime(reported_at, '%Y-%m-%dT%H:%M')
+            else:
+                reported_at = None
+            
+            # Validate dates
+            if event_from_date and event_to_date:
+                if event_to_date < event_from_date:
+                    messages.error(request, 'Event end date cannot be earlier than start date.')
+                    return render(request, 'L01/Display/event_announcement_edit.html', {'data': announcement})
+            
+            # Get status (checkbox returns 'on' when checked)
+            status = request.POST.get('status') == 'on'
+            
+            # Get reported by
+            reported_by = request.POST.get('reported_by', '').strip()
+            if not reported_by:
+                reported_by = None
+            
+            # Update event announcement
+            announcement.event_title = event_title
+            announcement.description = description if description else None
+            announcement.status = status
+            announcement.event_from_date = event_from_date
+            announcement.event_to_date = event_to_date
+            announcement.reported_at = reported_at
+            announcement.reported_by = reported_by
+            announcement.updated_by = request.user.username if request.user.is_authenticated else 'Anonymous'
+            announcement.save()
+            
+            messages.success(request, f'Event announcement "{event_title}" updated successfully!')
+            return redirect('L01:event_announcement_index')
+            
+        # GET request - show the edit form with existing data
+        return render(request, 'L01/Display/event_announcement_edit.html', {'data': announcement})
+        
+    except Exception as e:
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error editing event announcement: {str(e)}')
+        
+        messages.error(request, f'Error editing event announcement: {str(e)}')
+        return redirect('L01:event_announcement_index')

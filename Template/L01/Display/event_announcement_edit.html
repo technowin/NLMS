@@ -1,0 +1,505 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Edit Event Announcement - {{ data.event_title }}{% endblock title %}
+
+{% block extra_css %}
+    <!-- SweetAlert CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Flatpickr for datepicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+
+        /* Character counter */
+        .char-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .char-counter.warning {
+            color: #ffc107;
+        }
+        
+        .char-counter.danger {
+            color: #dc3545;
+        }
+        
+        /* Date input styling */
+        .date-input-group {
+            position: relative;
+        }
+        
+        .date-input-group .form-control {
+            padding-right: 40px;
+        }
+        
+        .date-input-group i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            pointer-events: none;
+        }
+        
+        /* Form switch styling */
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+        }
+        
+        .form-switch .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        /* Status badge */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #155724;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .status-inactive {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #721c24;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+    </style>
+{% endblock %}
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='Event Announcements' sub_title='Edit Event Announcement' %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="est-info-wrapper">
+
+        <form method="post" id="eventAnnouncementForm">
+            {% csrf_token %}
+
+            <!-- Event Title -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-heading me-2"></i>Event Title <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" 
+                           name="event_title" 
+                           id="id_event_title" 
+                           class="form-control" 
+                           placeholder="Enter event title"
+                           maxlength="255"
+                           required
+                           value="{{ data.event_title|default:'' }}">
+                    <div class="char-counter">
+                        <span id="titleCharCount">{{ data.event_title|length|default:0 }}</span>/255 characters
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-align-left me-2"></i>Description
+                    </label>
+                    <textarea name="description" 
+                              id="id_description" 
+                              class="form-control" 
+                              rows="4" 
+                              placeholder="Enter event description (optional)"
+                              maxlength="2000">{{ data.description|default:'' }}</textarea>
+                    <div class="char-counter">
+                        <span id="descCharCount">{{ data.description|length|default:0 }}</span>/2000 characters
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Dates -->
+            <div class="mb-3 row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-day me-2"></i>Event Start Date
+                    </label>
+                    <div class="date-input-group">
+                        <input type="text" 
+                               name="event_from_date" 
+                               id="id_event_from_date" 
+                               class="form-control datepicker" 
+                               placeholder="Select start date"
+                               value="{% if data.event_from_date %}{{ data.event_from_date|date:'Y-m-d' }}{% endif %}">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-day me-2"></i>Event End Date (Optional)
+                    </label>
+                    <div class="date-input-group">
+                        <input type="text" 
+                               name="event_to_date" 
+                               id="id_event_to_date" 
+                               class="form-control datepicker" 
+                               placeholder="Select end date (optional)"
+                               value="{% if data.event_to_date %}{{ data.event_to_date|date:'Y-m-d' }}{% endif %}">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-3 row">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        <i class="fas fa-toggle-on me-2"></i>Status
+                    </label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               name="status" 
+                               id="id_status" 
+                               role="switch" 
+                               {% if data.status %}checked{% endif %}>
+                        <label class="form-check-label" for="id_status">
+                            <span id="statusText">
+                                {% if data.status %}Active{% else %}Inactive{% endif %}
+                            </span> - Event announcement will be visible to users
+                        </label>
+                    </div>
+                    <div class="mt-2">
+                        <span class="status-badge {% if data.status %}status-active{% else %}status-inactive{% endif %}" id="statusBadge">
+                            <i class="fas {% if data.status %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i>
+                            {% if data.status %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </div>
+                    <div class="form-text text-muted mt-1">
+                        <i class="fas fa-info-circle me-1"></i> Toggle the switch to change event status
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reported Information -->
+            <div class="mb-3 row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-user me-2"></i>Reported By
+                    </label>
+                    <input type="text" 
+                           name="reported_by" 
+                           id="id_reported_by" 
+                           class="form-control" 
+                           placeholder="Enter reporter name"
+                           value="{{ data.reported_by|default:'' }}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-clock me-2"></i>Reported At
+                    </label>
+                    <input type="datetime-local" 
+                           name="reported_at" 
+                           id="id_reported_at" 
+                           class="form-control"
+                           value="{% if data.reported_at %}{{ data.reported_at|date:'Y-m-d\\TH:i' }}{% endif %}">
+                </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-submit">
+                    <i class="fa-solid fa-save"></i> Update Event Announcement
+                </button>
+                <a href="{% url 'L01:event_announcement_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Back to List
+                </a>
+                {% comment %} <a href="{% url 'L01:event_announcement_view' data.encrypted_id %}" class="btn btn-outline-info">
+                    <i class="fa-solid fa-eye me-2"></i> View Details
+                </a> {% endcomment %}
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- jQuery -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Flatpickr for datepicker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{{ message.tags|title }}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{{ message.tags }}",
+                        confirmButtonText: "OK",
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+    
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize date pickers
+            flatpickr('.datepicker', {
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    // If from date is selected, set min date for to date
+                    if (instance.input.id === 'id_event_from_date' && dateStr) {
+                        flatpickr('#id_event_to_date', {
+                            minDate: dateStr
+                        });
+                    }
+                }
+            });
+            
+            // Character counters
+            function updateCharCounters() {
+                const titleLength = $('#id_event_title').val().length;
+                const descLength = $('#id_description').val().length;
+                
+                $('#titleCharCount').text(titleLength);
+                $('#descCharCount').text(descLength);
+                
+                // Add warning classes
+                if (titleLength > 200) {
+                    $('#titleCharCount').addClass('warning');
+                } else {
+                    $('#titleCharCount').removeClass('warning');
+                }
+                
+                if (descLength > 1800) {
+                    $('#descCharCount').addClass('warning');
+                } else {
+                    $('#descCharCount').removeClass('warning');
+                }
+            }
+            
+            // Update counters on input
+            $('#id_event_title, #id_description').on('input', updateCharCounters);
+            updateCharCounters(); // Initial update
+            
+            // Status toggle text and badge
+            $('#id_status').on('change', function() {
+                const isActive = this.checked;
+                $('#statusText').text(isActive ? 'Active' : 'Inactive');
+                $('#statusBadge')
+                    .toggleClass('status-active', isActive)
+                    .toggleClass('status-inactive', !isActive)
+                    .html(`<i class="fas ${isActive ? 'fa-toggle-on' : 'fa-toggle-off'} me-1"></i>${isActive ? 'Active' : 'Inactive'}`);
+            });
+            
+            // Set current date/time for reported_at if empty
+            if (!$('#id_reported_at').val()) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                $('#id_reported_at').val(formattedDateTime);
+            }
+            
+            // Auto-fill reported_by with current user if empty
+            {% if user.is_authenticated and not data.reported_by %}
+            if (!$('#id_reported_by').val()) {
+                $('#id_reported_by').val('{{ user.get_full_name|default:user.username }}');
+            }
+            {% endif %}
+            
+            // Form validation
+            $('#eventAnnouncementForm').on('submit', function(e) {
+                // Validate required fields
+                const title = $('#id_event_title').val().trim();
+                if (!title) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Missing Information',
+                        text: 'Please enter Event Title',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    $('#id_event_title').focus();
+                    return false;
+                }
+                
+                // Validate dates if provided
+                const fromDate = $('#id_event_from_date').val();
+                const toDate = $('#id_event_to_date').val();
+                
+                if (fromDate && toDate) {
+                    const from = new Date(fromDate);
+                    const to = new Date(toDate);
+                    
+                    if (to < from) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid Dates',
+                            text: 'End date cannot be earlier than start date',
+                            confirmButtonColor: '#dc3545'
+                        });
+                        $('#id_event_to_date').focus();
+                        return false;
+                    }
+                }
+                
+                // Show loading on submit button
+                $('.btn-submit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Updating...');
+                
+                return true;
+            });
+            
+            // Show confirmation before leaving page if there are unsaved changes
+            let formChanged = false;
+            
+            $('#eventAnnouncementForm').on('change keyup', 'input, textarea, select', function() {
+                if (!formChanged) {
+                    formChanged = true;
+                }
+            });
+            
+            // Status change also triggers form change
+            $('#id_status').on('change', function() {
+                formChanged = true;
+            });
+            
+            window.addEventListener('beforeunload', function(e) {
+                if (formChanged) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                }
+            });
+            
+            // Reset formChanged when form is submitted
+            $('#eventAnnouncementForm').on('submit', function() {
+                formChanged = false;
+            });
+        });
+    </script>
+
+{% endblock %}
