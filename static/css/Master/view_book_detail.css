@@ -394,7 +394,7 @@
     }
 
     /* ---------- DARK MODE ---------- */
-    @media (prefers-color-scheme: dark) {
+    /* @media (prefers-color-scheme: dark) {
         .book-detail-container {
             background: #1e1e2f;
             border-color: #2d2d44;
@@ -444,7 +444,7 @@
             border-color: #4a6fa5;
             color: #ffffff;
         }
-    }
+    } */
 
     /* Dark mode overrides for Bootstrap theme toggle */
     :root[data-bs-theme="dark"] .book-detail-container,
