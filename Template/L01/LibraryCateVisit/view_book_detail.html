@@ -76,414 +76,414 @@
 
 {% block content %}
 
-<div class="book-detail-container">
-    <!-- HEADER -->
-    <div class="book-header">
-        <h1>{{ book.title }}</h1>
-        <span class="book-category">
-            <i class="ri-bookmark-line me-1"></i>
-            {{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}
-        </span>
-    </div>
-
-    <div class="book-content">
-        <!-- LEFT SIDEBAR: Images & Quick Info -->
-        <div class="book-sidebar">
-            <!-- Main Image -->
-            <div class="zoom-wrapper">
-                <img id="mainBookImage" 
-                    src="{{ MEDIA_URL }}{{ images.0 }}" 
-                    alt="{{ book.title }}">
-            </div>
-
-            <!-- Thumbnails -->
-            {% if images|length > 1 %}
-                <div class="thumbnail-grid">
-                    {% for img in images %}
-                        <img class="thumbnail" 
-                            src="{{ MEDIA_URL }}{{ img }}" 
-                            alt="Thumbnail {{ forloop.counter }}"
-                            onclick="changeMainImage('{{ MEDIA_URL }}{{ img }}', this)">
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            <!-- Quick Stats -->
-            <div class="book-stats">
-                <h6 class="mb-3 fw-semibold text-uppercase" style="letter-spacing: 1px; color: #4a6fa5;">
-                    <i class="ri-information-line me-2"></i>
-                    द्रुत माहिती
-                </h6>
-                <div class="stat-item">
-                    <span class="stat-label">ISBN/ISSN</span>
-                    <span class="stat-value">{{ book.isbn_issn|default:"-" }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">भाषा</span>
-                    <span class="stat-value">{{ book.language|default:"-" }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">पृष्ठे</span>
-                    <span class="stat-value">{{ book.pages|default:"-" }}</span>
-                </div>
-            </div>
+    <div class="book-detail-container">
+        <!-- HEADER -->
+        <div class="book-header">
+            <h1>{{ book.title }}</h1>
+            <span class="book-category">
+                <i class="ri-bookmark-line me-1"></i>
+                {{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}
+            </span>
         </div>
 
-        <!-- MAIN CONTENT: Details -->
-        <div class="book-details">
-            <!-- Basic Information Section -->
-            <h3 class="section-header">
-                <i class="ri-book-open-line me-2"></i>
-                मूलभूत माहिती
-            </h3>
-            
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">लेखक</span>
-                    <span class="info-value">{{ book.author|default:"-" }}</span>
+        <div class="book-content">
+            <!-- LEFT SIDEBAR: Images & Quick Info -->
+            <div class="book-sidebar">
+                <!-- Main Image -->
+                <div class="zoom-wrapper">
+                    <img id="mainBookImage" 
+                        src="{{ MEDIA_URL }}{{ images.0 }}" 
+                        alt="{{ book.title }}">
                 </div>
-                
-                <div class="info-item">
-                    <span class="info-label">प्रकाशक</span>
-                    <span class="info-value">{{ book.publisher|default:"-" }}</span>
-                </div>
-                
-                <div class="info-item">
-                    <span class="info-label">आवृत्ती</span>
-                    <span class="info-value">{{ book.edition|default:"-" }}</span>
-                </div>
-                
-                <div class="info-item">
-                    <span class="info-label">प्रकाशन वर्ष</span>
-                    <span class="info-value">{{ book.year_of_publication|default:"-" }}</span>
-                </div>
-                
-                <div class="info-item">
-                    <span class="info-label">प्रकाशन स्थळ</span>
-                    <span class="info-value">{{ book.publication_place|default:"-" }}</span>
-                </div>
-                
-                <div class="info-item">
-                    <span class="info-label">विषय</span>
-                    <span class="info-value">{{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}</span>
-                </div>
-                
-                {% if book.other_authors %}
-                <div class="info-item">
-                    <span class="info-label">इतर लेखक</span>
-                    <span class="info-value">{{ book.other_authors }}</span>
-                </div>
-                {% endif %}
-                
-                {% if book.keywords %}
-                <div class="info-item full-width">
-                    <span class="info-label">Keywords</span>
-                    <span class="info-value">{{ book.keywords }}</span>
-                </div>
-                {% endif %}
-            </div>
 
-            <!-- Additional Information -->
-            {% if book.description or book.remarks %}
-            
-            <div class="info-grid">
-                {% if book.description %}
-                <div class="info-item full-width">
-                    <span class="info-label">विवरण</span>
-                    <span class="info-value">{{ book.description }}</span>
-                </div>
-                {% endif %}
-                
-                {% if book.remarks %}
-                <div class="info-item full-width">
-                    <span class="info-label">टिप्पणी</span>
-                    <span class="info-value">{{ book.remarks }}</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            <!-- Circulation Information -->
-            <div class="circulation-section">
-                <h3 class="section-header" style="border-bottom-color: #28a745;">
-                    <i class="ri-refresh-line me-2"></i>
-                    उपलब्धता माहिती
-                </h3>
-
-                <div class="circulation-grid">
-                    <!-- Current Status (first available status) -->
-                    <div class="circulation-item">
-                        <div class="circulation-label">सद्यस्थिती</div>
-                        <div class="circulation-value">
-                            {% if current_status_display != "Not Available" %}
-                                <span class="status-badge status-available">{{ current_status_display }}</span>
-                                <span>{{ availability_text }}</span>
-                            {% else %}
-                                <span class="status-badge status-unavailable">{{ current_status_display }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Location -->
-                    <div class="circulation-item">
-                        <div class="circulation-label">स्थान</div>
-                        <div class="circulation-value">
-                            {% if location_display != "Unknown" %}
-                                {{ location_display }}
-                            {% else %}
-                                <span class="status-badge status-unavailable">Not on Shelf</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <button class="btn btn-custom btn-borrow" disabled>
-                    <i class="ri-book-borrow-line"></i>
-                    पुस्तक मागवा
-                </button>
-                <button class="btn btn-custom btn-reserve" disabled>
-                    <i class="ri-bookmark-line"></i>
-                    राखून ठेवा
-                </button>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="book-detail-container">
-
-    <!-- Reviews Section -->
-    <div class="review-section">
-        <h3>
-            <i class="ri-chat-3-line"></i>
-            Reviews
-            <small class="text-muted">({{ total_reviews }})</small>
-        </h3>
-        
-        <!-- Average Rating -->
-        <div class="avg-rating">
-            <div class="stars-display">
-                {% for i in "12345"|make_list %}
-                    {% if forloop.counter <= avg_rating|floatformat:0 %}
-                        <i class="ri-star-fill"></i>
-                    {% elif forloop.counter <= avg_rating %}
-                        <i class="ri-star-half-fill"></i>
-                    {% else %}
-                        <i class="ri-star-line"></i>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            <span>{{ avg_rating|floatformat:1 }}/5</span>
-        </div>
-
-        <!-- Write Review -->
-        {% if not user_review %}
-            <div class="write-review card p-3 mb-3">
-                <h5><i class="ri-edit-line me-1"></i> Your Review</h5>
-                
-                <div class="star-input mb-2">
-                    <div class="d-flex align-items-center">
-                        {% for i in "12345"|make_list %}
-                            <i class="ri-star-line star me-1" data-value="{{ forloop.counter }}"></i>
+                <!-- Thumbnails -->
+                {% if images|length > 1 %}
+                    <div class="thumbnail-grid">
+                        {% for img in images %}
+                            <img class="thumbnail" 
+                                src="{{ MEDIA_URL }}{{ img }}" 
+                                alt="Thumbnail {{ forloop.counter }}"
+                                onclick="changeMainImage('{{ MEDIA_URL }}{{ img }}', this)">
                         {% endfor %}
-                        <small class="ms-2" id="ratingValue">0/5</small>
+                    </div>
+                {% endif %}
+
+                <!-- Quick Stats -->
+                <div class="book-stats">
+                    <h6 class="mb-3 fw-semibold text-uppercase" style="letter-spacing: 1px; color: #4a6fa5;">
+                        <i class="ri-information-line me-2"></i>
+                        द्रुत माहिती
+                    </h6>
+                    <div class="stat-item">
+                        <span class="stat-label">ISBN/ISSN</span>
+                        <span class="stat-value">{{ book.isbn_issn|default:"-" }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">भाषा</span>
+                        <span class="stat-value">{{ book.language|default:"-" }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">पृष्ठे</span>
+                        <span class="stat-value">{{ book.pages|default:"-" }}</span>
                     </div>
                 </div>
+            </div>
+
+            <!-- MAIN CONTENT: Details -->
+            <div class="book-details">
+                <!-- Basic Information Section -->
+                <h3 class="section-header">
+                    <i class="ri-book-open-line me-2"></i>
+                    मूलभूत माहिती
+                </h3>
                 
-                <textarea id="reviewText" class="form-control mb-2" rows="2" 
-                        placeholder="Share your thoughts..." maxlength="500"></textarea>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">लेखक</span>
+                        <span class="info-value">{{ book.author|default:"-" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">प्रकाशक</span>
+                        <span class="info-value">{{ book.publisher|default:"-" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">आवृत्ती</span>
+                        <span class="info-value">{{ book.edition|default:"-" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">प्रकाशन वर्ष</span>
+                        <span class="info-value">{{ book.year_of_publication|default:"-" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">प्रकाशन स्थळ</span>
+                        <span class="info-value">{{ book.publication_place|default:"-" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">विषय</span>
+                        <span class="info-value">{{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}</span>
+                    </div>
+                    
+                    {% if book.other_authors %}
+                    <div class="info-item">
+                        <span class="info-label">इतर लेखक</span>
+                        <span class="info-value">{{ book.other_authors }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if book.keywords %}
+                    <div class="info-item full-width">
+                        <span class="info-label">Keywords</span>
+                        <span class="info-value">{{ book.keywords }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Additional Information -->
+                {% if book.description or book.remarks %}
                 
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted"><span id="charCount">0</span>/500</small>
-                    <button id="submitReviewBtn" class="btn btn-sm btn-primary" 
-                            {% comment %} data-book-id="{{ book.cat_ref_num }}" disabled> {% endcomment %}
-                            data-book-id="{{ book.bookIdEnc }}" disabled>
-                        <i class="ri-send-plane-line me-1"></i>Submit
+                <div class="info-grid">
+                    {% if book.description %}
+                    <div class="info-item full-width">
+                        <span class="info-label">विवरण</span>
+                        <span class="info-value">{{ book.description }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if book.remarks %}
+                    <div class="info-item full-width">
+                        <span class="info-label">टिप्पणी</span>
+                        <span class="info-value">{{ book.remarks }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Circulation Information -->
+                <div class="circulation-section">
+                    <h3 class="section-header" style="border-bottom-color: #28a745;">
+                        <i class="ri-refresh-line me-2"></i>
+                        उपलब्धता माहिती
+                    </h3>
+
+                    <div class="circulation-grid">
+                        <!-- Current Status (first available status) -->
+                        <div class="circulation-item">
+                            <div class="circulation-label">सद्यस्थिती</div>
+                            <div class="circulation-value">
+                                {% if current_status_display != "Not Available" %}
+                                    <span class="status-badge status-available">{{ current_status_display }}</span>
+                                    <span>{{ availability_text }}</span>
+                                {% else %}
+                                    <span class="status-badge status-unavailable">{{ current_status_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="circulation-item">
+                            <div class="circulation-label">स्थान</div>
+                            <div class="circulation-value">
+                                {% if location_display != "Unknown" %}
+                                    {{ location_display }}
+                                {% else %}
+                                    <span class="status-badge status-unavailable">Not on Shelf</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-custom btn-borrow" disabled>
+                        <i class="ri-book-borrow-line"></i>
+                        पुस्तक मागवा
+                    </button>
+                    <button class="btn btn-custom btn-reserve" disabled>
+                        <i class="ri-bookmark-line"></i>
+                        राखून ठेवा
                     </button>
                 </div>
-            </div>
-        {% else %}
-            <div class="alert alert-info mb-3">
-                <i class="ri-check-line me-1"></i> You've already reviewed this book
-            </div>
-        {% endif %}
 
-        <!-- Reviews List -->
-        <div id="reviewList">
-           {% for review in reviews %}
-                <div class="review-card">
-                    <div class="review-header">
-                        <div class="d-flex align-items-center gap-2">
-                            <!-- Updated User Badge -->
-                            <div class="user-badge">
-                                <i class="ri-user-line"></i> 
-                                {% if review.user_obj %}
-                                    {% if review.user_obj.full_name %}
-                                        {{ review.user_obj.full_name }}
-                                    {% elif review.user_obj.get_full_name %}
-                                        {{ review.user_obj.get_full_name }}
-                                    {% elif review.user_obj.username %}
-                                        {{ review.user_obj.username }}
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="book-detail-container">
+
+        <!-- Reviews Section -->
+        <div class="review-section">
+            <h3>
+                <i class="ri-chat-3-line"></i>
+                Reviews
+                <small class="text-muted">({{ total_reviews }})</small>
+            </h3>
+            
+            <!-- Average Rating -->
+            <div class="avg-rating">
+                <div class="stars-display">
+                    {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= avg_rating|floatformat:0 %}
+                            <i class="ri-star-fill"></i>
+                        {% elif forloop.counter <= avg_rating %}
+                            <i class="ri-star-half-fill"></i>
+                        {% else %}
+                            <i class="ri-star-line"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <span>{{ avg_rating|floatformat:1 }}/5</span>
+            </div>
+
+            <!-- Write Review -->
+            {% if not user_review %}
+                <div class="write-review card p-3 mb-3">
+                    <h5><i class="ri-edit-line me-1"></i> Your Review</h5>
+                    
+                    <div class="star-input mb-2">
+                        <div class="d-flex align-items-center">
+                            {% for i in "12345"|make_list %}
+                                <i class="ri-star-line star me-1" data-value="{{ forloop.counter }}"></i>
+                            {% endfor %}
+                            <small class="ms-2" id="ratingValue">0/5</small>
+                        </div>
+                    </div>
+                    
+                    <textarea id="reviewText" class="form-control mb-2" rows="2" 
+                            placeholder="Share your thoughts..." maxlength="500"></textarea>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted"><span id="charCount">0</span>/500</small>
+                        <button id="submitReviewBtn" class="btn btn-sm btn-primary" 
+                                {% comment %} data-book-id="{{ book.cat_ref_num }}" disabled> {% endcomment %}
+                                data-book-id="{{ book.bookIdEnc }}" disabled>
+                            <i class="ri-send-plane-line me-1"></i>Submit
+                        </button>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-3">
+                    <i class="ri-check-line me-1"></i> You've already reviewed this book
+                </div>
+            {% endif %}
+
+            <!-- Reviews List -->
+            <div id="reviewList">
+            {% for review in reviews %}
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- Updated User Badge -->
+                                <div class="user-badge">
+                                    <i class="ri-user-line"></i> 
+                                    {% if review.user_obj %}
+                                        {% if review.user_obj.full_name %}
+                                            {{ review.user_obj.full_name }}
+                                        {% elif review.user_obj.get_full_name %}
+                                            {{ review.user_obj.get_full_name }}
+                                        {% elif review.user_obj.username %}
+                                            {{ review.user_obj.username }}
+                                        {% else %}
+                                            User #{{ review.user_id }}
+                                        {% endif %}
                                     {% else %}
                                         User #{{ review.user_id }}
                                     {% endif %}
-                                {% else %}
-                                    User #{{ review.user_id }}
-                                {% endif %}
+                                </div>
+                                
+                                <!-- Star Rating -->
+                                <div class="stars-display">
+                                    {% for i in "12345"|make_list %}
+                                        <i class="ri-star-fill" style="color: {% if forloop.counter <= review.rating %}#ffc107{% else %}#e0e0e0{% endif %};"></i>
+                                    {% endfor %}
+                                    <span>{{ review.rating }}/5</span>
+                                </div>
                             </div>
                             
-                            <!-- Star Rating -->
-                            <div class="stars-display">
-                                {% for i in "12345"|make_list %}
-                                    <i class="ri-star-fill" style="color: {% if forloop.counter <= review.rating %}#ffc107{% else %}#e0e0e0{% endif %};"></i>
-                                {% endfor %}
-                                <span>{{ review.rating }}/5</span>
-                            </div>
+                            <!-- Date -->
+                            <small>
+                                <i class="ri-time-line"></i>
+                                {{ review.created_at|date:"M d, Y" }}
+                            </small>
                         </div>
                         
-                        <!-- Date -->
-                        <small>
-                            <i class="ri-time-line"></i>
-                            {{ review.created_at|date:"M d, Y" }}
-                        </small>
+                        <!-- Review Text -->
+                        <div class="review-body">
+                            <p class="mb-0">{{ review.review }}</p>
+                        </div>
+                        
+                        <!-- Library Code (if exists) -->
+                        {% if review.library_code %}
+                        <div class="review-footer">
+                            <small><i class="ri-building-line me-1"></i>{{ review.library_code }}</small>
+                        </div>
+                        {% endif %}
                     </div>
-                    
-                    <!-- Review Text -->
-                    <div class="review-body">
-                        <p class="mb-0">{{ review.review }}</p>
+                {% empty %}
+                    <div class="text-center py-4">
+                        <i class="ri-chat-3-line display-6 text-muted"></i>
+                        <p class="text-muted mb-0 mt-2">No reviews yet. Be the first!</p>
                     </div>
-                    
-                    <!-- Library Code (if exists) -->
-                    {% if review.library_code %}
-                    <div class="review-footer">
-                        <small><i class="ri-building-line me-1"></i>{{ review.library_code }}</small>
-                    </div>
-                    {% endif %}
-                </div>
-            {% empty %}
-                <div class="text-center py-4">
-                    <i class="ri-chat-3-line display-6 text-muted"></i>
-                    <p class="text-muted mb-0 mt-2">No reviews yet. Be the first!</p>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
 
-        <!-- Beautiful Pagination -->
-        {% if show_pagination and reviews.paginator.num_pages > 1 %}
-            <div class="review-pagination" id="paginationContainer" {% if not show_pagination %}style="display: none;"{% endif %}>
-                <!-- Page Navigation -->
-                <nav aria-label="Reviews pagination">
-                    <ul class="pagination">
-                        <!-- First Page -->
-                        {% if reviews.number > 1 %}
-                        <li class="page-item">
-                            <a class="page-link" 
-                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page=1&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
-                            aria-label="First">
-                                <i class="ri-skip-left-line"></i>
-                                <span class="d-none d-md-inline ms-1">First</span>
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        <!-- Previous Page -->
-                        {% if reviews.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" 
-                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.previous_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
-                            aria-label="Previous">
-                                <i class="ri-arrow-left-line"></i>
-                                <span class="d-none d-md-inline ms-1">Prev</span>
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        <!-- Page Numbers -->
-                        {% for num in reviews.paginator.page_range %}
-                            {% if num == reviews.number %}
-                            <li class="page-item active" aria-current="page">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                            
-                            {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+            <!-- Beautiful Pagination -->
+            {% if show_pagination and reviews.paginator.num_pages > 1 %}
+                <div class="review-pagination" id="paginationContainer" {% if not show_pagination %}style="display: none;"{% endif %}>
+                    <!-- Page Navigation -->
+                    <nav aria-label="Reviews pagination">
+                        <ul class="pagination">
+                            <!-- First Page -->
+                            {% if reviews.number > 1 %}
                             <li class="page-item">
                                 <a class="page-link" 
-                                href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ num }}&cat_ref_num={{ cat_ref_num_enc }}#reviews">
-                                    {{ num }}
+                                href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page=1&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                                aria-label="First">
+                                    <i class="ri-skip-left-line"></i>
+                                    <span class="d-none d-md-inline ms-1">First</span>
                                 </a>
                             </li>
+                            {% endif %}
                             
-                            {% elif num == reviews.number|add:'-3' or num == reviews.number|add:'3' %}
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
+                            <!-- Previous Page -->
+                            {% if reviews.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.previous_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                                aria-label="Previous">
+                                    <i class="ri-arrow-left-line"></i>
+                                    <span class="d-none d-md-inline ms-1">Prev</span>
+                                </a>
                             </li>
                             {% endif %}
-                        {% endfor %}
-                        
-                        <!-- Next Page -->
-                        {% if reviews.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" 
-                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.next_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
-                            aria-label="Next">
-                                <span class="d-none d-md-inline me-1">Next</span>
-                                <i class="ri-arrow-right-line"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        <!-- Last Page -->
-                        {% if reviews.number < reviews.paginator.num_pages %}
-                        <li class="page-item">
-                            <a class="page-link" 
-                            href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.paginator.num_pages }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
-                            aria-label="Last">
-                                <span class="d-none d-md-inline me-1">Last</span>
-                                <i class="ri-skip-right-line"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                
-                <!-- Page Information -->
-                <div class="pagination-info">
-                    <div class="info-item">
-                        <i class="ri-file-list-line"></i>
-                        <span>Page {{ reviews.number }} of {{ reviews.paginator.num_pages }}</span>
-                    </div>
+                            
+                            <!-- Page Numbers -->
+                            {% for num in reviews.paginator.page_range %}
+                                {% if num == reviews.number %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                
+                                {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                    href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ num }}&cat_ref_num={{ cat_ref_num_enc }}#reviews">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                                
+                                {% elif num == reviews.number|add:'-3' or num == reviews.number|add:'3' %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <!-- Next Page -->
+                            {% if reviews.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.next_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                                aria-label="Next">
+                                    <span class="d-none d-md-inline me-1">Next</span>
+                                    <i class="ri-arrow-right-line"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <!-- Last Page -->
+                            {% if reviews.number < reviews.paginator.num_pages %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.paginator.num_pages }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
+                                aria-label="Last">
+                                    <span class="d-none d-md-inline me-1">Last</span>
+                                    <i class="ri-skip-right-line"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                     
-                    <div class="info-item">
-                        <i class="ri-chat-3-line"></i>
-                        <span>{{ reviews.start_index }}-{{ reviews.end_index }} of {{ total_reviews }} reviews</span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <i class="ri-star-line"></i>
-                        <span>Avg: {{ avg_rating|floatformat:1 }}/5</span>
+                    <!-- Page Information -->
+                    <div class="pagination-info">
+                        <div class="info-item">
+                            <i class="ri-file-list-line"></i>
+                            <span>Page {{ reviews.number }} of {{ reviews.paginator.num_pages }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="ri-chat-3-line"></i>
+                            <span>{{ reviews.start_index }}-{{ reviews.end_index }} of {{ total_reviews }} reviews</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="ri-star-line"></i>
+                            <span>Avg: {{ avg_rating|floatformat:1 }}/5</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% elif total_reviews > 0 %}
-            <!-- Simple message if 5 or fewer reviews -->
-            <div class="no-pagination-message text-center mt-4">
-                <div class="d-inline-flex align-items-center gap-2 p-3 rounded">
-                    <i class="ri-checkbox-circle-line text-success"></i>
-                    <span class="text-muted">Showing all {{ total_reviews }} reviews</span>
+            {% elif total_reviews > 0 %}
+                <!-- Simple message if 5 or fewer reviews -->
+                <div class="no-pagination-message text-center mt-4">
+                    <div class="d-inline-flex align-items-center gap-2 p-3 rounded">
+                        <i class="ri-checkbox-circle-line text-success"></i>
+                        <span class="text-muted">Showing all {{ total_reviews }} reviews</span>
+                    </div>
                 </div>
-            </div>
-        {% endif %}
-    </div>
+            {% endif %}
+        </div>
 
-</div>
+    </div>
 
     <!-- Back to Top Button -->
     <a href="#" class="back-to-top" id="backToTop">
