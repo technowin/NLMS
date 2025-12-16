@@ -107,4 +107,7 @@ urlpatterns = [
     path('generate-final-report/', generate_final_report, name='generate_final_report'),
     path('generate-stock-report-api/', GenerateStockReportAPI.as_view(), name='generate_stock_report_api'),
 
+    path('dashboard/', dashboard_view, name='dashboard'),
+    path('dashboard/data/<str:dashboard_id>/', get_dashboard_data, name='dashboard_data'),
+
 ]

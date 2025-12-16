@@ -7,6 +7,7 @@ import traceback
 from django.contrib import messages
 import Db
 import requests
+from django.db.models import Count, Sum, Q, F, Avg
 from django.http import HttpResponse, JsonResponse
 from NLMS.encryption import *
 from Account.db_utils import callproc
@@ -7451,3 +7452,71 @@ def event_announcement_edit(request, encrypted_id):
         
         messages.error(request, f'Error editing event announcement: {str(e)}')
         return redirect('L01:event_announcement_index')
+    
+@login_required
+def dashboard_view(request):
+    """
+    Main dashboard view with 4 tabs
+    """
+    context = {
+        'dashboard_title': 'Library Dashboard',
+        'active_tab': 'dashboard1'
+    }
+    return render(request, 'L01/Dashboard/library_dashboard.html', context)
+
+def get_dashboard1_data(request):
+    """
+    Returns placeholder data for Dashboard 1
+    """
+    return JsonResponse({
+        'dashboard': 'dashboard1',
+        'title': 'Dashboard 1 - Overview',
+        'message': 'Dashboard 1 data loaded successfully',
+        'last_updated': '2024-01-01 00:00:00'
+    })
+
+def get_dashboard2_data(request):
+    """
+    Returns placeholder data for Dashboard 2
+    """
+    return JsonResponse({
+        'dashboard': 'dashboard2',
+        'title': 'Dashboard 2 - Reports',
+        'message': 'Dashboard 2 data will be implemented here',
+        'last_updated': '2024-01-01 00:00:00'
+    })
+
+def get_dashboard3_data(request):
+    """
+    Returns placeholder data for Dashboard 3
+    """
+    return JsonResponse({
+        'dashboard': 'dashboard3',
+        'title': 'Dashboard 3 - Analytics',
+        'message': 'Dashboard 3 data will be implemented here',
+        'last_updated': '2024-01-01 00:00:00'
+    })
+
+def get_dashboard4_data(request):
+    """
+    Returns placeholder data for Dashboard 4
+    """
+    return JsonResponse({
+        'dashboard': 'dashboard4',
+        'title': 'Dashboard 4 - Settings',
+        'message': 'Dashboard 4 data will be implemented here',
+        'last_updated': '2024-01-01 00:00:00'
+    })
+
+def get_dashboard_data(request, dashboard_id):
+    """Route to get data for specific dashboard"""
+    if dashboard_id == '1':
+        return get_dashboard1_data(request)
+    elif dashboard_id == '2':
+        return get_dashboard2_data(request)
+    elif dashboard_id == '3':
+        return get_dashboard3_data(request)
+    elif dashboard_id == '4':
+        return get_dashboard4_data(request)
+    else:
+        return JsonResponse({'error': 'Invalid dashboard ID'}, status=400)
