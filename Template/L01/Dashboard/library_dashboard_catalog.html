@@ -1,0 +1,154 @@
+{% load static %}
+
+{% block extra_css %}
+    <style>
+        .kpi-card {
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .kpi-card h2 {
+            margin: 0;
+            font-weight: bold;
+        }
+        .nav-tabs .nav-link {
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="container">
+
+        <!-- SUBJECT TABS -->
+        <ul class="nav nav-tabs" id="subjectTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-subject="">All</a>
+            </li>
+            {% for sub in subjects %}
+            <li class="nav-item">
+                <a class="nav-link" data-subject="{{ sub.id }}">
+                    {{ sub.subjectNameMarathi|default:sub.subjectNameEnglish }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- KPI CARDS -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="kpi-card">
+                    <h5>Total Titles</h5>
+                    <h2 id="totalTitles">0</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi-card">
+                    <h5>Total Copies</h5>
+                    <h2 id="totalCopies">0</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi-card">
+                    <h5>Total Processed</h5>
+                    <h2 id="totalProcessed">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHART -->
+        <div class="mt-5">
+            <canvas id="catalogChart" height="120"></canvas>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    <!-- JS LIBRARIES -->
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let catalogChart;
+
+        function initChart() {
+            const ctx = document.getElementById('catalogChart').getContext('2d');
+            catalogChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Titles',
+                            data: []
+                        },
+                        {
+                            label: 'Copies',
+                            data: []
+                        },
+                        {
+                            label: 'Processed Copies',
+                            data: []
+                        }
+                    ]
+                }
+            });
+        }
+
+        function loadCatalogData(subjectId) {
+            $.ajax({
+                url: "{% url 'L01:catalog_data_ajax' %}",
+                data: { subject_id: subjectId },
+                success: function (res) {
+
+                    // KPI update
+                    $('#totalTitles').text(res.total_titles);
+                    $('#totalCopies').text(res.total_copies);
+                    $('#totalProcessed').text(res.total_processed);
+
+                    // Chart update
+                    let labels = [];
+                    let titles = [];
+                    let copies = [];
+                    let processed = [];
+
+                    res.data.forEach(item => {
+                        labels.push(item.subject);
+                        titles.push(item.titles);
+                        copies.push(item.copies);
+                        processed.push(item.processed);
+                    });
+
+                    catalogChart.data.labels = labels;
+                    catalogChart.data.datasets[0].data = titles;
+                    catalogChart.data.datasets[1].data = copies;
+                    catalogChart.data.datasets[2].data = processed;
+                    catalogChart.update();
+                }
+            });
+        }
+
+        $(document).ready(function () {
+
+            initChart();
+            loadCatalogData(""); // initial ALL load
+
+            $('#subjectTabs').on('click', '.nav-link', function () {
+
+                $('#subjectTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                const subjectId = $(this).data('subject');
+                loadCatalogData(subjectId);
+            });
+        });
+    </script>
+
+{% endblock %}
+

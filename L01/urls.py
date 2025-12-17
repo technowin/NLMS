@@ -7,13 +7,13 @@ urlpatterns = [
     path("view_ebook_catalogue",view_ebook_catalogue,name='view_ebook_catalogue'),
     path('upsc_ebook_index/', upsc_ebook_index, name='upsc_ebook_index'),
     path('topic_index/<int:section_no>/', topic_index, name='topic_index'),
-    path('chapters_index/<int:topic_id>/',chapters_index, name='chapters_index'),
+    path('chapters_index/<str:topic_id>/',chapters_index, name='chapters_index'),
     path("book_info_login/", book_info_login, name="book_info_login"),
     path("view_catalogue_login_page",view_catalogue_login_page,name='view_catalogue_login_page'),
     path('mpsc_ebooks_index/', mpsc_ebook_index, name='mpsc_ebooks_index'),
     path("clear_pdf_session/", clear_pdf_session, name="clear_pdf_session"),
     path('mpsc_topics_index/<int:section_no>/', mpsc_topics_index, name='mpsc_topics_index'),
-    path('mpsc_chapters_index/<int:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
+    path('mpsc_chapters_index/<str:topic_id>/', mpsc_chapters_index, name='mpsc_chapters_index'),
     path("index_book_search", index_book_search, name="index_book_search"),
     path("led_tv_index/", led_tv_index, name="led_tv_index"),
     path("bookcatalog-search", bookcatalog_search, name="bookcatalog_search"),
@@ -108,6 +108,7 @@ urlpatterns = [
     path('generate-stock-report-api/', GenerateStockReportAPI.as_view(), name='generate_stock_report_api'),
 
     path('dashboard/', dashboard_view, name='dashboard'),
+    path("catalog_data_ajax/", catalog_data_ajax, name="catalog_data_ajax"),
     path('dashboard/data/<str:dashboard_id>/', get_dashboard_data, name='dashboard_data'),
 
 ]

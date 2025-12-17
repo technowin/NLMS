@@ -1,6 +1,7 @@
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
 {% block content %}
+{% load encryption_filters %}
 <style>
 /* ===== Chapters Section ===== */
 .chapters-section {
@@ -206,7 +207,7 @@
       <a href="{% url 'L01:upsc_ebook_index' %}">UPSC</a>
     </li>
     <li class="breadcrumb-item">
-      <a href="{% url 'L01:topic_index' section_no=section.section_no %}">Phase {{ section.section_no }}</a>
+      <a href="{% url 'L01:topic_index' section_no=section.section_no %}">Phase {{ section.section_no}}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">
       Chapters of {{ topic.topic_name }}

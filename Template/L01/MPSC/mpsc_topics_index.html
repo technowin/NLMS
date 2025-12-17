@@ -1,7 +1,7 @@
 {% extends "Shared/landingPageLayout.html" %}
 {% load static %}
 {% block content %}
-
+{% load encryption_filters %}
   <style>
     /* ===== Subjects Section Card ===== */
     .subjects-section .card {
@@ -283,7 +283,7 @@
 
                         <!-- ✅ Fixed Bottom Button -->
                         <div class="topic-btn-container">
-                          <a href="{% url 'Login' %}?next={% url 'L01:mpsc_chapters_index' topic_id=topic.topic_id %}" 
+                          <a href="{% url 'Login' %}?next={% url 'L01:mpsc_chapters_index' topic_id=topic.topic_id|encrypt %}" 
                           class="topic-btn">
                             View details
                         </a>

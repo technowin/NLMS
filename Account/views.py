@@ -99,6 +99,7 @@ def Login(request):
     # GET METHOD
     # ============================================================
     if request.method == "GET":
+       
         next_url = request.GET.get("next", "")
         cat_ref_num = request.GET.get("cat_ref_num", "")
         encrypted_ebook_id = request.GET.get("ebook_id")
@@ -132,6 +133,7 @@ def Login(request):
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
         next_url = request.POST.get('next')
+        
 
         cat_ref_num = request.POST.get("cat")
         encrypted_ebook_id = request.POST.get("ebook_id")
@@ -176,17 +178,26 @@ def Login(request):
                 membership_id = membership.id
             except MembershipMaster.DoesNotExist:
                 membership_id = None
+        if membership_id == 8:
 
-        # ============================================================
-        # PRACTITIONER (ID = 8) RESTRICTION FOR EBOOKS
-        # ============================================================
-        if membership_id == 8 and ebook_id:
-            messages.error(request, "This section is not available for Practitioner Branch (अभ्यासिका शाखा)")
+            # Practitioner trying to access Ebook or restricted catalog
+            if ebook_id or pdf_url or cat_ref_num:
+                messages.error(
+                    request,
+                    "This section is not available for Practitioner Branch (अभ्यासिका शाखा)"
+                )
 
-            if cat_ref_num:
-                return redirect(f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}")
+                # Redirect safely to allowed section
+                return redirect("L01:membership_dashboard")
 
-            return redirect("L01:membership_dashboard")
+            # ✅ Practitioner allowed normal navigation
+            if next_url:
+                return redirect(next_url)
+            else:
+
+             return redirect("L01:membership_dashboard")
+
+       
 
         # ============================================================
         # VALID MEMBERSHIP (NOT PRACTITIONER)
@@ -199,9 +210,12 @@ def Login(request):
                 final_pdf_url = request.build_absolute_uri(file_url)
                 
                 request.session["open_pdf_url"] = final_pdf_url
+            if cat_ref_num:
+                return redirect(f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}")
 
             request.session.set_expiry(0)
             return redirect("L01:membership_dashboard")
+        
 
         # ============================================================
         # NO MEMBERSHIP FOUND
@@ -221,6 +235,8 @@ def Login(request):
     else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
+
+
 
 def logoutView(request):
     library_code = request.session.get('library_db', None)

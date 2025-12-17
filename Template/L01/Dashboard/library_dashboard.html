@@ -4,227 +4,260 @@
 {% block title %}सदस्यत्व अर्ज पडताळणी{% endblock title %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-<link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+        <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+
+            <style>
+                :root {
+                    --primary-color: #4e73df;
+                    --success-color: #1cc88a;
+                    --info-color: #36b9cc;
+                    --warning-color: #f6c23e;
+                    --danger-color: #e74a3b;
+                }
+                
+                body {
+                    background-color: #f8f9fc;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                .dashboard-container {
+                    padding: 20px;
+                    max-width: 1400px;
+                    margin: 0 auto;
+                }
+                
+                .header-section {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                    margin-bottom: 20px;
+                }
+                
+                .tabs-container {
+                    background: white;
+                    border-radius: 10px;
+                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                    overflow: hidden;
+                }
+                
+                .dashboard-tabs {
+                    display: flex;
+                    background: #f8f9fc;
+                    border-bottom: 1px solid #e3e6f0;
+                }
+                
+                .tab-btn {
+                    padding: 15px 30px;
+                    background: none;
+                    border: none;
+                    color: #6e707e;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    position: relative;
+                }
+                
+                .tab-btn:hover {
+                    color: var(--primary-color);
+                    background-color: rgba(78, 115, 223, 0.05);
+                }
+                
+                .tab-btn.active {
+                    color: var(--primary-color);
+                    background-color: white;
+                }
+                
+                .tab-btn.active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 3px;
+                    background-color: var(--primary-color);
+                }
+                
+                .tab-content {
+                    padding: 30px;
+                    min-height: 500px;
+                }
+                
+                .loading-overlay {
+                    display: none;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.8);
+                    z-index: 1000;
+                    justify-content: center;
+                    align-items: center;
+                }
+                
+                .dashboard-content {
+                    padding: 20px;
+                }
+                
+                .card {
+                    border: none;
+                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                    margin-bottom: 20px;
+                }
+                
+                .last-updated {
+                    font-size: 0.85rem;
+                    color: #858796;
+                    text-align: right;
+                }
+                
+                .status-indicator {
+                    display: inline-block;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    margin-right: 8px;
+                }
+                
+                .status-active {
+                    background-color: var(--success-color);
+                }
+                
+                .status-inactive {
+                    background-color: var(--danger-color);
+                }
+            </style>
+    </head>
 {% endblock %}
 
 {% block content %}
-    <style>
-        :root {
-            --primary-color: #4e73df;
-            --success-color: #1cc88a;
-            --info-color: #36b9cc;
-            --warning-color: #f6c23e;
-            --danger-color: #e74a3b;
-        }
-        
-        body {
-            background-color: #f8f9fc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        
-        .dashboard-container {
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        .header-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            margin-bottom: 20px;
-        }
-        
-        .tabs-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            overflow: hidden;
-        }
-        
-        .dashboard-tabs {
-            display: flex;
-            background: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-        }
-        
-        .tab-btn {
-            padding: 15px 30px;
-            background: none;
-            border: none;
-            color: #6e707e;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-        }
-        
-        .tab-btn:hover {
-            color: var(--primary-color);
-            background-color: rgba(78, 115, 223, 0.05);
-        }
-        
-        .tab-btn.active {
-            color: var(--primary-color);
-            background-color: white;
-        }
-        
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background-color: var(--primary-color);
-        }
-        
-        .tab-content {
-            padding: 30px;
-            min-height: 500px;
-        }
-        
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .dashboard-content {
-            padding: 20px;
-        }
-        
-        .card {
-            border: none;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            margin-bottom: 20px;
-        }
-        
-        .last-updated {
-            font-size: 0.85rem;
-            color: #858796;
-            text-align: right;
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-active {
-            background-color: var(--success-color);
-        }
-        
-        .status-inactive {
-            background-color: var(--danger-color);
-        }
-    </style>
-</head>
-<body>
-    <div class="">
-        <!-- Header -->
-        <div class="header-section">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="h3 mb-2 text-gray-800">
-                        <i class="bi bi-speedometer2 me-2"></i>Library Management System
-                    </h1>
-                    <p class="text-muted mb-0">Multi-tab dashboard for library operations</p>
-                </div>
-                <div class="col-md-4">
-                    <div class="last-updated" id="last-updated">
-                        Last updated: --
+
+    <body>
+        <div class="">
+            <!-- Header -->
+            <div class="header-section">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h3 mb-2 text-gray-800">
+                            <i class="bi bi-speedometer2 me-2"></i>Library Management System
+                        </h1>
+                        <p class="text-muted mb-0">Multi-tab dashboard for library operations</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="last-updated" id="last-updated">
+                            Last updated: --
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Dashboard Tabs -->
-        <div class="tabs-container">
-            <div class="dashboard-tabs">
-                <button class="tab-btn active" onclick="loadDashboard('1')">
-                    <i class="bi bi-house-door me-2"></i>Dashboard 1
-                </button>
-                <button class="tab-btn" onclick="loadDashboard('2')">
-                    <i class="bi bi-file-text me-2"></i>Dashboard 2
-                </button>
-                <button class="tab-btn" onclick="loadDashboard('3')">
-                    <i class="bi bi-graph-up me-2"></i>Dashboard 3
-                </button>
-                <button class="tab-btn" onclick="loadDashboard('4')">
-                    <i class="bi bi-gear me-2"></i>Dashboard 4
-                </button>
             </div>
             
-            <!-- Tab Contents -->
-            <div class="tab-content">
-                <!-- Dashboard 1 Content (Loaded by default) -->
-                <div id="dashboard1-content">
-                    <h4 class="mb-4">Dashboard 1: Library Overview</h4>
-                    <div class="dashboard-content" id="dashboard1-data">
-                        <!-- Data will be loaded via AJAX -->
-                    </div>
+            <!-- Dashboard Tabs -->
+            <div class="tabs-container">
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" onclick="loadDashboard('1')">
+                        <i class="bi bi-house-door me-2"></i>Dashboard 1
+                    </button>
+                    <button class="tab-btn" onclick="loadDashboard('2')">
+                        <i class="bi bi-file-text me-2"></i>Dashboard 2
+                    </button>
+                    <button class="tab-btn" onclick="loadDashboard('3')">
+                        <i class="bi bi-graph-up me-2"></i>Dashboard 3
+                    </button>
+                    <button class="tab-btn" onclick="loadDashboard('4')">
+                        <i class="bi bi-gear me-2"></i>Dashboard 4
+                    </button>
                 </div>
                 
-                <!-- Dashboard 2 Content (Loaded on click) -->
-                <div id="dashboard2-content" style="display: none;">
-                    <h4 class="mb-4">Dashboard 2: Reports</h4>
-                    <div class="dashboard-content" id="dashboard2-data">
-                        <!-- Data will be loaded via AJAX -->
+                <!-- Tab Contents -->
+                <div class="tab-content">
+                    <!-- Dashboard 1 Content (Loaded by default) -->
+                    <div id="dashboard1-content">
+                        <h4 class="mb-4">Dashboard 1: Library Overview</h4>
+                        <div class="dashboard-content" id="dashboard1-data">
+                            <!-- Data will be loaded via AJAX -->
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Dashboard 3 Content (Loaded on click) -->
-                <div id="dashboard3-content" style="display: none;">
-                    <h4 class="mb-4">Dashboard 3: Analytics</h4>
-                    <div class="dashboard-content" id="dashboard3-data">
-                        <!-- Data will be loaded via AJAX -->
+                    
+                    <!-- Dashboard 2 Content (Loaded on click) -->
+                    <div id="dashboard2-content" style="display: none;">
+                        {% comment %} <h4 class="mb-4">Dashboard 2: Reports</h4> {% endcomment %}
+
+                        <!-- ADD THIS -->
+                        <div id="dashboard2-session-data"></div>
+
+                        <!-- Books container -->
+                        <div id="books-container"></div>
                     </div>
-                </div>
-                
-                <!-- Dashboard 4 Content (Loaded on click) -->
-                <div id="dashboard4-content" style="display: none;">
-                    <h4 class="mb-4">Dashboard 4: Settings</h4>
-                    <div class="dashboard-content" id="dashboard4-data">
-                        <!-- Data will be loaded via AJAX -->
+
+                    
+                    <!-- Dashboard 3 Content (Loaded on click) -->
+                    <div id="dashboard3-content" style="display: none;">
+                        <h4 class="mb-4">Dashboard 3: Analytics</h4>
+                        <div class="dashboard-content" id="dashboard3-data">
+                            <!-- Data will be loaded via AJAX -->
+                        </div>
+                    </div>
+                    
+                    <!-- Dashboard 4 Content (Loaded on click) -->
+                    <div id="dashboard4-content" style="display: none;">
+                        <h4 class="mb-4">Dashboard 4: Settings</h4>
+                        <div class="dashboard-content" id="dashboard4-data">
+                            <!-- Data will be loaded via AJAX -->
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="text-center">
-                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                    <span class="visually-hidden">Loading...</span>
+            
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading dashboard data...</p>
                 </div>
-                <p class="mt-3">Loading dashboard data...</p>
             </div>
         </div>
-    </div>
+    </body>
+
+{% endblock %}
+
+{% block extra_javascript %}
+
+    {% include "bootstrap/partials/syntax-highlight.html" %}
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <!-- Third party js -->
+    <script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
+    <script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
+    <script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
+    <!-- Third party js ends -->
+
+    <script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
+
+    <!-- Init js -->
+    <script src="{% static 'js/pages/demo.typehead.js' %}"></script>
+    <script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
+    <!-- Init js end -->
+
+    <!-- Selectize.js JS -->
+    <script src="{% static 'js/selectize.min.js' %}"></script>
+    <script src="{% static 'js/vendor/select2.min.js' %}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         // Load Dashboard 1 on page load
         $(document).ready(function() {
@@ -232,6 +265,7 @@
         });
         
         function loadDashboard(dashboardId) {
+            debugger;
             // Update active tab
             updateActiveTab(dashboardId);
             
@@ -246,7 +280,7 @@
             
             // Load data via AJAX
             $.ajax({
-                url: `L01/dashboard/data/${dashboardId}/`,
+                url: `/L01/dashboard/data/${dashboardId}/`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
@@ -317,7 +351,49 @@
                         </div>
                     </div>
                 `;
-            } else {
+            }
+            else if (dashboardId === '2') {
+                debugger;
+
+                // Show dashboard
+                $('#dashboard2-content').show();
+
+                // ✅ DEFINE sessionContent
+                let sessionContent = `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Session Data</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <strong>Library Code:</strong> ${data.session_data.library_code}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Username:</strong> ${data.session_data.username}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>User ID:</strong> ${data.session_data.user_id}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Role ID:</strong> ${data.session_data.role_id}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                // Session info
+                // $('#dashboard2-session-data').html(sessionContent);
+
+                // Books partial
+                if (data.books_html) {
+                    $('#books-container').html(data.books_html);
+                } else {
+                    console.error('books_html missing');
+                }
+
+                console.log('Dashboard 2 rendered');
+            }
+            else {
                 content = `
                     <div class="alert alert-primary">
                         <h5><i class="bi bi-database me-2"></i>${data.title}</h5>
@@ -384,25 +460,5 @@
             loadDashboard(dashboardId);
         }
     </script>
-{% endblock %}
-{% block extra_javascript %}
 
-{% include "bootstrap/partials/syntax-highlight.html" %}
-
-<!-- Third party js -->
-<script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
-<script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
-<script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
-<!-- Third party js ends -->
-
-<script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
-
-<!-- Init js -->
-<script src="{% static 'js/pages/demo.typehead.js' %}"></script>
-<script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
-<!-- Init js end -->
-
-<!-- Selectize.js JS -->
-<script src="{% static 'js/selectize.min.js' %}"></script>
-<script src="{% static 'js/vendor/select2.min.js' %}"></script>
 {% endblock %}

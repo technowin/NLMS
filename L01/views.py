@@ -3892,6 +3892,7 @@ def chapters_index(request, topic_id):
         library_code = request.session.get('library_db', None)
         
         # ✅ Fetch the selected topic from L01
+        topic_id = int(dec(topic_id))
         topic = get_object_or_404(
             Topics.objects.using('L01'),
             topic_id=topic_id
@@ -4032,6 +4033,7 @@ def mpsc_chapters_index(request, topic_id):
         )
 
         # Fetch the topic
+        topic_id = int(dec(topic_id))
         topic = get_object_or_404(
             Topics.objects.using('L01'),
             topic_id=topic_id
@@ -7452,71 +7454,217 @@ def event_announcement_edit(request, encrypted_id):
         
         messages.error(request, f'Error editing event announcement: {str(e)}')
         return redirect('L01:event_announcement_index')
-    
+   
+   
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
 @login_required
 def dashboard_view(request):
     """
     Main dashboard view with 4 tabs
     """
-    context = {
-        'dashboard_title': 'Library Dashboard',
-        'active_tab': 'dashboard1'
-    }
-    return render(request, 'L01/Dashboard/library_dashboard.html', context)
+    try:
+        context = {
+            'dashboard_title': 'Library Dashboard',
+            'active_tab': 'dashboard1'
+        }
+        return render(request, 'L01/Dashboard/library_dashboard.html', context)
+    except Exception as e:
+        # Log the error here if you have logging configured
+        return JsonResponse({
+            'error': f'Error loading dashboard: {str(e)}'
+        }, status=500)
 
 def get_dashboard1_data(request):
     """
     Returns placeholder data for Dashboard 1
     """
+    try:
+        return JsonResponse({
+            'dashboard': 'dashboard1',
+            'title': 'Dashboard 1 - Overview',
+            'message': 'Dashboard 1 data loaded successfully',
+            'last_updated': '2024-01-01 00:00:00',
+            'status': 'success'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'dashboard': 'dashboard1',
+            'error': f'Error loading dashboard 1 data: {str(e)}',
+            'status': 'error'
+        }, status=500)
+
+from django.http import JsonResponse
+
+def catalog_data_ajax(request):
+    subject_id = request.GET.get("subject_id")
+
+    qs = BookCatalog.objects.filter(subject__is_active=1)
+
+    if subject_id:
+        qs = qs.filter(subject_id=subject_id)
+        subjects = SubjectTypeMaster.objects.filter(id=subject_id, is_active=1)
+    else:
+        subjects = SubjectTypeMaster.objects.filter(is_active=1)
+
+    data = []
+
+    for sub in subjects:
+        titles_count = qs.filter(subject=sub).count()
+
+        copies_count = BookAccession.objects.filter(
+            catalogue__subject=sub
+        ).count()
+
+        processed_count = CirculationCopyStatus.objects.filter(
+            bookcatalog__subject=sub
+        ).count()
+
+        if titles_count > 0:
+            data.append({
+                "subject": sub.subjectNameMarathi or sub.subjectNameEnglish,
+                "titles": titles_count,
+                "copies": copies_count,
+                "processed": processed_count,
+            })
+
+    # KPI counts
+    if subject_id:
+        total_titles = qs.count()
+        total_copies = BookAccession.objects.filter(
+            catalogue__subject_id=subject_id
+        ).count()
+        total_processed = CirculationCopyStatus.objects.filter(
+            bookcatalog__subject_id=subject_id
+        ).count()
+    else:
+        total_titles = BookCatalog.objects.count()
+        total_copies = BookAccession.objects.count()
+        total_processed = CirculationCopyStatus.objects.count()
+
     return JsonResponse({
-        'dashboard': 'dashboard1',
-        'title': 'Dashboard 1 - Overview',
-        'message': 'Dashboard 1 data loaded successfully',
-        'last_updated': '2024-01-01 00:00:00'
+        "data": data,
+        "total_titles": total_titles,
+        "total_copies": total_copies,
+        "total_processed": total_processed
     })
+
+
+def build_books_partial_html():
+    total_titles = BookCatalog.objects.count()
+    total_copies = BookAccession.objects.count()
+    
+    # Get active subjects for the dropdown
+    subjects = SubjectTypeMaster.objects.filter(is_active=1)
+
+    return render_to_string(
+        "L01/Dashboard/library_dashboard_catalog.html",
+        {
+            "total_titles": total_titles,
+            "total_copies": total_copies,
+            "subjects": subjects,  # pass subjects here
+        }
+    )
 
 def get_dashboard2_data(request):
     """
-    Returns placeholder data for Dashboard 2
+    Returns session data and total books for Dashboard 2
     """
-    return JsonResponse({
-        'dashboard': 'dashboard2',
-        'title': 'Dashboard 2 - Reports',
-        'message': 'Dashboard 2 data will be implemented here',
-        'last_updated': '2024-01-01 00:00:00'
-    })
+    try:
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session.get('user_id', None)
+        role_id = request.session.get('role_id', None)
+
+        books_html = build_books_partial_html()
+        print("Books HTML:", books_html)  # Debugging line  
+        return JsonResponse({
+            'dashboard': 'dashboard2',
+            'title': 'Dashboard 2 - Reports',
+            'message': 'Dashboard 2 data will be implemented here',
+            'last_updated': '2024-01-01 00:00:00',
+            'session_data': {
+                'library_code': library_code,
+                'username': username,
+                'user_id': user_id,
+                'role_id': role_id
+            },
+            'books_html': books_html,
+            'status': 'success'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'dashboard': 'dashboard2',
+            'error': f'Error loading dashboard 2 data: {str(e)}',
+            'status': 'error'
+        }, status=500)
 
 def get_dashboard3_data(request):
     """
     Returns placeholder data for Dashboard 3
     """
-    return JsonResponse({
-        'dashboard': 'dashboard3',
-        'title': 'Dashboard 3 - Analytics',
-        'message': 'Dashboard 3 data will be implemented here',
-        'last_updated': '2024-01-01 00:00:00'
-    })
+    try:
+        return JsonResponse({
+            'dashboard': 'dashboard3',
+            'title': 'Dashboard 3 - Analytics',
+            'message': 'Dashboard 3 data will be implemented here',
+            'last_updated': '2024-01-01 00:00:00',
+            'status': 'success'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'dashboard': 'dashboard3',
+            'error': f'Error loading dashboard 3 data: {str(e)}',
+            'status': 'error'
+        }, status=500)
 
 def get_dashboard4_data(request):
     """
     Returns placeholder data for Dashboard 4
     """
-    return JsonResponse({
-        'dashboard': 'dashboard4',
-        'title': 'Dashboard 4 - Settings',
-        'message': 'Dashboard 4 data will be implemented here',
-        'last_updated': '2024-01-01 00:00:00'
-    })
+    try:
+        return JsonResponse({
+            'dashboard': 'dashboard4',
+            'title': 'Dashboard 4 - Settings',
+            'message': 'Dashboard 4 data will be implemented here',
+            'last_updated': '2024-01-01 00:00:00',
+            'status': 'success'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'dashboard': 'dashboard4',
+            'error': f'Error loading dashboard 4 data: {str(e)}',
+            'status': 'error'
+        }, status=500)
 
 def get_dashboard_data(request, dashboard_id):
-    """Route to get data for specific dashboard"""
-    if dashboard_id == '1':
-        return get_dashboard1_data(request)
-    elif dashboard_id == '2':
-        return get_dashboard2_data(request)
-    elif dashboard_id == '3':
-        return get_dashboard3_data(request)
-    elif dashboard_id == '4':
-        return get_dashboard4_data(request)
-    else:
-        return JsonResponse({'error': 'Invalid dashboard ID'}, status=400)
+    """
+    Route to get data for specific dashboard
+    """
+    try:
+        dashboard_handlers = {
+            '1': get_dashboard1_data,
+            '2': get_dashboard2_data,
+            '3': get_dashboard3_data,
+            '4': get_dashboard4_data
+        }
+        
+        handler = dashboard_handlers.get(dashboard_id)
+        
+        if handler:
+            return handler(request)
+        else:
+            return JsonResponse({
+                'error': 'Invalid dashboard ID',
+                'status': 'error'
+            }, status=400)
+            
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error processing dashboard request: {str(e)}',
+            'status': 'error'
+        }, status=500)
+            
