@@ -66,6 +66,58 @@
 
     </div>
 
+    <!-- Detail Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalTitle">
+                        <!-- Dynamic title -->
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+
+                    <!-- Action buttons -->
+                    <div class="d-flex justify-content-end gap-2 mb-3">
+                        <a href="javascript:void(0)" id="downloadPdfBtn" class="btn btn-sm btn-outline-danger">
+                            Download PDF
+                        </a>
+                        <a href="javascript:void(0)" id="downloadExcelBtn" class="btn btn-sm btn-outline-success">
+                            Download Excel
+                        </a>
+                    </div>
+
+                    <!-- DataTable -->
+                    <div class="table-responsive">
+                        <table id="detailTable" class="table table-bordered table-striped w-100">
+                            <thead>
+                                <!-- Will be injected dynamically -->
+                            </thead>
+                            <tbody>
+                                <!-- Server-side DataTable -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
 {% endblock %}
 
 {% block extra_javascript %}
@@ -74,31 +126,81 @@
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script>
-        let catalogChart;
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
 
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+
+        let catalogChart;
+        let currentSubjectId = "";  
+        let currentMetric = "";
+        let detailModalInstance;
+        
         function initChart() {
             const ctx = document.getElementById('catalogChart').getContext('2d');
+
             catalogChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: [],
                     datasets: [
-                        {
-                            label: 'Titles',
-                            data: []
-                        },
-                        {
-                            label: 'Copies',
-                            data: []
-                        },
-                        {
-                            label: 'Processed Copies',
-                            data: []
-                        }
+                        { label: 'Titles', data: [] },
+                        { label: 'Copies', data: [] },
+                        { label: 'Processed Copies', data: [] }
                     ]
+                },
+                options: {
+                    onClick: function (evt, elements) {
+
+                        if (!elements.length) return;
+
+                        const element = elements[0];
+                        const datasetIndex = element.datasetIndex;
+                        const index = element.index;
+
+                        const metricMap = ['titles', 'copies', 'processed'];
+                        currentMetric = metricMap[datasetIndex];
+
+                        const subjectLabel = this.data.labels[index];
+                        currentSubjectId = $('#subjectTabs .nav-link.active').data('subject') || '';
+
+                        openDetailModal(subjectLabel, currentMetric);
+                    }
                 }
             });
+        }
+
+        function openDetailModal(subjectLabel, metric) {
+
+            resetModal();
+
+            const metricTitleMap = {
+                titles: 'Titles',
+                copies: 'Copies',
+                processed: 'Processed Copies'
+            };
+
+            $('#detailModalTitle').text(
+                `${metricTitleMap[metric]} - ${subjectLabel}`
+            );
+
+            $('#downloadPdfBtn').attr(
+                'href',
+                "{% url 'L01:export_catalog_pdf' %}?subject=" + currentSubjectId + "&type=" + metric
+            );
+
+            $('#downloadExcelBtn').attr(
+                'href',
+                "{% url 'L01:export_catalog_excel' %}?subject=" + currentSubjectId + "&type=" + currentMetric
+            );
+
+            loadDetailTable(currentSubjectId, metric);
+
+            detailModalInstance.show();
+
         }
 
         function loadCatalogData(subjectId) {
@@ -137,10 +239,14 @@
         $(document).ready(function () {
 
             initChart();
-            loadCatalogData(""); // initial ALL load
+            loadCatalogData("");
+
+            detailModalInstance = new bootstrap.Modal(
+                document.getElementById('detailModal'),
+                { backdrop: 'static', keyboard: true }
+            );
 
             $('#subjectTabs').on('click', '.nav-link', function () {
-
                 $('#subjectTabs .nav-link').removeClass('active');
                 $(this).addClass('active');
 
@@ -148,6 +254,82 @@
                 loadCatalogData(subjectId);
             });
         });
+
+    </script>
+
+    <script>
+        function resetModal() {
+
+            if ($.fn.DataTable.isDataTable('#detailTable')) {
+                $('#detailTable').DataTable().clear().destroy();
+            }
+
+            $('#detailTable').empty();
+
+            $('#detailModalTitle').text('');
+            $('#downloadPdfBtn').attr('href', 'javascript:void(0)');
+            $('#downloadExcelBtn').attr('href', 'javascript:void(0)');
+        }
+
+
+        $('#detailModal').on('hidden.bs.modal', function () {
+            resetModal();
+        });
+    </script>
+
+    <script>
+        function loadDetailTable(subjectId, metric) {
+
+            if ($.fn.DataTable.isDataTable('#detailTable')) {
+                $('#detailTable').DataTable().clear().destroy();
+            }
+
+            $('#detailTable').html(''); // keep table, remove children
+
+            let columnsConfig = [];
+
+            if (metric === 'titles') {
+                columnsConfig = [
+                    { data: 'title', title: 'Title' },
+                    { data: 'author', title: 'Author' },
+                    { data: 'publisher', title: 'Publisher' }
+                ];
+            }
+
+            if (metric === 'copies') {
+                columnsConfig = [
+                    { data: 'accession_no', title: 'Accession No' },
+                    { data: 'title', title: 'Title' },
+                    { data: 'status', title: 'Status' }
+                ];
+            }
+
+            if (metric === 'processed') {
+                columnsConfig = [
+                    { data: 'barcode', title: 'Barcode' },
+                    { data: 'accession_no', title: 'Accession No' },
+                    { data: 'current_status', title: 'Status' },
+                    { data: 'shelf', title: 'Shelf' }
+                ];
+            }
+
+            $('#detailTable').DataTable({
+                processing: true,
+                serverSide: true,
+                searching: true,
+                pageLength: 10,
+                destroy: true,
+                ajax: {
+                    url: "{% url 'L01:catalog_detail_datatable' %}",
+                    data: function (d) {
+                        d.subject_id = subjectId;
+                        d.type = metric;
+                    }
+                },
+                columns: columnsConfig
+            });
+        }
+
     </script>
 
 {% endblock %}

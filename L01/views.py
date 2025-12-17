@@ -7454,11 +7454,6 @@ def event_announcement_edit(request, encrypted_id):
         
         messages.error(request, f'Error editing event announcement: {str(e)}')
         return redirect('L01:event_announcement_index')
-   
-   
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
 
 @login_required
 def dashboard_view(request):
@@ -7496,9 +7491,8 @@ def get_dashboard1_data(request):
             'status': 'error'
         }, status=500)
 
-from django.http import JsonResponse
-
 def catalog_data_ajax(request):
+    
     subject_id = request.GET.get("subject_id")
 
     qs = BookCatalog.objects.filter(subject__is_active=1)
@@ -7550,7 +7544,6 @@ def catalog_data_ajax(request):
         "total_copies": total_copies,
         "total_processed": total_processed
     })
-
 
 def build_books_partial_html():
     total_titles = BookCatalog.objects.count()
@@ -7668,3 +7661,681 @@ def get_dashboard_data(request, dashboard_id):
             'status': 'error'
         }, status=500)
             
+def catalog_detail_datatable(request):
+    try:
+        draw = int(request.GET.get('draw', 1))
+        start = int(request.GET.get('start', 0))
+        length = int(request.GET.get('length', 10))
+        search_value = request.GET.get('search[value]', '')
+
+        subject_id = request.GET.get('subject_id')
+        metric = request.GET.get('type')
+
+        data = []
+        total_records = 0
+
+        # ---------------- TITLES ----------------
+        if metric == 'titles':
+            qs = BookCatalog.objects.filter(subject_id=subject_id)
+
+            if search_value:
+                qs = qs.filter(
+                    Q(title__icontains=search_value) |
+                    Q(author__icontains=search_value)
+                )
+
+            total_records = qs.count()
+            qs = qs[start:start + length]
+
+            for obj in qs:
+                data.append({
+                    'title': obj.title,
+                    'author': obj.author,
+                    'publisher': obj.publisher
+                })
+
+        # ---------------- COPIES ----------------
+        elif metric == 'copies':
+            qs = BookAccession.objects.filter(catalogue__subject_id=subject_id)
+
+            if search_value:
+                qs = qs.filter(accession_no__icontains=search_value)
+
+            total_records = qs.count()
+            qs = qs[start:start + length]
+
+            for obj in qs:
+                data.append({
+                    'accession_no': obj.accession_no,
+                    'title': obj.catalogue.title,
+                    'status': obj.status.status_name if obj.status else ''
+                })
+
+        # ---------------- PROCESSED ----------------
+        elif metric == 'processed':
+            qs = CirculationCopyStatus.objects.filter(
+                bookcatalog__subject_id=subject_id
+            )
+
+            if search_value:
+                qs = qs.filter(
+                    Q(barcode__icontains=search_value) |
+                    Q(accession_no__icontains=search_value)
+                )
+
+            total_records = qs.count()
+            qs = qs[start:start + length]
+
+            for obj in qs:
+                data.append({
+                    'barcode': obj.barcode,
+                    'accession_no': obj.accession_no,
+                    'current_status': obj.current_status.status_name if obj.current_status else '',
+                    'shelf': obj.shelf_location.location_name if obj.shelf_location else ''
+                })
+
+        return JsonResponse({
+            'draw': draw,
+            'recordsTotal': total_records,
+            'recordsFiltered': total_records,
+            'data': data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error fetching catalog details: {str(e)}'
+        }, status=500)
+        
+import openpyxl
+from openpyxl.styles import Alignment, Font, Border, Side
+from django.http import HttpResponse
+
+def export_catalog_excel(request):
+    try:
+        # Get library info
+        library_code = request.session.get('library_db', None)
+        library_obj = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+        library_name = library_obj.library_name if library_obj else 'Library'
+
+        subject_id = request.GET.get('subject')
+        metric = request.GET.get('type')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Report"
+
+        # Define thin border style
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # ---------------- TITLES ----------------
+        if metric == 'titles':
+            headers = [
+                'Title', 'Subtitle', 'Author', 'Other Authors', 'Publisher', 
+                'ISBN/ISSN', 'Edition', 'Publication Year', 'Language',
+                'Call Number', 'Cutter Number', 'Remarks'
+            ]
+            num_columns = len(headers)
+
+            # Library Name at top
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_columns)
+            ws.cell(row=1, column=1, value=library_name).alignment = Alignment(horizontal='center')
+            ws.cell(row=1, column=1).font = Font(bold=True, size=14)
+
+            # Headers
+            for col_idx, header in enumerate(headers, start=1):
+                cell = ws.cell(row=2, column=col_idx, value=header)
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
+                cell.border = thin_border
+
+            # Data
+            qs = BookCatalog.objects.filter(subject_id=subject_id)
+            for row_idx, obj in enumerate(qs, start=3):
+                row_values = [
+                    obj.title, obj.subtitle, obj.author, obj.other_authors, obj.publisher,
+                    obj.isbn_issn, obj.edition, obj.year_of_publication, obj.language,
+                    obj.call_number, obj.cutter_number, obj.remarks
+                ]
+                for col_idx, value in enumerate(row_values, start=1):
+                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                    cell.border = thin_border
+
+        # ---------------- COPIES ----------------
+        elif metric == 'copies':
+            headers = [
+                'Accession No', 'Title', 'Author', 'Publisher',
+                'Copy Number', 'Acquisition Date', 'Location', 'Status', 'Price', 'Supplier'
+            ]
+            num_columns = len(headers)
+
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_columns)
+            ws.cell(row=1, column=1, value=library_name).alignment = Alignment(horizontal='center')
+            ws.cell(row=1, column=1).font = Font(bold=True, size=14)
+
+            for col_idx, header in enumerate(headers, start=1):
+                cell = ws.cell(row=2, column=col_idx, value=header)
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
+                cell.border = thin_border
+
+            qs = BookAccession.objects.filter(catalogue__subject_id=subject_id)
+            for row_idx, obj in enumerate(qs, start=3):
+                row_values = [
+                    obj.accession_no,
+                    obj.catalogue.title if obj.catalogue else '',
+                    obj.catalogue.author if obj.catalogue else '',
+                    obj.catalogue.publisher if obj.catalogue else '',
+                    obj.copy_number,
+                    obj.acquisition_date,
+                    obj.location.location_name if obj.location else '',
+                    obj.status.status_name if obj.status else '',
+                    obj.price,
+                    obj.supplier.supplier_name if obj.supplier else '',
+                ]
+                for col_idx, value in enumerate(row_values, start=1):
+                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                    cell.border = thin_border
+
+        # ---------------- PROCESSED ----------------
+        elif metric == 'processed':
+            headers = [
+                'Barcode', 'Accession No', 'Title', 'Author', 'Current Status',
+                'Processing Status', 'Shelf', 'Date Processed', 'Remarks'
+            ]
+            num_columns = len(headers)
+
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_columns)
+            ws.cell(row=1, column=1, value=library_name).alignment = Alignment(horizontal='center')
+            ws.cell(row=1, column=1).font = Font(bold=True, size=14)
+
+            for col_idx, header in enumerate(headers, start=1):
+                cell = ws.cell(row=2, column=col_idx, value=header)
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
+                cell.border = thin_border
+
+            qs = CirculationCopyStatus.objects.filter(bookcatalog__subject_id=subject_id)
+            for row_idx, obj in enumerate(qs, start=3):
+                row_values = [
+                    obj.barcode,
+                    obj.accession_no,
+                    obj.bookcatalog.title if obj.bookcatalog else '',
+                    obj.bookcatalog.author if obj.bookcatalog else '',
+                    obj.current_status.status_name if obj.current_status else '',
+                    obj.processing_status.status_name if obj.processing_status else '',
+                    obj.shelf_location.location_name if obj.shelf_location else '',
+                    obj.date_processed,
+                    obj.remarks,
+                ]
+                for col_idx, value in enumerate(row_values, start=1):
+                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                    cell.border = thin_border
+
+        # Auto-adjust column widths
+        from openpyxl.utils import get_column_letter
+
+        # Auto-adjust column widths
+        for i, col in enumerate(ws.columns, start=1):
+            max_length = 0
+            column_letter = get_column_letter(i)
+            for cell in col:
+                if cell.value and not isinstance(cell, openpyxl.cell.cell.MergedCell):
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[column_letter].width = max_length + 2
+            
+        # Prepare response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename=report_{metric}.xlsx'
+        wb.save(response)
+        return response
+
+    except Exception as e:
+        return HttpResponse(f'Error generating Excel file: {str(e)}', status=500)
+
+import os
+from django.conf import settings
+from django.http import HttpResponse
+from weasyprint import HTML, CSS
+from datetime import datetime
+
+def export_catalog_pdf(request):
+    try:
+        library_code = request.session.get('library_db', None)
+        library_obj = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+        library_name = library_obj.library_name if library_obj else 'Library'
+
+        subject_id = request.GET.get('subject')
+        metric = request.GET.get('type')
+
+        # Fetch data based on metric
+        data = []
+        if metric == 'titles':
+            headers = [
+                'Title', 'Subtitle', 'Author', 'Other Authors', 'Publisher', 
+                'ISBN/ISSN', 'Edition', 'Publication Year', 'Language',
+                'Call Number', 'Cutter Number', 'Remarks'
+            ]
+            qs = BookCatalog.objects.filter(subject_id=subject_id)
+            for obj in qs:
+                data.append([
+                    obj.title, obj.subtitle, obj.author, obj.other_authors, obj.publisher,
+                    obj.isbn_issn, obj.edition, obj.year_of_publication, obj.language,
+                    obj.call_number, obj.cutter_number, obj.remarks
+                ])
+
+        elif metric == 'copies':
+            headers = [
+                'Accession No', 'Title', 'Author', 'Publisher',
+                'Copy Number', 'Acquisition Date', 'Location', 'Status', 'Price', 'Supplier'
+            ]
+            qs = BookAccession.objects.filter(catalogue__subject_id=subject_id)
+            for obj in qs:
+                data.append([
+                    obj.accession_no,
+                    obj.catalogue.title if obj.catalogue else '',
+                    obj.catalogue.author if obj.catalogue else '',
+                    obj.catalogue.publisher if obj.catalogue else '',
+                    obj.copy_number,
+                    obj.acquisition_date,
+                    obj.location.location_name if obj.location else '',
+                    obj.status.status_name if obj.status else '',
+                    obj.price,
+                    obj.supplier.supplier_name if obj.supplier else ''
+                ])
+
+        elif metric == 'processed':
+            headers = [
+                'Barcode', 'Accession No', 'Title', 'Author', 'Current Status',
+                'Processing Status', 'Shelf', 'Date Processed', 'Remarks'
+            ]
+            qs = CirculationCopyStatus.objects.filter(bookcatalog__subject_id=subject_id)
+            for obj in qs:
+                data.append([
+                    obj.barcode,
+                    obj.accession_no,
+                    obj.bookcatalog.title if obj.bookcatalog else '',
+                    obj.bookcatalog.author if obj.bookcatalog else '',
+                    obj.current_status.status_name if obj.current_status else '',
+                    obj.processing_status.status_name if obj.processing_status else '',
+                    obj.shelf_location.location_name if obj.shelf_location else '',
+                    obj.date_processed,
+                    obj.remarks
+                ])
+
+        # ---------------- Build HTML table ----------------
+        table_rows = ""
+        for row in data:
+            row_html = ""
+            for cell in row:
+                # Replace None or empty string with '-'
+                cell_value = cell if cell not in [None, "", "None"] else "-"
+                row_html += f"<td>{cell_value}</td>"
+            table_rows += f"<tr>{row_html}</tr>"
+
+        headers_html = "".join(f"<th>{header}</th>" for header in headers)
+
+        current_datetime = datetime.now().strftime("%d-%m-%Y")
+
+        html_string = f"""
+        <!DOCTYPE html>
+        <html lang="mr">
+        <head>
+            <meta charset="UTF-8">
+            <title>{library_name} - Report</title>
+        </head>
+        <body>
+            <h1 style="text-align:center;">{library_name}</h1>
+            <table>
+                <thead>
+                    <tr>
+                        {headers_html}
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows}
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+
+        # ---------------- CSS with page breaks, footer ----------------
+        font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSansDevanagari-Regular.ttf")
+        css_string = f"""
+        @font-face {{
+            font-family: 'NotoDeva';
+            src: url('file://{font_path}');
+        }}
+        @page {{
+            size: A4;
+            margin: 10px 10px 40px 10px; /* small margin for footer */
+            @bottom-right {{
+                content: "Page " counter(page) " | {current_datetime}";
+                font-size: 8pt;
+                font-family: 'NotoDeva';
+            }}
+        }}
+        body {{
+            font-family: 'NotoDeva', sans-serif;
+            font-size: 9pt;
+            margin: 5px;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* fit table in page */
+            page-break-inside: auto;
+        }}
+        tr {{
+            page-break-inside: avoid;  /* do not break row across pages */
+            page-break-after: auto;
+        }}
+        th, td {{
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            word-wrap: break-word;
+        }}
+        th {{
+            font-weight: bold;
+            background-color: #d3d3d3;
+        }}
+        h1 {{
+            font-size: 16pt;
+            margin: 5px 0;
+        }}
+        """
+
+        # Generate PDF
+        pdf_file = HTML(string=html_string).write_pdf(stylesheets=[CSS(string=css_string)])
+
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="report_{metric}.pdf"'
+        return response
+
+    except Exception as e:
+        return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
+    
+    
+@login_required
+def kiosk_display(request):
+    # Get library_code from session
+    library_code_from_session = request.session.get('library_db', None)
+    library_name = None  # This will now store Marathi name if available
+
+    # If library_code is provided in session, get library details from tbl_librarymasterL01
+    if library_code_from_session:
+        try:
+            library = tbl_librarymasterL01.objects.filter(
+                library_code__iexact=library_code_from_session
+            ).first()
+            if library:
+                # Prefer Marathi name if available, otherwise fallback to English name
+                library_name = library.library_name_mar if library.library_name_mar else library.library_name
+                
+        except Exception as e:
+            library_name = None
+    
+    # Render the template with context
+    return render(request, "L01/kiosk_display.html", {
+        "MEDIA_URL": settings.MEDIA_URL,
+        "library_name": library_name  # Marathi name will go here if present
+    })
+
+    
+@login_required
+def visit_Library_ebook_catalogue(request):
+    try:
+        # Session checks
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/LibraryCateVisit/visit_Library_ebook_catalogue.html", {})
+
+        # Load all active subjects
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))
+            subjects.append(s)
+
+        first_subject = subjects[0] if subjects else None
+
+        # Fetch ebooks for the first subject
+        if first_subject:
+            ebooks = LibraryEbook.objects.filter(eb_subject=first_subject).select_related('eb_subject')
+        else:
+            ebooks = LibraryEbook.objects.none()
+
+        # Pagination – 8 ebooks per page
+        paginator = Paginator(ebooks, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        # Encode ebook IDs
+        for b in page_obj:
+            b.ebookIdEnc = enc(str(b.ebook_id)) if 'enc' in globals() else b.ebook_id
+
+        # --- NEW ARRIVALS LOGIC ---
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        new_ebooks = LibraryEbook.objects.filter(created_at__gte=thirty_days_ago).order_by('-created_at')
+
+        if not new_ebooks.exists():
+            new_ebooks = LibraryEbook.objects.all().order_by('-ebook_id')[:10]
+
+        for b in new_ebooks:
+            b.ebookIdEnc = enc(str(b.ebook_id)) if 'enc' in globals() else b.ebook_id
+
+        context = {
+            'subjects': subjects,
+            'ebooks': page_obj,
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'new_ebooks': new_ebooks,
+        }
+
+        return render(request, "L01/LibraryCateVisit/visit_library_Cate_ebooks.html", context)
+
+    except Exception as e:
+        print(f"Error Ebook Catalogue: {e}")
+        return render(request, "L01/LibraryCateVisit/visit_library_Cate_ebooks.html", {})
+    
+@login_required
+def get_ebooks_by_subject(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc)
+
+        search = request.GET.get('search', '').strip()
+
+        # Base queryset
+        all_ebooks = LibraryEbook.objects.filter(eb_subject_id=subject_id).select_related('eb_subject')
+
+        # Search filter
+        if search:
+            all_ebooks = all_ebooks.filter(
+                Q(eb_title__icontains=search) |
+                Q(eb_author__icontains=search)
+            )
+
+        # Encode ebook IDs
+        for b in all_ebooks:
+            b.ebookIdEnc = enc(str(b.ebook_id)) if 'enc' in globals() else b.ebook_id
+
+        # Pagination
+        paginator = Paginator(all_ebooks, 8)
+        page_number = request.GET.get('page', 1)
+        ebooks_page = paginator.get_page(page_number)
+
+        context = {
+            'ebooks': ebooks_page,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'subject_id_enc': subject_id_enc,
+        }
+
+        return render(request, "L01/LibraryCateVisit/ebook_list_partial.html", context)
+
+    except Exception as e:
+        print("Error fetching ebooks:", e)
+        return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
+
+@login_required
+def view_ebook_detail(request):
+    try:
+        # -----------------------
+        # SESSION VALIDATION
+        # -----------------------
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/LibraryCateVisit/visit_library_Cate_ebooks.html", {})
+
+        # -----------------------
+        # EBOOK ID VALIDATION
+        # -----------------------
+        ebook_id_enc = request.GET.get('ebook_id')
+        if not ebook_id_enc:
+            messages.error(request, "Invalid ebook request.")
+            return redirect("visit_Library_ebook_catalogue")
+
+        ebook_id = dec(ebook_id_enc)
+
+        # -----------------------
+        # FETCH EBOOK DATA
+        # -----------------------
+        ebook = get_object_or_404(LibraryEbook, ebook_id=ebook_id)
+
+        # Collect images (same style as your physical book)
+        images = []
+        if ebook.eb_front_page_photo:
+            images.append(ebook.eb_front_page_photo)
+        if ebook.eb_last_page_photo:
+            images.append(ebook.eb_last_page_photo)
+
+        # -----------------------
+        # REVIEWS (if needed)
+        # -----------------------
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        all_reviews = BookReview.objects.filter(ebook=ebook).order_by('-created_at')
+
+        user_ids = all_reviews.values_list('user_id', flat=True).distinct()
+        users = User.objects.filter(id__in=user_ids)
+        user_dict = {u.id: u for u in users}
+
+        reviews_with_users = []
+        for r in all_reviews:
+            r.user_obj = user_dict.get(r.user_id)
+            reviews_with_users.append(r)
+
+        # Current user review
+        current_user_id = request.session.get('user_id')
+        user_review = None
+        if current_user_id:
+            try:
+                user_review = all_reviews.filter(user_id=int(current_user_id)).first()
+                if user_review:
+                    user_review.user_obj = user_dict.get(int(current_user_id))
+            except:
+                user_review = None
+
+        # Rating summary
+        avg_rating = all_reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0
+        total_reviews = all_reviews.count()
+
+        # Reviews pagination (same style)
+        reviews_per_page = 5
+        show_pagination = total_reviews > reviews_per_page
+
+        if show_pagination:
+            paginator = Paginator(reviews_with_users, reviews_per_page)
+            page_number = request.GET.get('page', 1)
+            try:
+                reviews_page = paginator.page(page_number)
+            except PageNotAnInteger:
+                reviews_page = paginator.page(1)
+            except EmptyPage:
+                reviews_page = paginator.page(paginator.num_pages)
+        else:
+            reviews_page = reviews_with_users
+
+        # -----------------------
+        # FINAL CONTEXT
+        # -----------------------
+        context = {
+            "ebook": ebook,
+            "images": images,
+            "MEDIA_URL": settings.MEDIA_URL,
+
+            # Ebook Metadata
+            "title": ebook.eb_title,
+            "subtitle": ebook.eb_subtitle,
+            "author": ebook.eb_author,
+            "publisher": ebook.eb_publisher,
+            "isbn": ebook.eb_isbn_issn,
+            "edition": ebook.eb_edition,
+            "publication_year": ebook.eb_year_of_publication,
+            "language": ebook.eb_language,
+            "keywords": ebook.eb_keywords,
+            "classification": ebook.eb_classification_number,
+            "pages": ebook.eb_pages,
+            "remarks": ebook.remarks,
+            "pdf_url": ebook.eb_pdf_url,
+            "subject": ebook.eb_subject.subject_name if ebook.eb_subject else None,
+            "ebook_type": ebook.ebook_type.type_name if ebook.ebook_type else None,
+            "call_number": ebook.call_number,
+            "cutter_number": ebook.cutter_number,
+
+            # Reviews section
+            "reviews": reviews_page,
+            "user_review": user_review,
+            "avg_rating": round(avg_rating, 1),
+            "total_reviews": total_reviews,
+            "show_pagination": show_pagination,
+            "reviews_per_page": reviews_per_page,
+
+            # Enc ID
+            "ebook_id_enc": ebook_id_enc,
+
+            "current_params": request.GET.copy(),
+        }
+
+        return render(request, "L01/LibraryCateVisit/view_ebook_detail.html", context)
+
+    except Exception as e:
+        print("Error in view_ebook_detail:", e)
+        messages.error(request, "Unable to load ebook details.")
+        return redirect("visit_Library_ebook_catalogue")
+
+def kiosk_competitive_exam_type(request, competitive_id=None):
+    if competitive_id:
+        # Show exam details
+        exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+        return render(request, "L01/competitive_exam_details.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "exam": exam
+        })
+    
+    # Show exam list
+    competitive_exams = CompetitiveExamMaster.objects.all().order_by('full_name')
+    return render(request, "L01/kiosk_competitive_exam_type.html", {
+        "MEDIA_URL": settings.MEDIA_URL,
+        "competitive_exams": competitive_exams
+    })

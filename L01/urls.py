@@ -26,6 +26,16 @@ urlpatterns = [
     path("get_membership_details", get_membership_details, name="get_membership_details"),
     path("get-membership-code/",get_membership_code, name="get_membership_code"),
     
+     path("kiosk_display/", kiosk_display, name="kiosk_display"),
+    path("visit_library_Cate_ebooks/", visit_Library_ebook_catalogue, name="visit_library_Cate_ebooks"),
+    path("get_ebooks_by_subject/", get_ebooks_by_subject, name="get_ebooks_by_subject"),
+     path("view_ebook_detail/", view_ebook_detail, name="view_ebook_detail"),
+     # Both URLs use the same function
+    path('kiosk_competitive_exam_type/', kiosk_competitive_exam_type, name='kiosk_competitive_exam_type'),
+    
+    # For detail view (with argument)
+    path('kiosk_competitive_exam_type/<int:competitive_id>/', kiosk_competitive_exam_type, name='kiosk_competitive_exam_type_detail'),
+    
     # membership approval
     path("membership_approval", membership_approval, name="membership_approval"),
     path("membership_form_create", membership_form_create, name="membership_form_create"),
@@ -110,5 +120,8 @@ urlpatterns = [
     path('dashboard/', dashboard_view, name='dashboard'),
     path("catalog_data_ajax/", catalog_data_ajax, name="catalog_data_ajax"),
     path('dashboard/data/<str:dashboard_id>/', get_dashboard_data, name='dashboard_data'),
+    path('catalog_detail_datatable/', catalog_detail_datatable, name='catalog_detail_datatable'),
+    path('export_catalog_excel/', export_catalog_excel, name='export_catalog_excel'),
+    path('export_catalog_pdf/', export_catalog_pdf, name='export_catalog_pdf'),
 
 ]
