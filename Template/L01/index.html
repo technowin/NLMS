@@ -82,6 +82,7 @@
     transition: transform 0.8s;
     transform-style: preserve-3d;
     cursor: pointer;
+    box-shadow: 0 5px 40px rgba(0,0,0);
 }
 
 /* Front & Back Side */
@@ -90,9 +91,8 @@
     width: 100%;
     height: 100%;
     backface-visibility: hidden;
-    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 6px 12px rgba(0,0,0);
 }
 
 .book-flip-front img, .book-flip-back img {
@@ -132,13 +132,72 @@
     font-size: 1rem;
 }
 
-/* Book Title */
 .book-title {
-    margin-top: 6px;
+    margin-top: 12px;
     text-align: center;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #000000ff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+
+    /* Dark brown gradient text (high contrast) */
+    background: linear-gradient(
+        135deg,
+        #3e2723,   /* deep brown */
+        #5d4037,   /* warm brown */
+        #6d4c41    /* soft highlight */
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    padding: 8px 16px;
+
+    transition:
+        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        text-shadow 0.35s ease;
+}
+
+/* Elegant underline */
+.book-title::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 32%;
+    height: 3px;
+
+    background: linear-gradient(
+        90deg,
+        #5d4037,
+        #8d6e63
+    );
+
+    border-radius: 10px;
+    transform: translateX(-50%);
+    opacity: 0.8;
+
+    transition: width 0.4s ease, opacity 0.4s ease;
+}
+
+/* Hover effect */
+.book-title:hover {
+    transform: translateY(-3px) scale(1.02);
+
+    {% comment %} /* Soft brown glow for visibility */
+    text-shadow:
+        0 4px 12px rgba(93, 64, 55, 0.35); {% endcomment %}
+}
+
+.book-title:hover::after {
+    width: 90%;
+    opacity: 1;
+}
+
+/* Click feedback */
+.book-title:active {
+    transform: translateY(-1px) scale(0.98);
 }
 
 /* ================= Zoom Modal ================= */
@@ -581,60 +640,98 @@
         <div class="book-flip" id="book-flip-{{ forloop.counter }}">
             <div class="book-flip-inner">
 
-                {% if book.front_page_photo %}
-                <div class="book-flip-front">
-                    <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
-                         alt="{{ book.title }} Front Cover"
-                         class="book-image"
-                         onclick="zoomImage(this)"
-                         data-author="{{ book.author }}"
-                         data-title="{{ book.title }}"
-                         data-subtitle="{{ book.subtitle }}"
-                         data-publisher="{{ book.publisher }}"
-                         data-isbn_issn="{{ book.isbn_issn }}"
-                         data-edition="{{ book.edition }}"
-                         data-publication_place="{{ book.publication_place }}"
-                         data-year_of_publication="{{ book.year_of_publication }}"
-                         data-pages="{{ book.pages }}"
-                         data-remarks="{{ book.remarks }}"
-                         data-language="{{ book.language }}"
-                         data-description="{{ book.description }}"
-                         data-ebook_available="{{ book.ebook_available }}">
-                </div>
-                {% endif %}
+              {% if book.front_page_photo %}
+    <div class="book-flip-front">
+        <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
+             alt="{{ book.title }} Front Cover"
+             class="book-image"
+             onclick="zoomImage(this)"
+             data-author="{{ book.author }}"
+             data-title="{{ book.title }}"
+             data-subtitle="{{ book.subtitle }}"
+             data-publisher="{{ book.publisher }}"
+             data-isbn_issn="{{ book.isbn_issn }}"
+             data-edition="{{ book.edition }}"
+             data-publication_place="{{ book.publication_place }}"
+             data-year_of_publication="{{ book.year_of_publication }}"
+             data-pages="{{ book.pages }}"
+             data-remarks="{{ book.remarks }}"
+             data-language="{{ book.language }}"
+             data-description="{{ book.description }}"
+             data-ebook_available="{{ book.ebook_available }}">
+    </div>
 
-                {% if book.last_page_photo %}
-                <div class="book-flip-back">
-                    <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
-                         alt="{{ book.title }} Back Cover"
-                         class="book-image"
-                         onclick="zoomImage(this)"
-                         data-author="{{ book.author }}"
-                         data-title="{{ book.title }}"
-                         data-subtitle="{{ book.subtitle }}"
-                         data-publisher="{{ book.publisher }}"
-                         data-isbn_issn="{{ book.isbn_issn }}"
-                         data-edition="{{ book.edition }}"
-                         data-publication_place="{{ book.publication_place }}"
-                         data-year_of_publication="{{ book.year_of_publication }}"
-                         data-pages="{{ book.pages }}"
-                         data-remarks="{{ book.remarks }}"
-                         data-language="{{ book.language }}"
-                         data-description="{{ book.description }}"
-                         data-ebook_available="{{ book.ebook_available }}">
-                </div>
-                {% endif %}
+{% elif book.last_page_photo %}
+    <div class="book-flip-back">
+        <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
+             alt="{{ book.title }} Back Cover"
+             class="book-image"
+             onclick="zoomImage(this)"
+             data-author="{{ book.author }}"
+             data-title="{{ book.title }}"
+             data-subtitle="{{ book.subtitle }}"
+             data-publisher="{{ book.publisher }}"
+             data-isbn_issn="{{ book.isbn_issn }}"
+             data-edition="{{ book.edition }}"
+             data-publication_place="{{ book.publication_place }}"
+             data-year_of_publication="{{ book.year_of_publication }}"
+             data-pages="{{ book.pages }}"
+             data-remarks="{{ book.remarks }}"
+             data-language="{{ book.language }}"
+             data-description="{{ book.description }}"
+             data-ebook_available="{{ book.ebook_available }}">
+    </div>
+
+{% else %}
+    <!-- ✅ NO IMAGE FALLBACK -->
+    <div class="book-flip-front"
+         style="
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#f3f4f6;
+            color:#6b7280;
+            font-weight:600;
+            font-size:14px;
+            border-radius:8px;
+            height:220px;
+         ">
+        No Image Available
+    </div>
+{% endif %}
+
             </div>
         </div>
-
+<br>
         <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
             <i class="fas fa-sync-alt"></i> Flip
         </button>
+  
+
 
         <!-- ⭐ Title -->
-        <p class="book-title" style="margin-bottom: 4px;">
-            {{ book.title }}
-        </p>
+       <!-- ⭐ Title (click opens modal) -->
+<p class="book-title"
+   style="margin-bottom: 4px; cursor:pointer;"
+   onclick="zoomFromTitle(this)"
+   data-image="{% if book.front_page_photo %}{{ MEDIA_URL }}{{ book.front_page_photo }}{% endif %}"
+   data-author="{{ book.author }}"
+   data-title="{{ book.title }}"
+   data-subtitle="{{ book.subtitle }}"
+   data-publisher="{{ book.publisher }}"
+   data-isbn_issn="{{ book.isbn_issn }}"
+   data-edition="{{ book.edition }}"
+   data-publication_place="{{ book.publication_place }}"
+   data-year_of_publication="{{ book.year_of_publication }}"
+   data-pages="{{ book.pages }}"
+   data-remarks="{{ book.remarks }}"
+   data-language="{{ book.language }}"
+   data-description="{{ book.description }}"
+   data-ebook_available="{{ book.ebook_available }}">
+    {{ book.title }}
+</p>
+<br>
+
 
         <!-- ⭐ Ebook availability in ONE clean line -->
         <p class="ebook-line" style="font-size: 13px; margin-top: -4px;">
@@ -700,68 +797,103 @@
                 <div class="book-flip" id="ebook-flip-{{ forloop.counter }}">
                     <div class="book-flip-inner">
 
-                        {% if ebook.eb_front_page_photo %}
-                        <div class="book-flip-front">
-                            <img src="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo }}"
-                                alt="{{ ebook.eb_title }} Front Cover"
-                                class="book-image"
-                                onclick="zoomImage(this)"
-                                
-                                data-title="{{ ebook.eb_title }}"
-                                data-subtitle="{{ ebook.eb_subtitle }}"
-                                data-author="{{ ebook.eb_author }}"
-                                data-publisher="{{ ebook.eb_publisher }}"
-                                data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-                                data-edition="{{ ebook.eb_edition }}"
-                                data-subject="{{ ebook.eb_subject }}"
-                                data-publication_place="{{ ebook.eb_publication_place }}"
-                                data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-                                data-pages="{{ ebook.eb_pages }}"
-                                data-remarks="{{ ebook.remarks }}"
-                                data-language="{{ ebook.eb_language }}"
-                                data-description="{{ ebook.eb_keywords }}"
-                                data-pdf_file="{{ ebook.eb_pdf_url }}"
-                                data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-                                data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-                        </div>
-                        {% endif %}
+                     {% if ebook.eb_front_page_photo %}
+    <div class="book-flip-front">
+        <img src="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo }}"
+             alt="{{ ebook.eb_title }} Front Cover"
+             class="book-image"
+             onclick="zoomImage(this)"
 
-                        {% if ebook.eb_last_page_photo %}
-                        <div class="book-flip-back">
-                            <img src="{{ MEDIA_URL }}{{ ebook.eb_last_page_photo }}"
-                                alt="{{ ebook.eb_title }} Back Cover"
-                                class="book-image"
-                                onclick="zoomImage(this)"
+             data-title="{{ ebook.eb_title }}"
+             data-subtitle="{{ ebook.eb_subtitle }}"
+             data-author="{{ ebook.eb_author }}"
+             data-publisher="{{ ebook.eb_publisher }}"
+             data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+             data-edition="{{ ebook.eb_edition }}"
+             data-subject="{{ ebook.eb_subject }}"
+             data-publication_place="{{ ebook.eb_publication_place }}"
+             data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+             data-pages="{{ ebook.eb_pages }}"
+             data-remarks="{{ ebook.remarks }}"
+             data-language="{{ ebook.eb_language }}"
+             data-description="{{ ebook.eb_keywords }}"
+             data-pdf_file="{{ ebook.eb_pdf_url }}"
+             data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+             data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+    </div>
 
-                                data-title="{{ ebook.eb_title }}"
-                                data-subtitle="{{ ebook.eb_subtitle }}"
-                                data-author="{{ ebook.eb_author }}"
-                                data-publisher="{{ ebook.eb_publisher }}"
-                                data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-                                data-edition="{{ ebook.eb_edition }}"
-                                data-subject="{{ ebook.eb_subject }}"
-                                data-publication_place="{{ ebook.eb_publication_place }}"
-                                data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-                                data-pages="{{ ebook.eb_pages }}"
-                                data-remarks="{{ ebook.remarks }}"
-                                data-language="{{ ebook.eb_language }}"
-                                data-description="{{ ebook.eb_keywords }}"
-                                data-pdf_file="{{ ebook.eb_pdf_url }}"
-                                data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-                                data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-                        </div>
-                        {% endif %}
+{% elif ebook.eb_last_page_photo %}
+    <div class="book-flip-back">
+        <img src="{{ MEDIA_URL }}{{ ebook.eb_last_page_photo }}"
+             alt="{{ ebook.eb_title }} Back Cover"
+             class="book-image"
+             onclick="zoomImage(this)"
+
+             data-title="{{ ebook.eb_title }}"
+             data-subtitle="{{ ebook.eb_subtitle }}"
+             data-author="{{ ebook.eb_author }}"
+             data-publisher="{{ ebook.eb_publisher }}"
+             data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+             data-edition="{{ ebook.eb_edition }}"
+             data-subject="{{ ebook.eb_subject }}"
+             data-publication_place="{{ ebook.eb_publication_place }}"
+             data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+             data-pages="{{ ebook.eb_pages }}"
+             data-remarks="{{ ebook.remarks }}"
+             data-language="{{ ebook.eb_language }}"
+             data-description="{{ ebook.eb_keywords }}"
+             data-pdf_file="{{ ebook.eb_pdf_url }}"
+             data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+             data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+    </div>
+
+{% else %}
+    <!-- ✅ NO IMAGE FALLBACK -->
+    <div class="book-flip-front"
+         style="
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            height:220px;
+            background:#f3f4f6;
+            color:#6b7280;
+            font-size:14px;
+            font-weight:600;
+            border-radius:8px;
+         ">
+        No Image Available
+    </div>
+{% endif %}
 
                     </div>
                 </div>
-
+<br>
                 <!-- Flip Button -->
                 <button class="flip-btn"
                         onclick="flipBook('ebook-flip-{{ forloop.counter }}')">
                     <i class="fas fa-sync-alt"></i> Flip
                 </button>
 
-                <p class="book-title">{{ ebook.eb_title }}</p>
+                <p class="book-title"
+                    style="margin-bottom: 4px; cursor:pointer;"
+                    onclick="zoomFromTitle(this)"
+                    data-image="{% if ebook.eb_front_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_front_page_photo }}{% endif %}"
+                    data-author="{{ ebook.eb_author }}"
+                    data-title="{{ ebook.eb_title }}"
+                    data-subtitle="{{ ebook.eb_subtitle }}"
+                    data-publisher="{{ ebook.eb_publisher }}"
+                    data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                    data-edition="{{ ebook.eb_edition }}"
+                    data-publication_place="{{ ebook.eb_publication_place }}"
+                    data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                    data-pages="{{ ebook.eb_pages }}"
+                    data-remarks="{{ ebook.eb_remarks }}"
+                    data-language="{{ ebook.eb_language }}"
+                    data-description="{{ ebook.eb_description }}"
+                    data-ebook_available="{{ ebook.eb_ebook_available }}">
+                        {{ ebook.eb_title }}
+                    </p>
+
 
 
             </div>
@@ -939,6 +1071,39 @@
         }
     });
 </script>
+
+<script>
+function zoomFromTitle(el) {
+
+    // Set image
+    const imageSrc = el.dataset.image || '';
+    document.getElementById("zoomedImage").src = imageSrc;
+
+    // Fill modal data
+    document.getElementById("zoomBookTitle").innerText = el.dataset.title || '';
+    document.getElementById("zoomBookSubtitle").innerText = el.dataset.subtitle || '';
+    document.getElementById("zoomBookAuthor").innerText = el.dataset.author || '';
+    document.getElementById("zoomBookPublisher").innerText = el.dataset.publisher || '';
+    document.getElementById("zoomBookISBN").innerText = el.dataset.isbn_issn || '';
+    document.getElementById("zoomBookEdition").innerText = el.dataset.edition || '';
+    document.getElementById("zoomBookLanguage").innerText = el.dataset.language || '';
+    document.getElementById("zoomBookPlace").innerText = el.dataset.publication_place || '';
+    document.getElementById("zoomBookYear").innerText = el.dataset.year_of_publication || '';
+    document.getElementById("zoomBookPages").innerText = el.dataset.pages || '';
+    document.getElementById("zoomBookRemarks").innerText = el.dataset.remarks || '';
+    document.getElementById("zoomBookDescription").innerText = el.dataset.description || '';
+
+    // Show modal
+    document.getElementById("zoomModal").style.display = "flex";
+}
+
+// Close modal
+function closeZoom() {
+    document.getElementById("zoomModal").style.display = "none";
+}
+</script>
+
+
 
 <script>
 function toggleDescription(btn) {
