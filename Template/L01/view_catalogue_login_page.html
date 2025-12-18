@@ -534,7 +534,7 @@
 </div>
 
 <!-- ================= Library Card Section ================= -->
-<div class="library-card-wrapper">
+{% comment %} <div class="library-card-wrapper">
 
     <!-- Top Section: Logo and NMMC Title -->
     <div class="library-card-header">
@@ -574,18 +574,18 @@
             </p>
             {% comment %} <p><strong>Member ID :</strong> {{ member_details.user_id }}</p> {% endcomment %}
             <!-- Added library address and phone here -->
-            <p><strong>Library Address :</strong> {{ member_details.library_address }}</p>
+            {% comment %} <p><strong>Library Address :</strong> {{ member_details.library_address }}</p> {% endcomment %}
             {% comment %} <p><strong>Library Phone :</strong> {{ member_details.library_phone }}</p> {% endcomment %}
-        </div>
+       {% comment %} </div>
 
     </div>
     <!-- ================================== -->
 
 <div class="overdue-note">
     <strong>Note:</strong> Rows highlighted in red indicate that the book's due date has passed. Returning these books late will incur a fine.
-</div>
+</div> {% endcomment %}
 <!-- Book Transactions Table -->
-<div class="library-table-wrapper">
+{% comment %} <div class="library-table-wrapper">
     <table class="library-table display" id="transactionsTable" style="width:100%">
         <thead>
             <tr>
@@ -612,7 +612,7 @@
     </table>
 </div>
 
-</div>
+</div> {% endcomment %}
 
     <script>
         // Open modal

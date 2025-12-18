@@ -12,6 +12,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
         <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+        
 
             <style>
                 :root {
@@ -165,16 +166,16 @@
             <div class="tabs-container">
                 <div class="dashboard-tabs">
                     <button class="tab-btn active" onclick="loadDashboard('1')">
-                        <i class="bi bi-house-door me-2"></i>Dashboard 1
+                        <i class="bi bi-house-door me-2"></i>movement of books
                     </button>
                     <button class="tab-btn" onclick="loadDashboard('2')">
-                        <i class="bi bi-file-text me-2"></i>Dashboard 2
+                        <i class="bi bi-file-text me-2"></i>library inventory & stock
                     </button>
                     <button class="tab-btn" onclick="loadDashboard('3')">
-                        <i class="bi bi-graph-up me-2"></i>Dashboard 3
+                        <i class="bi bi-graph-up me-2"></i>members & subscriptions
                     </button>
                     <button class="tab-btn" onclick="loadDashboard('4')">
-                        <i class="bi bi-gear me-2"></i>Dashboard 4
+                        <i class="bi bi-gear me-2"></i>analytics & insights
                     </button>
                 </div>
                 
@@ -182,9 +183,9 @@
                 <div class="tab-content">
                     <!-- Dashboard 1 Content (Loaded by default) -->
                     <div id="dashboard1-content">
-                        <h4 class="mb-4">Dashboard 1: Library Overview</h4>
-                        <div class="dashboard-content" id="dashboard1-data">
-                            <!-- Data will be loaded via AJAX -->
+                        {% comment %} <h4 class="mb-4">Dashboard 1: Library Overview</h4> {% endcomment %}
+                         <div id="dashboard-1" class="dashboard-tab">
+                            {% include "L01/Dashboard/dashboard1_content.html" %}
                         </div>
                     </div>
                     
@@ -201,19 +202,27 @@
 
                     
                     <!-- Dashboard 3 Content (Loaded on click) -->
-                    <div id="dashboard3-content" style="display: none;">
-                        <h4 class="mb-4">Dashboard 3: Analytics</h4>
-                        <div class="dashboard-content" id="dashboard3-data">
-                            <!-- Data will be loaded via AJAX -->
+                    {% comment %} <div id="dashboard3-content" style="display: none;">
+                         <div id="dashboard-3" class="dashboard-tab d-none">
+                            {% include "L01/Dashboard/dashboard3_content.html" %}
                         </div>
+                    </div> {% endcomment %}
+
+                    <div id="dashboard3-content" style="display: none;">
+                        <div id="dashboard-3" class="dashboard-tab d-none">
+                           
+                        </div>
+                        <div id="membershiptype-container"></div>
                     </div>
                     
                     <!-- Dashboard 4 Content (Loaded on click) -->
                     <div id="dashboard4-content" style="display: none;">
-                        <h4 class="mb-4">Dashboard 4: Settings</h4>
-                        <div class="dashboard-content" id="dashboard4-data">
+                        {% comment %} <h4 class="mb-4">Dashboard 4: Settings</h4> {% endcomment %}
+                        {% comment %} <div class="dashboard-content" id="dashboard4-data">
                             <!-- Data will be loaded via AJAX -->
-                        </div>
+                        </div> {% endcomment %}
+                        <!-- Books container -->
+                        <div id="memberBookRelation-container"></div>
                     </div>
                 </div>
             </div>
@@ -237,11 +246,10 @@
     {% include "bootstrap/partials/syntax-highlight.html" %}
 
     <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <!-- Third party js -->
     <script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
@@ -281,13 +289,14 @@
             
             // Show selected dashboard content
             $(`#dashboard${dashboardId}-content`).show();
-            
+            debugger;
             // Load data via AJAX
             $.ajax({
                 url: `/L01/dashboard/data/${dashboardId}/`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
+                    debugger;
                     renderDashboardContent(dashboardId, data);
                     updateLastUpdated(data.last_updated);
                     showLoading(false);
@@ -299,8 +308,11 @@
                 }
             });
         }
+
+
         
         function renderDashboardContent(dashboardId, data) {
+            debugger;
             let content = '';
             
             if (dashboardId === '1') {
@@ -397,32 +409,84 @@
 
                 console.log('Dashboard 2 rendered');
             }
-            else {
-                content = `
-                    <div class="alert alert-primary">
-                        <h5><i class="bi bi-database me-2"></i>${data.title}</h5>
-                        <p>${data.message}</p>
-                        <p class="mb-0">Dashboard ID: ${data.dashboard}</p>
-                    </div>
-                    
-                    <div class="row mt-4">
-                        <div class="col-md-12">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5><i class="bi bi-lightning-charge me-2"></i>AJAX Demo</h5>
-                                    <p>This content was loaded dynamically via AJAX when you clicked on Dashboard ${dashboardId} tab.</p>
-                                    <div class="alert alert-success">
-                                        <i class="bi bi-check-circle me-2"></i>
-                                        AJAX loading is working perfectly!
-                                    </div>
-                                    <button class="btn btn-primary" onclick="refreshDashboard('${dashboardId}')">
-                                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
-                                    </button>
-                                </div>
-                            </div>
+            else if (dashboardId === '4') {
+                debugger;
+
+                // Show dashboard
+                $('#dashboard4-content').show();
+
+                // ✅ DEFINE sessionContent
+                let sessionContent = `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Session Data</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <strong>Library Code:</strong> ${data.session_data.library_code}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Username:</strong> ${data.session_data.username}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>User ID:</strong> ${data.session_data.user_id}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Role ID:</strong> ${data.session_data.role_id}
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 `;
+
+                // Books partial
+                if (data.books_html) {
+                    $('#memberBookRelation-container').html(data.books_html);
+                } else {
+                    console.error('books_html missing');
+                }
+
+                console.log('Dashboard 4 rendered');
+            }
+            else if (dashboardId === '3') {
+                debugger;
+
+                // Show dashboard
+                $('#dashboard3-content').show();
+
+                // ✅ DEFINE sessionContent
+                let sessionContent = `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Session Data</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <strong>Library Code:</strong> ${data.session_data.library_code}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Username:</strong> ${data.session_data.username}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>User ID:</strong> ${data.session_data.user_id}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Role ID:</strong> ${data.session_data.role_id}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                // Session info
+                // $('#dashboard2-session-data').html(sessionContent);
+
+                // Books partial
+                if (data.books_html) {
+                    $('#membershiptype-container').html(data.books_html);
+                } else {
+                    console.error('books_html missing');
+                }
+
+                console.log('Dashboard 3 rendered');
             }
             
             $(`#dashboard${dashboardId}-data`).html(content);
@@ -463,6 +527,7 @@
         function refreshDashboard(dashboardId) {
             loadDashboard(dashboardId);
         }
+
     </script>
 
 {% endblock %}

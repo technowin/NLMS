@@ -1,5 +1,6 @@
 {% extends "Shared/landingPageLayout.html" %}
 {% load static %}
+{% load encryption_filters %}
 
 {% block content %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
@@ -589,7 +590,7 @@ function renderPage(page) {
                         <p><strong>Year (Publication):</strong> ${item.year_of_publication || item.publication_year || "N/A"}</p>
 
                        <!-- Hidden cat_ref_num -->
-                        <span class="cat-ref-num" style="display:none;">${item.cat_ref_num}</span>
+                        <span class="cat-ref-num" style="display:none;">${item.encrypted_cat_ref_num}</span>
 
                         <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
                             <button onclick="flipCard(${globalIndex})" style="
@@ -829,7 +830,7 @@ function renderPageNew(page) {
                                 transition: all 0.3s ease;
                             " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
 
-                            <button onclick="window.location.href='/Login?cat_ref_num=${item.cat_ref_num}'" style="
+                            <button onclick="window.location.href='/Login?cat_ref_num=${item.encrypted_cat_ref_num}'" style="
                                 flex:1;
                                 background:linear-gradient(135deg,#2563eb,#1e40af);
                                 color:white;
@@ -970,8 +971,9 @@ function toggleKeywordSection() {
 }
 </script>
 
-<script>
+{% comment %} <script>
 document.addEventListener("DOMContentLoaded", function () {
+    debugger
 
     const catNum = localStorage.getItem("cat_ref_num");
 
@@ -1014,7 +1016,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 });
-</script>
+</script> {% endcomment %}
 
 
 {% endblock %}

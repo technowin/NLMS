@@ -101,12 +101,14 @@ def Login(request):
     if request.method == "GET":
        
         next_url = request.GET.get("next", "")
-        cat_ref_num = request.GET.get("cat_ref_num", "")
+    
+        encrypted_cat_ref_num= request.GET.get("cat_ref_num", "")
         encrypted_ebook_id = request.GET.get("ebook_id")
         encrypted_pdf_url = request.GET.get("pdf_url")
 
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
+        cat_ref_num = dec(encrypted_cat_ref_num) if encrypted_cat_ref_num else None
 
         library = LibraryMaster.objects.using('default').filter(
             is_active=1,
@@ -119,7 +121,7 @@ def Login(request):
             'library_code': library_code,
             'registration_url': membership_url,
             'next': next_url,
-            'cat': cat_ref_num,
+            'cat': encrypted_cat_ref_num,
             'ebook_id': encrypted_ebook_id,
             'pdf_url': encrypted_pdf_url,
         })
@@ -135,12 +137,13 @@ def Login(request):
         next_url = request.POST.get('next')
         
 
-        cat_ref_num = request.POST.get("cat")
+        encrypted_cat_ref_num = request.POST.get("cat")
         encrypted_ebook_id = request.POST.get("ebook_id")
         encrypted_pdf_url = request.POST.get("pdf_url")
 
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
+        cat_ref_num = dec(encrypted_cat_ref_num) if encrypted_cat_ref_num else None
 
         # ------------------------------------------
         # Database alias (static for L01)
@@ -222,7 +225,7 @@ def Login(request):
         # ============================================================
         if membership_id is None:
             request.session.set_expiry(0)
-            return redirect('LMS_Dashboard')
+            return redirect('L01:dashboard')
 
         # ============================================================
         # Role fallback
@@ -230,7 +233,7 @@ def Login(request):
         if str(user.role_id) == '3':
             return redirect('L01:membership_dashboard')
 
-        return redirect('LMS_Dashboard')
+        return redirect('L01:dashboard')
 
     else:
             messages.error(request, 'Invalid Credentials')

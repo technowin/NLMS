@@ -123,5 +123,12 @@ urlpatterns = [
     path('catalog_detail_datatable/', catalog_detail_datatable, name='catalog_detail_datatable'),
     path('export_catalog_excel/', export_catalog_excel, name='export_catalog_excel'),
     path('export_catalog_pdf/', export_catalog_pdf, name='export_catalog_pdf'),
+    
+    # For Dashboard 4 Librarian Get DATA
+    path("library_dashboard_data", library_dashboard_data, name="library_dashboard_data"),
+    path('dashboard/details/', get_transaction_details, name='transaction_details'),
+    path('get_dashboard3_data', get_dashboard3_data, name='get_dashboard3_data'),
+    path('get_membershipType_data_dashboardThree', get_membershipType_data_dashboardThree, name='get_membershipType_data_dashboardThree'),
+
 
 ]

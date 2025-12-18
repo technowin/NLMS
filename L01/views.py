@@ -81,6 +81,8 @@ import io
 import csv
 from django.utils.dateparse import parse_date, parse_datetime
 import pandas as pd
+import openpyxl
+from openpyxl.styles import Alignment, Font, Border, Side
 
 # Part First While Filling Membership Form
 
@@ -3488,9 +3490,11 @@ def bookcatalog_search(request):
         for r in results:
             image_path = r.get("front_page_photo")
             r["front_page_photo"] = request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
+            r["encrypted_cat_ref_num"] = enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
+    
 
     except Exception as e:
         return JsonResponse(
@@ -3558,6 +3562,7 @@ def index_book_search(request):
             r["front_page_photo"] = (
                 request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
             )
+            r["encrypted_cat_ref_num"] = enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
@@ -3568,72 +3573,6 @@ def index_book_search(request):
             status=500
         )
 
-
-    try:
-        if request.method != "POST":
-            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
-
-        query = request.POST.get("query", "").strip()
-        search_type = request.POST.get("searchType", "").strip().lower()
-
-        if not query or not search_type:
-            return JsonResponse({"error": "Please provide both query and search type."}, status=400)
-
-        # Base queryset from L01 database
-        results = BookCatalog.objects.using('L01').all()
-
-        # Filter by selected search type
-        if search_type == "title" or search_type == "books":
-            results = results.filter(title__icontains=query)
-        elif search_type == "author":
-            results = results.filter(author__icontains=query)
-        elif search_type == "publisher":
-            results = results.filter(publisher__icontains=query)
-        elif search_type == "language":
-            results = results.filter(language__icontains=query)
-        elif search_type == "keyword":
-            results = results.filter(keywords__icontains=query)
-        elif search_type == "year":
-            year_filters = Q()
-            if query.isdigit():
-                year_filters |= Q(year_of_publication=int(query))
-            year_filters |= Q(publication_year__icontains=query)
-            results = results.filter(year_filters)
-        elif search_type == "call_number":
-            results = results.filter(call_number__icontains=query)
-        elif search_type == "cutter_number":
-            results = results.filter(cutter_number__icontains=query)
-        else:
-            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
-
-        # Limit results to 50
-        results = results.values(
-            "title",
-            "author",
-            "publisher",
-            "language",
-            "year_of_publication",
-            "publication_year",
-            "call_number",
-            "cutter_number",
-            "front_page_photo",
-            "ebook_available",
-        )[:50]
-
-        # Convert front_page_photo to absolute URL
-        updated_results = []
-        for r in results:
-            image_path = r.get("front_page_photo")
-            r["front_page_photo"] = request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
-            updated_results.append(r)
-
-        return JsonResponse(updated_results, safe=False)
-
-    except Exception as e:
-        return JsonResponse(
-            {"error": "An unexpected error occurred.", "details": str(e)},
-            status=500
-        )
 
 @csrf_exempt
 def libraryebook_search(request):
@@ -7455,6 +7394,8 @@ def event_announcement_edit(request, encrypted_id):
         messages.error(request, f'Error editing event announcement: {str(e)}')
         return redirect('L01:event_announcement_index')
 
+# Librarian Dashboard
+
 @login_required
 def dashboard_view(request):
     """
@@ -7473,24 +7414,223 @@ def dashboard_view(request):
         }, status=500)
 
 def get_dashboard1_data(request):
-    """
-    Returns placeholder data for Dashboard 1
-    """
+    from django.utils.timezone import now
+    from datetime import datetime
+    from django.db.models import Sum
+    
+    start_date = request.GET.get('from_date')
+    end_date = request.GET.get('to_date')
+    
+    # REMOVE the datatable handling from this function
+    
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    else:
+        start_date = end_date = now().date()
+    
+    # --------------------------
+    # NORMAL DASHBOARD DATA (GRAPHS ONLY)
+    # --------------------------
+    daily = {
+        "issued": CirculationTransaction.objects.using("L01").filter(issue_date__range=[start_date, end_date]).count(),
+        "returned": CirculationTransaction.objects.using("L01").filter(return_date__range=[start_date, end_date]).count(),
+        "due": CirculationTransaction.objects.using("L01").filter(
+            due_date__range=[start_date, end_date],
+            return_date__isnull=True
+        ).count(),
+        "damaged": CirculationTransaction.objects.using("L01").filter(
+            return_condition_id__in=[17, 18],
+            return_date__range=[start_date, end_date]
+        ).count(),
+    }
+    
+    payments = PaymentDetails.objects.using("L01").filter(payment_date__range=[start_date, end_date])
+    
+    eod = payments.aggregate(
+        monthly=Sum('monthly_subscription_amount') or 0,
+        total=Sum('total_subscription_amount') or 0,
+        fine=Sum('fine_amount') or 0,
+        book_fine=Sum('book_fine_amount') or 0
+    )
+    
+    # Convert None to 0
+    for key in eod:
+        if eod[key] is None:
+            eod[key] = 0
+    
+    return JsonResponse({"daily": daily, "eod": eod})
+
+def get_transaction_details(request):
     try:
+        from django.utils.timezone import now
+        from datetime import datetime
+        from django.db.models import Q
+        
+        start_date = request.GET.get('from_date')
+        end_date = request.GET.get('to_date')
+        detail_type = request.GET.get('detail_type')
+        draw = int(request.GET.get('draw', 1))
+        start = int(request.GET.get('start', 0))
+        length = int(request.GET.get('length', 10))
+        search_value = request.GET.get('search[value]', '')
+        
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        else:
+            start_date = end_date = now().date()
+        
+        # Base queryset based on detail_type
+        if detail_type == "issued":
+            try:
+                qs = CirculationTransaction.objects.using("L01").filter(issue_date__range=[start_date, end_date])
+                if search_value:
+                    qs = qs.filter(
+                        Q(member_id__member_code__icontains=search_value) |
+                        Q(book_barcode__icontains=search_value)
+                    )
+                total_records = qs.count()
+                qs = qs.order_by('-issue_date')[start:start + length]
+                
+                data = []
+                for obj in qs:
+                    data.append({
+                        "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
+                        "book_name":obj.catalog.title,
+                        "member_code": obj.member.membership_code if obj.member else "",
+                        "book_barcode": obj.barcode,
+                        "date": obj.issue_date.isoformat() if obj.issue_date else ""
+                    })
+            except Exception as e:
+                print("Error in get_transaction_details:", traceback.format_exc())
+                return JsonResponse({"error": str(e)}, status=500)
+        
+        elif detail_type == "returned":
+            qs = CirculationTransaction.objects.using("L01").filter(return_date__range=[start_date, end_date])
+            if search_value:
+                qs = qs.filter(
+                    Q(member_id__member_code__icontains=search_value) |
+                    Q(book_barcode__icontains=search_value)
+                )
+            
+            total_records = qs.count()
+            qs = qs.order_by('-return_date')[start:start + length]
+            
+            data = []
+            for obj in qs:
+                data.append({
+                    "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
+                    "book_name":obj.catalog.title,
+                    "member_code": obj.member.membership_code if obj.member else "",
+                    "book_barcode": obj.barcode,
+                    "date": obj.return_date.isoformat() if obj.return_date else ""
+                })
+        
+        elif detail_type == "due":
+            qs = CirculationTransaction.objects.using("L01").filter(
+                due_date__range=[start_date, end_date],
+                return_date__isnull=True
+            )
+            if search_value:
+                qs = qs.filter(
+                    Q(member_id__member_code__icontains=search_value) |
+                    Q(book_barcode__icontains=search_value)
+                )
+            
+            total_records = qs.count()
+            qs = qs.order_by('-due_date')[start:start + length]
+            
+            data = []
+            for obj in qs:
+                data.append({
+                    "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
+                    "book_name":obj.catalog.title,
+                    "member_code": obj.member.membership_code if obj.membership_code else "",
+                    "book_barcode": obj.barcode,
+                    "date": obj.due_date.isoformat() if obj.due_date else ""
+                })
+        
+        elif detail_type == "damaged":
+            qs = CirculationTransaction.objects.using("L01").filter(
+                return_condition_id__in=[17, 18],
+                return_date__range=[start_date, end_date]
+            )
+            if search_value:
+                qs = qs.filter(
+                    Q(member_id__member_code__icontains=search_value) |
+                    Q(book_barcode__icontains=search_value)
+                )
+            
+            total_records = qs.count()
+            qs = qs.order_by('-return_date')[start:start + length]
+            
+            data = []
+            for obj in qs:
+                data.append({
+                    "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
+                    "book_name":obj.catalog.title,
+                    "member_code": obj.member.membership_code if obj.member else "",
+                    "book_barcode": obj.barcode,
+                    "date": obj.return_date.isoformat() if obj.return_date else ""
+                })
+        
+        elif detail_type in ["monthly", "total", "fine", "book_fine"]:
+
+            qs = PaymentDetails.objects.using("L01").filter(
+                payment_date__range=[start_date, end_date]
+            )
+
+            if search_value:
+                qs = qs.filter(
+                    membership__membership_code__icontains=search_value
+                )
+
+            # Decide which amount field to use
+            if detail_type == "monthly":
+                amount_field = "monthly_subscription_amount"
+            elif detail_type == "total":
+                amount_field = "total_subscription_amount"
+            elif detail_type == "fine":
+                amount_field = "fine_amount"
+            else:  # book_fine
+                amount_field = "book_fine_amount"
+
+            # ✅ FILTER: only rows where selected amount is NOT NULL (and > 0)
+            qs = qs.filter(**{
+                f"{amount_field}__isnull": False,
+                f"{amount_field}__gt": 0     # remove this line if 0 is valid
+            })
+
+            total_records = qs.count()
+            qs = qs.order_by("-payment_date")[start:start + length]
+
+            data = []
+            for obj in qs:
+                data.append({
+                    "member_name": f"{obj.membership.first_name_mar} {obj.membership.last_name_mar}".strip()
+                                    if obj.membership else "",
+                    "member_code": obj.membership_code if obj.membership else "",
+                    "amount": float(getattr(obj, amount_field) or 0),
+                    "payment_date": obj.payment_date
+                })
+
+
+        else:
+            data = []
+            total_records = 0
+        
         return JsonResponse({
-            'dashboard': 'dashboard1',
-            'title': 'Dashboard 1 - Overview',
-            'message': 'Dashboard 1 data loaded successfully',
-            'last_updated': '2024-01-01 00:00:00',
-            'status': 'success'
+            "draw": draw,
+            "recordsTotal": total_records,
+            "recordsFiltered": total_records,
+            "data": data
         })
     except Exception as e:
-        return JsonResponse({
-            'dashboard': 'dashboard1',
-            'error': f'Error loading dashboard 1 data: {str(e)}',
-            'status': 'error'
-        }, status=500)
+            print("Error in get_transaction_details:", traceback.format_exc())
+            return JsonResponse({"error": str(e)}, status=500)
 
+# for Dashboard 2 Librarian
 def catalog_data_ajax(request):
     
     subject_id = request.GET.get("subject_id")
@@ -7545,6 +7685,7 @@ def catalog_data_ajax(request):
         "total_processed": total_processed
     })
 
+# for Dashboard 2 Librarian
 def build_books_partial_html():
     total_titles = BookCatalog.objects.count()
     total_copies = BookAccession.objects.count()
@@ -7560,7 +7701,68 @@ def build_books_partial_html():
             "subjects": subjects,  # pass subjects here
         }
     )
+    
+def build_membershipType_partial_html():
+    total_titles = BookCatalog.objects.count()
+    total_copies = BookAccession.objects.count()
+    
+    # Get active subjects for the dropdown
+    subjects = SubjectTypeMaster.objects.filter(is_active=1)
 
+    return render_to_string(
+        "L01/Dashboard/dashboard3_content.html",
+        {
+            "total_titles": total_titles,
+            "total_copies": total_copies,
+            "subjects": subjects,  # pass subjects here
+        }
+    )
+
+def get_membershipType_data_dashboardThree(request):
+    try:
+        memberships = (
+            MembershipMaster.objects.using("L01")
+            .filter(isactive=1)
+            .annotate(member_count=Count('membership_holders'))
+            .values(
+                'id',
+                'membership_code',
+                'membership_type',
+                'deposit',
+                'entry_fees',
+                'subscription_fees',
+                'fine',
+                'outsider',
+                'days',
+                'item',
+                'member_count'
+            )
+        )
+
+        total_members = sum(m['member_count'] for m in memberships)
+
+        # For pie chart percentage
+        pie_data = []
+        for m in memberships:
+            percent = (
+                (m['member_count'] / total_members) * 100
+                if total_members > 0 else 0
+            )
+            pie_data.append({
+                'membership_type': m['membership_type'],
+                'count': m['member_count'],
+                'percent': round(percent, 2)
+            })
+
+        return JsonResponse({
+            'bar_chart': list(memberships),
+            'pie_chart': pie_data,
+            'table': list(memberships)
+        })
+    except Exception as e:
+            print(f"WeasyPrint generation error: {e}")
+
+# for Dashboard 2 Librarian
 def get_dashboard2_data(request):
     """
     Returns session data and total books for Dashboard 2
@@ -7596,34 +7798,282 @@ def get_dashboard2_data(request):
         }, status=500)
 
 def get_dashboard3_data(request):
-    """
-    Returns placeholder data for Dashboard 3
-    """
     try:
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session.get('user_id', None)
+        role_id = request.session.get('role_id', None)
+
+        books_html = build_membershipType_partial_html()
+        print("Books HTML:", books_html)  # Debugging line  
         return JsonResponse({
             'dashboard': 'dashboard3',
-            'title': 'Dashboard 3 - Analytics',
+            'title': 'Dashboard 3 - Reports',
             'message': 'Dashboard 3 data will be implemented here',
             'last_updated': '2024-01-01 00:00:00',
+            'session_data': {
+                'library_code': library_code,
+                'username': username,
+                'user_id': user_id,
+                'role_id': role_id
+            },
+            'books_html': books_html,
             'status': 'success'
         })
     except Exception as e:
-        return JsonResponse({
-            'dashboard': 'dashboard3',
-            'error': f'Error loading dashboard 3 data: {str(e)}',
-            'status': 'error'
-        }, status=500)
+            print(f"WeasyPrint generation error: {e}")
 
+# for Dashboard 4 Librarian Get DATA
+from django.http import JsonResponse
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+from django.utils.dateparse import parse_date
+from django.db.models import CharField, F, Value
+
+def library_dashboard_data(request):
+    try:
+        # -------------------------
+        # FILTERS
+        # -------------------------
+        from_date = parse_date(request.GET.get('from_date'))
+        to_date = parse_date(request.GET.get('to_date'))
+        subject_id = request.GET.get('subject_id')
+
+        circulation_qs = CirculationTransaction.objects.all()
+
+        if from_date:
+            circulation_qs = circulation_qs.filter(issue_date__date__gte=from_date)
+        if to_date:
+            circulation_qs = circulation_qs.filter(issue_date__date__lte=to_date)
+        if subject_id:
+            circulation_qs = circulation_qs.filter(catalog__subject_id=subject_id)
+
+        # -------------------------
+        # KPI
+        # -------------------------
+        kpis = {
+            "total_members": MembershipDetails.objects.count(),
+            "total_titles": BookCatalog.objects.count(),
+            "total_copies": BookAccession.objects.count(),
+            "total_reviews": BookReview.objects.count(),
+        }
+
+        # -------------------------
+        # TOP READ BOOKS
+        # -------------------------
+        top_books_qs = (
+            circulation_qs
+            .values('catalog__title')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:10]
+        )
+
+        top_books = {
+            "labels": [b['catalog__title'] or 'Untitled' for b in top_books_qs],
+            "data": [b['count'] for b in top_books_qs]
+        }
+
+        # -------------------------
+        # TOP READERS
+        # -------------------------
+        top_readers_qs = (
+            circulation_qs
+            .values('member__first_name', 'member__last_name')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:10]
+        )
+
+        top_readers = {
+            "labels": [
+                f"{r['member__first_name'] or ''} {r['member__last_name'] or ''}".strip() or "Unknown"
+                for r in top_readers_qs
+            ],
+            "data": [r['count'] for r in top_readers_qs]
+        }
+
+        # -------------------------
+        # RATING DISTRIBUTION
+        # -------------------------
+        rating_qs = (
+            BookReview.objects
+            .values('rating')
+            .annotate(count=Count('id'))
+            .order_by('rating')
+        )
+
+        rating_distribution = {
+            "labels": [f"{r['rating']} Star" for r in rating_qs],
+            "data": [r['count'] for r in rating_qs]
+        }
+
+        # -------------------------
+        # SUBJECT POPULARITY
+        # -------------------------
+        subject_qs = (
+            circulation_qs
+            .values(
+                'catalog__subject__subjectNameMarathi',
+                'catalog__subject__subjectNameEnglish'
+            )
+            .annotate(count=Count('id'))
+            .order_by('-count')
+        )
+
+        subject_popularity = {
+            "labels": [
+                s['catalog__subject__subjectNameMarathi']
+                or s['catalog__subject__subjectNameEnglish']
+                or 'Unknown'
+                for s in subject_qs
+            ],
+            "data": [s['count'] for s in subject_qs]
+        }
+
+        # -------------------------
+        # MONTHLY TREND
+        # -------------------------
+        month_qs = (
+            circulation_qs
+            .annotate(month=TruncMonth('issue_date'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+
+        monthly_trend = {
+            "labels": [
+                m['month'].strftime('%b %Y') if m['month'] else ''
+                for m in month_qs
+            ],
+            "data": [m['count'] for m in month_qs]
+        }
+
+        # -------------------------
+        # DRILL DOWN
+        # -------------------------
+        drill_type = request.GET.get('drill_type')
+        drill_value = request.GET.get('drill_value')
+        drill_data = []
+        drill_headers = []
+
+        if drill_type and drill_value:
+            if drill_type == 'book':
+                qs = (
+                    circulation_qs
+                    .filter(catalog__title=drill_value)
+                    .select_related('member')
+                    .values('member__first_name', 'member__last_name', 'issue_date')[:50]
+                )
+                drill_headers = ["Member Name", "Issue Date"]
+                drill_data = [
+                    {
+                        "Member Name": f"{row['member__first_name'] or ''} {row['member__last_name'] or ''}".strip(),
+                        "Issue Date": row['issue_date']
+                    }
+                    for row in qs
+                ]
+
+            elif drill_type == 'reader':
+                qs = (
+                    circulation_qs
+                    .annotate(
+                        full_name=Concat(
+                            F('member__first_name'),
+                            Value(' '),
+                            F('member__last_name'),
+                            output_field=CharField()   # <--- This fixes your error
+                        )
+                    )
+                    .filter(full_name=drill_value)
+                    .select_related('member')
+                    .values('catalog__title', 'issue_date')[:50]
+                )
+
+                drill_headers = ["Book Title", "Issue Date"]
+                drill_data = [
+                    {"Book Title": row['catalog__title'], "Issue Date": row['issue_date']}
+                    for row in qs
+                ]
+                
+            elif drill_type == 'rating':
+                try:
+                    numeric_rating = int(''.join(filter(str.isdigit, drill_value)))
+                except ValueError:
+                    numeric_rating = 0
+
+                qs = BookReview.objects.filter(rating=numeric_rating).values(
+                    'user_id', 'book__title', 'rating', 'review', 'created_at'
+                )[:50]
+
+                drill_data = [
+                    {
+                        "User ID": row['user_id'],
+                        "Book Title": row['book__title'],
+                        "Rating": row['rating'],
+                        "Review": row['review'],
+                        "Created At": row['created_at'].strftime('%Y-%m-%d %H:%M')
+                    }
+                    for row in qs
+                ]
+
+                drill_headers = ["User ID", "Book Title", "Rating", "Review", "Created At"]
+
+        return JsonResponse({
+            "kpis": kpis,
+            "top_books": top_books,
+            "top_readers": top_readers,
+            "rating_distribution": rating_distribution,
+            "subject_popularity": subject_popularity,
+            "monthly_trend": monthly_trend,
+            "drill_data": drill_data,
+            "drill_headers": drill_headers,
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+# for Dashboard 4 Librarian
+def build_memberbookrelation_partial_html():
+    total_titles = BookCatalog.objects.count()
+    total_copies = BookAccession.objects.count()
+    
+    # Get active subjects for the dropdown
+    subjects = SubjectTypeMaster.objects.filter(is_active=1)
+
+    return render_to_string(
+        "L01/Dashboard/library_dashboard_memberBookRelation.html",
+        {
+            "total_titles": total_titles,
+            "total_copies": total_copies,
+            "subjects": subjects,  # pass subjects here
+        }
+    )
+
+# for Dashboard 4 Librarian
 def get_dashboard4_data(request):
     """
     Returns placeholder data for Dashboard 4
     """
     try:
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
+        user_id = request.session.get('user_id', None)
+        role_id = request.session.get('role_id', None)
+
+        books_html = build_memberbookrelation_partial_html()
+        print("Books HTML:", books_html)  # Debugging line  
         return JsonResponse({
             'dashboard': 'dashboard4',
-            'title': 'Dashboard 4 - Settings',
+            'title': 'Dashboard 4 - Reports',
             'message': 'Dashboard 4 data will be implemented here',
             'last_updated': '2024-01-01 00:00:00',
+            'session_data': {
+                'library_code': library_code,
+                'username': username,
+                'user_id': user_id,
+                'role_id': role_id
+            },
+            'books_html': books_html,
             'status': 'success'
         })
     except Exception as e:
@@ -7660,7 +8110,8 @@ def get_dashboard_data(request, dashboard_id):
             'error': f'Error processing dashboard request: {str(e)}',
             'status': 'error'
         }, status=500)
-            
+
+# for Dashboard 2 Data in model Librarian          
 def catalog_detail_datatable(request):
     try:
         draw = int(request.GET.get('draw', 1))
@@ -7669,10 +8120,21 @@ def catalog_detail_datatable(request):
         search_value = request.GET.get('search[value]', '')
 
         subject_id = request.GET.get('subject_id')
+        
+        if not subject_id:  # Validate subject selection
+            return JsonResponse({
+                'error': 'Please Select Categories'
+            }, status=400)
+        
         metric = request.GET.get('type')
 
         data = []
         total_records = 0
+        
+        if not subject_id:  # Validate subject selection
+            return JsonResponse({
+                'error': 'Please Select Categories'
+            }, status=400)
 
         # ---------------- TITLES ----------------
         if metric == 'titles':
@@ -7744,11 +8206,8 @@ def catalog_detail_datatable(request):
         return JsonResponse({
             'error': f'Error fetching catalog details: {str(e)}'
         }, status=500)
-        
-import openpyxl
-from openpyxl.styles import Alignment, Font, Border, Side
-from django.http import HttpResponse
 
+# for Dashboard 2 Excel Librarian
 def export_catalog_excel(request):
     try:
         # Get library info
@@ -7898,12 +8357,7 @@ def export_catalog_excel(request):
     except Exception as e:
         return HttpResponse(f'Error generating Excel file: {str(e)}', status=500)
 
-import os
-from django.conf import settings
-from django.http import HttpResponse
-from weasyprint import HTML, CSS
-from datetime import datetime
-
+# for Dashboard 2 PDF Librarian
 def export_catalog_pdf(request):
     try:
         library_code = request.session.get('library_db', None)
@@ -8061,8 +8515,9 @@ def export_catalog_pdf(request):
 
     except Exception as e:
         return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
-    
-    
+
+# For Kiosk Display and Ebook Catalogue
+
 @login_required
 def kiosk_display(request):
     # Get library_code from session
@@ -8087,7 +8542,6 @@ def kiosk_display(request):
         "MEDIA_URL": settings.MEDIA_URL,
         "library_name": library_name  # Marathi name will go here if present
     })
-
     
 @login_required
 def visit_Library_ebook_catalogue(request):

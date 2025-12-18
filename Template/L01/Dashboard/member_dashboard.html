@@ -294,138 +294,712 @@
 </div>
 
 <style>
-/* Enhanced typography and spacing */
-.card-title {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* ===== CSS Variables for Light Theme Only ===== */
+:root {
+    /* Light theme */
+    --bg-primary: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --card-border: rgba(255, 255, 255, 0.2);
+    --text-primary: #2c3e50;
+    --text-secondary: #5a6c7d;
+    --text-muted: #7b8793;
+    --shadow-color: rgba(31, 38, 135, 0.1);
+    --hover-shadow: rgba(31, 38, 135, 0.15);
+    --glass-effect: rgba(255, 255, 255, 0.1);
+    --table-bg: #f8f9fa;
+    --table-hover: rgba(102, 126, 234, 0.05);
+    
+    /* Gradients */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    
+    /* Transitions */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --card-shadow: 0 8px 32px var(--shadow-color);
 }
 
-.welcome-title {
-    font-size: 1.75rem;
+/* ===== Base Styles ===== */
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
 }
 
-.section-title {
-    font-size: 1.25rem;
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--card-border);
+    transition: var(--transition-smooth);
+    color: var(--text-primary);
 }
 
-/* Welcome card enhancements */
-{% comment %} .welcome-card {
-    background: linear-gradient(135deg, var(--bs-primary) 0%, rgba(var(--bs-primary-rgb), 0.1) 100%);
-    border-left: 4px solid var(--bs-primary);
-} {% endcomment %}
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-title, .card-subtitle, .card-text {
+    color: var(--text-primary);
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* ===== Welcome Card Enhancements ===== */
+.welcome-card {
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    position: relative;
+    animation: slideInDown 0.6s ease-out;
+    overflow: hidden;
+}
+
+.welcome-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    animation: shimmer 3s infinite;
+}
 
 .welcome-background {
     position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    opacity: 0.3;
 }
 
-/* Stat cards enhancements */
-.stat-card {
-    transition: transform 0.2s ease-in-out;
-    border-top: 3px solid transparent;
+.welcome-title {
+    font-family: 'Merriweather', serif;
+    font-size: 2rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+.welcome-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.membership-link {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: 600;
+    position: relative;
+    transition: var(--transition-smooth);
+}
+
+.membership-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #ffd700;
+    transition: width 0.3s ease;
+}
+
+.membership-link:hover {
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.membership-link:hover::after {
+    width: 100%;
+}
+
+/* ===== Statistics Cards ===== */
+.stat-card {
+    border-radius: 20px;
+    position: relative;
+    transition: var(--transition-smooth);
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 4px 4px 0 0;
+}
+
+.stat-card-primary::before { background: var(--primary-gradient); }
+.stat-card-warning::before { background: var(--warning-gradient); }
+.stat-card-danger::before { background: var(--secondary-gradient); }
 
 .stat-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px var(--hover-shadow);
 }
 
-.stat-card-primary {
-    border-top-color: var(--bs-primary);
+.stat-card .card-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.stat-card-warning {
-    border-top-color: var(--bs-warning);
-}
-
-.stat-card-danger {
-    border-top-color: var(--bs-danger);
-}
+.stat-card-warning .card-title { background: var(--warning-gradient); -webkit-background-clip: text; }
+.stat-card-danger .card-title { background: var(--secondary-gradient); -webkit-background-clip: text; }
 
 .stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    background-color: rgba(var(--bs-primary-rgb), 0.1);
-    color: var(--bs-primary);
+    font-size: 2rem;
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: var(--transition-smooth);
+}
+
+.stat-card:hover .stat-icon {
+    transform: rotate(15deg) scale(1.1);
 }
 
 .stat-card-warning .stat-icon {
-    background-color: rgba(var(--bs-warning-rgb), 0.1);
-    color: var(--bs-warning);
+    background: var(--warning-gradient);
+    box-shadow: 0 4px 15px rgba(246, 211, 101, 0.4);
 }
 
 .stat-card-danger .stat-icon {
-    background-color: rgba(var(--bs-danger-rgb), 0.1);
-    color: var(--bs-danger);
+    background: var(--secondary-gradient);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
 }
 
-/* Book card enhancements */
+/* ===== Currently Reading Cards ===== */
+.section-title {
+    font-family: 'Merriweather', serif;
+    font-size: 1.5rem;
+    position: relative;
+    display: inline-block;
+    color: #2c3e50;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: var(--primary-gradient);
+    border-radius: 2px;
+}
+
+/* Book Card Styles */
 .book-card {
-    transition: all 0.3s ease;
-    border-left: 3px solid var(--bs-primary);
+    border: none;
+    border-radius: 16px;
+    background: white;
+    overflow: hidden;
+    transition: var(--transition-smooth);
+    position: relative;
+    animation: fadeInUp 0.5s ease-out backwards;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.book-card:nth-child(2) { animation-delay: 0.1s; }
+.book-card:nth-child(3) { animation-delay: 0.2s; }
+
+.book-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-gradient);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+}
+
+.book-card:hover::before {
+    transform: scaleX(1);
 }
 
 .book-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(31, 38, 135, 0.15);
+}
+
+.book-cover-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 .book-cover-wrapper {
     overflow: hidden;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    aspect-ratio: 3/4;
 }
 
 .book-cover {
-    transition: transform 0.3s ease;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .book-card:hover .book-cover {
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
-/* Action buttons enhancements */
+.book-status-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.book-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    color: #2c3e50;
+    transition: color 0.3s ease;
+}
+
+.book-card:hover .book-title {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.book-author {
+    font-size: 0.9rem;
+    color: #5a6c7d;
+}
+
+.book-details {
+    background: rgba(245, 247, 250, 0.8);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ===== Empty State with VERY SMALL Browse Collection Button ===== */
+.empty-state {
+    animation: fadeIn 0.8s ease-out;
+    padding: 1.5rem 0; /* Reduced padding */
+}
+
+.empty-state i {
+    font-size: 2rem; /* Much smaller icon */
+    opacity: 0.3;
+    animation: float 3s ease-in-out infinite;
+    color: #7b8793;
+    margin-bottom: 0.75rem; /* Reduced margin */
+}
+
+/* VERY SMALL Browse Collection Button */
+.empty-state .btn {
+    padding: 0.25rem 1rem; /* Very small padding */
+    font-size: 0.75rem; /* Small font size */
+    border-radius: 15px; /* Less rounded */
+    transition: var(--transition-smooth);
+    font-weight: 500;
+    height: 32px; /* Fixed small height */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-state .btn i {
+    font-size: 0.875rem; /* Smaller icon inside button */
+    margin-right: 0.5rem;
+    margin-bottom: 0;
+    animation: none; /* No float animation for button icon */
+}
+
+.empty-state .btn-primary {
+    background: var(--primary-gradient);
+    border: none;
+    min-width: 140px; /* Minimum width for better appearance */
+}
+
+.empty-state .btn-primary:hover {
+    transform: translateY(-2px); /* Smaller hover lift */
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25); /* Smaller shadow */
+}
+
+.empty-state .btn-primary:active {
+    transform: translateY(0); /* Reset on click */
+}
+
+/* Empty state text adjustments */
+.empty-state h6 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* ===== QUICK ACTION CARDS - BOTH WITH PURPLE GRADIENT ===== */
+/* Both buttons with same purple gradient background */
 .action-btn {
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    border: none; /* No border for gradient buttons */
+    color: white; /* White text for both buttons */
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+}
+
+/* Shimmer effect for both buttons */
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
+}
+
+.action-btn:hover::before {
+    left: 100%;
 }
 
 .action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
-/* Table enhancements in modal */
+/* Purple gradient background for BOTH buttons */
+.btn-primary.action-btn,
+.btn-outline-primary.action-btn {
+    background: var(--primary-gradient); /* Purple gradient for both */
+    border: none;
+    color: white;
+}
+
+/* Style icons in both buttons */
+.btn-primary.action-btn .bi-search,
+.btn-outline-primary.action-btn .bi-clock-history {
+    color: white; /* White icons */
+    font-size: 1.75rem;
+    transition: var(--transition-smooth);
+}
+
+/* Style text in both buttons */
+.btn-primary.action-btn .fw-bold,
+.btn-outline-primary.action-btn .fw-bold {
+    color: white; /* White main text */
+}
+
+.btn-primary.action-btn .opacity-75,
+.btn-outline-primary.action-btn .opacity-75 {
+    color: rgba(255, 255, 255, 0.9); /* Slightly transparent white for subtitles */
+}
+
+/* Hover effects for both buttons */
+.btn-primary.action-btn:hover,
+.btn-outline-primary.action-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); /* Reverse gradient on hover */
+    transform: translateY(-5px) scale(1.02);
+}
+
+/* Icon animations on hover */
+.btn-primary.action-btn:hover .bi-search {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.btn-outline-primary.action-btn:hover .bi-clock-history {
+    transform: scale(1.1) rotate(-5deg); /* Slight rotation in opposite direction */
+}
+
+/* Style arrow icons in both buttons */
+.btn-primary.action-btn .bi-arrow-right,
+.btn-outline-primary.action-btn .bi-arrow-right {
+    color: white;
+    transition: transform 0.3s ease;
+}
+
+/* Arrow animation on hover */
+.btn-primary.action-btn:hover .bi-arrow-right,
+.btn-outline-primary.action-btn:hover .bi-arrow-right {
+    transform: translateX(3px);
+    color: white;
+}
+
+/* ===== Modal Enhancements ===== */
+.modal-content {
+    border: none;
+    border-radius: 24px;
+    overflow: hidden;
+    animation: modalSlideIn 0.4s ease-out;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #2c3e50;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    background: var(--primary-gradient);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.modal-title {
+    color: white;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+}
+
+.table {
+    color: #2c3e50;
+    background: white;
+}
+
+.table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #2c3e50;
+}
+
+.table tbody tr {
+    background: white;
+    border-bottom: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateX(5px);
+}
+
 #historyTable tbody tr {
-    transition: background-color 0.2s ease;
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
 }
 
 #historyTable tbody tr:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    border-left-color: #667eea;
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, transparent 100%);
 }
 
-/* Responsive adjustments */
+/* ===== Badges ===== */
+.badge {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    font-weight: 500;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+    border-color: currentColor;
+}
+
+/* ===== Animations ===== */
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ===== Loading Animation ===== */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.25em;
+}
+
+.spinner-border.text-primary {
+    border-color: #667eea !important;
+    border-right-color: transparent !important;
+}
+
+/* ===== Button Styling ===== */
+.btn {
+    border-radius: 12px;
+    transition: var(--transition-smooth);
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(31, 38, 135, 0.1);
+}
+
+/* ===== Responsive Design ===== */
 @media (max-width: 768px) {
     .welcome-title {
         font-size: 1.5rem;
     }
     
+    .stat-card .card-title {
+        font-size: 2.5rem;
+    }
+    
     .stat-icon {
         width: 50px;
         height: 50px;
-        font-size: 1.25rem;
+        font-size: 1.5rem;
     }
     
-    .display-6 {
-        font-size: 2rem;
+    .section-title {
+        font-size: 1.3rem;
     }
+    
+    .book-card {
+        margin-bottom: 1rem;
+    }
+    
+    .action-btn {
+        padding: 1.25rem;
+    }
+    
+    .action-btn .bi-search,
+    .action-btn .bi-clock-history {
+        font-size: 1.5rem;
+    }
+    
+    .empty-state .btn {
+        padding: 0.2rem 0.8rem;
+        font-size: 0.7rem;
+        height: 28px;
+        min-width: 120px;
+    }
+    
+    .empty-state i {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .display-6 {
+        font-size: 1.8rem;
+    }
+    
+    .welcome-card .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .stat-card .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .book-cover-wrapper {
+        aspect-ratio: 2/3;
+    }
+    
+    .empty-state i {
+        font-size: 1.5rem;
+    }
+    
+    .empty-state .btn {
+        padding: 0.15rem 0.7rem;
+        font-size: 0.65rem;
+        height: 26px;
+        min-width: 110px;
+    }
+    
+    .action-btn {
+        padding: 1rem;
+    }
+    
+    .action-btn .bi-search,
+    .action-btn .bi-clock-history {
+        font-size: 1.25rem;
+        margin-right: 0.75rem;
+    }
+}
+
+/* ===== Custom Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-gradient);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 </style>
 
@@ -509,6 +1083,57 @@ function getStatusBadgeClass(status) {
         return 'bg-primary';
     }
 }
+</script>
+<script>
+   // Add smooth scroll to membership link
+document.addEventListener('DOMContentLoaded', function() {
+    const membershipLink = document.querySelector('.membership-link');
+    if (membershipLink) {
+        membershipLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Add loading animation
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
+            this.style.pointerEvents = 'none';
+            
+            setTimeout(() => {
+                window.location.href = this.href;
+            }, 300);
+        });
+    }
+    
+    // Add intersection observer for scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all cards for scroll animations
+    document.querySelectorAll('.stat-card, .book-card').forEach(card => {
+        observer.observe(card);
+    });
+    
+    // Add hover effect to table rows in modal
+    const historyModal = document.getElementById('historyModal');
+    if (historyModal) {
+        historyModal.addEventListener('shown.bs.modal', function() {
+            const tableRows = document.querySelectorAll('#historyTable tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.3s ease';
+                });
+            });
+        });
+    }
+});
 </script>
 
 {% if request.session.open_pdf_url %}

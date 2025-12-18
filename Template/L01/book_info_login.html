@@ -134,7 +134,7 @@
 
 <!-- Store cat_ref_num hidden -->
 {% if book %}
-<input type="hidden" id="catRefNum" name="cat_ref_num" value="{{ book.cat_ref_num }}">
+<input type="hidden" id="catRefNum" name="cat_ref_num" value="{{ book.encrypted_cat_ref_num}}">
 {% else %}
 <input type="hidden" id="catRefNum" name="cat_ref_num" value="">
 {% endif %}
@@ -170,7 +170,7 @@
     </div>
 
     <div class="back-btn">
-        <a href="{% url 'L01:view_catalogue_login_page' %}">Back to Catalog</a>
+        <a href="{% url 'L01:visit_Library_catalogue' %}">Back to Catalog</a>
     </div>
 </div>
 

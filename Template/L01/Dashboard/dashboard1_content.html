@@ -1,0 +1,363 @@
+
+<div class="modal fade" id="transactionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="transactionModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- DOWNLOAD BUTTONS -->
+                <div class="d-flex justify-content-end mb-3 gap-2">
+                    <button class="btn btn-success btn-sm" id="excelBtn">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </button>
+
+                    <button class="btn btn-danger btn-sm" id="pdfBtn">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+
+                <!-- TABLE -->
+                <table id="transaction-table" class="table table-bordered table-striped w-100"></table>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<div class="card mb-4">
+    {% comment %} <div class="card-header bg-white">
+        <h3 class="fw-bold mb-1">Transaction Dashboard & Reports</h3>
+    </div> {% endcomment %}
+
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="fw-bold">From Date</label>
+                <input type="date" id="from_date" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="fw-bold">To Date</label>
+                <input type="date" id="to_date" class="form-control">
+            </div>
+
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" onclick="loadDashboard1Data()">
+                    Apply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <!-- DAILY TRANSACTION GRAPH -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Daily Transaction</h5>
+                <canvas id="dailyTransactionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- EOD GRAPH -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">EOD (End Of Day)</h5>
+                <canvas id="eodChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+   
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<!-- jQuery (MUST be first) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+
+
+<script>
+pdfMake.fonts = {
+    NotoSansDevanagari: {
+        normal: "NotoSansDevanagari-Regular.ttf",
+        bold: "NotoSansDevanagari-Regular.ttf"
+    }
+};
+
+</script>
+
+
+ 
+
+
+
+<script>
+
+let dailyChart, eodChart;
+let transactionTable = null;
+let currentLabel = '';
+let currentDetailType = '';
+
+function loadDashboard1Data() {
+    const fromDate = $('#from_date').val();
+    const toDate   = $('#to_date').val();
+
+    $.ajax({
+        url: '/L01/dashboard/data/1/',
+        type: 'GET',
+        dataType: 'json',                 // ✅ ensure JSON
+        data: {
+            from_date: fromDate,
+            to_date: toDate
+        },
+        success: function (response) {
+
+            if (response.daily) {
+                renderDailyTransactionChart(response.daily);
+            } else {
+                console.warn('Daily data missing');
+            }
+
+            if (response.eod) {
+                renderEodChart(response.eod);
+            } else {
+                console.warn('EOD data missing');
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Dashboard load failed:', xhr.responseText);
+            alert('Dashboard data load failed. Check console.');
+        }
+    });
+}
+
+// ------------------- DAILY TRANSACTION CHART -------------------
+function renderDailyTransactionChart(dailyData) {
+    const ctx = document.getElementById('dailyTransactionChart').getContext('2d');
+
+    const data = {
+        labels: ['Book Issued', 'Book Returned', 'Book Due Not Returned', 'Book Damaged/Lost'],
+        datasets: [{
+            label: 'Count',
+            data: [dailyData.issued, dailyData.returned, dailyData.due, dailyData.damaged],
+            backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+        }]
+    };
+
+    const options = {
+        responsive: true,
+        onClick: (evt, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const types = ['issued', 'returned', 'due', 'damaged'];
+                showTransactionTable(types[index], data.labels[index]);
+            }
+        },
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    };
+
+    if (dailyChart) dailyChart.destroy();
+    dailyChart = new Chart(ctx, { type: 'bar', data, options });
+}
+
+// ------------------- EOD CHART -------------------
+function renderEodChart(eodData) {
+    const ctx = document.getElementById('eodChart').getContext('2d');
+
+    const data = {
+        labels: ['Monthly Subscription', 'Total Subscription', 'Fine Amount', 'Book Fine Amount'],
+        datasets: [{
+            label: 'Amount (Rs)',
+            data: [eodData.monthly, eodData.total, eodData.fine, eodData.book_fine],
+            backgroundColor: ['#17a2b8', '#6610f2', '#fd7e14', '#20c997']
+        }]
+    };
+
+    const options = {
+        responsive: true,
+        onClick: (evt, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const types = ['monthly', 'total', 'fine', 'book_fine'];
+                showTransactionTable(types[index], data.labels[index], 'payments');
+            }
+        },
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    };
+
+    if (eodChart) eodChart.destroy();
+    eodChart = new Chart(ctx, { type: 'bar', data, options });
+}
+
+// ------------------- SHOW DATATABLE IN SWEETALERT -------------------
+
+
+function showTransactionTable(detailType, label) {
+
+    currentLabel = label;
+    currentDetailType = detailType;
+
+    $('#transactionModalTitle').text(label + ' Details');
+
+    const isPaymentType = ['monthly', 'total', 'fine', 'book_fine'].includes(detailType);
+
+    if ($.fn.DataTable.isDataTable('#transaction-table')) {
+        transactionTable.destroy();
+        $('#transaction-table').empty();
+    }
+
+    transactionTable = $('#transaction-table').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/L01/dashboard/details/',
+            type: 'GET',
+           data: function (d) {
+                return {
+                    detail_type: detailType,
+                    from_date: $('#from_date').val(),
+                    to_date: $('#to_date').val(),
+                    draw: d.draw,
+                    start: d.start,
+                    length: d.length,
+                    'search[value]': d.search.value  // ✅ use correct key
+                };
+            }
+
+        },
+        columns: isPaymentType ? [
+            { title: "Member Code", data: "member_code" },
+            { title: "Member Name", data: "member_name" },
+            { title: "Payment Date", data: "payment_date" },
+            { title: label + " Amount", data: "amount" }
+        ] : [
+            { title: "Member Code", data: "member_code" },
+            { title: "Member Name", data: "member_name" },
+            { title: "Book Title", data: "book_name" },
+            { title: "Book Barcode", data: "book_barcode" },
+            { title: "Date", data: "date" }
+        ]
+    });
+
+    new bootstrap.Modal(document.getElementById('transactionModal')).show();
+}
+
+$('#excelBtn').on('click', function () {
+    if (!transactionTable) return;
+
+    const data = transactionTable.rows({ search: 'applied' }).data().toArray();
+    if (!data.length) {
+        alert('डेटा उपलब्ध नाही');
+        return;
+    }
+
+    exportSimpleExcel(data, currentLabel);
+});
+
+
+
+$('#pdfBtn').on('click', function () {
+    if (!transactionTable) return;
+
+    const data = transactionTable.rows({ search: 'applied' }).data().toArray();
+    if (!data.length) {
+        alert('डेटा उपलब्ध नाही');
+        return;
+    }
+
+    const keys = Object.keys(data[0]);
+
+    const tableBody = [
+        keys.map(k => k.replace(/_/g, ' ').toUpperCase())
+    ];
+
+    data.forEach(row => {
+        tableBody.push(keys.map(k => row[k] ?? ''));
+    });
+
+    const docDefinition = {
+        defaultStyle: {
+            font: 'NotoSansDevanagari',
+            fontSize: 10
+        },
+        content: [
+            { text: 'विष्णुदास भावे नाट्य ग्रंथालय', fontSize: 16, bold: true },
+            { text: currentLabel + ' अहवाल', margin: [0, 5, 0, 10] },
+
+            {
+                table: {
+                    headerRows: 1,
+                    widths: Array(keys.length).fill('*'),
+                    body: tableBody
+                }
+            }
+        ]
+    };
+
+    pdfMake.createPdf(docDefinition)
+        .download(currentLabel + '.pdf');
+});
+
+
+
+function exportSimpleExcel(data, label) {
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Report');
+
+    // Header
+    const keys = Object.keys(data[0]);
+    worksheet.addRow(keys.map(k => k.replace(/_/g, ' ').toUpperCase()));
+
+    // Data
+    data.forEach(row => {
+        worksheet.addRow(keys.map(k => row[k] ?? ''));
+    });
+
+    // Column width
+    worksheet.columns.forEach(col => col.width = 20);
+
+    workbook.xlsx.writeBuffer().then(buffer => {
+        saveAs(
+            new Blob([buffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }),
+            `${label}.xlsx`
+        );
+    });
+}
+
+// ------------------- FILTER BUTTON -------------------
+$('#filterBtn').on('click', function() {
+    loadDashboard1Data();
+});
+
+// Load default data on page load
+$(document).ready(function() {
+    loadDashboard1Data();
+});
+
+</script>
