@@ -1071,7 +1071,7 @@
                     <div class="card-back">
                         <h3>भौतिक पुस्तक</h3>
                         <p>या क्लासिक कादंबरीचा पारंपरिक छापील स्वरूपात अनुभव घ्या. पानांची स्पर्शानुभूती, शाईचा सुगंध आणि प्रत्यक्ष पुस्तक वाचण्याचा आनंद लुटा.</p>
-                       <a href="{% url 'L01:visit_Library_catalogue' %}" class="select-btn">अधिक वाचा</a>
+                       <a href="{% url 'L01:visit_Library_catalogue_kiosk' %}" class="select-btn">अधिक वाचा</a>
 
                     </div>
                 </div>
@@ -1129,6 +1129,83 @@
         </button> {% endcomment %}
     </div>
 
+
+
+   
+<script>
+// Enhanced fullscreen script that won't interfere with other functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to enter fullscreen
+    function enterFullscreen() {
+        const elem = document.documentElement;
+        
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => {
+                console.log('Fullscreen error:', err);
+            });
+        } else if (elem.mozRequestFullScreen) { // Firefox
+            elem.mozRequestFullScreen().catch(err => {
+                console.log('Fullscreen error:', err);
+            });
+        } else if (elem.webkitRequestFullscreen) { // Chrome, Safari and Opera
+            elem.webkitRequestFullscreen().catch(err => {
+                console.log('Fullscreen error:', err);
+            });
+        } else if (elem.msRequestFullscreen) { // IE/Edge
+            elem.msRequestFullscreen().catch(err => {
+                console.log('Fullscreen error:', err);
+            });
+        }
+    }
+
+    // Enter fullscreen on any user interaction
+    function requestFullscreenOnInteraction() {
+        // Remove any existing listeners
+        document.removeEventListener('click', requestFullscreenOnInteraction);
+        document.removeEventListener('touchstart', requestFullscreenOnInteraction);
+        document.removeEventListener('keydown', requestFullscreenOnInteraction);
+        
+        // Enter fullscreen
+        enterFullscreen();
+        
+        // Prevent accidental exit (optional)
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement) {
+                // Auto-request fullscreen again if user exits
+                setTimeout(enterFullscreen, 100);
+            }
+        });
+    }
+
+    // Add event listeners for multiple interaction types
+    document.addEventListener('click', requestFullscreenOnInteraction, { once: true });
+    document.addEventListener('touchstart', requestFullscreenOnInteraction, { once: true });
+    document.addEventListener('keydown', requestFullscreenOnInteraction, { once: true });
+
+    // Also try to enter fullscreen automatically after a short delay
+    setTimeout(function() {
+        if (!document.fullscreenElement) {
+            enterFullscreen();
+        }
+    }, 1000);
+
+    // Handle ESC key to prevent accidental exit (for kiosk mode)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.fullscreenElement) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+
+// Prevent context menu (right-click) in kiosk mode
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+});
+</script>
+
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const optionCards = document.querySelectorAll('.option-card');

@@ -1,6 +1,8 @@
 # L01/views.py
 from django.http import HttpResponse
 from L01.models import *
+from prompt_toolkit import HTML
+from weasyprint import CSS
 from administration.models import *
 from django.conf import settings
 import traceback
@@ -7415,210 +7417,262 @@ def dashboard_view(request):
 
 def get_dashboard1_data(request):
     from django.utils.timezone import now
-    from datetime import datetime
-    from django.db.models import Sum
-    
     start_date = request.GET.get('from_date')
-    end_date = request.GET.get('to_date')
-    
-    # REMOVE the datatable handling from this function
-    
+    end_date   = request.GET.get('to_date')
+
     if start_date and end_date:
         start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        end_date   = datetime.strptime(end_date, "%Y-%m-%d").date()
     else:
         start_date = end_date = now().date()
-    
-    # --------------------------
-    # NORMAL DASHBOARD DATA (GRAPHS ONLY)
-    # --------------------------
+
+    # ---------- DAILY ----------
     daily = {
-        "issued": CirculationTransaction.objects.using("L01").filter(issue_date__range=[start_date, end_date]).count(),
-        "returned": CirculationTransaction.objects.using("L01").filter(return_date__range=[start_date, end_date]).count(),
-        "due": CirculationTransaction.objects.using("L01").filter(
-            due_date__range=[start_date, end_date],
-            return_date__isnull=True
-        ).count(),
-        "damaged": CirculationTransaction.objects.using("L01").filter(
-            return_condition_id__in=[17, 18],
-            return_date__range=[start_date, end_date]
-        ).count(),
+        "issued": CirculationTransaction.objects.using("L01")
+                    .filter(issue_date__range=[start_date, end_date]).count(),
+
+        "returned": CirculationTransaction.objects.using("L01")
+                    .filter(return_date__range=[start_date, end_date]).count(),
+
+        "due": CirculationTransaction.objects.using("L01")
+                    .filter(due_date__range=[start_date, end_date],
+                            return_date__isnull=True).count(),
+
+        "damaged": CirculationTransaction.objects.using("L01")
+                    .filter(return_condition_id__in=[17, 18],
+                            return_date__range=[start_date, end_date]).count(),
     }
-    
-    payments = PaymentDetails.objects.using("L01").filter(payment_date__range=[start_date, end_date])
-    
+
+    # ---------- EOD ----------
+    payments = PaymentDetails.objects.using("L01")\
+                .filter(payment_date__range=[start_date, end_date])
+
     eod = payments.aggregate(
-        monthly=Sum('monthly_subscription_amount') or 0,
-        total=Sum('total_subscription_amount') or 0,
-        fine=Sum('fine_amount') or 0,
-        book_fine=Sum('book_fine_amount') or 0
+        monthly=Sum('monthly_subscription_amount'),
+        total=Sum('total_subscription_amount'),
+        fine=Sum('fine_amount'),
+        book_fine=Sum('book_fine_amount')
     )
-    
-    # Convert None to 0
-    for key in eod:
-        if eod[key] is None:
-            eod[key] = 0
-    
-    return JsonResponse({"daily": daily, "eod": eod})
+
+    eod = {k: v or 0 for k, v in eod.items()}
+
+    # ---------- PARTIAL HTML ----------
+    html = render_to_string(
+        "L01/Dashboard/dashboard1_content.html",
+        request=request
+    )
+
+    return JsonResponse({
+        "html": html,
+        "daily": daily,
+        "eod": eod
+    })
 
 def get_transaction_details(request):
     try:
         from django.utils.timezone import now
         from datetime import datetime
         from django.db.models import Q
+        import traceback
         
+        # Get parameters from request
         start_date = request.GET.get('from_date')
         end_date = request.GET.get('to_date')
         detail_type = request.GET.get('detail_type')
         draw = int(request.GET.get('draw', 1))
         start = int(request.GET.get('start', 0))
         length = int(request.GET.get('length', 10))
+        
+        # Get search value - handle both formats
         search_value = request.GET.get('search[value]', '')
+        if not search_value:
+            # Try alternative format
+            search_value = request.GET.get('search_value', '')
+        
+        print(f"DEBUG: detail_type={detail_type}, search_value='{search_value}'")
+        print(f"DEBUG: from_date={start_date}, to_date={end_date}")
         
         if start_date and end_date:
-            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            try:
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                start_date = end_date = now().date()
         else:
             start_date = end_date = now().date()
         
         # Base queryset based on detail_type
+        data = []
+        total_records = 0
+        
         if detail_type == "issued":
             try:
-                qs = CirculationTransaction.objects.using("L01").filter(issue_date__range=[start_date, end_date])
+                qs = CirculationTransaction.objects.using("L01").filter(
+                    issue_date__range=[start_date, end_date]
+                ).select_related('member', 'catalog')
+                
                 if search_value:
                     qs = qs.filter(
-                        Q(member_id__member_code__icontains=search_value) |
-                        Q(book_barcode__icontains=search_value)
+                        Q(member__membership_code__icontains=search_value) |
+                        Q(barcode__icontains=search_value) |
+                        Q(catalog__title__icontains=search_value)
                     )
+                
                 total_records = qs.count()
                 qs = qs.order_by('-issue_date')[start:start + length]
                 
-                data = []
                 for obj in qs:
                     data.append({
-                        "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
-                        "book_name":obj.catalog.title,
+                        "member_name": f"{obj.member.first_name_mar or ''} {obj.member.last_name_mar or ''}".strip(),
+                        "book_name": obj.catalog.title if obj.catalog else "",
                         "member_code": obj.member.membership_code if obj.member else "",
                         "book_barcode": obj.barcode,
                         "date": obj.issue_date.isoformat() if obj.issue_date else ""
                     })
+                    
             except Exception as e:
-                print("Error in get_transaction_details:", traceback.format_exc())
-                return JsonResponse({"error": str(e)}, status=500)
+                print(f"Error in issued section: {str(e)}")
+                traceback.print_exc()
         
         elif detail_type == "returned":
-            qs = CirculationTransaction.objects.using("L01").filter(return_date__range=[start_date, end_date])
-            if search_value:
-                qs = qs.filter(
-                    Q(member_id__member_code__icontains=search_value) |
-                    Q(book_barcode__icontains=search_value)
-                )
-            
-            total_records = qs.count()
-            qs = qs.order_by('-return_date')[start:start + length]
-            
-            data = []
-            for obj in qs:
-                data.append({
-                    "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
-                    "book_name":obj.catalog.title,
-                    "member_code": obj.member.membership_code if obj.member else "",
-                    "book_barcode": obj.barcode,
-                    "date": obj.return_date.isoformat() if obj.return_date else ""
-                })
+            try:
+                qs = CirculationTransaction.objects.using("L01").filter(
+                    return_date__range=[start_date, end_date]
+                ).select_related('member', 'catalog')
+                
+                if search_value:
+                    qs = qs.filter(
+                        Q(member__membership_code__icontains=search_value) |
+                        Q(barcode__icontains=search_value) |
+                        Q(catalog__title__icontains=search_value)
+                    )
+                
+                total_records = qs.count()
+                qs = qs.order_by('-return_date')[start:start + length]
+                
+                for obj in qs:
+                    data.append({
+                        "member_name": f"{obj.member.first_name_mar or ''} {obj.member.last_name_mar or ''}".strip(),
+                        "book_name": obj.catalog.title if obj.catalog else "",
+                        "member_code": obj.member.membership_code if obj.member else "",
+                        "book_barcode": obj.barcode,
+                        "date": obj.return_date.isoformat() if obj.return_date else ""
+                    })
+                    
+            except Exception as e:
+                print(f"Error in returned section: {str(e)}")
+                traceback.print_exc()
         
         elif detail_type == "due":
-            qs = CirculationTransaction.objects.using("L01").filter(
-                due_date__range=[start_date, end_date],
-                return_date__isnull=True
-            )
-            if search_value:
-                qs = qs.filter(
-                    Q(member_id__member_code__icontains=search_value) |
-                    Q(book_barcode__icontains=search_value)
-                )
-            
-            total_records = qs.count()
-            qs = qs.order_by('-due_date')[start:start + length]
-            
-            data = []
-            for obj in qs:
-                data.append({
-                    "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
-                    "book_name":obj.catalog.title,
-                    "member_code": obj.member.membership_code if obj.membership_code else "",
-                    "book_barcode": obj.barcode,
-                    "date": obj.due_date.isoformat() if obj.due_date else ""
-                })
+            try:
+                qs = CirculationTransaction.objects.using("L01").filter(
+                    due_date__range=[start_date, end_date],
+                    return_date__isnull=True
+                ).select_related('member', 'catalog')
+                
+                if search_value:
+                    qs = qs.filter(
+                        Q(member__membership_code__icontains=search_value) |
+                        Q(barcode__icontains=search_value) |
+                        Q(catalog__title__icontains=search_value)
+                    )
+                
+                total_records = qs.count()
+                qs = qs.order_by('-due_date')[start:start + length]
+                
+                for obj in qs:
+                    data.append({
+                        "member_name": f"{obj.member.first_name_mar or ''} {obj.member.last_name_mar or ''}".strip(),
+                        "book_name": obj.catalog.title if obj.catalog else "",
+                        "member_code": obj.member.membership_code if obj.member else "",
+                        "book_barcode": obj.barcode,
+                        "date": obj.due_date.isoformat() if obj.due_date else ""
+                    })
+                    
+            except Exception as e:
+                print(f"Error in due section: {str(e)}")
+                traceback.print_exc()
         
         elif detail_type == "damaged":
-            qs = CirculationTransaction.objects.using("L01").filter(
-                return_condition_id__in=[17, 18],
-                return_date__range=[start_date, end_date]
-            )
-            if search_value:
-                qs = qs.filter(
-                    Q(member_id__member_code__icontains=search_value) |
-                    Q(book_barcode__icontains=search_value)
-                )
-            
-            total_records = qs.count()
-            qs = qs.order_by('-return_date')[start:start + length]
-            
-            data = []
-            for obj in qs:
-                data.append({
-                    "member_name": f"{obj.member.first_name_mar} {obj.member.last_name_mar}".strip(),
-                    "book_name":obj.catalog.title,
-                    "member_code": obj.member.membership_code if obj.member else "",
-                    "book_barcode": obj.barcode,
-                    "date": obj.return_date.isoformat() if obj.return_date else ""
-                })
+            try:
+                qs = CirculationTransaction.objects.using("L01").filter(
+                    return_condition_id__in=[17, 18],
+                    return_date__range=[start_date, end_date]
+                ).select_related('member', 'catalog')
+                
+                if search_value:
+                    qs = qs.filter(
+                        Q(member__membership_code__icontains=search_value) |
+                        Q(barcode__icontains=search_value) |
+                        Q(catalog__title__icontains=search_value)
+                    )
+                
+                total_records = qs.count()
+                qs = qs.order_by('-return_date')[start:start + length]
+                
+                for obj in qs:
+                    data.append({
+                        "member_name": f"{obj.member.first_name_mar or ''} {obj.member.last_name_mar or ''}".strip(),
+                        "book_name": obj.catalog.title if obj.catalog else "",
+                        "member_code": obj.member.membership_code if obj.member else "",
+                        "book_barcode": obj.barcode,
+                        "date": obj.return_date.isoformat() if obj.return_date else ""
+                    })
+                    
+            except Exception as e:
+                print(f"Error in damaged section: {str(e)}")
+                traceback.print_exc()
         
         elif detail_type in ["monthly", "total", "fine", "book_fine"]:
-
-            qs = PaymentDetails.objects.using("L01").filter(
-                payment_date__range=[start_date, end_date]
-            )
-
-            if search_value:
-                qs = qs.filter(
-                    membership__membership_code__icontains=search_value
-                )
-
-            # Decide which amount field to use
-            if detail_type == "monthly":
-                amount_field = "monthly_subscription_amount"
-            elif detail_type == "total":
-                amount_field = "total_subscription_amount"
-            elif detail_type == "fine":
-                amount_field = "fine_amount"
-            else:  # book_fine
-                amount_field = "book_fine_amount"
-
-            # ✅ FILTER: only rows where selected amount is NOT NULL (and > 0)
-            qs = qs.filter(**{
-                f"{amount_field}__isnull": False,
-                f"{amount_field}__gt": 0     # remove this line if 0 is valid
-            })
-
-            total_records = qs.count()
-            qs = qs.order_by("-payment_date")[start:start + length]
-
-            data = []
-            for obj in qs:
-                data.append({
-                    "member_name": f"{obj.membership.first_name_mar} {obj.membership.last_name_mar}".strip()
-                                    if obj.membership else "",
-                    "member_code": obj.membership_code if obj.membership else "",
-                    "amount": float(getattr(obj, amount_field) or 0),
-                    "payment_date": obj.payment_date
-                })
-
-
+            try:
+                # Determine amount field
+                amount_field_map = {
+                    "monthly": "monthly_subscription_amount",
+                    "total": "total_subscription_amount",
+                    "fine": "fine_amount",
+                    "book_fine": "book_fine_amount"
+                }
+                amount_field = amount_field_map.get(detail_type)
+                
+                qs = PaymentDetails.objects.using("L01").filter(
+                    payment_date__range=[start_date, end_date]
+                ).select_related('membership')
+                
+                # Filter for non-zero amounts in the specific field
+                if amount_field:
+                    qs = qs.filter(**{
+                        f"{amount_field}__isnull": False,
+                        f"{amount_field}__gt": 0
+                    })
+                
+                if search_value:
+                    qs = qs.filter(
+                        Q(membership__membership_code__icontains=search_value)
+                    )
+                
+                total_records = qs.count()
+                qs = qs.order_by("-payment_date")[start:start + length]
+                
+                for obj in qs:
+                    amount = 0
+                    if amount_field:
+                        amount = getattr(obj, amount_field, 0) or 0
+                    
+                    data.append({
+                        "member_name": f"{obj.membership.first_name_mar or ''} {obj.membership.last_name_mar or ''}".strip() if obj.membership else "",
+                        "member_code": obj.membership.membership_code if obj.membership else "",
+                        "amount": float(amount),
+                        "payment_date": obj.payment_date.isoformat() if obj.payment_date else ""
+                    })
+                    
+            except Exception as e:
+                print(f"Error in payment section: {str(e)}")
+                traceback.print_exc()
+        
         else:
-            data = []
-            total_records = 0
+            print(f"Unknown detail_type: {detail_type}")
+        
+        print(f"DEBUG: Returning {len(data)} records out of {total_records} total")
         
         return JsonResponse({
             "draw": draw,
@@ -7626,9 +7680,17 @@ def get_transaction_details(request):
             "recordsFiltered": total_records,
             "data": data
         })
+        
     except Exception as e:
-            print("Error in get_transaction_details:", traceback.format_exc())
-            return JsonResponse({"error": str(e)}, status=500)
+        print(f"General error in get_transaction_details: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({
+            "draw": 1,
+            "recordsTotal": 0,
+            "recordsFiltered": 0,
+            "data": [],
+            "error": str(e)
+        }, status=500)
 
 # for Dashboard 2 Librarian
 def catalog_data_ajax(request):
@@ -7829,6 +7891,7 @@ from django.db.models import Count
 from django.db.models.functions import TruncMonth
 from django.utils.dateparse import parse_date
 from django.db.models import CharField, F, Value
+from dateutil.relativedelta import relativedelta
 
 def library_dashboard_data(request):
     try:
@@ -7838,15 +7901,22 @@ def library_dashboard_data(request):
         from_date = parse_date(request.GET.get('from_date'))
         to_date = parse_date(request.GET.get('to_date'))
         subject_id = request.GET.get('subject_id')
+        
+        subjects = list(
+            SubjectTypeMaster.objects
+            .filter(is_active=1)
+            .values('id', 'subjectNameMarathi', 'subjectNameEnglish')
+            .order_by('subjectNameMarathi', 'subjectNameEnglish')
+        )
 
         circulation_qs = CirculationTransaction.objects.all()
 
         if from_date:
-            circulation_qs = circulation_qs.filter(issue_date__date__gte=from_date)
+            circulation_qs = circulation_qs.filter(issue_date__gte=from_date)
         if to_date:
-            circulation_qs = circulation_qs.filter(issue_date__date__lte=to_date)
-        if subject_id:
-            circulation_qs = circulation_qs.filter(catalog__subject_id=subject_id)
+            circulation_qs = circulation_qs.filter(issue_date__lte=to_date)
+        if subject_id and subject_id.isdigit():
+            circulation_qs = circulation_qs.filter(catalog__subject_id=int(subject_id))
 
         # -------------------------
         # KPI
@@ -7957,6 +8027,7 @@ def library_dashboard_data(request):
         drill_headers = []
 
         if drill_type and drill_value:
+            
             if drill_type == 'book':
                 qs = (
                     circulation_qs
@@ -8018,6 +8089,82 @@ def library_dashboard_data(request):
 
                 drill_headers = ["User ID", "Book Title", "Rating", "Review", "Created At"]
 
+            elif drill_type == 'month':
+                try:
+                    # Example: "Nov 2025"
+                    month_date = datetime.strptime(drill_value, "%b %Y")
+                    start_date = month_date.replace(day=1)
+                    end_date = start_date + relativedelta(months=1)
+                except ValueError:
+                    start_date = end_date = None
+
+                if start_date and end_date:
+                    qs = (
+                        circulation_qs
+                        .filter(
+                            issue_date__gte=start_date,
+                            issue_date__lt=end_date
+                        )
+                        .select_related(
+                            'catalog',
+                            'catalog__subject',
+                            'accession',
+                            'member',
+                            'member__member_type'
+                        )
+                        .annotate(
+                            member_name=Concat(
+                                F('member__first_name'),
+                                Value(' '),
+                                F('member__middle_name'),
+                                Value(' '),
+                                F('member__last_name'),
+                                output_field=CharField()
+                            )
+                        )
+                        .values(
+                            'issue_date',
+                            'catalog__title',
+                            'catalog__author',
+                            'catalog__subject__subjectNameMarathi',
+                            'accession__accession_no',
+                            'accession__copy_number',
+                            'member_name',
+                            'member__member_type__parameter_value',
+                            'transaction_type',
+                            'fine_amount'
+                        )
+                        .order_by('issue_date')[:300]
+                    )
+
+                    drill_headers = [
+                        "Issue Date",
+                        "Book Title",
+                        "Author",
+                        "Subject",
+                        "Accession No",
+                        "Copy No",
+                        "Member Name",
+                        "Member Type",
+                        "Transaction",
+                        "Fine Amount"
+                    ]
+
+                    drill_data = []
+                    for row in qs:
+                        drill_data.append({
+                            "Issue Date": row['issue_date'],
+                            "Book Title": row['catalog__title'],
+                            "Author": row['catalog__author'],
+                            "Subject": row['catalog__subject__subjectNameMarathi'],
+                            "Accession No": row['accession__accession_no'],
+                            "Copy No": row['accession__copy_number'],
+                            "Member Name": row['member_name'].strip(),
+                            "Member Type": row['member__member_type__parameter_value'],
+                            "Transaction": row['transaction_type'],
+                            "Fine Amount": row['fine_amount'] or 0
+                        })
+            
         return JsonResponse({
             "kpis": kpis,
             "top_books": top_books,
@@ -8027,6 +8174,7 @@ def library_dashboard_data(request):
             "monthly_trend": monthly_trend,
             "drill_data": drill_data,
             "drill_headers": drill_headers,
+            "subjects": subjects,
         })
 
     except Exception as e:
@@ -8793,3 +8941,399 @@ def kiosk_competitive_exam_type(request, competitive_id=None):
         "MEDIA_URL": settings.MEDIA_URL,
         "competitive_exams": competitive_exams
     })
+    
+@login_required
+def visit_Library_catalogue_kiosk(request):
+    try:
+        # --- SESSION CHECKS ---
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if library_code != 'L01':
+            messages.error(request, "Invalid library access.")
+            request.session.flush()
+            return redirect('library_list')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/visit_Library_catalogue_kiosk.html", {})
+
+        # --- SUBJECTS ---
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))
+            subjects.append(s)
+
+        first_subject = subjects[0] if subjects else None
+
+        # --- BOOKS BY FIRST SUBJECT ---
+        if first_subject:
+            books = BookCatalog.objects.filter(subject_id=first_subject.id)\
+                                       .select_related('subject', 'material')
+        else:
+            books = BookCatalog.objects.none()
+
+        # --- PAGINATION ---
+        paginator = Paginator(books, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        for b in page_obj:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        # --- UPCOMING / LATEST BOOKS ---
+        latest_created_at = BookCatalog.objects.aggregate(
+            latest=Max('created_at')
+        )['latest']
+
+        recent_books = (
+            BookCatalog.objects.filter(created_at=latest_created_at)
+            if latest_created_at else BookCatalog.objects.none()
+        )
+
+        remaining_count = 10 - recent_books.count()
+        fallback_books = (
+            BookCatalog.objects
+            .exclude(cat_ref_num__in=recent_books.values_list('cat_ref_num', flat=True))
+            .order_by('-cat_ref_num')[:remaining_count]
+            if remaining_count > 0 else BookCatalog.objects.none()
+        )
+
+        new_books = list(recent_books) + list(fallback_books)
+        for b in new_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        # --- MOST REVIEWED BOOKS ---
+        most_reviewed_books = (
+            BookCatalog.objects.annotate(
+                review_count=Count('cat_ref_id_reviews'),
+                avg_rating=Avg('cat_ref_id_reviews__rating')
+            )
+            .filter(review_count__gt=0)
+            .order_by('-avg_rating', '-review_count')[:10]
+        )
+
+        for b in most_reviewed_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            avg = b.avg_rating or 0
+            b.avg_rating = round(avg, 1)
+            b.stars = [True if i < round(avg) else False for i in range(5)]
+
+        # --- NEW ARRIVALS IN CIRCULATION ---
+        new_arrivals_qs = BookCatalog.objects.annotate(
+            in_circulation=Exists(
+                CirculationCopyStatus.objects.filter(
+                    bookcatalog_id=OuterRef('cat_ref_num')
+                )
+            )
+        ).filter(in_circulation=True).order_by('-cat_ref_num')[:10]
+
+        for b in new_arrivals_qs:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        # --- CONTEXT ---
+        context = {
+            'subjects': subjects,
+            'books': page_obj,
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'new_books': new_books,
+            'most_reviewed_books': most_reviewed_books,
+            'new_arrivals_qs': new_arrivals_qs,
+        }
+
+        return render(
+            request,
+            "L01/visit_Library_catalogue_kiosk.html",
+            context
+        )
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return render(
+            request,
+            "L01/visit_Library_catalogue_kiosk.html",
+            {}
+        )
+        
+
+def get_books_by_subject_kiosk(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+        search = request.GET.get('search', '').strip()
+        searching = request.GET.get('searching', '').strip()
+
+        # Base queryset
+        all_books = BookCatalog.objects.all().select_related('subject', 'material')
+
+        if searching:
+            # Global search across all subjects
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+            elif subject_id:
+                all_books = all_books.filter(subject_id=subject_id)
+
+        else:
+            # Subject-wise browsing
+            if subject_id:
+                all_books = all_books.filter(subject_id=subject_id)
+
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+
+        # Encode book IDs
+        for b in all_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        # Pagination (same as normal view)
+        paginator = Paginator(all_books, 8)
+        page_number = request.GET.get('page', 1)
+        books_page = paginator.get_page(page_number)
+
+        context = {
+            'books': books_page,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'subject_id_enc': subject_id_enc,
+            'is_kiosk': True,   # useful in template if needed
+        }
+
+        return render(
+            request,
+            "L01/book_details_kiosk.html",  # or reuse same partial
+            context
+        )
+
+    except Exception as e:
+        print("Kiosk error fetching books:", e)
+        return JsonResponse({'error': 'Failed to fetch books'}, status=500)
+
+
+def get_books_by_subject_kiosk(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+        search = request.GET.get('search', '').strip()
+        searching = request.GET.get('searching', '').strip()
+
+        # Base queryset
+        all_books = BookCatalog.objects.all().select_related('subject', 'material')
+
+        if searching:
+            # Global search across all subjects
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+            elif subject_id:
+                all_books = all_books.filter(subject_id=subject_id)
+
+        else:
+            # Subject-wise browsing
+            if subject_id:
+                all_books = all_books.filter(subject_id=subject_id)
+
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+
+        # Encode book IDs
+        for b in all_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        # Pagination (same as normal view)
+        paginator = Paginator(all_books, 8)
+        page_number = request.GET.get('page', 1)
+        books_page = paginator.get_page(page_number)
+
+        context = {
+            'books': books_page,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'subject_id_enc': subject_id_enc,
+            'is_kiosk': True,   # useful in template if needed
+        }
+
+        return render(
+            request,
+            "L01/book_details_kiosk.html",  # or reuse same partial
+            context
+        )
+
+    except Exception as e:
+        print("Kiosk error fetching books:", e)
+        return JsonResponse({'error': 'Failed to fetch books'}, status=500)
+
+
+@login_required
+def view_book_detail_kiosk(request):
+    try:
+        # --- SESSION CHECKS ---
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid.")
+            return redirect("visit_library_catalogue")
+
+        # --- GET BOOK ID ---
+        cat_ref_num_enc = request.GET.get('cat_ref_num')
+        if not cat_ref_num_enc:
+            messages.error(request, "Invalid book request.")
+            return redirect("visit_library_catalogue")
+
+        cat_ref_num = dec(cat_ref_num_enc)
+
+        # --- FETCH BOOK ---
+        book = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
+        book.bookIdEnc = enc(str(book.cat_ref_num))
+
+        # --- IMAGES ---
+        images = []
+        if book.front_page_photo:
+            images.append(book.front_page_photo)
+        if book.last_page_photo:
+            images.append(book.last_page_photo)
+
+        # --- CIRCULATION DETAILS ---
+        circulation_qs = CirculationCopyStatus.objects.filter(
+            bookcatalog_id=book.cat_ref_num
+        )
+        total_qty = circulation_qs.count()
+
+        status_on_shelf = status_master.objects.filter(
+            status_name__iexact="On-Shelf"
+        ).first()
+
+        status_unknown = "Not Available"
+
+        current_on_shelf_count = (
+            circulation_qs.filter(current_status=status_on_shelf).count()
+            if status_on_shelf else 0
+        )
+
+        if total_qty > 0:
+            if current_on_shelf_count > 0:
+                current_status_display = "On-Shelf"
+                availability_text = f"{current_on_shelf_count} of {total_qty} available"
+            else:
+                current_status_display = status_unknown
+                availability_text = f"0 of {total_qty} available"
+        else:
+            current_status_display = status_unknown
+            availability_text = "-"
+
+        # --- LOCATION (ONLY ON-SHELF) ---
+        location_counts = {}
+        if status_on_shelf:
+            on_shelf_copies = circulation_qs.filter(current_status=status_on_shelf)
+            for circ in on_shelf_copies:
+                if circ.shelf_location:
+                    loc = circ.shelf_location.location_name
+                    location_counts[loc] = location_counts.get(loc, 0) + 1
+
+        if location_counts:
+            location_display = ", ".join(
+                [f"{loc} ({count})" for loc, count in location_counts.items()]
+            )
+        else:
+            location_display = "Unknown"
+
+        # --- REVIEWS ---
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        all_reviews = BookReview.objects.filter(book=book).order_by('-created_at')
+
+        user_ids = all_reviews.values_list('user_id', flat=True).distinct()
+        users = User.objects.filter(id__in=user_ids)
+        user_dict = {u.id: u for u in users}
+
+        reviews_with_users = []
+        for review in all_reviews:
+            review.user_obj = user_dict.get(review.user_id)
+            reviews_with_users.append(review)
+
+        current_user_id = request.session.get('user_id')
+
+        user_review = None
+        if current_user_id:
+            try:
+                user_review = all_reviews.filter(
+                    user_id=int(current_user_id)
+                ).first()
+                if user_review:
+                    user_review.user_obj = user_dict.get(int(current_user_id))
+            except (ValueError, TypeError):
+                user_review = None
+
+        # --- RATINGS ---
+        avg_rating = all_reviews.aggregate(
+            avg=models.Avg('rating')
+        )['avg'] or 0
+
+        total_reviews = all_reviews.count()
+
+        # --- PAGINATION ---
+        reviews_per_page = 5
+        show_pagination = total_reviews > reviews_per_page
+
+        if show_pagination:
+            paginator = Paginator(reviews_with_users, reviews_per_page)
+            page_number = request.GET.get('page', 1)
+
+            try:
+                reviews_page = paginator.page(page_number)
+            except PageNotAnInteger:
+                reviews_page = paginator.page(1)
+            except EmptyPage:
+                reviews_page = paginator.page(paginator.num_pages)
+        else:
+            reviews_page = reviews_with_users
+
+        # --- CONTEXT ---
+        context = {
+            'book': book,
+            'images': images,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'total_qty': total_qty,
+            'current_status_display': current_status_display,
+            'availability_text': availability_text,
+            'location_display': location_display,
+            'reviews': reviews_page,
+            'user_review': user_review,
+            'avg_rating': round(avg_rating, 1),
+            'total_reviews': total_reviews,
+            'show_pagination': show_pagination,
+            'reviews_per_page': reviews_per_page,
+            'current_params': request.GET.copy(),
+            'cat_ref_num_enc': cat_ref_num_enc,
+        }
+
+        return render(
+            request,
+            "L01/view_book_detail_kiosk.html",
+            context
+        )
+
+    except Exception as e:
+        print("Error in view_book_detail_kiosk:", e)
+        messages.error(request, "Unable to load book details.")
+        return redirect("L01/visit_Library_catalogue_kiosk")

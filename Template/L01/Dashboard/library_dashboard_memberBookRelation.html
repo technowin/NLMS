@@ -3,14 +3,48 @@
 {% block extra_css %}
     
     <style>
+        body { 
+            background-color: #f4f6f9; 
+        }
+        .dashboard-title { 
+            font-weight: 600; 
+            color: #2c3e50; 
+        }
+        .kpi-card { 
+            border-radius: 12px; 
+            padding: 20px; 
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            text-align: center; 
+            transition: transform 0.2s ease; 
+        }
+        .kpi-card:hover { 
+            transform: translateY(-3px); 
+        }
+        .kpi-card span { 
+            font-size: 14px; 
+            color: #6c757d; 
+        }
+        .kpi-card h2 { margin-top: 
+            10px; 
+            font-weight: 700; 
+            color: #2c3e50; 
+        }
+        .chart-card, .filter-box { 
+            background: #ffffff; 
+            padding: 15px; 
+            border-radius: 12px; 
+            {% comment %} box-shadow: 0 4px 12px rgba(0,0,0,0.05);  {% endcomment %}
+        }
+        .chart-card {
+            height: 360px;              /* Same height for all chart cards */
+            display: flex;
+            flex-direction: column;
+        }
 
-        body { background-color: #f4f6f9; }
-        .dashboard-title { font-weight: 600; color: #2c3e50; }
-        .kpi-card { border-radius: 12px; padding: 20px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; transition: transform 0.2s ease; }
-        .kpi-card:hover { transform: translateY(-3px); }
-        .kpi-card span { font-size: 14px; color: #6c757d; }
-        .kpi-card h2 { margin-top: 10px; font-weight: 700; color: #2c3e50; }
-        .chart-card, .filter-box { background: #ffffff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .chart-card canvas {
+            flex-grow: 1;
+        }
     </style>
 
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
@@ -38,16 +72,16 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <button id="applyFilter" class="btn btn-primary w-100">Apply Filters</button>
+                <button type="button" id="applyFilter" class="btn btn-primary w-100">
+                    Apply Filters
+                </button>
             </div>
         </div>
 
         <!-- KPI -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3"><div class="kpi-card"><span>Total Members</span><h2 id="totalMembers">0</h2></div></div>
-            <div class="col-md-3"><div class="kpi-card"><span>Total Titles</span><h2 id="totalTitles">0</h2></div></div>
-            <div class="col-md-3"><div class="kpi-card"><span>Total Copies</span><h2 id="totalCopies">0</h2></div></div>
-            <div class="col-md-3"><div class="kpi-card"><span>Total Reviews</span><h2 id="totalReviews">0</h2></div></div>
+            <div class="col-md-6"><div class="kpi-card"><span>Total Members</span><h2 id="totalMembers">0</h2></div></div>
+            <div class="col-md-6"><div class="kpi-card"><span>Total Reviews</span><h2 id="totalReviews">0</h2></div></div>
         </div>
 
         <!-- CHARTS -->
@@ -100,6 +134,7 @@
         function destroyChart(id) { if (charts[id]) charts[id].destroy(); }
 
         function renderBar(id, labels, data, label, drillType) {
+            debugger;
             destroyChart(id);
             if (!labels.length) labels = ['No data'], data = [0];
             charts[id] = new Chart(document.getElementById(id), {
@@ -107,6 +142,7 @@
                 data: { labels: labels, datasets: [{ label: label, data: data }] },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     onClick: function(evt, elements) {
                         if (!elements.length) return;
                         drillDown(drillType, labels[elements[0].index]);
@@ -117,17 +153,32 @@
 
         function renderDonut(id, labels, data, drillType) {
             destroyChart(id);
-            if (!labels.length) labels = ['No data'], data = [0];
+
+            if (!labels.length) {
+                labels = ['No data'];
+                data = [0];
+            }
+
+            let options = {
+                responsive: true,
+                maintainAspectRatio: false
+            };
+
+            // ✅ Conditionally add click handler
+            if (id === "ratingChart") {
+                options.onClick = function (evt, elements) {
+                    if (!elements.length) return;
+                    drillDown(drillType, labels[elements[0].index]);
+                };
+            }
+
             charts[id] = new Chart(document.getElementById(id), {
                 type: 'doughnut',
-                data: { labels: labels, datasets: [{ data: data }] },
-                options: {
-                    responsive: true,
-                    onClick: function(evt, elements) {
-                        if (!elements.length) return;
-                        drillDown(drillType, labels[elements[0].index]);
-                    }
-                }
+                data: {
+                    labels: labels,
+                    datasets: [{ data: data }]
+                },
+                options: options
             });
         }
 
@@ -139,6 +190,7 @@
                 data: { labels: labels, datasets: [{ label: 'Issues', data: data, tension: 0.3 }] },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     onClick: function(evt, elements) {
                         if (!elements.length) return;
                         drillDown(drillType, labels[elements[0].index]);
@@ -147,27 +199,62 @@
             });
         }
 
-        function loadDashboard(extra={}) {
-            $.get("{% url 'L01:library_dashboard_data' %}", {
-                from_date: $('#fromDate').val(),
-                to_date: $('#toDate').val(),
-                subject_id: $('#subjectFilter').val(),
-                ...extra
-            }, function(res) {
-                $('#totalMembers').text(res.kpis.total_members || 0);
-                $('#totalTitles').text(res.kpis.total_titles || 0);
-                $('#totalCopies').text(res.kpis.total_copies || 0);
-                $('#totalReviews').text(res.kpis.total_reviews || 0);
+        $(document).ready(function() {
 
-                renderBar('topBooksChart', res.top_books.labels, res.top_books.data, 'Issues', 'book');
-                renderDonut('subjectChart', res.subject_popularity.labels, res.subject_popularity.data, 'subject');
-                renderLine('monthlyTrendChart', res.monthly_trend.labels, res.monthly_trend.data, 'month');
-                renderBar('topReadersChart', res.top_readers.labels, res.top_readers.data, 'Books Read', 'reader');
-                renderDonut('ratingChart', res.rating_distribution.labels, res.rating_distribution.data, 'rating');
+            // --- Wrapper to call loadDashboard safely ---
+            $('#applyFilter').click(() => loadDashboard());
+
+            // Initial load
+            loadDashboard();
+
+        });
+
+        function loadDashboard(extra={}) {
+            console.log("Calling AJAX URL:", "{% url 'L01:library_dashboard_data' %}");
+            
+            $.ajax({
+                url: "{% url 'L01:library_dashboard_data' %}",
+                method: "GET",
+                data: {
+                    from_date: $('#fromDate').val(),
+                    to_date: $('#toDate').val(),
+                    subject_id: $('#subjectFilter').val(),
+                    ...extra
+                },
+                success: function(res) {
+                    // ----- Populate Subjects Dropdown -----
+                    if (res.subjects) {
+                        const subjectSelect = $('#subjectFilter');
+                        if (subjectSelect.children('option').length === 1) { // only if first load
+                            res.subjects.forEach(s => {
+                                const name = s.subjectNameMarathi || s.subjectNameEnglish || 'Unknown';
+                                subjectSelect.append(`<option value="${s.id}">${name}</option>`);
+                            });
+                        }
+                    }
+
+                    // ----- KPIs -----
+                    $('#totalMembers').text(res.kpis.total_members || 0);
+                    $('#totalTitles').text(res.kpis.total_titles || 0);
+                    $('#totalCopies').text(res.kpis.total_copies || 0);
+                    $('#totalReviews').text(res.kpis.total_reviews || 0);
+
+                    // ----- Charts -----
+                    renderBar('topBooksChart', res.top_books.labels, res.top_books.data, 'Issues', 'book');
+                    renderDonut('subjectChart', res.subject_popularity.labels, res.subject_popularity.data, 'subject');
+                    renderLine('monthlyTrendChart', res.monthly_trend.labels, res.monthly_trend.data, 'month');
+                    renderBar('topReadersChart', res.top_readers.labels, res.top_readers.data, 'Books Read', 'reader');
+                    renderDonut('ratingChart', res.rating_distribution.labels, res.rating_distribution.data, 'rating');
+                },
+                error: function(xhr, status, error) {
+                    console.error("Dashboard AJAX error:", status, error);
+                    Swal.fire('Error', 'Unable to load dashboard data', 'error');
+                }
             });
         }
 
         function drillDown(type, value) {
+            debugger;
             $.get("{% url 'L01:library_dashboard_data' %}", {
                 from_date: $('#fromDate').val(),
                 to_date: $('#toDate').val(),
@@ -228,10 +315,6 @@
             $('#drillModal').modal('show');
         } 
 
-        $(document).ready(function () {
-            loadDashboard();
-            $('#applyFilter').click(loadDashboard);
-        });
     </script>
 
 {% endblock %}

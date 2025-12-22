@@ -13,136 +13,134 @@
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
         <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
         
-
-            <style>
-                :root {
-                    --primary-color: #4e73df;
-                    --success-color: #1cc88a;
-                    --info-color: #36b9cc;
-                    --warning-color: #f6c23e;
-                    --danger-color: #e74a3b;
-                }
-                
-                body {
-                    background-color: #f8f9fc;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    margin: 0;
-                    padding: 0;
-                }
-                
-                .dashboard-container {
-                    padding: 20px;
-                    max-width: 1400px;
-                    margin: 0 auto;
-                }
-                
-                .header-section {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-                    margin-bottom: 20px;
-                }
-                
-                .tabs-container {
-                    background: white;
-                    border-radius: 10px;
-                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-                    overflow: hidden;
-                }
-                
-                .dashboard-tabs {
-                    display: flex;
-                    background: #f8f9fc;
-                    border-bottom: 1px solid #e3e6f0;
-                }
-                
-                .tab-btn {
-                    padding: 15px 30px;
-                    background: none;
-                    border: none;
-                    color: #6e707e;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.3s;
-                    position: relative;
-                }
-                
-                .tab-btn:hover {
-                    color: var(--primary-color);
-                    background-color: rgba(78, 115, 223, 0.05);
-                }
-                
-                .tab-btn.active {
-                    color: var(--primary-color);
-                    background-color: white;
-                }
-                
-                .tab-btn.active::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 3px;
-                    background-color: var(--primary-color);
-                }
-                
-                .tab-content {
-                    padding: 30px;
-                    min-height: 500px;
-                }
-                
-                .loading-overlay {
-                    display: none;
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(255, 255, 255, 0.8);
-                    z-index: 1000;
-                    justify-content: center;
-                    align-items: center;
-                }
-                
-                .dashboard-content {
-                    padding: 20px;
-                }
-                
-                .card {
-                    border: none;
-                    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-                    margin-bottom: 20px;
-                }
-                
-                .last-updated {
-                    font-size: 0.85rem;
-                    color: #858796;
-                    text-align: right;
-                }
-                
-                .status-indicator {
-                    display: inline-block;
-                    width: 10px;
-                    height: 10px;
-                    border-radius: 50%;
-                    margin-right: 8px;
-                }
-                
-                .status-active {
-                    background-color: var(--success-color);
-                }
-                
-                .status-inactive {
-                    background-color: var(--danger-color);
-                }
-            </style>
+        <style>
+            :root {
+                --primary-color: #4e73df;
+                --success-color: #1cc88a;
+                --info-color: #36b9cc;
+                --warning-color: #f6c23e;
+                --danger-color: #e74a3b;
+            }
+            
+            body {
+                background-color: #f8f9fc;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            
+            .dashboard-container {
+                padding: 20px;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+            
+            .header-section {
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                margin-bottom: 20px;
+            }
+            
+            .tabs-container {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                overflow: hidden;
+            }
+            
+            .dashboard-tabs {
+                display: flex;
+                background: #f8f9fc;
+                border-bottom: 1px solid #e3e6f0;
+            }
+            
+            .tab-btn {
+                padding: 15px 30px;
+                background: none;
+                border: none;
+                color: #6e707e;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s;
+                position: relative;
+            }
+            
+            .tab-btn:hover {
+                color: var(--primary-color);
+                background-color: rgba(78, 115, 223, 0.05);
+            }
+            
+            .tab-btn.active {
+                color: var(--primary-color);
+                background-color: white;
+            }
+            
+            .tab-btn.active::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background-color: var(--primary-color);
+            }
+            
+            .tab-content {
+                padding: 30px;
+                min-height: 500px;
+            }
+            
+            .loading-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.8);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .dashboard-content {
+                padding: 20px;
+            }
+            
+            .card {
+                border: none;
+                box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                margin-bottom: 20px;
+            }
+            
+            .last-updated {
+                font-size: 0.85rem;
+                color: #858796;
+                text-align: right;
+            }
+            
+            .status-indicator {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                margin-right: 8px;
+            }
+            
+            .status-active {
+                background-color: var(--success-color);
+            }
+            
+            .status-inactive {
+                background-color: var(--danger-color);
+            }
+        </style>
     </head>
 {% endblock %}
 
 {% block content %}
-
     <body>
         <div class="">
             <!-- Header -->
@@ -165,16 +163,16 @@
             <!-- Dashboard Tabs -->
             <div class="tabs-container">
                 <div class="dashboard-tabs">
-                    <button class="tab-btn active" onclick="loadDashboard('1')">
+                    <button class="tab-btn active" onclick="switchTab('1')">
                         <i class="bi bi-house-door me-2"></i>movement of books
                     </button>
-                    <button class="tab-btn" onclick="loadDashboard('2')">
+                    <button class="tab-btn" onclick="switchTab('2')">
                         <i class="bi bi-file-text me-2"></i>library inventory & stock
                     </button>
-                    <button class="tab-btn" onclick="loadDashboard('3')">
+                    <button class="tab-btn" onclick="switchTab('3')">
                         <i class="bi bi-graph-up me-2"></i>members & subscriptions
                     </button>
-                    <button class="tab-btn" onclick="loadDashboard('4')">
+                    <button class="tab-btn" onclick="switchTab('4')">
                         <i class="bi bi-gear me-2"></i>analytics & insights
                     </button>
                 </div>
@@ -182,46 +180,25 @@
                 <!-- Tab Contents -->
                 <div class="tab-content">
                     <!-- Dashboard 1 Content (Loaded by default) -->
-                    <div id="dashboard1-content">
-                        {% comment %} <h4 class="mb-4">Dashboard 1: Library Overview</h4> {% endcomment %}
-                         <div id="dashboard-1" class="dashboard-tab">
-                            {% include "L01/Dashboard/dashboard1_content.html" %}
+                    <div id="dashboard1-content" class="dashboard-content">
+                        <div id="dashboard-1" class="dashboard-tab">
+                            {% comment %} {% include "L01/Dashboard/dashboard1_content.html" %} {% endcomment %}
+                               <div id="dashboard1-content"></div>
                         </div>
                     </div>
                     
                     <!-- Dashboard 2 Content (Loaded on click) -->
-                    <div id="dashboard2-content" style="display: none;">
-                        {% comment %} <h4 class="mb-4">Dashboard 2: Reports</h4> {% endcomment %}
-
-                        <!-- ADD THIS -->
-                        <div id="dashboard2-session-data"></div>
-
-                        <!-- Books container -->
+                    <div id="dashboard2-content" class="dashboard-content" style="display: none;">
                         <div id="books-container"></div>
                     </div>
-
                     
                     <!-- Dashboard 3 Content (Loaded on click) -->
-                    {% comment %} <div id="dashboard3-content" style="display: none;">
-                         <div id="dashboard-3" class="dashboard-tab d-none">
-                            {% include "L01/Dashboard/dashboard3_content.html" %}
-                        </div>
-                    </div> {% endcomment %}
-
-                    <div id="dashboard3-content" style="display: none;">
-                        <div id="dashboard-3" class="dashboard-tab d-none">
-                           
-                        </div>
+                    <div id="dashboard3-content" class="dashboard-content" style="display: none;">
                         <div id="membershiptype-container"></div>
                     </div>
                     
                     <!-- Dashboard 4 Content (Loaded on click) -->
-                    <div id="dashboard4-content" style="display: none;">
-                        {% comment %} <h4 class="mb-4">Dashboard 4: Settings</h4> {% endcomment %}
-                        {% comment %} <div class="dashboard-content" id="dashboard4-data">
-                            <!-- Data will be loaded via AJAX -->
-                        </div> {% endcomment %}
-                        <!-- Books container -->
+                    <div id="dashboard4-content" class="dashboard-content" style="display: none;">
                         <div id="memberBookRelation-container"></div>
                     </div>
                 </div>
@@ -238,15 +215,12 @@
             </div>
         </div>
     </body>
-
 {% endblock %}
 
 {% block extra_javascript %}
-
     {% include "bootstrap/partials/syntax-highlight.html" %}
 
     <!-- Bootstrap Bundle with Popper -->
-
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
@@ -270,233 +244,167 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    
     <script>
-        // Load Dashboard 1 on page load
+        // Initialize on page load
         $(document).ready(function() {
+            console.log("Page loaded, Dashboard 1 active");
+            updateLastUpdated(new Date().toLocaleString());
+            
+            // Load Dashboard 1 initially
             loadDashboard('1');
         });
+    </script>
+
+    <script>
+        // Track current dashboard and loaded dashboards
+        let currentDashboard = '1';
+        let loadedDashboards = {
+            '1': false,  // Dashboard 1 is pre-loaded
+            '2': false,
+            '3': false,
+            '4': false
+        };
         
-        function loadDashboard(dashboardId) {
-            debugger;
-            // Update active tab
+        // Initialize on page load
+        $(document).ready(function() {
+            console.log("Page loaded, Dashboard 1 active");
+            updateLastUpdated(new Date().toLocaleString());
+        });
+        
+        // Tab switching function
+        function switchTab(dashboardId) {
+            // If clicking the same tab, do nothing
+            if (currentDashboard === dashboardId) {
+                return;
+            }
+            
+            console.log(`Switching from Dashboard ${currentDashboard} to Dashboard ${dashboardId}`);
+            
+            // Update current dashboard
+            currentDashboard = dashboardId;
+            
+            // Update active tab visually
             updateActiveTab(dashboardId);
             
-            // Show loading
+            // Hide all dashboard contents
+            hideAllDashboards();
+            
+            // Check if dashboard is already loaded
+            if (loadedDashboards[dashboardId]) {
+                // Dashboard already loaded, just show it
+                showDashboard(dashboardId);
+                return;
+            }
+            
+            // Load new dashboard via AJAX
+            loadDashboard(dashboardId);
+        }
+        
+        function loadDashboard(dashboardId) {
+          //  console.log(`Loading Dashboard ${dashboardId} via AJAX`);
+            debugger;
+            // Show loading overlay
             showLoading(true);
             
-            // Hide all dashboard contents
-            $('[id$="-content"]').hide();
-            
-            // Show selected dashboard content
-            $(`#dashboard${dashboardId}-content`).show();
-            debugger;
-            // Load data via AJAX
+            // Make AJAX request
             $.ajax({
                 url: `/L01/dashboard/data/${dashboardId}/`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
-                    debugger;
-                    renderDashboardContent(dashboardId, data);
-                    updateLastUpdated(data.last_updated);
+                    console.log(`Dashboard ${dashboardId} data received:`, data);
+                    handleDashboardData(dashboardId, data);
+                    loadedDashboards[dashboardId] = true;
+                    showDashboard(dashboardId);
+                    updateLastUpdated(data.last_updated || new Date().toLocaleString());
                     showLoading(false);
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error loading dashboard:', error);
+                    console.error(`Error loading Dashboard ${dashboardId}:`, error);
                     showError(dashboardId, error);
                     showLoading(false);
                 }
             });
         }
-
-
         
-        function renderDashboardContent(dashboardId, data) {
+        function handleDashboardData(dashboardId, data) {
             debugger;
-            let content = '';
-            
-            if (dashboardId === '1') {
-                content = `
-                    <div class="alert alert-info">
-                        <h5><i class="bi bi-info-circle me-2"></i>${data.title}</h5>
-                        <p>${data.message}</p>
-                        <p class="mb-0">This is Dashboard 1 - Add your widgets and charts here.</p>
-                    </div>
+            switch(dashboardId) {
+                case '1':
+                    // Clear the container first
+                    $('#dashboard1-content').empty();
+                    // Load the HTML template
+                    if (data.html) {
+                        $('#dashboard1-content').html(data.html);
+                        // Now render the charts with the data
+                        if (window.renderDashboard1 && data.daily && data.eod) {
+                            renderDashboard1({
+                                daily: data.daily,
+                                eod: data.eod,
+                                start_date: data.start_date,
+                                end_date: data.end_date
+                            });
+                        }
+                    } else {
+                        $('#dashboard1-content').html('<div class="alert alert-warning">No analytics data available</div>');
+                    }
+                    break;
+                case '2':
+                    if (data.books_html) {
+                        $('#books-container').html(data.books_html);
+                    } else {
+                        $('#books-container').html('<div class="alert alert-warning">No library inventory data available</div>');
+                    }
+                    break;
                     
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5><i class="bi bi-calendar-check me-2"></i>Daily Statistics</h5>
-                                    <p class="text-muted">Placeholder for daily statistics</p>
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="h3 mb-0">0</div>
-                                            <small class="text-muted">Transactions</small>
-                                        </div>
-                                        <div>
-                                            <div class="h3 mb-0">0</div>
-                                            <small class="text-muted">Members</small>
-                                        </div>
-                                        <div>
-                                            <div class="h3 mb-0">0</div>
-                                            <small class="text-muted">Books</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5><i class="bi bi-clock-history me-2"></i>Recent Activity</h5>
-                                    <p class="text-muted">Placeholder for recent activity</p>
-                                    <div class="list-group">
-                                        <div class="list-group-item border-0">
-                                            <span class="status-indicator status-active"></span>
-                                            No recent activity
-                                        </div>
-                                        <div class="list-group-item border-0">
-                                            <span class="status-indicator status-inactive"></span>
-                                            System is ready
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                case '3':
+                    if (data.books_html) {
+                        $('#membershiptype-container').html(data.books_html);
+                    } else {
+                        $('#membershiptype-container').html('<div class="alert alert-warning">No members & subscriptions data available</div>');
+                    }
+                    break;
+                    
+                case '4':
+                    if (data.books_html) {
+                        $('#memberBookRelation-container').html(data.books_html);
+                    } else {
+                        $('#memberBookRelation-container').html('<div class="alert alert-warning">No analytics data available</div>');
+                    }
+                    break;
+                    
+                default:
+                    break;
             }
-            else if (dashboardId === '2') {
-                debugger;
-
-                // Show dashboard
-                $('#dashboard2-content').show();
-
-                // ✅ DEFINE sessionContent
-                let sessionContent = `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5>Session Data</h5>
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <strong>Library Code:</strong> ${data.session_data.library_code}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Username:</strong> ${data.session_data.username}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>User ID:</strong> ${data.session_data.user_id}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Role ID:</strong> ${data.session_data.role_id}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                `;
-
-                // Session info
-                // $('#dashboard2-session-data').html(sessionContent);
-
-                // Books partial
-                if (data.books_html) {
-                    $('#books-container').html(data.books_html);
-                } else {
-                    console.error('books_html missing');
-                }
-
-                console.log('Dashboard 2 rendered');
-            }
-            else if (dashboardId === '4') {
-                debugger;
-
-                // Show dashboard
-                $('#dashboard4-content').show();
-
-                // ✅ DEFINE sessionContent
-                let sessionContent = `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5>Session Data</h5>
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <strong>Library Code:</strong> ${data.session_data.library_code}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Username:</strong> ${data.session_data.username}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>User ID:</strong> ${data.session_data.user_id}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Role ID:</strong> ${data.session_data.role_id}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                `;
-
-                // Books partial
-                if (data.books_html) {
-                    $('#memberBookRelation-container').html(data.books_html);
-                } else {
-                    console.error('books_html missing');
-                }
-
-                console.log('Dashboard 4 rendered');
-            }
-            else if (dashboardId === '3') {
-                debugger;
-
-                // Show dashboard
-                $('#dashboard3-content').show();
-
-                // ✅ DEFINE sessionContent
-                let sessionContent = `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5>Session Data</h5>
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <strong>Library Code:</strong> ${data.session_data.library_code}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Username:</strong> ${data.session_data.username}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>User ID:</strong> ${data.session_data.user_id}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Role ID:</strong> ${data.session_data.role_id}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                `;
-
-                // Session info
-                // $('#dashboard2-session-data').html(sessionContent);
-
-                // Books partial
-                if (data.books_html) {
-                    $('#membershiptype-container').html(data.books_html);
-                } else {
-                    console.error('books_html missing');
-                }
-
-                console.log('Dashboard 3 rendered');
-            }
+        }
+        
+        function showDashboard(dashboardId) {
+            // Hide all dashboards first
+            hideAllDashboards();
             
-            $(`#dashboard${dashboardId}-data`).html(content);
+            // Show selected dashboard
+            $(`#dashboard${dashboardId}-content`).show();
+            
+            console.log(`Dashboard ${dashboardId} is now visible`);
+        }
+        
+        function hideAllDashboards() {
+            // Hide all dashboard contents
+            for (let i = 1; i <= 4; i++) {
+                $(`#dashboard${i}-content`).hide();
+            }
         }
         
         function updateActiveTab(dashboardId) {
+            console.log(`Updating active tab to Dashboard ${dashboardId}`);
+            
             // Remove active class from all tabs
             $('.tab-btn').removeClass('active');
+            
             // Add active class to clicked tab
-            $(`.tab-btn:contains("Dashboard ${dashboardId}")`).addClass('active');
+            // Get the button based on its position (Dashboard 1 = first button, etc.)
+            $('.tab-btn').eq(parseInt(dashboardId) - 1).addClass('active');
         }
         
         function showLoading(show) {
@@ -512,22 +420,22 @@
         }
         
         function showError(dashboardId, error) {
-            $(`#dashboard${dashboardId}-data`).html(`
+            // Show error in the dashboard content area
+            $(`#dashboard${dashboardId}-content`).html(`
                 <div class="alert alert-danger">
                     <h5><i class="bi bi-exclamation-triangle me-2"></i>Error Loading Dashboard</h5>
-                    <p>Failed to load data for Dashboard ${dashboardId}.</p>
+                    <p>Failed to load dashboard data.</p>
                     <p class="mb-0">Error: ${error}</p>
                 </div>
-                <button class="btn btn-primary mt-3" onclick="loadDashboard('${dashboardId}')">
-                    <i class="bi bi-arrow-clockwise me-2"></i>Try Again
+                <button class="btn btn-primary mt-3" onclick="retryLoad(${dashboardId})">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Retry Loading
                 </button>
             `);
         }
         
-        function refreshDashboard(dashboardId) {
+        function retryLoad(dashboardId) {
+            loadedDashboards[dashboardId] = false;
             loadDashboard(dashboardId);
         }
-
     </script>
-
 {% endblock %}

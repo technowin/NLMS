@@ -28,7 +28,7 @@ urlpatterns = [
     
      path("kiosk_display/", kiosk_display, name="kiosk_display"),
     path("visit_library_Cate_ebooks/", visit_Library_ebook_catalogue, name="visit_library_Cate_ebooks"),
-    path("get_ebooks_by_subject/", get_ebooks_by_subject, name="get_ebooks_by_subject"),
+    
      path("view_ebook_detail/", view_ebook_detail, name="view_ebook_detail"),
      # Both URLs use the same function
     path('kiosk_competitive_exam_type/', kiosk_competitive_exam_type, name='kiosk_competitive_exam_type'),
@@ -66,6 +66,10 @@ urlpatterns = [
     path('view_book_detail/', view_book_detail, name='view_book_detail'),
     path('get_books_by_subject', get_books_by_subject, name='get_books_by_subject'),
     path('submit_review', submit_review, name='submit_review'),
+    path('visit_Library_catalogue_kiosk', visit_Library_catalogue_kiosk, name='visit_Library_catalogue_kiosk'),
+    path('get_books_by_subject_kiosk', get_books_by_subject_kiosk, name='get_books_by_subject_kiosk'),
+    path('view_book_detail_kiosk/', view_book_detail_kiosk, name='view_book_detail_kiosk'),
+    path('get_ebooks_by_subject', get_ebooks_by_subject, name='get_ebooks_by_subject'),
     
     # Palaves work
     path('library_master_index_individual', library_master_index_individual, name='library_master_index_individual'), 
