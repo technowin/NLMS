@@ -74,7 +74,7 @@
 
         <form id="membershipForm" method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="hidden" name="membership_id" value="{{ membership.id }}">
+            <input type="hidden" name="membership_id" id="membershipDetailId" value="{{ membership.id }}">
             <!-- USER ID -->
             <div class="form-section mb-3 mt-3 row">
                 <div class="col-md-6 position-relative">
@@ -396,17 +396,11 @@
                         </div>
 
                         <!-- From Date -->
-                        {% comment %} <div class="col-md-6">
-                            <label class="form-label">
-                                Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" >
-                        </div> {% endcomment %}
                         <div class="col-md-6">
                             <label class="form-label">
                                 Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
                             </label>
-                            <input type="date" id="fromDate" name="fromDate" class="form-control">
+                            <input type="date" id="fromDate" name="fromDate" value="{{ membership.from_date|date:'Y-m-d' }}" class="form-control">
                             <div id="durationNote" style="display:none; color:red; font-weight:bold; margin-top:5px;"></div>
                         </div>
 
@@ -1202,16 +1196,43 @@
             resetMembershipForm();
 
             if (encId) {
+
+                var membershipDetailId = $("#membershipDetailId").val();
+
                 $.ajax({
                     url: "{% url 'L01:get_membership_details' %}",
                     type: "GET",
-                    data: { id: encId },
+                    data: { 
+                        id: encId,
+                        membership_detail_id: membershipDetailId 
+                    },
                     success: function (response) {
                         debugger;
                         if (response.success) {
                             baseDeposit = parseFloat(response.data.deposit) || 0;
                             baseEntryFees = parseFloat(response.data.entry_fees) || 0;
                             baseSubscription = parseFloat(response.data.subscription_fees) || 0;
+
+                            basefrom_date = response.data1.from_date;
+                            basemembership_duration = response.data1.membership_duration;
+                            baseto_date = response.data1.to_date;
+
+                            if (basefrom_date) {
+                                $("#fromDate").val(basefrom_date);
+                                $("#months").val(basemembership_duration);
+
+                                // NEW: only use backend to_date if available
+                                if (baseto_date) {
+                                    $("#toDate").val(baseto_date);
+                                    $("#fyCapNote").hide();
+                                } else {
+                                    updateToDate();
+                                }
+
+                                $("#depositInput").val(parseFloat(response.data1.deposit) || 0);
+                                $("#entryFeesInput").val(parseFloat(response.data1.entry_fees) || 0);
+                                $("#subscriptionInput").val(parseFloat(response.data1.subscription) || 0);
+                            }
 
                             $("#depositCell").text(formatCurrency(baseDeposit));
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
@@ -1248,7 +1269,13 @@
                                 $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
                                 $("#months, #toDate").closest(".col-md-6").show();
                                 $("#durationNote").hide();
-                                updateToDate();
+                                //updateToDate();
+                                if (baseto_date) {
+                                    $("#toDate").val(baseto_date);
+                                    $("#fyCapNote").hide();
+                                } else {
+                                    updateToDate();
+                                }
                             }
                         } else {
                             $("#membershipDetails, #membershipDuration, #amountFields").hide();
@@ -1269,6 +1296,7 @@
         });
 
         $("#fromDate").on("change", function() {
+            debugger;
             updateToDate();
         });
 
@@ -1380,6 +1408,11 @@
             baseDeposit = 0;
             baseEntryFees = 0;
             baseSubscription = 0;
+        }
+
+        let initialMembershipType = $("#membershiptype").val();
+        if (initialMembershipType) {
+            $("#membershiptype").trigger("change");
         }
 
     });

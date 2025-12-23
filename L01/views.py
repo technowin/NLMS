@@ -124,7 +124,8 @@ def index(request):
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
                     "remarks": book.remarks or "",
                     "description": book.remarks or "No description available.",
-                    "ebook_available": book.ebook_available or "No"   # ⭐ ADDED LINE
+                    "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
+                    "encrypted_cat_ref_num": enc(str(book.cat_ref_num)),
                 }
                 for book in books
             ]
@@ -186,7 +187,8 @@ def index(request):
                     "last_page_photo": book.last_page_photo if book.last_page_photo else "",
                     "remarks": book.remarks or "",
                     "description": book.remarks or "No description available.",
-                    "ebook_available": book.ebook_available or "No"   # ⭐ ADDED LINE
+                    "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
+                    "encrypted_cat_ref_num": enc(str(book.cat_ref_num)),
                 }
                 for book in books
             ]
@@ -224,7 +226,7 @@ def index(request):
         'library_name': library_name,
         'MEDIA_URL': settings.MEDIA_URL
     })
-
+    
 def check_user_id(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -280,17 +282,52 @@ def get_pincodes(request):
 def get_membership_details(request):
     if request.method == "GET":
         enc_id = request.GET.get("id")
+        membership_detail_id = request.GET.get("membership_detail_id", "")
         try:
-            membership_id = enc_id  # decrypt back to int
-            membership = MembershipMaster.objects.get(id=membership_id, isactive=1)
+            membership_id = enc_id  # decrypt if needed
+
+            membership = MembershipMaster.objects.get(
+                id=membership_id,
+                isactive=1
+            )
+
+            membershipDetails = MembershipDetails.objects.filter(
+                id=membership_detail_id,
+                isactive=1
+            ).first()
+
             data = {
                 "deposit": str(membership.deposit),
                 "entry_fees": str(membership.entry_fees),
                 "subscription_fees": str(membership.subscription_fees),
             }
-            return JsonResponse({"success": True, "data": data})
+
+            data1 = {
+                "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
+                "membership_duration": membershipDetails.membership_duration,
+                "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
+                
+                "deposit": str(membershipDetails.deposit) if membershipDetails and membershipDetails.deposit else str(membership.deposit),  
+                "entry_fees": str(membershipDetails.entry_fees) if membershipDetails and membershipDetails.entry_fees else str(membership.entry_fees),
+                "subscription": str(membershipDetails.subscription) if membershipDetails and membershipDetails.subscription else str(membership.subscription),
+            }
+
+            return JsonResponse({
+                "success": True,
+                "data": data,
+                "data1": data1
+            })
+
         except MembershipMaster.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Membership not found"})
+            return JsonResponse({
+                "success": False,
+                "error": "Membership not found"
+            })
+        except Exception as e: 
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            })
 
 # membership form filled by member first time registeration
 

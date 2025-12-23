@@ -658,7 +658,8 @@
              data-remarks="{{ book.remarks }}"
              data-language="{{ book.language }}"
              data-description="{{ book.description }}"
-             data-ebook_available="{{ book.ebook_available }}">
+             data-ebook_available="{{ book.ebook_available }}"
+             data-encrypted_cat_ref_num="{{ book.encrypted_cat_ref_num}}">
     </div>
 
 {% elif book.last_page_photo %}
@@ -679,7 +680,8 @@
              data-remarks="{{ book.remarks }}"
              data-language="{{ book.language }}"
              data-description="{{ book.description }}"
-             data-ebook_available="{{ book.ebook_available }}">
+             data-ebook_available="{{ book.ebook_available }}"
+             data-encrypted_cat_ref_num="{{ book.encrypted_cat_ref_num}}">
     </div>
 
 {% else %}
@@ -727,7 +729,8 @@
    data-remarks="{{ book.remarks }}"
    data-language="{{ book.language }}"
    data-description="{{ book.description }}"
-   data-ebook_available="{{ book.ebook_available }}">
+   data-ebook_available="{{ book.ebook_available }}"
+   data-encrypted_cat_ref_num="{{ book.encrypted_cat_ref_num}}">
     {{ book.title }}
 </p>
 <br>
@@ -1055,6 +1058,9 @@
 
         document.getElementById("zoomEncryptedPdfUrl").textContent =
             img.getAttribute("data-encrypted-pdf-url") || "";
+        
+             document.getElementById("zoomEncryptedCatRefNum").textContent =
+            img.getAttribute("data-encrypted-cat-ref-num") || "";
 
     }
 
@@ -1127,21 +1133,20 @@ function toggleDescription(btn) {
     }
 }
 </script>
-
 <script>
 function zoomRedirectLogin() {
     let ebookId = document.getElementById("zoomEncryptedEbookId").textContent;
     let pdfUrl = document.getElementById("zoomEncryptedPdfUrl").textContent;
-
+    let catRefNum = document.getElementById("zoomEncryptedCatRefNum").textContent;
+{% comment %} 
     if (!ebookId || !pdfUrl) {
         alert("Access error: Ebook details missing.");
         return;
-    }
+    } {% endcomment %}
 
     // Same redirect logic as card button
     window.location.href = `/Login?ebook_id=${ebookId}&pdf_url=${pdfUrl}`;
 }
 </script>
-
 
 {% endblock %}

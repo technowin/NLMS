@@ -324,9 +324,9 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td id="depositCell"></td>
-                                    <td id="entryFeesCell"></td>
-                                    <td id="subscriptionCell"></td>
+                                    <td>{{ membership.membership.deposit }}</td>
+                                    <td>{{ membership.membership.entry_fees }}</td>
+                                    <td>{{ membership.membership.subscription_fees }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -368,18 +368,15 @@
                         <div class="mb-3 row">
                             <div class="col-md-4">
                                 <label class="form-label">Deposit / ठेव</label>
-                                <input type="text" id="depositInput"class="form-control" readonly>
-                                <input type="hidden" id="depositHidden" name="deposit" value="{{ membership.deposit }}">
+                                <input type="text" id="depositInput"class="form-control" value="{{ membership.deposit }}" readonly>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
-                                <input type="text" id="entryFeesInput"class="form-control" readonly>
-                                <input type="hidden" id="entryFeesHidden" name="entry_fees" value="{{ membership.entry_fees }}">
+                                <input type="text" id="entryFeesInput"class="form-control" value="{{ membership.entry_fees }}" readonly>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Subscription / सभासद फी</label>
-                                <input type="text" id="subscriptionInput"class="form-control" readonly>
-                                <input type="hidden" id="subscriptionHidden" name="subscription" value="{{ membership.subscription }}">
+                                <input type="text" id="subscriptionInput"class="form-control" value="{{ membership.subscription }}" readonly>
                             </div>
                         </div>
                     </div>
