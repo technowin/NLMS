@@ -6,6 +6,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from weasyprint import CSS
 from administration.models import *
+from openpyxl import Workbook
 from django.conf import settings
 import traceback
 from django.contrib import messages

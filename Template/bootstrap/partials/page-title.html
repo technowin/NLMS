@@ -4,13 +4,13 @@
         <div class="page-title-box">
             <div class="page-title-right">
                 <ol class="breadcrumb m-0">
-                    {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">NLMS</a></li> {% endcomment %}
+                    {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">HOME</a></li> {% endcomment %}
                       <li class="breadcrumb-item">
                         {% if role_id == '3' %}
-                            <a href="{% url 'L01:membership_dashboard' %}">NLMS</a>
+                            <a href="{% url 'L01:membership_dashboard' %}">HOME</a>
                         {% else %}
-                            {% comment %} <a href="{% url 'LMS_Dashboard' %}">NLMS</a> {% endcomment %}
-                             <a href="{% url 'L01:dashboard' %}">NLMS</a>
+                            {% comment %} <a href="{% url 'LMS_Dashboard' %}">HOME</a> {% endcomment %}
+                             <a href="{% url 'L01:dashboard' %}">HOME</a>
                             
                         {% endif %}
                     </li>
