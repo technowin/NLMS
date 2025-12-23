@@ -7504,7 +7504,9 @@ def get_dashboard1_data(request):
     return JsonResponse({
         "html": html,
         "daily": daily,
-        "eod": eod
+        "eod": eod,
+        "start_date":start_date,
+        "end_date":end_date
     })
 
 def get_transaction_details(request):
@@ -9484,7 +9486,7 @@ def get_dashboard_detail_data(detail_type, from_date, to_date):
 
 
 def export_excel(data, detail_type):
-    wb = Workbook()
+    wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Report"
 
