@@ -6192,7 +6192,9 @@ class ExportStockReportView(View):
             pdf_data = html.write_pdf(stylesheets=[css])
             
         except Exception as e:
-            print(f"WeasyPrint generation error: {e}")
+            tb = traceback.extract_tb(e.__traceback__)
+            fun = tb[0].name if tb else 'library_list'
+            callproc("stp_error_log", [fun, str(e), ''])
             # Fallback to basic HTML to PDF without CSS
             try:
                 html = HTML(string=html_content)
