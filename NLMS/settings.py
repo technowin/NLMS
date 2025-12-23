@@ -27,8 +27,8 @@ ALLOWED_HOSTS = ['3.111.76.175']
 # ALLOWED_HOSTS = ['127.0.0.1']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-# DEBUG = True   
+# DEBUG = False
+DEBUG = True   
 
 # SITE_URL = "http://localhost:8000"  # for local development
 SITE_URL = "http://3.111.76.175"  # for production development
