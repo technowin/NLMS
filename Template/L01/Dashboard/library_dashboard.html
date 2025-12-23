@@ -16,125 +16,335 @@
         <style>
             :root {
                 --primary-color: #4e73df;
+                --primary-light: rgba(78, 115, 223, 0.1);
                 --success-color: #1cc88a;
+                --success-light: rgba(28, 200, 138, 0.1);
                 --info-color: #36b9cc;
+                --info-light: rgba(54, 185, 204, 0.1);
                 --warning-color: #f6c23e;
+                --warning-light: rgba(246, 194, 62, 0.1);
                 --danger-color: #e74a3b;
+                --danger-light: rgba(231, 74, 59, 0.1);
+                --dark-color: #5a5c69;
+                --light-color: #f8f9fc;
+                --border-color: #e3e6f0;
+                --shadow-color: rgba(58, 59, 69, 0.15);
+                --transition-speed: 0.3s;
             }
             
-            body {
-                background-color: #f8f9fc;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                margin: 0;
-                padding: 0;
-            }
+           
             
             .dashboard-container {
-                padding: 20px;
-                max-width: 1400px;
+                padding: 30px;
+                max-width: 1600px;
                 margin: 0 auto;
             }
             
             .header-section {
-                background: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-                margin-bottom: 20px;
+                background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+                padding: 25px 30px;
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(78, 115, 223, 0.1);
+                margin-bottom: 30px;
+                border: 1px solid rgba(78, 115, 223, 0.1);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .header-section::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 5px;
+                height: 100%;
+            }
+            
+            .header-section h1 {
+                color: var(--primary-color);
+                font-weight: 700;
+                font-size: 2rem;
+                margin-bottom: 10px;
+            }
+            
+            .header-section h1 i {
+                background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            
+            .header-section p {
+                color: var(--dark-color);
+                font-size: 1.1rem;
+                margin-bottom: 0;
             }
             
             .tabs-container {
                 background: white;
-                border-radius: 10px;
-                box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+                border-radius: 20px;
+                box-shadow: 0 15px 35px var(--shadow-color);
                 overflow: hidden;
+                border: 1px solid var(--border-color);
             }
             
             .dashboard-tabs {
                 display: flex;
-                background: #f8f9fc;
-                border-bottom: 1px solid #e3e6f0;
+                background: linear-gradient(to right, #f8f9fc, #ffffff);
+                border-bottom: 2px solid var(--border-color);
+                padding: 0 20px;
             }
             
             .tab-btn {
-                padding: 15px 30px;
+                padding: 20px 35px;
                 background: none;
                 border: none;
-                color: #6e707e;
-                font-weight: 500;
+                color: var(--dark-color);
+                font-weight: 600;
+                font-size: 1.1rem;
                 cursor: pointer;
-                transition: all 0.3s;
+                transition: all var(--transition-speed) ease;
                 position: relative;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-right: 5px;
+            }
+            
+            .tab-btn i {
+                font-size: 1.3rem;
+                transition: transform var(--transition-speed) ease;
             }
             
             .tab-btn:hover {
                 color: var(--primary-color);
-                background-color: rgba(78, 115, 223, 0.05);
+                background-color: var(--primary-light);
+            }
+            
+            .tab-btn:hover i {
+                transform: translateY(-2px);
             }
             
             .tab-btn.active {
                 color: var(--primary-color);
                 background-color: white;
+                box-shadow: 0 -5px 15px rgba(78, 115, 223, 0.1);
+                border-radius: 15px 15px 0 0;
             }
             
-            .tab-btn.active::after {
+            .tab-btn.active::before {
                 content: '';
                 position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 3px;
-                background-color: var(--primary-color);
-            }
-            
-            .tab-content {
-                padding: 30px;
-                min-height: 500px;
-            }
-            
-            .loading-overlay {
-                display: none;
-                position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
-                bottom: 0;
-                background: rgba(255, 255, 255, 0.8);
-                z-index: 1000;
-                justify-content: center;
-                align-items: center;
+                height: 3px;
+                background: linear-gradient(to right, var(--primary-color), var(--info-color));
+            }
+            
+            .tab-btn.active i {
+                background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                transform: scale(1.1);
+            }
+            
+            .tab-content {
+                padding: 40px;
+                min-height: 600px;
+                background: white;
             }
             
             .dashboard-content {
                 padding: 20px;
+                animation: fadeIn 0.5s ease;
             }
             
-            .card {
-                border: none;
-                box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-                margin-bottom: 20px;
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
             
             .last-updated {
-                font-size: 0.85rem;
-                color: #858796;
-                text-align: right;
-            }
-            
-            .status-indicator {
+                font-size: 0.9rem;
+                color: var(--dark-color);
+                background: var(--light-color);
+                padding: 10px 20px;
+                border-radius: 50px;
                 display: inline-block;
-                width: 10px;
-                height: 10px;
-                border-radius: 50%;
-                margin-right: 8px;
+                border: 1px solid var(--border-color);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             }
             
-            .status-active {
-                background-color: var(--success-color);
+            /* Book Loader Styles */
+            .book-loader {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(5px);
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                z-index: 9999;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease;
             }
             
-            .status-inactive {
-                background-color: var(--danger-color);
+            .book-loader.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .book,
+            .book__pg-shadow,
+            .book__pg {
+                animation: cover 5s ease-in-out infinite;
+            }
+
+            .book {
+                background-color: hsl(268, 90%, 65%);
+                border-radius: 0.5em;
+                box-shadow: 0 0.5em 1em hsla(0, 0%, 0%, 0.3),
+                            0 0 0 0.25em hsl(278, 100%, 57%) inset;
+                padding: 0.5em;
+                perspective: 37.5em;
+                position: relative;
+                width: 10em;
+                height: 8em;
+                transform-style: preserve-3d;
+            }
+
+            .book__pg-shadow,
+            .book__pg {
+                position: absolute;
+                left: 0.5em;
+                width: calc(50% - 0.5em);
+            }
+
+            .book__pg-shadow {
+                animation-name: shadow;
+                background-image: linear-gradient(-45deg, transparent 50%, hsla(0, 0%, 0%, 0.3) 50%);
+                filter: blur(0.25em);
+                top: calc(100% - 0.5em);
+                height: 4.75em;
+                transform: scaleY(0);
+                transform-origin: 100% 0%;
+            }
+
+            .book__pg {
+                animation-name: pg1;
+                background-color: hsl(223, 10%, 100%);
+                background-image: linear-gradient(90deg, transparent 87.5%, hsl(223, 10%, 90%));
+                height: calc(100% - 1em);
+                transform-origin: 100% 50%;
+            }
+
+            .book__pg--2,
+            .book__pg--3,
+            .book__pg--4 {
+                background-image: repeating-linear-gradient(hsl(223, 10%, 10%) 0 0.125em, transparent 0.125em 0.5em),
+                                 linear-gradient(90deg, transparent 87.5%, hsl(223, 10%, 90%));
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: 3em 5em, 100% 100%;
+            }
+
+            .book__pg--2 { animation-name: pg2; }
+            .book__pg--3 { animation-name: pg3; }
+            .book__pg--4 { animation-name: pg4; }
+            .book__pg--5 { animation-name: pg5; }
+
+            @keyframes cover {
+                from, 5%, 45%, 55%, 95%, to { background-color: hsl(278, 84%, 67%); }
+                10%, 40%, 60%, 90% { background-color: hsl(271, 90%, 45%); }
+            }
+            
+            @keyframes shadow {
+                from, 10.01%, 20.01%, 30.01%, 40.01% { transform: scaleY(0) rotateY(0); }
+                5%, 15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95% { transform: scaleY(0.2) rotateY(90deg); }
+                10%, 20%, 30%, 40%, 50%, to { transform: scaleY(0) rotateY(180deg); }
+            }
+            
+            @keyframes pg1 {
+                0%, 5% { transform: rotateY(0deg); }
+                15%, 20% { transform: rotateY(-180deg); }
+                25%, to { transform: rotateY(-180deg); }
+            }
+            
+            @keyframes pg2 {
+                0%, 15% { transform: rotateY(0deg); }
+                25%, 30% { transform: rotateY(-180deg); }
+                35%, to { transform: rotateY(-180deg); }
+            }
+            
+            @keyframes pg3 {
+                0%, 25% { transform: rotateY(0deg); }
+                35%, 40% { transform: rotateY(-180deg); }
+                45%, to { transform: rotateY(-180deg); }
+            }
+            
+            @keyframes pg4 {
+                0%, 35% { transform: rotateY(0deg); }
+                45%, 50% { transform: rotateY(-180deg); }
+                55%, to { transform: rotateY(-180deg); }
+            }
+            
+            @keyframes pg5 {
+                0%, 45% { transform: rotateY(0deg); }
+                55%, 60% { transform: rotateY(-180deg); }
+                65%, to { transform: rotateY(-180deg); }
+            }
+            
+            /* Responsive adjustments */
+            @media (max-width: 992px) {
+                .dashboard-container {
+                    padding: 20px;
+                }
+                
+                .dashboard-tabs {
+                    flex-wrap: wrap;
+                    justify-content: center;
+                }
+                
+                .tab-btn {
+                    padding: 15px 25px;
+                    font-size: 1rem;
+                }
+                
+                .tab-content {
+                    padding: 25px;
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .header-section {
+                    padding: 20px;
+                    text-align: center;
+                }
+                
+                .header-section h1 {
+                    font-size: 1.5rem;
+                }
+                
+                .tab-btn {
+                    padding: 12px 20px;
+                    font-size: 0.9rem;
+                }
+                
+                .tab-btn i {
+                    font-size: 1.1rem;
+                }
             }
         </style>
     </head>
@@ -142,19 +352,32 @@
 
 {% block content %}
     <body>
-        <div class="">
+        <!-- Book Loader -->
+        <div class="book-loader" id="loaderOverlay">
+            <div class="book">
+                <div class="book__pg-shadow"></div>
+                <div class="book__pg"></div>
+                <div class="book__pg book__pg--2"></div>
+                <div class="book__pg book__pg--3"></div>
+                <div class="book__pg book__pg--4"></div>
+                <div class="book__pg book__pg--5"></div>
+            </div>
+        </div>
+        
+        <div class="dashboard-container">
             <!-- Header -->
             <div class="header-section">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h1 class="h3 mb-2 text-gray-800">
-                            <i class="bi bi-speedometer2 me-2"></i>Library Management System
+                        <h1 class="mb-3">
+                            <i class="bi bi-journal-bookmark me-3"></i>Library Management Dashboard
                         </h1>
-                        <p class="text-muted mb-0">Multi-tab dashboard for library operations</p>
+                        <p class="text-muted mb-0">Comprehensive dashboard for monitoring library operations and analytics</p>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 text-md-end">
                         <div class="last-updated" id="last-updated">
-                            Last updated: --
+                            <i class="bi bi-clock-history me-2"></i>
+                            <span>Last updated: --</span>
                         </div>
                     </div>
                 </div>
@@ -163,28 +386,29 @@
             <!-- Dashboard Tabs -->
             <div class="tabs-container">
                 <div class="dashboard-tabs">
-                    <button class="tab-btn active" onclick="switchTab('1')">
-                        <i class="bi bi-house-door me-2"></i>movement of books
+                    <button class="tab-btn active" data-tab="1">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <span>Movement of Books</span>
                     </button>
-                    <button class="tab-btn" onclick="switchTab('2')">
-                        <i class="bi bi-file-text me-2"></i>library inventory & stock
+                    <button class="tab-btn" data-tab="2">
+                        <i class="bi bi-bookshelf"></i>
+                        <span>Library Inventory & Stock</span>
                     </button>
-                    <button class="tab-btn" onclick="switchTab('3')">
-                        <i class="bi bi-graph-up me-2"></i>members & subscriptions
+                    <button class="tab-btn" data-tab="3">
+                        <i class="bi bi-people"></i>
+                        <span>Members & Subscriptions</span>
                     </button>
-                    <button class="tab-btn" onclick="switchTab('4')">
-                        <i class="bi bi-gear me-2"></i>analytics & insights
+                    <button class="tab-btn" data-tab="4">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Analytics & Insights</span>
                     </button>
                 </div>
-                
+
                 <!-- Tab Contents -->
                 <div class="tab-content">
                     <!-- Dashboard 1 Content (Loaded by default) -->
                     <div id="dashboard1-content" class="dashboard-content">
-                        <div id="dashboard-1" class="dashboard-tab">
-                            {% comment %} {% include "L01/Dashboard/dashboard1_content.html" %} {% endcomment %}
-                               <div id="dashboard1-content"></div>
-                        </div>
+                        <div id="transaction-container"></div>
                     </div>
                     
                     <!-- Dashboard 2 Content (Loaded on click) -->
@@ -201,16 +425,6 @@
                     <div id="dashboard4-content" class="dashboard-content" style="display: none;">
                         <div id="memberBookRelation-container"></div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Loading Overlay -->
-            <div class="loading-overlay" id="loadingOverlay">
-                <div class="text-center">
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-3">Loading dashboard data...</p>
                 </div>
             </div>
         </div>
@@ -244,198 +458,186 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    
-    <script>
-        // Initialize on page load
-        $(document).ready(function() {
-            console.log("Page loaded, Dashboard 1 active");
-            updateLastUpdated(new Date().toLocaleString());
-            
-            // Load Dashboard 1 initially
-            loadDashboard('1');
-        });
-    </script>
+   <script>
+$(document).ready(function () {
+    // Load tab 1 on page load
+    loadTab(1);
+    $('.dashboard-content').hide();
+    $('#dashboard1-content').show();
 
-    <script>
-        // Track current dashboard and loaded dashboards
-        let currentDashboard = '1';
-        let loadedDashboards = {
-            '1': false,  // Dashboard 1 is pre-loaded
-            '2': false,
-            '3': false,
-            '4': false
-        };
-        
-        // Initialize on page load
-        $(document).ready(function() {
-            console.log("Page loaded, Dashboard 1 active");
-            updateLastUpdated(new Date().toLocaleString());
-        });
-        
-        // Tab switching function
-        function switchTab(dashboardId) {
-            // If clicking the same tab, do nothing
-            if (currentDashboard === dashboardId) {
-                return;
-            }
-            
-            console.log(`Switching from Dashboard ${currentDashboard} to Dashboard ${dashboardId}`);
-            
-            // Update current dashboard
-            currentDashboard = dashboardId;
-            
-            // Update active tab visually
-            updateActiveTab(dashboardId);
-            
-            // Hide all dashboard contents
-            hideAllDashboards();
-            
-            // Check if dashboard is already loaded
-            if (loadedDashboards[dashboardId]) {
-                // Dashboard already loaded, just show it
-                showDashboard(dashboardId);
-                return;
-            }
-            
-            // Load new dashboard via AJAX
-            loadDashboard(dashboardId);
-        }
-        
-        function loadDashboard(dashboardId) {
-          //  console.log(`Loading Dashboard ${dashboardId} via AJAX`);
-            debugger;
-            // Show loading overlay
-            showLoading(true);
-            
-            // Make AJAX request
-            $.ajax({
-                url: `/L01/dashboard/data/${dashboardId}/`,
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    console.log(`Dashboard ${dashboardId} data received:`, data);
-                    handleDashboardData(dashboardId, data);
-                    loadedDashboards[dashboardId] = true;
-                    showDashboard(dashboardId);
-                    updateLastUpdated(data.last_updated || new Date().toLocaleString());
-                    showLoading(false);
-                },
-                error: function(xhr, status, error) {
-                    console.error(`Error loading Dashboard ${dashboardId}:`, error);
-                    showError(dashboardId, error);
-                    showLoading(false);
-                }
+    // Tab click
+    $('.tab-btn').on('click', function () {
+        const tabId = $(this).data('tab');
+
+        // Activate tab button
+        $('.tab-btn').removeClass('active');
+        $(this).addClass('active');
+
+        // Hide all tabs first
+        $('.dashboard-content').hide();
+
+        // Show only clicked tab
+        $(`#dashboard${tabId}-content`).show();
+
+        // ALWAYS HIT AJAX
+        loadTab(tabId);
+    });
+});
+
+/* =========================
+   AJAX TAB LOADER
+========================= */
+function loadTab(tabId) {
+    showLoading(true);
+
+    $.ajax({
+        url: "{% url 'L01:dashboard_data' 0 %}".replace('/0/', `/${tabId}/`),
+        type: "GET",
+        dataType: "json",
+        cache: false,
+        success: function (data) {
+            handleDashboardData(tabId.toString(), data);
+        },
+        error: function (xhr, status, error) {
+            console.error('AJAX Error:', status, error, xhr.responseText);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load dashboard data',
+                confirmButtonColor: 'var(--primary-color)'
             });
+        },
+        complete: function () {
+            showLoading(false);
         }
-        
-        function handleDashboardData(dashboardId, data) {
-            debugger;
-            switch(dashboardId) {
-                case '1':
-                    // Clear the container first
-                    $('#dashboard1-content').empty();
-                    // Load the HTML template
-                    if (data.html) {
-                        $('#dashboard1-content').html(data.html);
-                        // Now render the charts with the data
-                        if (window.renderDashboard1 && data.daily && data.eod) {
-                            renderDashboard1({
-                                daily: data.daily,
-                                eod: data.eod,
-                                start_date: data.start_date,
-                                end_date: data.end_date
-                            });
-                        }
-                    } else {
-                        $('#dashboard1-content').html('<div class="alert alert-warning">No analytics data available</div>');
-                    }
-                    break;
-                case '2':
-                    if (data.books_html) {
-                        $('#books-container').html(data.books_html);
-                    } else {
-                        $('#books-container').html('<div class="alert alert-warning">No library inventory data available</div>');
-                    }
-                    break;
-                    
-                case '3':
-                    if (data.books_html) {
-                        $('#membershiptype-container').html(data.books_html);
-                    } else {
-                        $('#membershiptype-container').html('<div class="alert alert-warning">No members & subscriptions data available</div>');
-                    }
-                    break;
-                    
-                case '4':
-                    if (data.books_html) {
-                        $('#memberBookRelation-container').html(data.books_html);
-                    } else {
-                        $('#memberBookRelation-container').html('<div class="alert alert-warning">No analytics data available</div>');
-                    }
-                    break;
-                    
-                default:
-                    break;
-            }
-        }
-        
-        function showDashboard(dashboardId) {
-            // Hide all dashboards first
-            hideAllDashboards();
-            
-            // Show selected dashboard
-            $(`#dashboard${dashboardId}-content`).show();
-            
-            console.log(`Dashboard ${dashboardId} is now visible`);
-        }
-        
-        function hideAllDashboards() {
-            // Hide all dashboard contents
-            for (let i = 1; i <= 4; i++) {
-                $(`#dashboard${i}-content`).hide();
-            }
-        }
-        
-        function updateActiveTab(dashboardId) {
-            console.log(`Updating active tab to Dashboard ${dashboardId}`);
-            
-            // Remove active class from all tabs
-            $('.tab-btn').removeClass('active');
-            
-            // Add active class to clicked tab
-            // Get the button based on its position (Dashboard 1 = first button, etc.)
-            $('.tab-btn').eq(parseInt(dashboardId) - 1).addClass('active');
-        }
-        
-        function showLoading(show) {
-            if (show) {
-                $('#loadingOverlay').css('display', 'flex');
+    });
+}
+
+/* =========================
+   HANDLE DASHBOARD DATA
+========================= */
+function handleDashboardData(dashboardId, data) {
+    switch(dashboardId) {
+        case '1':
+            $('#dashboard1-content').empty();
+            if (data.html) {
+                $('#dashboard1-content').html(data.html);
+                if (typeof renderDashboard1 === 'function' && data.daily && data.eod) {
+                    renderDashboard1({
+                        daily: data.daily,
+                        eod: data.eod,
+                        start_date: data.start_date,
+                        end_date: data.end_date
+                    });
+                }
             } else {
-                $('#loadingOverlay').hide();
+                $('#dashboard1-content').html('<div class="alert alert-warning">No analytics data available</div>');
             }
-        }
-        
-        function updateLastUpdated(timestamp) {
-            $('#last-updated').text(`Last updated: ${timestamp}`);
-        }
-        
-        function showError(dashboardId, error) {
-            // Show error in the dashboard content area
-            $(`#dashboard${dashboardId}-content`).html(`
-                <div class="alert alert-danger">
-                    <h5><i class="bi bi-exclamation-triangle me-2"></i>Error Loading Dashboard</h5>
-                    <p>Failed to load dashboard data.</p>
-                    <p class="mb-0">Error: ${error}</p>
-                </div>
-                <button class="btn btn-primary mt-3" onclick="retryLoad(${dashboardId})">
-                    <i class="bi bi-arrow-clockwise me-2"></i>Retry Loading
-                </button>
-            `);
-        }
-        
-        function retryLoad(dashboardId) {
-            loadedDashboards[dashboardId] = false;
-            loadDashboard(dashboardId);
-        }
-    </script>
+            break;
+
+        case '2':
+            if (data.books_html) {
+                $('#books-container').html(data.books_html);
+                $('#subjectTabs .nav-link').off('click').on('click', function () {
+                    $('#subjectTabs .nav-link').removeClass('active');
+                    $(this).addClass('active');
+                    const subjectId = $(this).data('subject');
+                    if (typeof loadCatalogData === 'function') {
+                        loadCatalogData(subjectId);
+                    }
+                });
+
+                if (window.catalogChart && typeof window.catalogChart.destroy === 'function') {
+                    window.catalogChart.destroy();
+                    window.catalogChart = null;
+                }
+
+                if (typeof initChart === 'function') {
+                    initChart();
+                }
+
+                const activeSubjectId = $('#subjectTabs .nav-link.active').data('subject') || "";
+                if (typeof loadCatalogData === 'function') {
+                    loadCatalogData(activeSubjectId);
+                }
+
+                if (typeof bootstrap !== 'undefined') {
+                    detailModalInstance = new bootstrap.Modal(
+                        document.getElementById('detailModal'),
+                        { backdrop: 'static', keyboard: true }
+                    );
+                }
+            } else {
+                $('#books-container').html('<div class="alert alert-warning">No library inventory data available</div>');
+            }
+            break;
+
+        case '3':
+            if (data.books_html) {
+                if (window.membershipBarChart && typeof window.membershipBarChart.destroy === 'function') {
+                    window.membershipBarChart.destroy();
+                    window.membershipBarChart = null;
+                }
+                if (window.membershipPieChart && typeof window.membershipPieChart.destroy === 'function') {
+                    window.membershipPieChart.destroy();
+                    window.membershipPieChart = null;
+                }
+
+                $('#membershiptype-container').html(data.books_html);
+
+                if (typeof loadDashboard3Data === 'function') {
+                    loadDashboard3Data();
+                }
+            } else {
+                $('#membershiptype-container').html('<div class="alert alert-warning">No members & subscriptions data available</div>');
+            }
+            break;
+
+        case '4':
+            if (data.books_html) {
+                $('#memberBookRelation-container').html(data.books_html);
+
+                const chartIds = [
+                    'topBooksChart', 'subjectChart', 'monthlyTrendChart', 
+                    'topReadersChart', 'ratingChart'
+                ];
+                chartIds.forEach(id => {
+                    if (charts[id] && typeof charts[id].destroy === 'function') {
+                        charts[id].destroy();
+                        charts[id] = null;
+                    }
+                });
+
+                if (drillTable) {
+                    drillTable.destroy();
+                    $('#drillDataTable').empty().append('<thead><tr id="drillTableHead"></tr></thead><tbody id="drillTableBody"></tbody>');
+                    drillTable = null;
+                }
+
+                if (typeof loadDashboard === 'function') {
+                    loadDashboard();
+                }
+            } else {
+                $('#memberBookRelation-container').html('<div class="alert alert-warning">No analytics data available</div>');
+            }
+            break;
+
+        default:
+            console.warn('Unknown dashboard ID:', dashboardId);
+            break;
+    }
+}
+
+/* =========================
+   LOADER
+========================= */
+function showLoading(show) {
+    const loader = document.getElementById('loaderOverlay');
+    if (show) {
+        loader.classList.add('active');
+    } else {
+        loader.classList.remove('active');
+    }
+}
+</script>
 {% endblock %}

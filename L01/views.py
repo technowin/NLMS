@@ -2,6 +2,8 @@
 from django.http import HttpResponse
 from L01.models import *
 from prompt_toolkit import HTML
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from weasyprint import CSS
 from administration.models import *
 from django.conf import settings
@@ -9374,3 +9376,215 @@ def view_book_detail_kiosk(request):
         print("Error in view_book_detail_kiosk:", e)
         messages.error(request, "Unable to load book details.")
         return redirect("L01/visit_Library_catalogue_kiosk")
+    
+def get_dashboard_detail_data(detail_type, from_date, to_date):
+    from django.db.models.functions import Coalesce
+    """
+    Returns list of dicts for dashboard export
+    Compatible with Excel & Marathi PDF
+    """
+    from django.utils.timezone import now
+    today = now().date()
+    # ---------------- BOOK TRANSACTIONS ----------------
+    if detail_type == 'issued':
+        qs = CirculationTransaction.objects.filter(
+            issue_date__range=[from_date, to_date],
+        )
+
+    elif detail_type == 'returned':
+        qs = CirculationTransaction.objects.filter(
+            return_date__range=[from_date, to_date],
+        )
+
+
+    # ---------------- DUE BOOKS ----------------
+    elif detail_type == 'due':
+        qs = CirculationTransaction.objects.filter(
+            due_date__lt=today,                 # due date passed
+            return_date__isnull=True,            # not returned yet
+            due_date__range=[from_date, to_date] # filter by selected range
+        )
+
+    # ---------------- DAMAGED / LOST BOOKS ----------------
+    elif detail_type == 'damaged':
+        qs = CirculationTransaction.objects.filter(
+            return_condition__id__in=[18, 19],   # 18 = damaged, 19 = lost
+            return_date__range=[from_date, to_date]
+        )
+
+    # ---------- RETURN BOOK DATA ----------
+    if detail_type in ['issued', 'returned', 'due', 'damaged']:
+        return list(
+            qs.select_related('member', 'catalog')
+              .annotate(
+                  member_code=F('membership_code'),
+                  member_name=Concat(
+                      Coalesce('member__first_name_mar', Value('')),
+                      Value(' '),
+                      Coalesce('member__middle_name_mar', Value('')),
+                      Value(' '),
+                      Coalesce('member__last_name_mar', Value('')),
+                      output_field=CharField()
+                  ),
+                  book_name=F('catalog__title'),
+                  book_barcode=Coalesce('barcode', Value('', output_field=CharField())),
+                  date=Coalesce(
+                      'issue_date',
+                      'return_date',
+                      'due_date'
+                  )
+              )
+              .values(
+                  'member_code',
+                  'member_name',
+                  'book_name',
+                  'book_barcode',
+                  'date'
+              )
+        )
+
+    # ---------------- PAYMENTS ----------------
+    elif detail_type in ['monthly', 'total', 'fine', 'book_fine']:
+        amount_field_map = {
+            'monthly': 'monthly_subscription_amount',
+            'total': 'total_subscription_amount',
+            'fine': 'fine_amount',
+            'book_fine': 'book_fine_amount'
+        }
+
+        amount_field = amount_field_map.get(detail_type)
+
+        return list(
+            PaymentDetails.objects.filter(
+                payment_date__range=[from_date, to_date]
+            )
+            .exclude(**{f"{amount_field}__isnull": True})
+            .select_related('membership')
+            .annotate(
+                member_code=F('membership_code'),
+                member_name=Concat(
+                      Coalesce('membership__first_name_mar', Value('')),
+                      Value(' '),
+                      Coalesce('membership__middle_name_mar', Value('')),
+                      Value(' '),
+                      Coalesce('membership__last_name_mar', Value('')),
+                      output_field=CharField()
+                  ),
+                amount=F(amount_field)
+            )
+            .values(
+                'member_code',
+                'member_name',
+                'payment_date',
+                'amount'
+            )
+        )
+
+    return []
+
+
+def export_excel(data, detail_type):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Report"
+
+    if detail_type in ['monthly','total','fine','book_fine']:
+        headers = ['Member Code', 'Member Name', 'Payment Date', 'Amount']
+    else:
+        headers = ['Member Code', 'Member Name', 'Book Title', 'Book Barcode', 'Date']
+
+    ws.append(headers)
+
+    for row in data:
+        ws.append(list(row.values()))
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="dashboard_report.xlsx"'
+    wb.save(response)
+    return response
+
+def dashboard_export(request):
+    detail_type = request.GET.get('detail_type')
+    from_date = request.GET.get('from_date')
+    to_date = request.GET.get('to_date')
+    format_type = request.GET.get('format')
+
+    data = get_dashboard_detail_data(detail_type, from_date, to_date)
+
+    if format_type == 'excel':
+        return export_excel(data, detail_type)
+
+    elif format_type == 'pdf':
+        return export_pdf(data, detail_type)
+
+    return HttpResponse("Invalid request", status=400)
+
+from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate
+from reportlab.pdfgen import canvas
+
+def export_pdf(data, detail_type):
+    buffer = io.BytesIO()
+
+    # Register Marathi font
+    font_path = os.path.join(
+        settings.BASE_DIR,
+        "static/fonts/NotoSansDevanagari-Regular.ttf"
+    )
+    pdfmetrics.registerFont(TTFont("NotoSansDeva", font_path))
+
+    # Simple document (no header/footer)
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=20,
+        leftMargin=20,
+        topMargin=20,
+        bottomMargin=20
+    )
+
+    # Marathi paragraph style
+    marathi_style = ParagraphStyle(
+        name="Marathi",
+        fontName="NotoSansDeva",
+        fontSize=9,
+        leading=12
+    )
+
+    # Table headers
+    if detail_type in ['monthly', 'total', 'fine', 'book_fine']:
+        headers = ['सभासद कोड', 'सभासद नाव', 'देयक तारीख', 'रक्कम']
+    else:
+        headers = ['सभासद कोड', 'सभासद नाव', 'पुस्तक नाव', 'बारकोड', 'तारीख']
+
+    table_data = [[Paragraph(h, marathi_style) for h in headers]]
+
+    # Table rows
+    for row in data:
+        table_data.append([
+            Paragraph(str(v) if v else '-', marathi_style)
+            for v in row.values()
+        ])
+
+    # Create table
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), 'NotoSansDeva'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    # Build PDF
+    doc.build([table])
+
+    # Response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+    response.write(buffer.getvalue())
+    buffer.close()
+
+    return response

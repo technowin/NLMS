@@ -2,13 +2,61 @@
 {% load static %}
 {% block content %}
 
-    {% comment %} Slider {% endcomment %}
+    <section class="hero-section" id="hero-english"
+        style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
 
-    <section class="hero-section" id="hero-english" style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
         <div class="hero-overlay">
             <div class="hero-text">
+
                 <h1>Welcome to NMMC Library</h1>
                 <p>Explore our libraries and discover knowledge.</p>
+
+                <form method="POST" action="{% url 'service_redirect' %}">
+                    {% csrf_token %}
+
+                    <!-- SEARCHABLE DROPDOWN -->
+                    <div class="dropdown-container hero-dropdown">
+                        <div class="custom-dropdown">
+
+                            <div class="input-wrapper">
+                                <i class="fas fa-search search-icon"></i>
+
+                                <!-- USER TYPES HERE -->
+                                <input type="text"
+                                    class="dropdown-search dropdown-input"
+                                    placeholder="Search Library..."
+                                    autocomplete="off"
+                                    required>
+                            </div>
+
+                            <!-- REAL VALUE SENT TO BACKEND -->
+                            <input type="hidden" name="library_code" class="library-code">
+
+                            <ul class="dropdown-options">
+                                {% for library in library_details %}
+                                    <li data-value="{{ library.libraries }}">
+                                        📚 {{ library.library_name }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="hero-buttons mt-3">
+                        <button type="submit" class="hero-btn primary-btn">
+                            View More
+                        </button>
+
+                        <button type="submit"
+                            formaction="{% url 'set_library_session_and_login' %}"
+                            class="hero-btn secondary-btn">Login
+                        </button>
+                    </div>
+
+                </form>
+
             </div>
         </div>
     </section>
@@ -18,10 +66,58 @@
             <div class="hero-text">
                 <h1 id="hero-title">नवी मुंबई महानगरपालिका ग्रंथालयात आपले स्वागत आहे</h1>
                 <p id="hero-subtitle">आमच्या ग्रंथालयांचा शोध घ्या आणि ज्ञान मिळवा.</p>
+
+                <form method="POST" action="{% url 'service_redirect' %}">
+                    {% csrf_token %}
+
+                    <!-- SEARCHABLE DROPDOWN -->
+                    <div class="dropdown-container hero-dropdown">
+                        <div class="custom-dropdown">
+
+                            <div class="input-wrapper">
+                                <i class="fas fa-search search-icon"></i>
+
+                                <!-- USER TYPES HERE -->
+                                <input type="text"
+                                    class="dropdown-search dropdown-input"
+                                    placeholder="Search Library..."
+                                    autocomplete="off"
+                                    required>
+                            </div>
+
+                            <!-- REAL VALUE SENT TO BACKEND -->
+                            <input type="hidden" name="library_code" class="library-code">
+
+                            <ul class="dropdown-options">
+                                {% for library in library_details %}
+                                    <li data-value="{{ library.libraries }}">
+                                        📚 {{ library.library_name }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="hero-buttons mt-3">
+                        <button type="submit" class="hero-btn primary-btn">
+                            View More
+                        </button>
+
+                        <button type="submit"
+                            formaction="{% url 'set_library_session_and_login' %}"
+                            class="hero-btn secondary-btn">Login
+                        </button>
+                    </div>
+
+                </form>
+
+
             </div>
+
         </div>
     </section>
-
 
     <section id="libraries-section">
         <div class="container">
@@ -38,35 +134,6 @@
                     <button id="list-view-btn" title="List View">
                         <i class="fas fa-list"></i>
                     </button>
-                </div>
-            </div>
-
-            <!-- 🔽 Library Dropdown -->
-            {% comment %} <div class="dropdown-container">
-                <div class="custom-dropdown">
-                    <div class="dropdown-selected">🔍 Search Library</div>
-                    <ul class="dropdown-options">
-                        {% for library in library_details %}
-                            <li data-value="{{ library.library_code }}">📚 {{ library.library_name }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div> {% endcomment %}
-
-            <div class="dropdown-container">
-                <div class="custom-dropdown">
-                    <!-- Wrap input with an icon -->
-                    <div class="input-wrapper">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="dropdownSearch" placeholder="Search Library..." class="dropdown-input">
-                    </div>
-
-                    <!-- Dropdown list -->
-                    <ul id="dropdownOptions" class="dropdown-options">
-                    {% for library in library_details %}
-                        <li data-value="{{ library.libraries }}">📚 {{ library.library_name }}</li>
-                    {% endfor %}
-                    </ul>
                 </div>
             </div>
 
@@ -103,55 +170,54 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const input = document.getElementById("dropdownSearch");
-            const options = document.getElementById("dropdownOptions");
-            const items = options.getElementsByTagName("li");
-            const form = document.getElementById("libraryForm");
-            const hiddenInput = document.getElementById("libraryCodeInput");
 
-            // Show all options when input is focused
-            input.addEventListener("focus", function () {
-                options.style.display = "block";
-            });
+            document.querySelectorAll(".custom-dropdown").forEach(dropdown => {
 
-            // Filter while typing
-            input.addEventListener("input", function () {
-                let filter = input.value.toLowerCase();
-                let hasMatch = false;
+                const input = dropdown.querySelector(".dropdown-search");
+                const options = dropdown.querySelector(".dropdown-options");
+                const hiddenInput = dropdown.querySelector(".library-code");
+                const items = options.querySelectorAll("li");
 
-                for (let i = 0; i < items.length; i++) {
-                    let txtValue = items[i].textContent || items[i].innerText;
-                    if (txtValue.toLowerCase().indexOf(filter) > -1) {
-                        items[i].style.display = "";
-                        hasMatch = true;
-                    } else {
-                        items[i].style.display = "none";
-                    }
-                }
-
-                if (!hasMatch) {
-                    options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
-                }
-            });
-
-            // Select option & auto-submit form
-            for (let i = 0; i < items.length; i++) {
-                items[i].addEventListener("click", function () {
-                    const selectedValue = this.getAttribute("data-value");
-                    input.value = this.textContent.trim();
-
-                    // Set hidden input & submit form
-                    hiddenInput.value = selectedValue;
-                    form.submit();
+                input.addEventListener("focus", () => {
+                    options.style.display = "block";
                 });
-            }
 
-            // Close dropdown when clicking outside
-            document.addEventListener("click", function (e) {
-                if (!e.target.closest(".custom-dropdown")) {
-                    options.style.display = "none";
-                }
+                input.addEventListener("input", () => {
+                    const filter = input.value.toLowerCase();
+                    hiddenInput.value = ""; // ❗ clear invalid selection
+
+                    let hasMatch = false;
+                    items.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(filter)) {
+                            item.style.display = "";
+                            hasMatch = true;
+                        } else {
+                            item.style.display = "none";
+                        }
+                    });
+
+                    if (!hasMatch) {
+                        options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
+                    }
+                });
+
+                items.forEach(item => {
+                    item.addEventListener("click", () => {
+                        input.value = item.textContent.trim();
+                        hiddenInput.value = item.dataset.value; // ✅ THIS FIXES BACKEND
+                        options.style.display = "none";
+                    });
+                });
+
+                document.addEventListener("click", (e) => {
+                    if (!dropdown.contains(e.target)) {
+                        options.style.display = "none";
+                    }
+                });
+
             });
+
         });
     </script>
 
@@ -200,5 +266,15 @@
             });
         </script>
     {% endif %}
+
+    <script>
+        // Set hidden input when user clicks a library
+        document.querySelectorAll('.dropdown-options li').forEach(li => {
+            li.addEventListener('click', function() {
+                document.querySelector('.library-code').value = this.dataset.value;
+            });
+        });
+
+    </script>
 
 {% endblock %}

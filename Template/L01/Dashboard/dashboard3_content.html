@@ -124,73 +124,43 @@
 
         /* ================= BAR CHART ================= */
         function renderMembershipBarChart(data) {
+    if (!data || !data.length) return;
 
-            const labels = data.map(d => d.membership_type);
-            const values = data.map(d => d.member_count);
+    const labels = data.map(d => d.membership_type);
+    const values = data.map(d => d.member_count);
 
-            if (membershipBarChart) membershipBarChart.destroy();
+    // Destroy previous chart if exists
+    if (membershipBarChart) {
+        membershipBarChart.destroy();
+        membershipBarChart = null;  // reset variable
+    }
 
-            membershipBarChart = new Chart(
-                document.getElementById('membershipBarChart'),
-                {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: values,
-                            backgroundColor: [
-                                '#4e73df','#1cc88a','#36b9cc',
-                                '#f6c23e','#e74a3b','#858796','#20c997'
-                            ],
-                            borderRadius: 8,
-                            barThickness: 35
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
-                    }
-                }
-            );
-        }
+    const ctx = document.getElementById('membershipBarChart').getContext('2d');
+    membershipBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data: values, backgroundColor: ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#858796','#20c997'], borderRadius: 8, barThickness: 35 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+    });
+}
 
-        /* ================= PIE CHART ================= */
-        function renderMembershipPieChart(data) {
+function renderMembershipPieChart(data) {
+    if (!data || !data.length) return;
 
-            const labels = data.map(d => d.membership_type);
-            const values = data.map(d => d.percent);
+    const labels = data.map(d => d.membership_type);
+    const values = data.map(d => d.percent);
 
-            if (membershipPieChart) membershipPieChart.destroy();
+    if (membershipPieChart) {
+        membershipPieChart.destroy();
+        membershipPieChart = null;  // reset variable
+    }
 
-            membershipPieChart = new Chart(
-                document.getElementById('membershipPieChart'),
-                {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: values,
-                            backgroundColor: [
-                                '#4e73df','#1cc88a','#36b9cc',
-                                '#f6c23e','#e74a3b','#858796','#20c997'
-                            ]
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => `${ctx.label}: ${ctx.raw}%`
-                                }
-                            }
-                        }
-                    }
-                }
-            );
-        }
+    const ctx = document.getElementById('membershipPieChart').getContext('2d');
+    membershipPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: { labels, datasets:[{ data: values, backgroundColor: ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#858796','#20c997'] }] },
+        options: { plugins:{ legend:{ position:'bottom' }, tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${ctx.raw}%` } } } }
+    });
+}
 
         /* ================= TABLE ================= */
         function renderMembershipTable(data) {

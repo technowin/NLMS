@@ -94,18 +94,11 @@
                 <!-- Left: logo + title -->
                 <div class="brand-left" id="brand-english" style="display: none;">
                     <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="NMMC Logo" class="logo">
-                    {% comment %} <h1 class="header-title">NMMC Library</h1> {% endcomment %}
                     <div class="brand-text">
                         <h1 class="header-title">Navi Mumbai Muncipal Corporation</h1>
                         <h2 class="sub-title">Public Library</h2>
                     </div>
                 </div> 
-
-                <!-- Marathi Brand (default visible) -->
-                {% comment %} <div class="brand-left" id="brand-marathi">
-                    <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo">
-                    <h1 class="header-title">नवी मुंबई महानगरपालिका ग्रंथालय</h1>
-                </div> {% endcomment %}
 
                 <div class="brand-left" id="brand-marathi">
                     <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo">
@@ -199,7 +192,7 @@
                         </ul>
                     </li>
 
-                    {% if request.session.library_db == "L01" %}
+                    {% comment %} {% if request.session.library_db == "L01" %}
                         <li style="list-style:none; text-decoration:none;">
                             <a href="{% url 'Login' %}" class="no-hover-underline" 
                                 style="background:#f0c040; padding:8px 18px; border-radius:20px;
@@ -208,7 +201,7 @@
                                 लॉगिन
                             </a>
                         </li>
-                    {% endif %}
+                    {% endif %} {% endcomment %}
 
                     <li class="icon">
                         <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>

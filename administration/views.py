@@ -55,3 +55,22 @@ def service_redirect(request):
         return redirect("L02:index")
     else:
         return redirect("default:library_list")
+
+def set_library_session_and_login(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            library_code = request.POST.get('library_code')
+            library_code_decrypted = dec(library_code)
+            if library_code:
+                request.session['library_db'] = library_code_decrypted
+        return redirect('Login')  # actual login page
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("Meta_Index")

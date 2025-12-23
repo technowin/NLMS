@@ -659,7 +659,7 @@
              data-language="{{ book.language }}"
              data-description="{{ book.description }}"
              data-ebook_available="{{ book.ebook_available }}"
-             data-encrypted_cat_ref_num="{{ book.encrypted_cat_ref_num}}">
+             data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
     </div>
 
 {% elif book.last_page_photo %}
@@ -681,7 +681,7 @@
              data-language="{{ book.language }}"
              data-description="{{ book.description }}"
              data-ebook_available="{{ book.ebook_available }}"
-             data-encrypted_cat_ref_num="{{ book.encrypted_cat_ref_num}}">
+             data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
     </div>
 
 {% else %}
@@ -713,26 +713,26 @@
 
         <!-- ⭐ Title -->
        <!-- ⭐ Title (click opens modal) -->
-<p class="book-title"
-   style="margin-bottom: 4px; cursor:pointer;"
-   onclick="zoomFromTitle(this)"
-   data-image="{% if book.front_page_photo %}{{ MEDIA_URL }}{{ book.front_page_photo }}{% endif %}"
-   data-author="{{ book.author }}"
-   data-title="{{ book.title }}"
-   data-subtitle="{{ book.subtitle }}"
-   data-publisher="{{ book.publisher }}"
-   data-isbn_issn="{{ book.isbn_issn }}"
-   data-edition="{{ book.edition }}"
-   data-publication_place="{{ book.publication_place }}"
-   data-year_of_publication="{{ book.year_of_publication }}"
-   data-pages="{{ book.pages }}"
-   data-remarks="{{ book.remarks }}"
-   data-language="{{ book.language }}"
-   data-description="{{ book.description }}"
-   data-ebook_available="{{ book.ebook_available }}"
-   data-encrypted_cat_ref_num="{{ book.encrypted_cat_ref_num}}">
-    {{ book.title }}
-</p>
+        <p class="book-title"
+        style="margin-bottom: 4px; cursor:pointer;"
+        onclick="zoomFromTitle(this)"
+        data-image="{% if book.front_page_photo %}{{ MEDIA_URL }}{{ book.front_page_photo }}{% endif %}"
+        data-author="{{ book.author }}"
+        data-title="{{ book.title }}"
+        data-subtitle="{{ book.subtitle }}"
+        data-publisher="{{ book.publisher }}"
+        data-isbn_issn="{{ book.isbn_issn }}"
+        data-edition="{{ book.edition }}"
+        data-publication_place="{{ book.publication_place }}"
+        data-year_of_publication="{{ book.year_of_publication }}"
+        data-pages="{{ book.pages }}"
+        data-remarks="{{ book.remarks }}"
+        data-language="{{ book.language }}"
+        data-description="{{ book.description }}"
+        data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}"
+        data-ebook_available="{{ book.ebook_available }}">
+            {{ book.title }}
+        </p>
 <br>
 
 
@@ -893,7 +893,9 @@
                     data-remarks="{{ ebook.eb_remarks }}"
                     data-language="{{ ebook.eb_language }}"
                     data-description="{{ ebook.eb_description }}"
-                    data-ebook_available="{{ ebook.eb_ebook_available }}">
+                    data-ebook_available="{{ ebook.eb_ebook_available }}"
+                    data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                    data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
                         {{ ebook.eb_title }}
                     </p>
 
@@ -966,6 +968,7 @@
             <p><strong>Description:</strong> <span id="zoomBookDescription"></span></p>
             <span id="zoomEncryptedEbookId" style="display:none;"></span>
             <span id="zoomEncryptedPdfUrl" style="display:none;"></span>
+            <span id="zoomEncryptedCatRefNum" style="display:none;"></span>
             <button class="login-btn" onclick="zoomRedirectLogin()">Login to Access</button>
 
 
@@ -1058,8 +1061,8 @@
 
         document.getElementById("zoomEncryptedPdfUrl").textContent =
             img.getAttribute("data-encrypted-pdf-url") || "";
-        
-             document.getElementById("zoomEncryptedCatRefNum").textContent =
+
+        document.getElementById("zoomEncryptedCatRefNum").textContent =
             img.getAttribute("data-encrypted-cat-ref-num") || "";
 
     }
@@ -1080,7 +1083,7 @@
 
 <script>
 function zoomFromTitle(el) {
-
+    debugger;
     // Set image
     const imageSrc = el.dataset.image || '';
     document.getElementById("zoomedImage").src = imageSrc;
@@ -1099,8 +1102,19 @@ function zoomFromTitle(el) {
     document.getElementById("zoomBookRemarks").innerText = el.dataset.remarks || '';
     document.getElementById("zoomBookDescription").innerText = el.dataset.description || '';
 
+       // Set encrypted ebook_id + pdf_url
+    document.getElementById("zoomEncryptedEbookId").textContent =
+            el.getAttribute("data-encrypted-ebook-id") || "";
+
+    document.getElementById("zoomEncryptedPdfUrl").textContent =
+            el.getAttribute("data-encrypted-pdf-url") || "";
+
+    document.getElementById("zoomEncryptedCatRefNum").textContent =
+            el.getAttribute("data-encrypted-cat-ref-num") || "";
+
     // Show modal
     document.getElementById("zoomModal").style.display = "flex";
+    
 }
 
 // Close modal
@@ -1133,8 +1147,10 @@ function toggleDescription(btn) {
     }
 }
 </script>
+
 <script>
 function zoomRedirectLogin() {
+    debugger;
     let ebookId = document.getElementById("zoomEncryptedEbookId").textContent;
     let pdfUrl = document.getElementById("zoomEncryptedPdfUrl").textContent;
     let catRefNum = document.getElementById("zoomEncryptedCatRefNum").textContent;
@@ -1145,8 +1161,9 @@ function zoomRedirectLogin() {
     } {% endcomment %}
 
     // Same redirect logic as card button
-    window.location.href = `/Login?ebook_id=${ebookId}&pdf_url=${pdfUrl}`;
+    window.location.href = `/Login?ebook_id=${ebookId}&pdf_url=${pdfUrl}&cat_ref_num=${catRefNum}`;
 }
 </script>
+
 
 {% endblock %}

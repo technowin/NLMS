@@ -133,6 +133,7 @@ urlpatterns = [
     path('dashboard/details/', get_transaction_details, name='transaction_details'),
     path('get_dashboard3_data', get_dashboard3_data, name='get_dashboard3_data'),
     path('get_membershipType_data_dashboardThree', get_membershipType_data_dashboardThree, name='get_membershipType_data_dashboardThree'),
+    path('dashboard/export/', dashboard_export, name='dashboard_export'),
 
 
 ]

@@ -41,6 +41,7 @@
 </div>
 
 <!-- ================= TRANSACTION MODAL ================= -->
+<!-- ================= TRANSACTION MODAL ================= -->
 <div class="modal fade" id="transactionModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -50,15 +51,15 @@
             </div>
             <div class="modal-body">
                 <div class="d-flex justify-content-end mb-3 gap-2">
-                    <button class="btn btn-success btn-sm" id="excelBtn">Excel</button>
-                    <button class="btn btn-danger btn-sm" id="pdfBtn">PDF</button>
+                    <button class="btn btn-success btn-sm" id="excelBtn">Download Excel</button>
+                    <button class="btn btn-danger btn-sm" id="pdfBtn">Download PDF</button>
                 </div>
+                <!-- REMOVE STATIC DATA - ONLY KEEP THE TABLE ELEMENT -->
                 <table id="transaction-table" class="table table-bordered table-striped w-100"></table>
             </div>
         </div>
     </div>
 </div>
-
 <script>
 let dailyChart, eodChart, transactionTable, currentLabel, currentDetailType;
 
@@ -411,6 +412,9 @@ function reloadDashboard1FromParent() {
     const fromDate = $('#from_date').val();
     const toDate = $('#to_date').val();
     
+    // Debug: Check if showLoading function exists
+    console.log('showLoading function exists:', typeof showLoading === 'function');
+    
     // Build URL with filter parameters
     let url = `/L01/dashboard/data/1/`;
     if (fromDate && toDate) {
@@ -419,7 +423,12 @@ function reloadDashboard1FromParent() {
     
     // Show loading overlay
     if (typeof showLoading === 'function') {
+        console.log('Showing loader...');
         showLoading(true);
+    } else {
+        // Fallback if showLoading is not defined
+        console.warn('showLoading function not found, using fallback');
+        $('#loaderOverlay').addClass('active');
     }
     
     // Load Dashboard 1 with filters
@@ -428,23 +437,63 @@ function reloadDashboard1FromParent() {
         type: 'GET',
         dataType: 'json',
         success: function(data) {
-            if (typeof handleDashboardData === 'function') {
-                handleDashboardData('1', data);
-                updateLastUpdated(data.last_updated || new Date().toLocaleString());
+            console.log('Dashboard data loaded successfully');
+            
+            try {
+                // Try to handle the data
+                if (typeof handleDashboardData === 'function') {
+                    handleDashboardData('1', data);
+                } else {
+                    console.warn('handleDashboardData function not found');
+                    // Fallback: Directly update the container
+                    if (data.html) {
+                        $('#dashboard1-content').html(data.html);
+                    }
+                }
+                
+                // Update timestamp if available
+                if (data.last_updated) {
+                    updateLastUpdated(data.last_updated);
+                }
+                
+            } catch (error) {
+                console.error('Error in handleDashboardData:', error);
+                alert('Error processing dashboard data: ' + error.message);
             }
-            if (typeof showLoading === 'function') {
-                showLoading(false);
-            }
+            
         },
         error: function(xhr, status, error) {
-            console.error('Error reloading dashboard:', error);
-            alert('Error loading dashboard data');
+            console.error('AJAX Error reloading dashboard:', status, error, xhr.responseText);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load dashboard data. Please try again.',
+                confirmButtonColor: 'var(--primary-color)'
+            });
+        },
+        complete: function() {
+            console.log('AJAX request complete, hiding loader...');
+            
+            // ALWAYS hide loader in complete callback (runs after success/error)
             if (typeof showLoading === 'function') {
                 showLoading(false);
+            } else {
+                // Fallback
+                $('#loaderOverlay').removeClass('active');
             }
+            
+            // Double-check after a short delay (in case of async operations)
+            setTimeout(() => {
+                if ($('#loaderOverlay').hasClass('active')) {
+                    console.warn('Loader still active after timeout, forcing hide');
+                    $('#loaderOverlay').removeClass('active');
+                }
+            }, 1000); // 1 second delay
         }
     });
 }
+
+// Helper function to update last updated timestamp
 
 // Initialize date inputs with today's date
 $(document).ready(function() {
@@ -452,4 +501,33 @@ $(document).ready(function() {
     $('#from_date').val(today);
     $('#to_date').val(today);
 });
+</script>
+
+<script>
+$('#excelBtn').on('click', function () {
+    downloadReport('excel');
+});
+
+$('#pdfBtn').on('click', function () {
+    downloadReport('pdf');
+});
+
+function downloadReport(format) {
+    if (!currentDetailType) {
+        alert('No data type selected');
+        return;
+    }
+
+    const fromDate = $('#from_date').val();
+    const toDate = $('#to_date').val();
+
+    const url = `/L01/dashboard/export/?` +
+        `detail_type=${currentDetailType}` +
+        `&from_date=${fromDate}` +
+        `&to_date=${toDate}` +
+        `&format=${format}`;
+
+    // IMPORTANT: normal redirect to force download
+    window.location.href = url;
+}
 </script>

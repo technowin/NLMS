@@ -143,7 +143,7 @@ def Login(request):
 
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
-        cat_ref_num = dec(encrypted_cat_ref_num) if encrypted_cat_ref_num else None
+        # cat_ref_num = encrypted_cat_ref_num if encrypted_cat_ref_num else None
 
         # ------------------------------------------
         # Database alias (static for L01)
@@ -184,7 +184,7 @@ def Login(request):
         if membership_id == 8:
 
             # Practitioner trying to access Ebook or restricted catalog
-            if ebook_id or pdf_url or cat_ref_num:
+            if ebook_id or pdf_url or encrypted_cat_ref_num:
                 messages.error(
                     request,
                     "This section is not available for Practitioner Branch (अभ्यासिका शाखा)"
@@ -213,8 +213,8 @@ def Login(request):
                 final_pdf_url = request.build_absolute_uri(file_url)
                 
                 request.session["open_pdf_url"] = final_pdf_url
-            if cat_ref_num:
-                return redirect(f"/{library_code}/book_info_login/?cat_ref_num={cat_ref_num}")
+            if encrypted_cat_ref_num:
+                return redirect(f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}")
 
             request.session.set_expiry(0)
             return redirect("L01:membership_dashboard")
@@ -238,8 +238,6 @@ def Login(request):
     else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
-
-
 
 def logoutView(request):
     library_code = request.session.get('library_db', None)

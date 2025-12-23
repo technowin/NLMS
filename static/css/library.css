@@ -397,7 +397,7 @@ footer a:hover {
 .hero-section {
     background-size: cover;
     background-position: center;
-    height: 700px;
+    height: 750px;
     position: relative;
 }
 
@@ -413,7 +413,8 @@ footer a:hover {
     align-items: flex-start;   /* start at top */
     justify-content: center;
     text-align: center;
-    padding-top: 450px; /* push text down on large screens */
+    /* padding-top: 450px;  */
+    padding-top: 400px; /* push text down on large screens */
     padding-left: 20px;
     padding-right: 20px;
 }
@@ -1196,4 +1197,74 @@ footer a:hover {
         width: 100%; /* full-width button for mobile */
         border-radius: 0.5rem;
     }
+}
+.hero-dropdown {
+    max-width: 420px;
+    margin: 18px auto 12px;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+/* Shared button */
+.hero-btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+/* Primary */
+.primary-btn {
+    background-color: #333399;
+    color: #ffffff;
+}
+
+.primary-btn:hover {
+    background-color: #2b2b85;
+}
+
+/* Secondary */
+.secondary-btn {
+    background-color: #EDEDF4;
+    color: #333399;
+}
+
+.secondary-btn:hover {
+    background-color: #dadaf0;
+}
+
+/* Force dropdown background + text visibility */
+.hero-dropdown .dropdown-options {
+    background-color: #ffffff !important;
+    color: #333399 !important;
+    border: 1px solid #ddd;
+}
+
+/* Each option */
+.hero-dropdown .dropdown-options li {
+    color: #333399 !important;
+    background-color: #ffffff;
+    font-weight: 500;
+}
+
+/* Search input text */
+.hero-dropdown .dropdown-input {
+    color: #333399;
+}
+
+/* Placeholder color */
+.hero-dropdown .dropdown-input::placeholder {
+    color: #666699;
+}
+
+/* Dropdown option hover effect */
+.hero-dropdown .dropdown-options li:hover {
+    background-color: #333399 !important; /* Primary */
+    color: #ffffff !important;           /* White text */
 }
