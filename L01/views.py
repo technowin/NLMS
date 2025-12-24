@@ -4593,7 +4593,7 @@ def show_Library_catalogue(request):
             return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
         
         membership_detail = MembershipDetails.objects.filter(
-            user_id=user_id,
+            user_id=username,
             isactive=1
         ).select_related('membership').first()
         
@@ -4641,7 +4641,7 @@ def visit_Library_catalogue(request):
         # --- BOOKS BY FIRST SUBJECT (use indexed subject_id) ---
         if first_subject:
             books = BookCatalog.objects.filter(subject_id=first_subject.id)\
-                                       .select_related('subject', 'material')
+                                       .select_related('subject', 'material', 'ebook')
         else:
             books = BookCatalog.objects.none()
 
@@ -4652,6 +4652,9 @@ def visit_Library_catalogue(request):
 
         for b in page_obj:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            
+            if b.ebook:
+                b.ebookEnc = enc(str(b.ebook.ebook_id))
 
         # --- UPCOMING / LATEST BOOKS (use indexed cat_ref_num & created_at if indexed) ---
         latest_created_at = BookCatalog.objects.aggregate(latest=Max('created_at'))['latest']
@@ -4722,7 +4725,7 @@ def get_books_by_subject(request):
         if searching:
             
             # Base queryset
-            all_books = BookCatalog.objects.all().select_related('subject', 'material')
+            all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook')
 
             if search:
                 # Search across all subjects
@@ -4742,6 +4745,11 @@ def get_books_by_subject(request):
             paginator = Paginator(all_books, 8)
             page_number = request.GET.get('page', 1)
             books_page = paginator.get_page(page_number)
+            
+            for b in books_page:
+
+                if b.ebook:
+                    b.ebookEnc = enc(str(b.ebook.ebook_id))  # ✅ NEW
 
             context = {
                 'books': books_page,
@@ -5168,6 +5176,35 @@ def submit_review(request):
 def clear_pdf_session(request):
     request.session.pop("open_pdf_url", None)
     return JsonResponse({"status": "ok"})
+
+from django.http import FileResponse, Http404
+from django.conf import settings
+import os
+
+@login_required
+def read_ebook_secure(request):
+    try:
+        ebook_id = dec(str(request.GET.get('token')))
+
+        ebook = LibraryEbook.objects.get(pk=ebook_id)
+
+        if not ebook.eb_pdf_url:
+            raise Http404("File not found")
+
+        file_path = os.path.join(settings.MEDIA_ROOT, ebook.eb_pdf_url)
+
+        if not os.path.exists(file_path):
+            raise Http404("File not found")
+
+        response = FileResponse(
+            open(file_path, 'rb'),
+            content_type='application/pdf'
+        )
+        response['Content-Disposition'] = 'inline; filename="ebook.pdf"'
+        return response
+
+    except Exception:
+        raise Http404("Invalid access")
 
 # for tv display view and api
 

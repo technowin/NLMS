@@ -30,6 +30,30 @@
                             <p class="info-line"><b>वर्ष:</b> {{ book.year_of_publication }}</p>
                         {% endif %}
 
+                        {% comment %} {% if book.ebook_available == "Yes" and book.ebook and book.ebook.eb_pdf_url %}
+                            <div class="mt-2 text-center">
+                                <a href="{% url 'L01:read_ebook_secure' %}?token={{ book.ebookEnc }}"
+                                    target="_blank"
+                                    class="ebook-link">
+                                    📘 ई-पुस्तक उपलब्ध (वाचा)
+                                </a>
+                            </div>
+                        {% endif %} {% endcomment %}
+                        {% if book.ebook_available == "Yes" and book.ebook and book.ebook.eb_pdf_url %}
+                            <div class="mt-2 text-center">
+                                <a href="{% url 'L01:read_ebook_secure' %}?token={{ book.ebookEnc }}"
+                                target="_blank"
+                                class="ebook-link">
+                                    📘 ई-पुस्तक उपलब्ध (वाचा)
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="mt-2 text-center text-muted small">
+                                📕 ई-पुस्तक उपलब्ध नाही
+                            </div>
+                        {% endif %}
+
+
                         <div class="mt-auto text-center">
                             <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" class="btn btn-primary view-btn">अधिक पहा</a>
                         </div>

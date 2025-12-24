@@ -64,6 +64,7 @@ urlpatterns = [
     # visit library master index views
     path('show_Library_catalogue/', show_Library_catalogue, name='show_Library_catalogue'),
     path('visit_Library_catalogue', visit_Library_catalogue, name='visit_Library_catalogue'),
+    path('read_ebook_secure', read_ebook_secure, name='read_ebook_secure'),
     path('view_book_detail/', view_book_detail, name='view_book_detail'),
     path('get_books_by_subject', get_books_by_subject, name='get_books_by_subject'),
     path('submit_review', submit_review, name='submit_review'),
