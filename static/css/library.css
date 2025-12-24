@@ -524,7 +524,12 @@ footer a:hover {
     .section-title::after {
         height: 2px; /* thinner underline */
     }
+
+    .section-header {
+        margin-top: 15% !important;
+    }
 }
+
 
 @media screen and (max-width: 480px) {
     .section-title {
@@ -532,11 +537,7 @@ footer a:hover {
     }
 }
 
-
-
-
 /* Card Grid */
-
 
 .card-grid {
     display: grid;
