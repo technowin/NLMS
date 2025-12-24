@@ -1,0 +1,52 @@
+<div class="discovery-wrapper">
+
+    {% if new_books %}
+        <div class="discovery-section discovery-upcoming mb-4">
+            <h6>आगामी पुस्तके</h6>
+                {% for book in new_books %}
+                    <div class="book-item mb-2">
+                        <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}"
+                        class="discovery-link">
+                            {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
+                        </a>
+                    </div>
+                {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if most_reviewed_books %}
+        <div class="discovery-section discovery-reviewed mb-4">
+            <h6>📖 सर्वाधिक प्रशंसित पुस्तके</h6>
+                {% for book in most_reviewed_books %}
+                    <div class="book-item mb-2">
+                        <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}"
+                            class="discovery-link">
+                            {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
+                            {% if book.stars %}
+                                <span class="ms-1" style="color:#FFD700; font-size:0.8rem;">
+                                    {% for star in book.stars %}
+                                        {% if star %}&#9733;{% else %}&#9734;{% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% endif %}
+                        </a>
+                    </div>
+                {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if new_arrivals_qs %}
+        <div class="discovery-section discovery-new mb-4">
+            <h6>नवीन पुस्तके</h6>
+                {% for book in new_arrivals_qs %}
+                    <div class="book-item mb-2">
+                        <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}"
+                        class="discovery-link">
+                            {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
+                        </a>
+                    </div>
+                {% endfor %}
+        </div>
+    {% endif %}
+
+</div>

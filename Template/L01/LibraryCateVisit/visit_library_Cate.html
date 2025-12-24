@@ -14,200 +14,128 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
+        /* ===============================
+        VISUAL STYLES (KEEP OLD)
+        ================================ */
 
-        /* Right-side discovery colors */
-        /* Upcoming Books – Blue */
-
+        /* Discovery colors */
         .discovery-upcoming {
             background-color: #eef3ff;
             border-left: 4px solid #4e73df;
         }
-        .discovery-upcoming h6 {
-            color: #4e73df;
-        }
+        .discovery-upcoming h6 { color: #4e73df; }
 
-        /* Most Reviewed – Gold */
         .discovery-reviewed {
             background-color: #fff8e6;
             border-left: 4px solid #D4AF37;
         }
-        .discovery-reviewed h6 {
-            color: #b8962e;
-        }
+        .discovery-reviewed h6 { color: #b8962e; }
 
-        /* New Arrivals – Green */
         .discovery-new {
             background-color: #eefaf3;
             border-left: 4px solid #28a745;
         }
-        .discovery-new h6 {
-            color: #1e7e34;
-        }
+        .discovery-new h6 { color: #1e7e34; }
 
-        /* Right-side discovery links */
+        /* Discovery links */
         .discovery-link {
             text-decoration: none;
             color: #4e73df;
             display: block;
-            font-size: 0.9rem;
+            font-size: 1rem;
             transition: all 0.2s ease;
         }
-
         .discovery-link:hover {
-            color: #D4AF37; /* gold highlight on hover */
+            color: #D4AF37;
             cursor: pointer;
             text-decoration: underline;
         }
-
-        /* Optional: if you want stars smaller */
         .discovery-link span {
             font-size: 0.75rem;
         }
 
-
+        /* Sidebar buttons */
         #subject-sidebar .nav-link {
             display: block;
             padding: 0.6rem 1rem;
             margin-bottom: 0.5rem;
             border-radius: 8px;
-            background-color: #727CF5; /* gold background */
-            color: #ffffff; /* white text */
+            background-color: #727CF5;
+            color: #ffffff;
             font-weight: 500;
             transition: all 0.3s ease;
             border: 1px solid transparent;
-        }
-
-        #subject-sidebar .nav-link {
+            font-size: 0.95rem;
             width: 100%;
             text-align: center;
             white-space: nowrap;
         }
-
         #subject-sidebar .nav-link:hover {
             background-color: transparent;
-            color: #727CF5; /* gold text on hover */
-            border-color: #727CF5; /* gold border */
+            color: #727CF5;
+            border-color: #727CF5;
             transform: translateX(3px);
         }
-
         #subject-sidebar .nav-link.active {
-            background-color: #727CF5; /* gold background when active */
-            color: #ffffff; /* white text */
+            background-color: #727CF5;
+            color: #ffffff;
             font-weight: 600;
             border-color: #727CF5;
+            font-size: 1rem;
         }
 
-        #discovery-column {
-            height: 90vh;
-            overflow: hidden;
-            position: relative;
-            border-left: 1px solid #dee2e6;
-            padding: 1rem;
-            background-color: #fefefe;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
+        /* Discovery sections */
         #discovery-column .discovery-section {
             padding: 0.5rem 0.8rem;
             margin-bottom: 1rem;
             border-radius: 6px;
         }
-
         #discovery-column .discovery-section h6 {
             font-weight: 600;
             color: #4e73df;
             margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
         }
-
+        #discovery-column .discovery-section h6::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 0;
+            height: 2px;
+            background-color: #4e73df;
+            transition: width 0.3s ease;
+        }
+        #discovery-column .discovery-section h6:hover::after {
+            width: 100%;
+        }
         #discovery-column .book-item {
             padding: 0.2rem 0.5rem;
             border-bottom: 1px dashed #ccc;
             font-size: 0.95rem;
         }
+        .book-item { font-size: 0.9rem; padding-left: 0.3rem; }
 
-
-        /* 3-Column Layout */
-        #subject-sidebar {
-            height: 90vh;
-            overflow-y: auto;
-            border-right: 1px solid #dee2e6;
-            padding-top: 1rem;
-            border-radius: 10px 0 0 10px;
-            scrollbar-width: none; /* Firefox */
-        }
-
-        #subject-sidebar::-webkit-scrollbar {
-            width: 0;  /* Chrome, Safari, Edge */
-        }
-
+        /* Books column */
         #books-column {
-            background-color: #ffffff; /* white */
-            padding: 1rem;
-            height: 90vh;
-            overflow-y: auto;
-            border-radius: 0; /* can keep square */
+            background-color: #ffffff;
+            padding: 0rem;
+            height: auto;
+            overflow: visible;
+            overscroll-behavior: auto;
+            border-radius: 0;
         }
-
         :root[data-bs-theme="dark"] #books-column {
             background-color: #313A46;
         }
-
-        /* Center: Books Column Scrollbar Hide */
-        #books-column {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* IE 10+ */
-        }
-
         #books-column::-webkit-scrollbar {
-            width: 0;  /* Chrome, Safari, Edge */
+            width: 0;
         }
+        #books-column { scrollbar-width: none; -ms-overflow-style: none; }
 
-
-
-        /* RIGHT: Discovery Column */
-        #discovery-column {
-            height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            border-left: 1px solid #dee2e6;
-            padding: 1rem;
-            border-radius: 0 10px 10px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            scrollbar-width: none; /* Firefox */
-        }
-
-        #discovery-column::-webkit-scrollbar {
-            width: 0;  /* Chrome, Safari, Edge */
-        }
-
-        /* Discovery Column Scroll (News-Ticker Style) */
-        #discovery-column .discovery-wrapper {
-            position: absolute;
-            top: 0;
-            animation: scrollDiscovery 30s linear infinite;
-        }
-
-        @keyframes scrollDiscovery {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); } /* adjust if needed */
-        }
-
-        #discovery-column:hover .discovery-wrapper {
-            animation-play-state: paused;
-        }
-
-        .discovery-section h6 {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .book-item {
-            font-size: 0.9rem;
-            padding-left: 0.3rem;
-        }
-
-        /* Back to Top Button */
+        /* Back to top button */
         .back-to-top {
             position: fixed;
             bottom: 30px;
@@ -221,7 +149,7 @@
             line-height: 50px;
             font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s ease;
@@ -230,37 +158,169 @@
             align-items: center;
             justify-content: center;
         }
-
         .back-to-top:hover {
             background-color: #2e59d9;
             transform: translateY(-3px);
         }
-
         .back-to-top.active {
             opacity: 1;
             visibility: visible;
         }
 
-        /* Page-specific width override */
+        /* ===============================
+        PAGE WIDE LAYOUT + SPACING
+        ================================ */
         .library-wide-layout {
+            width: 100vw;
             max-width: 100%;
+            padding-left: 2rem;
+            padding-right: 2rem;
         }
-
         .library-wide-layout .row {
             margin-left: 0;
             margin-right: 0;
+            gap: 1.5rem; /* modern spacing between columns */
         }
-
-        .library-wide-layout {
-            width: 100vw;
-        }
-
         @media (min-width: 1400px) {
             html[data-layout="topnav"] .library-wide-layout.container-fluid {
                 max-width: 100% !important;
+                padding-left: 4rem;
+                padding-right: 4rem;
+            }
+            .library-wide-layout .row {
+                gap: 2rem;
             }
         }
 
+        /* ===============================
+        LAYOUT BEHAVIOR (RESPONSIVE)
+        ================================ */
+
+        /* Desktop sticky sidebars + discovery scroll */
+        @media (min-width: 992px) {
+            {% comment %} #subject-sidebar {
+                position: sticky;
+                top: 80px;
+                height: calc(100vh - 100px);
+                overflow-y: auto;
+                scrollbar-width: none;
+            } {% endcomment %}
+            /* =========================
+            ATTRACTIVE LEFT SIDEBAR
+            ========================= */
+
+            #subject-sidebar {
+                padding: 1rem 0.5rem;
+            }
+
+            #subject-sidebar .nav-link {
+                display: block;
+                margin-bottom: 0.5rem;
+                padding: 0.5rem 1rem;
+                border-radius: 50px; /* pill shape */
+                background-color: #f4f6f9;
+                color: #333399;
+                font-weight: 500;
+                font-size: 1rem;
+                text-align: center;
+                text-decoration: none;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            }
+
+            :root[data-bs-theme="dark"] #subject-sidebar .nav-link {
+                background-color: #313A46;
+                color: #a3b0d9;
+            }
+
+            #subject-sidebar .nav-link:hover {
+                transform: scale(1.05);
+            }
+
+            #subject-sidebar .nav-link:hover {
+                background: linear-gradient(90deg, #727CF5, #4e73df);
+                color: #ffffff;
+                transform: translateX(3px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            #subject-sidebar .nav-link.active {
+                background: linear-gradient(90deg, #333399, #333399);
+                color: #fff;
+                font-weight: 600;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+
+            #discovery-column {
+                position: sticky;
+                top: 80px;
+                height: calc(100vh - 100px);
+                overflow: hidden; /* keep hidden so animation scrolls inside */
+            }
+
+            #discovery-column .discovery-wrapper {
+                position: absolute;
+                top: 0;
+                width: 100%;
+                animation: scrollDiscovery 30s linear infinite;
+            }
+
+            #discovery-column:hover .discovery-wrapper {
+                animation-play-state: paused;
+            }
+
+            
+
+            @keyframes scrollDiscovery {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-50%); }
+            }
+        }
+
+        /* Mobile/tablet adjustments */
+        @media (max-width: 991px) {
+            #subject-sidebar,
+            #discovery-column {
+                position: sticky;
+                top: 80px;
+                height: calc(100vh - 100px);
+                overflow: hidden; /* keep hidden so animation scrolls inside */
+            }
+
+            #discovery-column .discovery-wrapper {
+                position: absolute;
+                top: 0;
+                width: 100%;
+                animation: scrollDiscovery 30s linear infinite;
+            }
+
+            #discovery-column:hover .discovery-wrapper {
+                animation-play-state: paused;
+            }
+
+            @keyframes scrollDiscovery {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-50%); }
+            }
+
+            .discovery-upcoming{
+                padding:1rem;
+            }
+
+            .discovery-reviewed{
+                padding:1rem;
+            }
+
+            .discovery-new{
+                padding:1rem;
+            }
+        }
+
+        /* Discovery scroll animation */
+        @keyframes scrollDiscovery {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
     </style>
 
 {% endblock %}
@@ -270,111 +330,65 @@
 {% endblock %}
 
 {% block content %}
-    
-    {% comment %} <div class="container-fluid px-4" style="max-width: 100%;"> {% endcomment %}
-    <div class="container-fluid px-4 library-wide-layout">
 
-        <div class="row g-3">
+    <div class="row g-3">
 
-            <!-- LEFT: Subjects Sidebar -->
-            <div class="col-2" id="subject-sidebar">
+            <!-- 📱 MOBILE SUBJECT DROPDOWN -->
+            <div class="col-12 d-md-none">
+                <select id="mobileSubjectSelect" class="form-select">
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id_enc }}">
+                        {{ subject.subjectNameMarathi }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- LEFT: SUBJECT SIDEBAR -->
+            <div class="col-lg-2 col-md-3 d-none d-md-block" id="subject-sidebar">
                 <ul class="nav flex-column">
                     {% for subject in subjects %}
-                    <li class="nav-item mb-2">
-                        <button class="nav-link {% if forloop.first %}active{% endif %}" 
-                                data-subject-id="{{ subject.id_enc }}">
-                            <i class="ri-book-2-line me-1"></i>
-                            {{ subject.subjectNameMarathi }}
-                        </button>
+                    <li class="nav-item">
+                        <a class="nav-link {% if forloop.first %}active{% endif %}" 
+                        data-subject-id="{{ subject.id_enc }}">
+                        {{ subject.subjectNameMarathi }}
+                        </a>
                     </li>
                     {% endfor %}
                 </ul>
             </div>
 
-            <!-- CENTER: Books -->
-            <div class="col-8" id="books-column">
-                <!-- Search bar -->
-                <div class="book-search-wrapper mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-0" id="search-icon">
-                            <i class="ri-search-line"></i>
-                        </span>
-                        <input type="text" id="bookSearch" class="form-control"
-                            placeholder="पुस्तकाचे नाव किंवा शीर्षक शोधा…" autocomplete="off">
-                    </div>
+
+            <!-- CENTER: BOOKS -->
+            <div class="col-lg-7 col-md-9 col-12" id="books-column">
+
+                <!-- Search -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text">
+                        🔍
+                    </span>
+                    <input type="text" id="bookSearch" class="form-control"
+                        placeholder="पुस्तक शोधा…">
                 </div>
 
-                <!-- AJAX-loaded Books -->
+                <!-- Books -->
                 <div id="books-container">
                     {% include "L01/LibraryCateVisit/book_list_partial.html" with books=books subject_id_enc=first_subject_id_enc %}
                 </div>
 
-            </div>
-
-            <!-- RIGHT: Discovery / Auto-Scroll -->
-            <div class="col-2" id="discovery-column">
-                <div class="discovery-wrapper">
-
-                    {% if new_books %}
-                        <div class="discovery-section discovery-upcoming mb-4">
-                            <h6>आगामी पुस्तके</h6>
-                                {% for book in new_books %}
-                                    <div class="book-item mb-2">
-                                        <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
-                                        class="discovery-link" title="{{ book.title }}">
-                                            {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                                        </a>
-                                    </div>
-                                {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    {% if most_reviewed_books %}
-                        <div class="discovery-section discovery-reviewed mb-4">
-                            <h6>📖 सर्वाधिक प्रशंसित पुस्तके</h6>
-                            {% for book in most_reviewed_books %}
-                                <div class="book-item mb-2">
-                                    <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
-                                    class="discovery-link" title="{{ book.title }}">
-                                        {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                                        <!-- Optional: Show stars inline -->
-                                        {% if book.stars %}
-                                            <span class="ms-1" style="color:#FFD700; font-size:0.8rem;">
-                                            {% for star in book.stars %}
-                                                {% if star %}&#9733;{% else %}&#9734;{% endif %}
-                                            {% endfor %}
-                                            </span>
-                                        {% endif %}
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    {% if new_arrivals_qs %}
-                        <div class="discovery-section discovery-new mb-4">
-                            <h6>नवीन पुस्तके</h6>
-                            {% for book in new_arrivals_qs %}
-                                <div class="book-item mb-2">
-                                    <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
-                                    class="discovery-link" title="{{ book.title }}">
-                                        {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
+                <!-- 📱 DISCOVERY ON MOBILE -->
+                <div class="d-lg-none mt-4">
+                    {% include "L01/LibraryCateVisit/discovery_partial.html" %}
                 </div>
+
             </div>
 
-        </div>
-    </div>
+            <!-- RIGHT: DISCOVERY (DESKTOP ONLY) -->
+            <div class="col-lg-3 d-none d-lg-block" id="discovery-column">
+                {% include "L01/LibraryCateVisit/discovery_partial.html" %}
+            </div>
 
-    <!-- Back to Top Button -->
-    <a href="#" class="back-to-top" id="backToTop">
-        <i class="fas fa-arrow-up"></i>
-    </a>
+    </div>
 
 {% endblock %}
 
@@ -385,29 +399,20 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-    <!-- Subject Sidebar Click & AJAX -->
     <script>
-        $(document).ready(function() {
-            // SUBJECT CLICK
-            $(document).on('click', '#subject-sidebar .nav-link', function() {
-                $('#bookSearch').val('');
+        $(document).ready(function () {
+
+            // Sidebar subject click
+            $('#subject-sidebar').on('click', '.nav-link', function () {
                 $('#subject-sidebar .nav-link').removeClass('active');
                 $(this).addClass('active');
 
-                let subjectId = $(this).data('subject-id');
-                $('#loaderOverlay').addClass('active');
+                loadBooks($(this).data('subject-id'));
+            });
 
-                $.ajax({
-                    url: "{% url 'L01:get_books_by_subject' %}",
-                    type: "GET",
-                    data: { subject_id: subjectId },
-                    success: function(html) {
-                        $("#books-container").html(html);
-                    },
-                    complete: function() {
-                        $('#loaderOverlay').removeClass('active');
-                    }
-                });
+            // Mobile dropdown
+            $('#mobileSubjectSelect').on('change', function () {
+                loadBooks($(this).val());
             });
 
             // SEARCH KEYUP
@@ -432,19 +437,21 @@
                     }
                 });
             });
-        });
-    </script>
 
-    <!-- Back to Top Button -->
-    <script>
-        const backToTopButton = document.getElementById('backToTop');
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) backToTopButton.classList.add('active');
-            else backToTopButton.classList.remove('active');
-        });
-        backToTopButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            function loadBooks(subjectId, search='') {
+                $.ajax({
+                    url: "{% url 'L01:get_books_by_subject' %}",
+                    data: {
+                        subject_id: subjectId,
+                        search: search
+                    },
+                    success: function (html) {
+                        $('#books-container').html(html);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            }
+
         });
     </script>
 
@@ -479,6 +486,28 @@
         });
 
     </script>
-    
+
+    <!-- Back to Top Button -->
+    <script>
+        const backToTopButton = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) backToTopButton.classList.add('active');
+            else backToTopButton.classList.remove('active');
+        });
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+
+    <script>
+        const sidebar = document.getElementById('subject-sidebar');
+        const booksCol = document.getElementById('books-column');
+
+        booksCol.addEventListener('scroll', () => {
+            sidebar.scrollTop = booksCol.scrollTop;
+        });
+
+    </script>
 
 {% endblock %}
