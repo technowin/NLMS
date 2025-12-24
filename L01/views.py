@@ -88,6 +88,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Alignment, Font, Border, Side
+from django.views.decorators.http import require_POST
 
 # Part First While Filling Membership Form
 
@@ -3615,7 +3616,6 @@ def index_book_search(request):
             status=500
         )
 
-
 @csrf_exempt
 def libraryebook_search(request):
     try:
@@ -3700,8 +3700,6 @@ def libraryebook_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-
-    
 
 @csrf_exempt
 def index_ebook_search(request):
@@ -4216,7 +4214,7 @@ def membership_dashboard(request):
             membership_code=membership_code,
             return_date__isnull=True
         ).select_related('catalog').order_by('-issue_date')[:3]
-        open_pdf_url = request.session.get("open_pdf_url")  # saved during login
+        pending_action = request.session.get("pending_action")
         for transaction in transactions:
             book_data = {
                 'transaction': transaction,
@@ -4236,7 +4234,7 @@ def membership_dashboard(request):
             'overdue': overdue,
             'latest_books': latest_books,
             'today': today,
-            'open_pdf_url': open_pdf_url,   # send to template
+            'pending_action': pending_action,    # send to template
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)
@@ -4575,6 +4573,35 @@ def save_eod_log(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 # Cate list notepad view 440
+
+@login_required
+def show_Library_catalogue(request):
+    try:
+        # --- SESSION CHECKS ---
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if library_code != 'L01':
+            messages.error(request, "Invalid library access.")
+            request.session.flush()
+            return redirect('library_list')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+
+        # --- CONTEXT ---
+        context = {
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        return render(request, "L01/LibraryCateVisit/show_Library_catalogue.html", context)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return render(request, "L01/LibraryCateVisit/show_Library_catalogue.html", {})
 
 @login_required
 def visit_Library_catalogue(request):
@@ -5354,7 +5381,6 @@ def insert_book_by_isbn(request, isbn):
         print("Error in insert_book_by_isbn:", e)
         return JsonResponse({"status": "error", "message": str(e)})
 
-
 # Stock Checking by Imran
 
 @csrf_exempt
@@ -5409,7 +5435,6 @@ def scan_barcode(request):
     except Exception as e:
         print("Error in insert_book_by_isbn:", e)
         return JsonResponse({"status": "error", "message": str(e)})
-    
 
 def get_recent_scans(request):
     year_id = request.GET.get("stock_year_id")
@@ -5424,7 +5449,6 @@ def get_recent_scans(request):
         })
 
     return JsonResponse({"data": data})
-
 
 # Stock Report Imran
 
@@ -5452,7 +5476,6 @@ def complete_stock_batch(request):
             
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
 class StockReportView(View):
     def get(self, request):
         """
@@ -5691,9 +5714,6 @@ class StockReportView(View):
             print(f"Error saving report: {str(e)}")
             print(traceback.format_exc())
 
-
-
-
 class GenerateStockReportAPI(View):
     """
     API endpoint for AJAX report generation
@@ -5721,9 +5741,6 @@ class GenerateStockReportAPI(View):
             
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-
-
 
 class ExportStockReportView(View):
     """
@@ -6310,7 +6327,6 @@ class ExportStockReportView(View):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
-    
 
 def generate_final_report(request):
     """
@@ -6346,7 +6362,6 @@ def generate_final_report(request):
             
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 def prepare_report_data_from_stock_reports(stock_reports, stock_year):
     """
@@ -6395,7 +6410,6 @@ def prepare_report_data_from_stock_reports(stock_reports, stock_year):
         'stock_year_id': stock_year.id,
         'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
     }
-
 
 def export_final_report_to_pdf(report_data):
     """
@@ -6763,7 +6777,6 @@ def export_final_report_to_pdf(report_data):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
-
 
 def export_final_report_fallback(report_data):
     """
@@ -7269,7 +7282,6 @@ def event_announcement_create(request):
     # GET request - show the form
     return render(request, 'L01/Display/event_announcement_create.html')
 
-
 @login_required
 def advertisement_edit(request, encrypted_id):
     try:
@@ -7359,7 +7371,6 @@ def advertisement_edit(request, encrypted_id):
         logger.error(f"Error editing advertisement: {str(e)}")
         messages.error(request, f"Error editing advertisement: {str(e)}")
         return redirect('L01:advertisement_index')
-
 
 @login_required
 def event_announcement_edit(request, encrypted_id):
@@ -9100,7 +9111,6 @@ def visit_Library_catalogue_kiosk(request):
             "L01/visit_Library_catalogue_kiosk.html",
             {}
         )
-        
 
 def get_books_by_subject_kiosk(request):
     try:
@@ -9160,7 +9170,6 @@ def get_books_by_subject_kiosk(request):
         print("Kiosk error fetching books:", e)
         return JsonResponse({'error': 'Failed to fetch books'}, status=500)
 
-
 def get_books_by_subject_kiosk(request):
     try:
         subject_id_enc = request.GET.get('subject_id')
@@ -9218,7 +9227,6 @@ def get_books_by_subject_kiosk(request):
     except Exception as e:
         print("Kiosk error fetching books:", e)
         return JsonResponse({'error': 'Failed to fetch books'}, status=500)
-
 
 @login_required
 def view_book_detail_kiosk(request):
@@ -9483,7 +9491,6 @@ def get_dashboard_detail_data(detail_type, from_date, to_date):
 
     return []
 
-
 def export_excel(data, detail_type):
     wb = Workbook()
     ws = wb.active
@@ -9589,3 +9596,7 @@ def export_pdf(data, detail_type):
     buffer.close()
 
     return response
+@require_POST
+def clear_pending_action(request):
+    request.session.pop("pending_action", None)
+    return JsonResponse({"success": True})

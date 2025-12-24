@@ -207,14 +207,27 @@ def Login(request):
         # ============================================================
         if membership_id is not None and membership_id != 8:
 
-            # If user accessed via ebook link
+            # Clear any previous pending action
+            request.session.pop("pending_action", None)
+
+            # Ebook + PDF intent
             if ebook_id and pdf_url:
-                file_url = settings.MEDIA_URL + pdf_url  
+                file_url = settings.MEDIA_URL + pdf_url
                 final_pdf_url = request.build_absolute_uri(file_url)
-                
-                request.session["open_pdf_url"] = final_pdf_url
-            if encrypted_cat_ref_num:
-                return redirect(f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}")
+
+                request.session["pending_action"] = {
+                    "type": "pdf",
+                    "url": final_pdf_url,
+                    "message": "You tried to open an eBook."
+                }
+
+            # Catalog detail intent
+            elif encrypted_cat_ref_num:
+                request.session["pending_action"] = {
+                    "type": "catalog",
+                    "url": f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}",
+                    "message": "You tried to view a book."
+                }
 
             request.session.set_expiry(0)
             return redirect("L01:membership_dashboard")

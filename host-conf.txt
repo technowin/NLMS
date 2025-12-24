@@ -288,3 +288,7 @@ python manage.py migrate MenuManager --database=2
 
 python manage.py migrate Reports --database=1
 python manage.py migrate Reports --database=2
+
+python manage.py makemigrations L01
+python manage.py migrate L01 --database=L01
+python manage.py migrate L01 0044 --fake 

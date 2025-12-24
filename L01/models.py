@@ -618,6 +618,7 @@ class LibraryEbook(models.Model):
         cutter_number = models.TextField(blank=True, null=True)  # NEW
         e_publication_year = models.TextField(blank=True, null=True)  # NEW
         ebook_type = models.ForeignKey('EbookTypeMaster',on_delete=models.SET_NULL,null=True,blank=True,db_column='ebook_type_id')
+        cat_id = models.TextField(null=True, blank=True)
         remarks = models.TextField(blank=True, null=True)  # NEW
         eb_keywords = models.TextField(blank=True, null=True)
         eb_language = models.TextField(blank=True, null=True)

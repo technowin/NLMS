@@ -62,6 +62,7 @@ urlpatterns = [
     path("circulation_transaction_details", circulation_transaction_details, name="circulation_transaction_details"),
     
     # visit library master index views
+    path('show_Library_catalogue/', show_Library_catalogue, name='show_Library_catalogue'),
     path('visit_Library_catalogue', visit_Library_catalogue, name='visit_Library_catalogue'),
     path('view_book_detail/', view_book_detail, name='view_book_detail'),
     path('get_books_by_subject', get_books_by_subject, name='get_books_by_subject'),
@@ -90,6 +91,7 @@ urlpatterns = [
     
     path("save-eod-log/", save_eod_log, name="save_eod_log"),
     path("membership_card/", membership_card, name="membership_card"),
+    path("clear-pending-action/", clear_pending_action, name="clear_pending_action"),
     # ... your other URLs
     
     # urls.py

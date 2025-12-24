@@ -1,0 +1,205 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}ग्रंथालय सेवा{% endblock %}
+
+{% block extra_css %}
+
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        /* ---------- Header Section ---------- */
+        .page-header {
+            text-align: center;
+            margin: 20px 0 20px;
+        }
+
+        .page-header h1 {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+            display: inline-block;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .page-header h1 i {
+            color: #0d6efd;
+            margin-right: 10px;
+        }
+
+        /* underline hover effect */
+        .page-header h1::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(to right, #0d6efd, #015296);
+            transition: all 0.4s ease;
+            transform: translateX(-50%);
+        }
+
+        .page-header h1:hover::after {
+            width: 100%;
+        }
+
+        .page-header p {
+            margin-top: 15px;
+            color: #555;
+            font-size: 1.05rem;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* ---------- Card Section ---------- */
+        .service-section {
+            padding: 30px 0;
+            margin-top: 5%;
+        }
+
+        .service-card {
+            font-family: 'Merriweather', serif;
+            border-radius: 18px;
+            padding: 35px 25px;
+            background: #ffffff;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            text-align: center;
+            transition: all 0.35s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #015296, #0d6efd);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            z-index: 0;
+        }
+
+        .service-card:hover::before {
+            opacity: 0.08;
+        }
+
+        .service-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 20px 45px rgba(0,0,0,0.18);
+        }
+
+        .service-icon {
+            font-size: 3.3rem;
+            color: #015296;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-card:hover .service-icon {
+            transform: scale(1.15);
+            transition: transform 0.3s ease;
+        }
+
+        .service-card h4 {
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-card p {
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+    
+{% endblock %}
+
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय सेवा' %}
+{% endblock %}
+
+{% block content %}
+
+    <!-- ---------- Header ---------- -->
+    <div class="container">
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-book-reader"></i>
+                ग्रंथालय सेवा निवडा
+            </h1>
+            <p>
+                आपल्या अभ्यासासाठी योग्य सेवा निवडा. भौतिक पुस्तके, ई-पुस्तके किंवा
+                स्पर्धा परीक्षांसाठी उपलब्ध विशेष साहित्य सहजपणे वापरता येईल.
+            </p>
+        </div>
+    </div>
+
+    <!-- ---------- Cards ---------- -->
+    <div class="container service-section">
+        <div class="row justify-content-center g-4 w-100">
+
+            <!-- Physical Books -->
+            <div class="col-lg-4 col-md-6">
+                <div class="service-card"
+                    onclick="window.location.href='{% url 'L01:visit_Library_catalogue' %}'">
+                    <div class="service-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h4>भौतिक पुस्तके</h4>
+                    <p>
+                        ग्रंथालयामध्ये उपलब्ध असलेली सर्व भौतिक पुस्तके पाहा,
+                        वाचनासाठी व उधार घेण्यासाठी योग्य.
+                    </p>
+                </div>
+            </div>
+
+            <!-- E-Books -->
+            <div class="col-lg-4 col-md-6">
+                <div class="service-card"
+                    onclick="window.location.href=''">
+                    <div class="service-icon">
+                        <i class="fas fa-tablet-screen-button"></i>
+                    </div>
+                    <h4>ई-पुस्तके</h4>
+                    <p>
+                        कुठेही आणि केव्हाही डिजिटल पुस्तके वाचा.
+                        लॉगिननंतर सुरक्षितपणे ऑनलाइन प्रवेश.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Competitive Exams -->
+            <div class="col-lg-4 col-md-6">
+                <div class="service-card"
+                    onclick="window.location.href=''">
+                    <div class="service-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h4>स्पर्धा परीक्षा</h4>
+                    <p>
+                        विविध स्पर्धा परीक्षांसाठी अभ्यास साहित्य,
+                        मार्गदर्शक पुस्तके व विशेष संसाधने.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}
