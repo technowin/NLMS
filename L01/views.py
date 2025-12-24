@@ -1,7 +1,7 @@
 # L01/views.py
 from django.http import HttpResponse
 from L01.models import *
-from prompt_toolkit import HTML
+from weasyprint import HTML
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from weasyprint import CSS
@@ -7050,7 +7050,6 @@ def advertisement_toggle_status(request, encrypted_id):
 
     return redirect('L01:advertisement_index')
 
-
 @login_required
 def advertisement_create(request):
     library_code = request.session.get('library_db', None)
@@ -9537,69 +9536,120 @@ from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate
 from reportlab.pdfgen import canvas
 
 def export_pdf(data, detail_type):
-    buffer = io.BytesIO()
+    try:
+        # ---------------- Headers based on type ----------------
+        if detail_type in ['monthly', 'total', 'fine', 'book_fine']:
+            headers = ['सभासद कोड', 'सभासद नाव', 'देयक तारीख', 'रक्कम']
+        else:
+            headers = ['सभासद कोड', 'सभासद नाव', 'पुस्तक नाव', 'बारकोड', 'तारीख']
 
-    # Register Marathi font
-    font_path = os.path.join(
-        settings.BASE_DIR,
-        "static/fonts/NotoSansDevanagari-Regular.ttf"
-    )
-    pdfmetrics.registerFont(TTFont("NotoSansDeva", font_path))
+        # ---------------- Build table rows ----------------
+        table_rows = ""
+        for row in data:
+            row_html = ""
+            for value in row.values():
+                cell_value = value if value not in [None, "", "None"] else "-"
+                row_html += f"<td>{cell_value}</td>"
+            table_rows += f"<tr>{row_html}</tr>"
 
-    # Simple document (no header/footer)
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        rightMargin=20,
-        leftMargin=20,
-        topMargin=20,
-        bottomMargin=20
-    )
+        headers_html = "".join(f"<th>{h}</th>" for h in headers)
 
-    # Marathi paragraph style
-    marathi_style = ParagraphStyle(
-        name="Marathi",
-        fontName="NotoSansDeva",
-        fontSize=9,
-        leading=12
-    )
+        current_datetime = datetime.now().strftime("%d-%m-%Y")
 
-    # Table headers
-    if detail_type in ['monthly', 'total', 'fine', 'book_fine']:
-        headers = ['सभासद कोड', 'सभासद नाव', 'देयक तारीख', 'रक्कम']
-    else:
-        headers = ['सभासद कोड', 'सभासद नाव', 'पुस्तक नाव', 'बारकोड', 'तारीख']
+        # ---------------- HTML ----------------
+        html_string = f"""
+        <!DOCTYPE html>
+        <html lang="mr">
+        <head>
+            <meta charset="UTF-8">
+            <title>Report</title>
+        </head>
+        <body>
+            <h1 style="text-align:center;">अहवाल</h1>
 
-    table_data = [[Paragraph(h, marathi_style) for h in headers]]
+            <table>
+                <thead>
+                    <tr>
+                        {headers_html}
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows}
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
 
-    # Table rows
-    for row in data:
-        table_data.append([
-            Paragraph(str(v) if v else '-', marathi_style)
-            for v in row.values()
-        ])
+        # ---------------- CSS (Marathi font + footer) ----------------
+        font_path = os.path.join(
+            settings.BASE_DIR,
+            "static",
+            "fonts",
+            "NotoSansDevanagari-Regular.ttf"
+        )
 
-    # Create table
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, -1), 'NotoSansDeva'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
+        css_string = f"""
+        @font-face {{
+            font-family: 'NotoDeva';
+            src: url('file://{font_path}');
+        }}
 
-    # Build PDF
-    doc.build([table])
+        @page {{
+            size: A4;
+            margin: 10px 10px 40px 10px;
+            @bottom-right {{
+                content: "Page " counter(page) " | {current_datetime}";
+                font-size: 8pt;
+                font-family: 'NotoDeva';
+            }}
+        }}
 
-    # Response
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="report.pdf"'
-    response.write(buffer.getvalue())
-    buffer.close()
+        body {{
+            font-family: 'NotoDeva', sans-serif;
+            font-size: 9pt;
+        }}
 
-    return response
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }}
+
+        th, td {{
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            word-wrap: break-word;
+        }}
+
+        th {{
+            background-color: #d3d3d3;
+            font-weight: bold;
+        }}
+
+        tr {{
+            page-break-inside: avoid;
+        }}
+
+        h1 {{
+            font-size: 16pt;
+            margin-bottom: 10px;
+        }}
+        """
+
+        # ---------------- Generate PDF ----------------
+        pdf_file = HTML(string=html_string).write_pdf(
+            stylesheets=[CSS(string=css_string)]
+        )
+
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="report.pdf"'
+        return response
+
+    except Exception as e:
+        return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
+
 @require_POST
 def clear_pending_action(request):
     request.session.pop("pending_action", None)

@@ -14,7 +14,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        
+
+        /* Right-side discovery colors */
+        /* Upcoming Books – Blue */
+
+        .discovery-upcoming {
+            background-color: #eef3ff;
+            border-left: 4px solid #4e73df;
+        }
+        .discovery-upcoming h6 {
+            color: #4e73df;
+        }
+
+        /* Most Reviewed – Gold */
+        .discovery-reviewed {
+            background-color: #fff8e6;
+            border-left: 4px solid #D4AF37;
+        }
+        .discovery-reviewed h6 {
+            color: #b8962e;
+        }
+
+        /* New Arrivals – Green */
+        .discovery-new {
+            background-color: #eefaf3;
+            border-left: 4px solid #28a745;
+        }
+        .discovery-new h6 {
+            color: #1e7e34;
+        }
+
         /* Right-side discovery links */
         .discovery-link {
             text-decoration: none;
@@ -48,6 +77,12 @@
             border: 1px solid transparent;
         }
 
+        #subject-sidebar .nav-link {
+            width: 100%;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         #subject-sidebar .nav-link:hover {
             background-color: transparent;
             color: #727CF5; /* gold text on hover */
@@ -76,8 +111,6 @@
         #discovery-column .discovery-section {
             padding: 0.5rem 0.8rem;
             margin-bottom: 1rem;
-            background-color: #f8f9fa;
-            border-left: 4px solid #4e73df;
             border-radius: 6px;
         }
 
@@ -114,6 +147,10 @@
             height: 90vh;
             overflow-y: auto;
             border-radius: 0; /* can keep square */
+        }
+
+        :root[data-bs-theme="dark"] #books-column {
+            background-color: #313A46;
         }
 
         /* Center: Books Column Scrollbar Hide */
@@ -204,17 +241,38 @@
             visibility: visible;
         }
 
+        /* Page-specific width override */
+        .library-wide-layout {
+            max-width: 100%;
+        }
+
+        .library-wide-layout .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .library-wide-layout {
+            width: 100vw;
+        }
+
+        @media (min-width: 1400px) {
+            html[data-layout="topnav"] .library-wide-layout.container-fluid {
+                max-width: 100% !important;
+            }
+        }
+
     </style>
 
 {% endblock %}
 
 {% block page_title %}
-{% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय सेवा' sub_title='पुस्तक सूची' %}
+    {% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय सेवा' sub_title='पुस्तक सूची' %}
 {% endblock %}
 
 {% block content %}
     
-    <div class="container-fluid px-4" style="max-width: 100%;">
+    {% comment %} <div class="container-fluid px-4" style="max-width: 100%;"> {% endcomment %}
+    <div class="container-fluid px-4 library-wide-layout">
 
         <div class="row g-3">
 
@@ -226,7 +284,7 @@
                         <button class="nav-link {% if forloop.first %}active{% endif %}" 
                                 data-subject-id="{{ subject.id_enc }}">
                             <i class="ri-book-2-line me-1"></i>
-                            {{ subject.subjectNameEnglish }} / {{ subject.subjectNameMarathi }}
+                            {{ subject.subjectNameMarathi }}
                         </button>
                     </li>
                     {% endfor %}
@@ -247,9 +305,6 @@
                 </div>
 
                 <!-- AJAX-loaded Books -->
-                {% comment %} <div id="books-container">
-                    {% include "L01/LibraryCateVisit/book_list_partial.html" %}
-                </div> {% endcomment %}
                 <div id="books-container">
                     {% include "L01/LibraryCateVisit/book_list_partial.html" with books=books subject_id_enc=first_subject_id_enc %}
                 </div>
@@ -261,53 +316,53 @@
                 <div class="discovery-wrapper">
 
                     {% if new_books %}
-                    <div class="discovery-section mb-4">
-                        <h6>आगामी पुस्तके</h6>
-                        {% for book in new_books %}
-                        <div class="book-item mb-2">
-                            <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
-                            class="discovery-link" title="{{ book.title }}">
-                                {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                            </a>
+                        <div class="discovery-section discovery-upcoming mb-4">
+                            <h6>आगामी पुस्तके</h6>
+                                {% for book in new_books %}
+                                    <div class="book-item mb-2">
+                                        <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
+                                        class="discovery-link" title="{{ book.title }}">
+                                            {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
+                                        </a>
+                                    </div>
+                                {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
                     {% endif %}
 
                     {% if most_reviewed_books %}
-                    <div class="discovery-section mb-4">
-                        <h6>📖 सर्वाधिक प्रशंसित पुस्तके</h6>
-                        {% for book in most_reviewed_books %}
-                        <div class="book-item mb-2">
-                            <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
-                            class="discovery-link" title="{{ book.title }}">
-                                {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                                <!-- Optional: Show stars inline -->
-                                {% if book.stars %}
-                                    <span class="ms-1" style="color:#FFD700; font-size:0.8rem;">
-                                    {% for star in book.stars %}
-                                        {% if star %}&#9733;{% else %}&#9734;{% endif %}
-                                    {% endfor %}
-                                    </span>
-                                {% endif %}
-                            </a>
+                        <div class="discovery-section discovery-reviewed mb-4">
+                            <h6>📖 सर्वाधिक प्रशंसित पुस्तके</h6>
+                            {% for book in most_reviewed_books %}
+                                <div class="book-item mb-2">
+                                    <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
+                                    class="discovery-link" title="{{ book.title }}">
+                                        {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
+                                        <!-- Optional: Show stars inline -->
+                                        {% if book.stars %}
+                                            <span class="ms-1" style="color:#FFD700; font-size:0.8rem;">
+                                            {% for star in book.stars %}
+                                                {% if star %}&#9733;{% else %}&#9734;{% endif %}
+                                            {% endfor %}
+                                            </span>
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
                     {% endif %}
 
                     {% if new_arrivals_qs %}
-                    <div class="discovery-section mb-4">
-                        <h6>नवीन पुस्तके</h6>
-                        {% for book in new_arrivals_qs %}
-                        <div class="book-item mb-2">
-                            <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
-                            class="discovery-link" title="{{ book.title }}">
-                                {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                            </a>
+                        <div class="discovery-section discovery-new mb-4">
+                            <h6>नवीन पुस्तके</h6>
+                            {% for book in new_arrivals_qs %}
+                                <div class="book-item mb-2">
+                                    <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}" 
+                                    class="discovery-link" title="{{ book.title }}">
+                                        {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
+                                    </a>
+                                </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
                     {% endif %}
 
                 </div>

@@ -821,4 +821,26 @@ class EventAnnouncement(models.Model):
     class Meta:
         db_table = 'tbl_eventannouncements'
 
+class MemberLoginSession(models.Model):
+    member = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE)
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    device_type = models.CharField(max_length=50, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'tbl_member_login_session'
+
+class MemberScreenActivity(models.Model):
+    session = models.ForeignKey(MemberLoginSession,on_delete=models.CASCADE)
+    screen_name = models.CharField(max_length=100)
+    screen_route = models.CharField(max_length=200)
+    visited_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'tbl_member_activity'
 
