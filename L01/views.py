@@ -4591,10 +4591,18 @@ def show_Library_catalogue(request):
         if not all([library_code, username, user_id, role_id]):
             messages.warning(request, "Session expired or invalid. Please login again.")
             return render(request, "L01/LibraryCateVisit/visit_library_Cate.html", {})
+        
+        membership_detail = MembershipDetails.objects.filter(
+            user_id=user_id,
+            isactive=1
+        ).select_related('membership').first()
+        
+        membership_id = membership_detail.membership.id if membership_detail else None
 
         # --- CONTEXT ---
         context = {
             'MEDIA_URL': settings.MEDIA_URL,
+            'membership_id': membership_id,
         }
 
         return render(request, "L01/LibraryCateVisit/show_Library_catalogue.html", context)

@@ -154,50 +154,55 @@
     <div class="container service-section">
         <div class="row justify-content-center g-4 w-100">
 
-            <!-- Physical Books -->
-            <div class="col-lg-4 col-md-6">
-                <div class="service-card"
-                    onclick="window.location.href='{% url 'L01:visit_Library_catalogue' %}'">
-                    <div class="service-icon">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <h4>भौतिक पुस्तके</h4>
-                    <p>
-                        ग्रंथालयामध्ये उपलब्ध असलेली सर्व भौतिक पुस्तके पाहा,
-                        वाचनासाठी व उधार घेण्यासाठी योग्य.
-                    </p>
-                </div>
-            </div>
+            {% if membership_id == 8 %}
 
-            <!-- E-Books -->
-            <div class="col-lg-4 col-md-6">
-                <div class="service-card"
-                    onclick="window.location.href=''">
-                    <div class="service-icon">
-                        <i class="fas fa-tablet-screen-button"></i>
+                <div class="col-lg-4 col-md-6">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h4>स्पर्धा परीक्षा</h4>
+                        <p>
+                            विविध स्पर्धा परीक्षांसाठी अभ्यास साहित्य,
+                            मार्गदर्शक पुस्तके व विशेष संसाधने.
+                        </p>
                     </div>
-                    <h4>ई-पुस्तके</h4>
-                    <p>
-                        कुठेही आणि केव्हाही डिजिटल पुस्तके वाचा.
-                        लॉगिननंतर सुरक्षितपणे ऑनलाइन प्रवेश.
-                    </p>
                 </div>
-            </div>
 
-            <!-- Competitive Exams -->
-            <div class="col-lg-4 col-md-6">
-                <div class="service-card"
-                    onclick="window.location.href=''">
-                    <div class="service-icon">
-                        <i class="fas fa-graduation-cap"></i>
+            {% else %}
+
+                <!-- Physical Books -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="service-card"
+                        onclick="window.location.href='{% url 'L01:visit_Library_catalogue' %}'">
+                        <div class="service-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h4>भौतिक पुस्तके</h4>
+                        <p>
+                            ग्रंथालयामध्ये उपलब्ध असलेली सर्व भौतिक पुस्तके पाहा,
+                            वाचनासाठी व उधार घेण्यासाठी योग्य.
+                        </p>
                     </div>
-                    <h4>स्पर्धा परीक्षा</h4>
-                    <p>
-                        विविध स्पर्धा परीक्षांसाठी अभ्यास साहित्य,
-                        मार्गदर्शक पुस्तके व विशेष संसाधने.
-                    </p>
                 </div>
-            </div>
+
+                <!-- E-Books -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-tablet-screen-button"></i>
+                        </div>
+                        <h4>ई-पुस्तके</h4>
+                        <p>
+                            कुठेही आणि केव्हाही डिजिटल पुस्तके वाचा.
+                            लॉगिननंतर सुरक्षितपणे ऑनलाइन प्रवेश.
+                        </p>
+                    </div>
+                </div>
+
+            {% endif %}
+
+
 
         </div>
     </div>
