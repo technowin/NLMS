@@ -230,14 +230,19 @@ def Login(request):
 
                     return redirect("L01:membership_dashboard")
                 
-            if str(user.role_id) == '3':   # role_id = 3 → Member
-                login_session = MemberLoginSession.objects.using('L01').create(
-                    member_id=user.id,
-                    ip_address=request.META.get('REMOTE_ADDR'),
-                )
+            if str(user.role_id) == '3' and member:
+                try:
+                    login_session = MemberLoginSession.objects.using('L01').create(
+                        member=member,   # ✅ pass MembershipDetails instance
+                        ip_address=request.META.get('REMOTE_ADDR'),
+                        created_by=str(user.id)
+                    )
 
-                # store session id for page tracking
-                request.session['login_session_id'] = login_session.id
+                    request.session['login_session_id'] = login_session.id
+
+                except Exception as e:
+                    print(f"Error creating MemberLoginSession: {e}")
+
 
             # ============================================================
             # VALID MEMBERSHIP (NOT PRACTITIONER)
