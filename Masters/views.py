@@ -245,13 +245,13 @@ def LMS_Dashboard(request):
             # Get today's date
             today = date.today()
 
-            # Fetch today's returned books
-            returned_books = CirculationTransaction.objects.filter(
-                return_date=today
-            )
+            # # Fetch today's returned books
+            # returned_books = CirculationTransaction.objects.filter(
+            #     return_date=today
+            # )
 
             context = {
-                "returned_books": returned_books
+                # "returned_books": returned_books
             }
 
             return render(request, 'Workflow/index.html', context)

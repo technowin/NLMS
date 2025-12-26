@@ -148,105 +148,131 @@ def Login(request):
         # ------------------------------------------
         # Database alias (static for L01)
         # ------------------------------------------
-        db_alias = "L01"
-        request.session['service'] = db_alias
-        request.session['library_db'] = db_alias
-
-        # ------------------------------------------
-        # Authenticate user
-        # ------------------------------------------
-        user = authenticate_from_db(request, username, password, db_alias)
-        if user is None:
-            messages.error(request, 'Invalid Credentials')
-            return redirect("Login")
-
-        # ------------------------------------------
-        # Set session user data
-        # ------------------------------------------
-        request.session.cycle_key()
-        request.session["username"] = str(username)
-        request.session["full_name"] = str(user.full_name)
-        request.session["user_id"] = str(user.id)
-        request.session["role_id"] = str(user.role_id)
-
-        # ------------------------------------------
-        # Get membership info
-        # ------------------------------------------
-        member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
-
-        membership_id = None
-        if member:
-            try:
-                membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
-                membership_id = membership.id
-            except MembershipMaster.DoesNotExist:
-                membership_id = None
-        if membership_id == 8:
-
-            # Practitioner trying to access Ebook or restricted catalog
-            if ebook_id or pdf_url or encrypted_cat_ref_num:
-                messages.error(
-                    request,
-                    "This section is not available for Practitioner Branch (अभ्यासिका शाखा)"
-                )
-
-                # Redirect safely to allowed section
-                return redirect("L01:membership_dashboard")
-
-            # ✅ Practitioner allowed normal navigation
-            if next_url:
-                return redirect(next_url)
-            else:
-
-             return redirect("L01:membership_dashboard")
-
-       
-
-        # ============================================================
-        # VALID MEMBERSHIP (NOT PRACTITIONER)
-        # ============================================================
-        if membership_id is not None and membership_id != 8:
-
-            # Clear any previous pending action
-            request.session.pop("pending_action", None)
-
-            # Ebook + PDF intent
-            if ebook_id and pdf_url:
-                file_url = settings.MEDIA_URL + pdf_url
-                final_pdf_url = request.build_absolute_uri(file_url)
-
-                request.session["pending_action"] = {
-                    "type": "pdf",
-                    "url": final_pdf_url,
-                    "message": "You tried to open an eBook."
-                }
-
-            # Catalog detail intent
-            elif encrypted_cat_ref_num:
-                request.session["pending_action"] = {
-                    "type": "catalog",
-                    "url": f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}",
-                    "message": "You tried to view a book."
-                }
-
-            request.session.set_expiry(0)
-            return redirect("L01:membership_dashboard")
         
+        if library_code == 'default' or library_code is None:
+            
+            db_alias = library_code
 
-        # ============================================================
-        # NO MEMBERSHIP FOUND
-        # ============================================================
-        if membership_id is None:
-            request.session.set_expiry(0)
+            # ------------------------------------------
+            # Authenticate user
+            # ------------------------------------------
+            user = authenticate_from_db(request, username, password, db_alias)
+            if user is None:
+                messages.error(request, 'Invalid Credentials')
+                return redirect("Login")
+            
+            # ------------------------------------------
+            # Set session user data
+            # ------------------------------------------
+            request.session.cycle_key()
+            request.session["username"] = str(username)
+            request.session["full_name"] = str(user.full_name)
+            request.session["user_id"] = str(user.id)
+            request.session["role_id"] = str(user.role_id)
+            
+            return redirect(f'LMS_Dashboard')
+        
+        else:
+            
+            print("Library code:", library_code)
+            
+            db_alias = "L01"
+            request.session['service'] = db_alias
+            request.session['library_db'] = db_alias
+
+            # ------------------------------------------
+            # Authenticate user
+            # ------------------------------------------
+            user = authenticate_from_db(request, username, password, db_alias)
+            if user is None:
+                messages.error(request, 'Invalid Credentials')
+                return redirect("Login")
+
+            # ------------------------------------------
+            # Set session user data
+            # ------------------------------------------
+            request.session.cycle_key()
+            request.session["username"] = str(username)
+            request.session["full_name"] = str(user.full_name)
+            request.session["user_id"] = str(user.id)
+            request.session["role_id"] = str(user.role_id)
+
+            # ------------------------------------------
+            # Get membership info
+            # ------------------------------------------
+            member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
+
+            membership_id = None
+            if member:
+                try:
+                    membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
+                    membership_id = membership.id
+                except MembershipMaster.DoesNotExist:
+                    membership_id = None
+            if membership_id == 8:
+
+                # Practitioner trying to access Ebook or restricted catalog
+                if ebook_id or pdf_url or encrypted_cat_ref_num:
+                    messages.error(
+                        request,
+                        "This section is not available for Practitioner Branch (अभ्यासिका शाखा)"
+                    )
+
+                    # Redirect safely to allowed section
+                    return redirect("L01:membership_dashboard")
+
+                # ✅ Practitioner allowed normal navigation
+                if next_url:
+                    return redirect(next_url)
+                else:
+
+                    return redirect("L01:membership_dashboard")
+
+            # ============================================================
+            # VALID MEMBERSHIP (NOT PRACTITIONER)
+            # ============================================================
+            if membership_id is not None and membership_id != 8:
+
+                # Clear any previous pending action
+                request.session.pop("pending_action", None)
+
+                # Ebook + PDF intent
+                if ebook_id and pdf_url:
+                    file_url = settings.MEDIA_URL + pdf_url
+                    final_pdf_url = request.build_absolute_uri(file_url)
+
+                    request.session["pending_action"] = {
+                        "type": "pdf",
+                        "url": final_pdf_url,
+                        "message": "You tried to open an eBook."
+                    }
+
+                # Catalog detail intent
+                elif encrypted_cat_ref_num:
+                    request.session["pending_action"] = {
+                        "type": "catalog",
+                        "url": f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}",
+                        "message": "You tried to view a book."
+                    }
+
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
+            
+
+            # ============================================================
+            # NO MEMBERSHIP FOUND
+            # ============================================================
+            if membership_id is None:
+                request.session.set_expiry(0)
+                return redirect('L01:dashboard')
+
+            # ============================================================
+            # Role fallback
+            # ============================================================
+            if str(user.role_id) == '3':
+                return redirect('L01:membership_dashboard')
+
             return redirect('L01:dashboard')
-
-        # ============================================================
-        # Role fallback
-        # ============================================================
-        if str(user.role_id) == '3':
-            return redirect('L01:membership_dashboard')
-
-        return redirect('L01:dashboard')
 
     else:
             messages.error(request, 'Invalid Credentials')
@@ -266,7 +292,7 @@ def logoutView(request):
 
     # Redirect based on whether library_code existed
     if library_code == 'default':
-        return redirect("Account")  
+        return redirect("library_list")  
     else:
         return redirect("library_list")
 

@@ -6,109 +6,122 @@ import Db
 from .db_utils import callproc
 from django.utils import timezone
 from administration.thread_local import get_current_service  # ✅ import from your other app
+from datetime import date
 
 def logged_in_user(request):
-    user = ''
-    session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
-    session_timeout_minutes = session_cookie_age_seconds 
-    username = request.session.get('username', '')
-    full_name = request.session.get('full_name', '')
-    user_id = request.session.get('user_id', '')
-    role_id = request.session.get('role_id', '')
-    library_code = request.session.get('library_db', None) 
-    role_name = ''
-    if request.user.is_authenticated:
-        user = str(request.user.id or '')
-    
-    reports = ''    
-    menu_items = []
-    
-    # Initialize file path variable
-    file_path = '/static/images/user.png'  # Default fallback
-    library_name_show = None
-    library_details = None
-    if user_id != '' and role_id != '':
-        
-        current_db = get_current_service() or 'default'
-        # library_name_show = 'none'  # default fallback
+    try:
+        membership_active = False
+        user = ''
+        session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
+        session_timeout_minutes = session_cookie_age_seconds 
+        username = request.session.get('username', '')
+        full_name = request.session.get('full_name', '')
+        user_id = request.session.get('user_id', '')
+        role_id = request.session.get('role_id', '')
+        library_code = request.session.get('library_db', None) 
+        role_name = ''
+        if request.user.is_authenticated:
+            user = str(request.user.id or '')
 
-        library_code = request.session.get('library_db', None)
-        if library_code == 'default':
-            library_code = None
-        
-        if library_code: 
-            library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
-
-        if library_details:
-            library_name_show = library_details.library_name_mar
-        
-        role_obj = roles.objects.using(current_db).get(id=role_id)
-        role_name = role_obj.role_name
+        reports = ''    
         menu_items = []
-        menu_data = callproc("stp_get_side_navbar_details", [user_id, role_id])
-        items = []
-        for row in menu_data:
-            item = {
-                'id': row[1],
-                'name': row[2],
-                'action': row[3],
-                'is_parent': row[4],
-                'parent_id': row[5],
-                'is_sub_menu': row[6],
-                'sub_menu': row[7],
-                'is_sub_menu2': row[8],
-                'sub_menu2': row[9],
-                'menu_icon': row[10],
-                'badge': row[11] if len(row) > 11 else None  # Optional badge/count
-            }
-            items.append(item)
 
-        # Build hierarchy
-        for item in items:
-            item['children'] = [i for i in items if i['parent_id'] == item['id']]
-    
-        # Get top level items (parent_id = -1 or your specific root indicator)
-        menu_items = [item for item in items if item['parent_id'] == -1]
-        
-    membershipshow = None
-    
-    # Step 1: Get the CustomUser model based on user_id
-    if role_id == '3':
-        try:
-            user_obj = CustomUser.objects.get(id=user_id)
-            username = user_obj.username  # Retrieve the username of the user
-        except CustomUser.DoesNotExist:
-            username = None
+        # Default profile picture
+        file_path = '/static/images/user.png'
+        library_name_show = None
+        library_details = None
 
-        # Step 2: Find the MembershipDetails entry where user_id = username
-        if username:
+        if user_id and role_id:
+            current_db = get_current_service() or 'default'
+
+            if library_code == 'default':
+                library_code = None
+
+            if library_code:
+                library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+
+            if library_details:
+                library_name_show = library_details.library_name_mar
+
+            role_obj = roles.objects.using(current_db).get(id=role_id)
+            role_name = role_obj.role_name
+
+            # Fetch menu items from stored procedure
+            menu_data = callproc("stp_get_side_navbar_details", [user_id, role_id])
+            items = []
+            for row in menu_data:
+                item = {
+                    'id': row[1],
+                    'name': row[2],
+                    'action': row[3],
+                    'is_parent': row[4],
+                    'parent_id': row[5],
+                    'is_sub_menu': row[6],
+                    'sub_menu': row[7],
+                    'is_sub_menu2': row[8],
+                    'sub_menu2': row[9],
+                    'menu_icon': row[10],
+                    'badge': row[11] if len(row) > 11 else None
+                }
+                items.append(item)
+
+            # Build hierarchy
+            for item in items:
+                item['children'] = [i for i in items if i['parent_id'] == item['id']]
+
+            menu_items = [item for item in items if item['parent_id'] == -1]
+
+        membershipshow = None
+
+        if role_id == '3':  # Member role
             try:
-                membershipshow = MembershipDetails.objects.get(user_id=username)
-            except MembershipDetails.DoesNotExist:
-                membershipshow = None
+                user_obj = CustomUser.objects.get(id=user_id)
+                username = user_obj.username
+            except CustomUser.DoesNotExist:
+                username = None
 
-            # Step 3: Find the DocumentDetails where membership_id = membership.id and document_id = 1
-            if membershipshow:
+            if username:
                 try:
-                    document = DocumentDetails.objects.get(membership_id=membershipshow.id, document_id=1)
-                    file_path = document.file_path  # Retrieve the file path from DocumentDetails
-                except DocumentDetails.DoesNotExist:
-                    file_path = '/static/images/user.png'  # Fallback in case the document is not found
+                    membershipshow = MembershipDetails.objects.get(user_id=username)
+                except MembershipDetails.DoesNotExist:
+                    membershipshow = None
 
-    # Return context with the file_path for image
-    return {
-        'role_id':role_id,
-        'username': username,
-        'full_name': full_name,
-        'role_name': role_name,
-        'session_timeout_minutes': session_timeout_minutes,
-        'reports': reports,
-        'menu_items': menu_items,
-        'profile_picture_url': settings.MEDIA_URL + file_path,  # Construct the full image path
-        'membershipshow': membershipshow, 
-        'library_name_show': library_name_show, 
-    }
-    
+                # Fetch profile picture
+                if membershipshow:
+                    try:
+                        document = DocumentDetails.objects.get(membership_id=membershipshow.id, document_id=1)
+                        file_path = document.file_path
+                    except DocumentDetails.DoesNotExist:
+                        file_path = '/static/images/user.png'
+
+                    # Check membership validity
+                    today = date.today()
+                    if membershipshow.from_date and membershipshow.to_date:
+                        membership_active = True
+                        if not (membershipshow.from_date <= today <= membershipshow.to_date):
+                            # Only show “सदस्यत्व देयक” menu when membership expired
+                            menu_items = [item for item in menu_items if item['name'] == "सदस्यत्व देयक"]
+                            membership_active = False
+
+        return {
+            'role_id': role_id,
+            'username': username,
+            'full_name': full_name,
+            'role_name': role_name,
+            'session_timeout_minutes': session_timeout_minutes,
+            'reports': reports,
+            'menu_items': menu_items,
+            'profile_picture_url': settings.MEDIA_URL + file_path,
+            'membershipshow': membershipshow, 
+            'library_name_show': library_name_show, 
+            'membership_active': membership_active, 
+        }
+    except Exception as e:
+        # Log the exception if needed
+        print(f"Error in context processor: {e}")
+        return {}
+
+
 # def logged_in_user(request):
 #     user = ''
 #     session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
@@ -117,6 +130,7 @@ def logged_in_user(request):
 #     full_name = request.session.get('full_name', '')
 #     user_id = request.session.get('user_id', '')
 #     role_id = request.session.get('role_id', '')
+#     library_code = request.session.get('library_db', None) 
 #     role_name = ''
 #     if request.user.is_authenticated:
 #         user = str(request.user.id or '')
@@ -126,10 +140,22 @@ def logged_in_user(request):
     
 #     # Initialize file path variable
 #     file_path = '/static/images/user.png'  # Default fallback
-
+#     library_name_show = None
+#     library_details = None
 #     if user_id != '' and role_id != '':
         
 #         current_db = get_current_service() or 'default'
+#         # library_name_show = 'none'  # default fallback
+
+#         library_code = request.session.get('library_db', None)
+#         if library_code == 'default':
+#             library_code = None
+        
+#         if library_code: 
+#             library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+
+#         if library_details:
+#             library_name_show = library_details.library_name_mar
         
 #         role_obj = roles.objects.using(current_db).get(id=role_id)
 #         role_name = role_obj.role_name
@@ -160,6 +186,7 @@ def logged_in_user(request):
 #         menu_items = [item for item in items if item['parent_id'] == -1]
         
 #     membershipshow = None
+    
 #     # Step 1: Get the CustomUser model based on user_id
 #     if role_id == '3':
 #         try:
@@ -172,6 +199,7 @@ def logged_in_user(request):
 #         if username:
 #             try:
 #                 membershipshow = MembershipDetails.objects.get(user_id=username)
+                
 #             except MembershipDetails.DoesNotExist:
 #                 membershipshow = None
 
@@ -180,11 +208,22 @@ def logged_in_user(request):
 #                 try:
 #                     document = DocumentDetails.objects.get(membership_id=membershipshow.id, document_id=1)
 #                     file_path = document.file_path  # Retrieve the file path from DocumentDetails
+                    
+#                     today = date.today()
+
+#                     # If membership exists, check validity
+#                     if membershipshow:
+#                         if membershipshow.from_date and membershipshow.to_date:
+#                             if not (membershipshow.from_date <= today <= membershipshow.to_date):
+#                                 # Membership expired or not active today
+#                                 menu_items = []  # Hide all menu items
+                                
 #                 except DocumentDetails.DoesNotExist:
 #                     file_path = '/static/images/user.png'  # Fallback in case the document is not found
 
 #     # Return context with the file_path for image
 #     return {
+#         'role_id':role_id,
 #         'username': username,
 #         'full_name': full_name,
 #         'role_name': role_name,
@@ -193,52 +232,6 @@ def logged_in_user(request):
 #         'menu_items': menu_items,
 #         'profile_picture_url': settings.MEDIA_URL + file_path,  # Construct the full image path
 #         'membershipshow': membershipshow, 
+#         'library_name_show': library_name_show, 
 #     }
-
-# def logged_in_user(request):
-#     user =''
-#     session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
-#     session_timeout_minutes = session_cookie_age_seconds 
-#     username = request.session.get('username', '')
-#     full_name = request.session.get('full_name', '')
-#     user_id = request.session.get('user_id', '')
-#     role_id = request.session.get('role_id', '')
-#     role_name = ''
-#     if request.user.is_authenticated ==True:
-#         user = str(request.user.id or '')
-#     reports = ''    
-#     menu_items = []
     
-#     if user_id!='' and role_id!='':
-        
-#         current_db = get_current_service() or 'default'
-        
-#         role_obj = roles.objects.using(current_db).get(id=role_id)
-#         role_name = role_obj.role_name
-#         menu_items = []
-#         menu_data = callproc("stp_get_side_navbar_details", [user_id, role_id])
-#         items = []
-#         for row in menu_data:
-#             item = {
-#                 'id': row[1],
-#                 'name': row[2],
-#                 'action': row[3],
-#                 'is_parent': row[4],
-#                 'parent_id': row[5],
-#                 'is_sub_menu': row[6],
-#                 'sub_menu': row[7],
-#                 'is_sub_menu2': row[8],
-#                 'sub_menu2': row[9],
-#                 'menu_icon': row[10],
-#                 'badge': row[11] if len(row) > 11 else None  # Optional badge/count
-#             }
-#             items.append(item)
-
-#         # Build hierarchy
-#         for item in items:
-#             item['children'] = [i for i in items if i['parent_id'] == item['id']]
-    
-#         # Get top level items (parent_id = -1 or your specific root indicator)
-#         menu_items = [item for item in items if item['parent_id'] == -1]
-
-#     return {'username':username,'full_name':full_name,'role_name':role_name,'session_timeout_minutes':session_timeout_minutes,'reports':reports, 'menu_items': menu_items}

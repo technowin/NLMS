@@ -295,26 +295,31 @@ def get_membership_details(request):
                 isactive=1
             )
 
-            membershipDetails = MembershipDetails.objects.filter(
-                id=membership_detail_id,
-                isactive=1
-            ).first()
-
             data = {
                 "deposit": str(membership.deposit),
                 "entry_fees": str(membership.entry_fees),
                 "subscription_fees": str(membership.subscription_fees),
             }
-
-            data1 = {
-                "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
-                "membership_duration": membershipDetails.membership_duration,
-                "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
+            
+            data1 = None
+            
+            if membership_detail_id:
                 
-                "deposit": str(membershipDetails.deposit) if membershipDetails and membershipDetails.deposit else str(membership.deposit),  
-                "entry_fees": str(membershipDetails.entry_fees) if membershipDetails and membershipDetails.entry_fees else str(membership.entry_fees),
-                "subscription": str(membershipDetails.subscription) if membershipDetails and membershipDetails.subscription else str(membership.subscription),
-            }
+                
+                membershipDetails = MembershipDetails.objects.filter(
+                    id=membership_detail_id,
+                    isactive=1
+                ).first()
+
+                data1 = {
+                    "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
+                    "membership_duration": membershipDetails.membership_duration,
+                    "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
+                    
+                    "deposit": str(membershipDetails.deposit) if membershipDetails and membershipDetails.deposit else str(membership.deposit),  
+                    "entry_fees": str(membershipDetails.entry_fees) if membershipDetails and membershipDetails.entry_fees else str(membership.entry_fees),
+                    "subscription": str(membershipDetails.subscription) if membershipDetails and membershipDetails.subscription else str(membership.subscription),
+                }
 
             return JsonResponse({
                 "success": True,

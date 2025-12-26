@@ -191,9 +191,20 @@
                             <i class="bi bi-book-x display-4 text-muted mb-3"></i>
                             <h6 class="text-muted fw-bold">No books currently borrowed</h6>
                             <p class="text-muted mb-4 small">Visit our library to discover exciting books!</p>
-                            <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-md rounded-pill">
+                            {% comment %} <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-md rounded-pill">
                                 <i class="bi bi-search me-1"></i>Browse Collection
-                            </a>
+                            </a> {% endcomment %}
+                            
+                            {% if membership_active %}
+                                <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-md rounded-pill">
+                                    <i class="bi bi-search me-1"></i>Browse Collection
+                                </a>
+                            {% else %}
+                                <div class="alert alert-warning d-inline-block px-4 py-2 rounded-pill">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Your membership is inactive. Please renew to borrow books.
+                                </div>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
@@ -213,20 +224,22 @@
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <!-- Search Books -->
-                            <div class="col-md-6">
-                                <div class="d-grid">
-                                    <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-lg action-btn p-3 rounded-3">
-                                        <div class="d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-search fs-3 me-3"></i>
-                                            <div class="text-start">
-                                                <div class="fw-bold">Search Books</div>
-                                                <small class="opacity-75">Browse our collection</small>
+                            {% if membership_active %}
+                                <div class="col-md-6">
+                                    <div class="d-grid">
+                                        <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-lg action-btn p-3 rounded-3">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-search fs-3 me-3"></i>
+                                                <div class="text-start">
+                                                    <div class="fw-bold">Search Books</div>
+                                                    <small class="opacity-75">Browse our collection</small>
+                                                </div>
+                                                <i class="bi bi-arrow-right ms-auto"></i>
                                             </div>
-                                            <i class="bi bi-arrow-right ms-auto"></i>
-                                        </div>
-                                    </a>
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
+                            {% endif %}
                             
                             <!-- History -->
                             <div class="col-md-6">
