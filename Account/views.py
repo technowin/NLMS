@@ -149,7 +149,8 @@ def Login(request):
         # Database alias (static for L01)
         # ------------------------------------------
         
-        if library_code == 'default' or library_code is None:
+        # if library_code == 'default' or library_code is None and next_url == '':
+        if ( library_code == 'default' or library_code is None ) and next_url == '':
             
             db_alias = library_code
 
@@ -220,6 +221,7 @@ def Login(request):
 
                     # Redirect safely to allowed section
                     return redirect("L01:membership_dashboard")
+            
 
                 # ✅ Practitioner allowed normal navigation
                 if next_url:
@@ -227,6 +229,15 @@ def Login(request):
                 else:
 
                     return redirect("L01:membership_dashboard")
+                
+            if str(user.role_id) == '3':   # role_id = 3 → Member
+                login_session = MemberLoginSession.objects.using('L01').create(
+                    member_id=user.id,
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                )
+
+                # store session id for page tracking
+                request.session['login_session_id'] = login_session.id
 
             # ============================================================
             # VALID MEMBERSHIP (NOT PRACTITIONER)

@@ -40,6 +40,29 @@
     </div>
 </div>
 
+<br>
+
+<div id="footfall_container" class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Member Footfall(Online)</h5>
+                <canvas id="footfallChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Member Footfall (Offline)</h5>
+                <canvas id="physicalFootfallChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- ================= TRANSACTION MODAL ================= -->
 <!-- ================= TRANSACTION MODAL ================= -->
 <div class="modal fade" id="transactionModal" tabindex="-1">
@@ -60,29 +83,115 @@
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-let dailyChart, eodChart, transactionTable, currentLabel, currentDetailType;
+let dailyChart, eodChart, transactionTable, currentLabel, currentDetailType, footfallChart,physicalFootfallChart;
 
 // ------------------- RENDER DASHBOARD 1 -------------------
 function renderDashboard1(data) {
-    // Set filter dates if provided
     if (data.start_date && data.end_date) {
         $('#from_date').val(data.start_date);
         $('#to_date').val(data.end_date);
     }
-    
+
     if (data.daily) {
         renderDailyTransactionChart(data.daily);
-    } else {
-        $('#transaction_container').html('<div class="alert alert-warning">No daily transaction data available</div>');
     }
 
     if (data.eod) {
         renderEodChart(data.eod);
-    } else {
-        $('#transaction_container').append('<div class="alert alert-warning">No EOD data available</div>');
+    }
+
+    // 🔥 NEW FOOTFALL BAR GRAPH
+    if (data.footfall) {
+        renderFootfallChart(data.footfall);
+    }
+      if (data.physical_footfall) {
+        renderPhysicalFootfallChart(data.physical_footfall);
     }
 }
+
+
+
+function renderFootfallChart(footfall) {
+    const ctx = document.getElementById('footfallChart');
+    if (!ctx) return;
+
+    if (footfallChart) footfallChart.destroy();
+
+    footfallChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: footfall.labels,   // menu names
+            datasets: [{
+                label: 'Members Logged In',
+                data: footfall.counts,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            },
+
+            // ✅ ADD THIS
+            onClick: (evt, elements) => {
+                if (!elements.length) return;
+
+                const index = elements[0].index;
+                const menuName = footfall.labels[index];
+
+                // SAME modal + SAME function
+                showTransactionTable('footfall_online', menuName);
+            }
+        }
+    });
+}
+
+
+function renderPhysicalFootfallChart(footfall) {
+    const ctx = document.getElementById('physicalFootfallChart');
+    if (!ctx) return;
+
+    if (physicalFootfallChart) physicalFootfallChart.destroy();
+
+    physicalFootfallChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: footfall.labels,   // dates
+            datasets: [{
+                label: 'Members Entered',
+                data: footfall.counts,
+                backgroundColor: '#198754'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            },
+
+            // ✅ ADD THIS
+            onClick: (evt, elements) => {
+                if (!elements.length) return;
+
+                const index = elements[0].index;
+                const label = footfall.labels[index];
+
+                showTransactionTable('footfall_offline', label);
+            }
+        }
+    });
+}
+
+
 
 // ------------------- RENDER CHARTS -------------------
 function renderDailyTransactionChart(daily) {
@@ -281,7 +390,9 @@ function initializeDataTable(detailType, fromDate, toDate) {
     console.log('initializeDataTable called for:', detailType);
     
     // Define columns
-    const columns = ['monthly','total','fine','book_fine'].includes(detailType) 
+    const columns =
+        // ================= PAYMENT (EOD) =================
+        ['monthly','total','fine','book_fine'].includes(detailType)
         ? [
             { 
                 title: 'Member Code', 
@@ -298,10 +409,7 @@ function initializeDataTable(detailType, fromDate, toDate) {
                 data: 'payment_date',
                 className: 'text-center',
                 render: function(data) {
-                    if (data) {
-                        return new Date(data).toLocaleDateString('en-IN');
-                    }
-                    return '';
+                    return data ? new Date(data).toLocaleDateString('en-IN') : '';
                 }
             },
             { 
@@ -316,6 +424,36 @@ function initializeDataTable(detailType, fromDate, toDate) {
                 }
             }
         ]
+
+        // ================= FOOTFALL (ONLINE + OFFLINE) =================
+        : ['footfall_online','footfall_offline'].includes(detailType)
+        ? [
+            {
+                title: 'Membership Type',
+                data: 'membership_type',
+                className: 'text-center'
+            },
+            {
+                title: 'Membership Code',
+                data: 'membership_code',
+                className: 'text-center'
+            },
+            {
+                title: 'Member Name',
+                data: 'member_name',
+                className: 'text-start'
+            },
+            {
+                title: 'Login / Entry Time',
+                data: 'login_time',
+                className: 'text-center',
+                render: function(data) {
+                    return data ? new Date(data).toLocaleString('en-IN') : '';
+                }
+            }
+        ]
+
+        // ================= CIRCULATION (Issued / Returned / Due / Damaged) =================
         : [
             { 
                 title: 'Member Code', 
@@ -342,13 +480,11 @@ function initializeDataTable(detailType, fromDate, toDate) {
                 data: 'date',
                 className: 'text-center',
                 render: function(data) {
-                    if (data) {
-                        return new Date(data).toLocaleDateString('en-IN');
-                    }
-                    return '';
+                    return data ? new Date(data).toLocaleDateString('en-IN') : '';
                 }
             }
         ];
+
     
     // Initialize DataTable
     transactionTable = $('#transaction-table').DataTable({
@@ -530,4 +666,6 @@ function downloadReport(format) {
     // IMPORTANT: normal redirect to force download
     window.location.href = url;
 }
+
+
 </script>

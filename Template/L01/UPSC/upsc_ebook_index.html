@@ -174,9 +174,9 @@
           <p>{{ section.section_description }}</p>
 
          <a href="javascript:void(0);" class="view-more-btn"
-   onclick="showSubjectsSection({{ section.section_no }}, '{{ section.section_name }}')">
-    View More
-</a>
+            onclick="showSubjectsSection('{{ section.encrypted_section_no }}', '{{ section.section_name|escapejs }}')">
+             View More
+         </a>
 
         </div>
       {% endfor %}

@@ -3805,10 +3805,12 @@ def upsc_ebook_index(request):
         # Keep as list of tuples (section_no, subjects)
         subjects_by_section = []
         for section in sections:
+            section.encrypted_section_no = enc(str(section.section_no))
             subjects = Subjects.objects.using('L01').filter(
                 section_no=section.section_no
             ).order_by('subject_id')  # use subject_id since subject_no doesn't exist
-            subjects_by_section.append((section.section_no, subjects))
+            # subjects_by_section.append((section.section_no, subjects))
+            subjects_by_section.append((section.encrypted_section_no, subjects))
 
         # Pass everything to template without converting to dict
         return render(request, "L01/UPSC/upsc_ebook_index.html", {
@@ -3832,6 +3834,7 @@ def topic_index(request, section_no):
         )
 
         # ✅ Fetch the specific section using the passed section_no
+        section_no = int(dec(section_no))
         section = get_object_or_404(
             Sections.objects.using('L01'),
             section_no=section_no
@@ -3941,11 +3944,17 @@ def mpsc_ebook_index(request):
 
         # ✅ Fetch subjects for each section (order by subject_id)
         subjects_by_section = []
+
         for section in sections:
+            section.encrypted_section_no = enc(str(section.section_no))
             subjects = Subjects.objects.using('L01').filter(
                 section_no=section.section_no
             ).order_by('subject_id')  # using subject_id same as UPSC
-            subjects_by_section.append((section.section_no, subjects))
+            # subjects_by_section.append((section.section_no, subjects))
+            # encrypted_section_no = enc(str(section.section_no))
+
+            # 🔐 send encrypted section_no to template
+            subjects_by_section.append((section.encrypted_section_no, subjects))
 
         # Pass everything to template without converting to dict
         return render(request, "L01/MPSC/mpsc_ebooks_index.html", {
@@ -3970,6 +3979,7 @@ def mpsc_topics_index(request, section_no):
         )
 
         # ✅ Fetch the specific section using the passed section_no
+        section_no = int(dec(section_no))
         section = get_object_or_404(
             Sections.objects.using('L01'),
             section_no=section_no
@@ -4050,7 +4060,6 @@ def mpsc_chapters_index(request, topic_id):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-    
 def member_entry_exit(request):
     from django.utils.timezone import localdate
     active_user_ids = CustomUser.objects.filter(
@@ -7518,59 +7527,111 @@ def dashboard_view(request):
         }, status=500)
 
 def get_dashboard1_data(request):
-    from django.utils.timezone import now
-    start_date = request.GET.get('from_date')
-    end_date   = request.GET.get('to_date')
+    try:
+        from django.utils.timezone import now
+        from datetime import datetime, time
+        from django.utils import timezone
+        from django.db.models import Count
+        from django.db.models.expressions import RawSQL
+        start_date = request.GET.get('from_date')
+        end_date   = request.GET.get('to_date')
 
-    if start_date and end_date:
-        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-        end_date   = datetime.strptime(end_date, "%Y-%m-%d").date()
-    else:
-        start_date = end_date = now().date()
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date   = datetime.strptime(end_date, "%Y-%m-%d").date()
+        else:
+            start_date = end_date = now().date()
 
-    # ---------- DAILY ----------
-    daily = {
-        "issued": CirculationTransaction.objects.using("L01")
-                    .filter(issue_date__range=[start_date, end_date]).count(),
+        
 
-        "returned": CirculationTransaction.objects.using("L01")
-                    .filter(return_date__range=[start_date, end_date]).count(),
+        # ---------- DAILY ----------
+        daily = {
+            "issued": CirculationTransaction.objects.using("L01")
+                        .filter(issue_date__range=[start_date, end_date]).count(),
 
-        "due": CirculationTransaction.objects.using("L01")
-                    .filter(due_date__range=[start_date, end_date],
-                            return_date__isnull=True).count(),
+            "returned": CirculationTransaction.objects.using("L01")
+                        .filter(return_date__range=[start_date, end_date]).count(),
 
-        "damaged": CirculationTransaction.objects.using("L01")
-                    .filter(return_condition_id__in=[17, 18],
-                            return_date__range=[start_date, end_date]).count(),
-    }
+            "due": CirculationTransaction.objects.using("L01")
+                        .filter(due_date__range=[start_date, end_date],
+                                return_date__isnull=True).count(),
 
-    # ---------- EOD ----------
-    payments = PaymentDetails.objects.using("L01")\
-                .filter(payment_date__range=[start_date, end_date])
+            "damaged": CirculationTransaction.objects.using("L01")
+                        .filter(return_condition_id__in=[17, 18],
+                                return_date__range=[start_date, end_date]).count(),
+        }
 
-    eod = payments.aggregate(
-        monthly=Sum('monthly_subscription_amount'),
-        total=Sum('total_subscription_amount'),
-        fine=Sum('fine_amount'),
-        book_fine=Sum('book_fine_amount')
-    )
+        # ---------- EOD ----------
+        payments = PaymentDetails.objects.using("L01")\
+                    .filter(payment_date__range=[start_date, end_date])
 
-    eod = {k: v or 0 for k, v in eod.items()}
+        eod = payments.aggregate(
+            monthly=Sum('monthly_subscription_amount'),
+            total=Sum('total_subscription_amount'),
+            fine=Sum('fine_amount'),
+            book_fine=Sum('book_fine_amount')
+        )
 
-    # ---------- PARTIAL HTML ----------
-    html = render_to_string(
-        "L01/Dashboard/dashboard1_content.html",
-        request=request
-    )
+        eod = {k: v or 0 for k, v in eod.items()}
 
-    return JsonResponse({
-        "html": html,
-        "daily": daily,
-        "eod": eod,
-        "start_date":start_date,
-        "end_date":end_date
-    })
+        
+        start_dt = timezone.make_aware(datetime.combine(start_date, time.min))
+        end_dt   = timezone.make_aware(datetime.combine(end_date, time.max))
+
+        
+        footfall_qs = (
+            MemberScreenActivity.objects.using("L01")
+            .values('screen_name')  # X-axis: menu/screen name
+            .annotate(count=Count('session__member', distinct=True))  # Y-axis: distinct members
+            .order_by('screen_name')
+        )
+
+        footfall = {
+            "labels": [f['screen_name'] for f in footfall_qs],  # menu names
+            "counts": [f['count'] for f in footfall_qs]         # number of members
+        }
+
+
+        physical_footfall_qs = (
+            MemberEntryExit.objects.using("L01")
+            .filter(
+                entry_time__range=(start_dt, end_dt)
+            )
+            .annotate(day=RawSQL("DATE(entry_time)", []))
+            .values('day')
+            .annotate(count=Count('id'))
+            .order_by('day')
+        )
+
+        physical_footfall = {
+            "labels": [
+                f['day'].strftime('%d-%b')
+                for f in physical_footfall_qs
+                if f['day']
+            ],
+            "counts": [
+                f['count']
+                for f in physical_footfall_qs
+                if f['day']
+            ]
+        }
+        # ---------- PARTIAL HTML ----------
+        html = render_to_string(
+            "L01/Dashboard/dashboard1_content.html",
+            request=request
+        )
+
+        return JsonResponse({
+            "html": html,
+            "daily": daily,
+            "eod": eod,
+            "footfall": footfall,
+            "physical_footfall": physical_footfall,
+            "start_date":start_date,
+            "end_date":end_date
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def get_transaction_details(request):
     try:
@@ -7772,6 +7833,84 @@ def get_transaction_details(request):
             except Exception as e:
                 print(f"Error in payment section: {str(e)}")
                 traceback.print_exc()
+
+        elif detail_type == "footfall_online":
+            from datetime import datetime, time
+
+            start_datetime = datetime.combine(start_date, time.min)
+            end_datetime = datetime.combine(end_date, time.max)
+            
+
+            qs = MemberLoginSession.objects.using("L01").select_related(
+                'member'
+            ).filter(
+                login_time__range=[start_datetime, end_datetime]
+            )
+
+            if search_value:
+                qs = qs.filter(
+                    Q(member__membership_code__icontains=search_value) |
+                    Q(member__first_name_mar__icontains=search_value) |
+                    Q(member__last_name_mar__icontains=search_value)
+                )
+
+            total_records = qs.count()
+            qs = qs.order_by('-login_time')[start:start + length]
+
+            for obj in qs:
+                data.append({
+                    "membership_type": obj.member.membership.membership_type if obj.member else "",
+                    "membership_code": obj.member.membership_code if obj.member else "",
+                    "member_name": f"{obj.member.first_name_mar or ''} {obj.member.last_name_mar or ''}".strip(),
+                    "login_time": obj.login_time.isoformat() if obj.login_time else "",
+                })
+
+        elif detail_type == "footfall_offline":
+            from datetime import datetime, time
+
+            start_datetime = datetime.combine(start_date, time.min)
+            end_datetime = datetime.combine(end_date, time.max)
+
+            qs = MemberEntryExit.objects.using("L01").filter(
+                entry_time__range=[start_datetime, end_datetime]
+            )
+
+            if search_value:
+                qs = qs.filter(
+                    Q(membership_code__icontains=search_value)
+                )
+
+            total_records = qs.count()
+            qs = qs.order_by('-entry_time')[start:start + length]
+
+            # ✅ FIX: evaluate queryset BEFORE using __in
+            membership_codes = list(
+                qs.values_list('membership_code', flat=True)
+            )
+
+            member_map = {
+                m.membership_code: m
+                for m in MembershipDetails.objects.using("L01").filter(
+                    membership_code__in=membership_codes
+                )
+            }
+
+            for obj in qs:
+                member = member_map.get(obj.membership_code)
+
+                data.append({
+                    "membership_type": member.membership.membership_type if member else "",
+                    "membership_code": obj.membership_code,
+                    "member_name": (
+                        f"{member.first_name_mar or ''} {member.last_name_mar or ''}".strip()
+                        if member else ""
+                    ),
+                    "login_time": obj.entry_time.isoformat() if obj.entry_time else "",
+                })
+
+
+
+
         
         else:
             print(f"Unknown detail_type: {detail_type}")
@@ -9541,8 +9680,78 @@ def get_dashboard_detail_data(detail_type, from_date, to_date):
                 'amount'
             )
         )
+    elif detail_type == "footfall_online":
+        from datetime import datetime, time
+
+        start_datetime = datetime.combine(from_date, time.min)
+        end_datetime = datetime.combine(to_date, time.max)
+
+        qs = (
+            MemberLoginSession.objects.using("L01")
+            .select_related('member', 'member__membership')
+            .filter(login_time__range=[start_datetime, end_datetime])
+            .order_by('-login_time')
+        )
+
+        return [
+            {
+                "membership_type": obj.member.membership.membership_type if obj.member else "",
+                "member_code": obj.member.membership_code if obj.member else "",
+                "member_name": (
+                    f"{obj.member.first_name_mar or ''} "
+                    f"{obj.member.last_name_mar or ''}"
+                ).strip() if obj.member else "",
+                "login_time": obj.login_time
+            }
+            for obj in qs
+        ]
+    elif detail_type == "footfall_offline":
+        from datetime import datetime, time
+
+        start_datetime = datetime.combine(from_date, time.min)
+        end_datetime = datetime.combine(to_date, time.max)
+
+        qs = (
+            MemberEntryExit.objects.using("L01")
+            .filter(entry_time__range=[start_datetime, end_datetime])
+            .order_by('-entry_time')
+        )
+
+        # evaluate queryset first (MySQL safe)
+        membership_codes = list(
+            qs.values_list('membership_code', flat=True)
+        )
+
+        member_map = {
+            m.membership_code: m
+            for m in MembershipDetails.objects.using("L01")
+            .select_related('membership')
+            .filter(membership_code__in=membership_codes)
+        }
+
+        return [
+            {
+                "membership_type": (
+                    member_map.get(obj.membership_code).membership.membership_type
+                    if member_map.get(obj.membership_code) else ""
+                ),
+                "member_code": obj.membership_code,
+                "member_name": (
+                    f"{member_map.get(obj.membership_code).first_name_mar or ''} "
+                    f"{member_map.get(obj.membership_code).last_name_mar or ''}"
+                ).strip() if member_map.get(obj.membership_code) else "",
+                "login_time": obj.entry_time
+            }
+            for obj in qs
+        ]
+
 
     return []
+
+def make_naive(dt):
+    if dt and hasattr(dt, 'tzinfo') and dt.tzinfo:
+        return dt.replace(tzinfo=None)
+    return dt
 
 def export_excel(data, detail_type):
     wb = openpyxl.Workbook()
@@ -9551,13 +9760,20 @@ def export_excel(data, detail_type):
 
     if detail_type in ['monthly','total','fine','book_fine']:
         headers = ['Member Code', 'Member Name', 'Payment Date', 'Amount']
+    elif detail_type in ['footfall_online', 'footfall_offline']:
+        headers = ['Member Code','Member Type','Member Name','Login Time']
     else:
         headers = ['Member Code', 'Member Name', 'Book Title', 'Book Barcode', 'Date']
 
     ws.append(headers)
 
     for row in data:
-        ws.append(list(row.values()))
+        cleaned_row = []
+        for value in row.values():
+            if isinstance(value, datetime):
+                value = make_naive(value)
+            cleaned_row.append(value)
+        ws.append(cleaned_row)
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -9572,6 +9788,13 @@ def dashboard_export(request):
     to_date = request.GET.get('to_date')
     format_type = request.GET.get('format')
 
+    
+    from_date_str = request.GET.get('from_date')
+    to_date_str = request.GET.get('to_date')
+
+    from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
+    to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
+
     data = get_dashboard_detail_data(detail_type, from_date, to_date)
 
     if format_type == 'excel':
@@ -9585,13 +9808,19 @@ def dashboard_export(request):
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate
 from reportlab.pdfgen import canvas
 
+
 def export_pdf(data, detail_type):
     try:
         # ---------------- Headers based on type ----------------
         if detail_type in ['monthly', 'total', 'fine', 'book_fine']:
             headers = ['सभासद कोड', 'सभासद नाव', 'देयक तारीख', 'रक्कम']
+        elif detail_type in ['footfall_online', 'footfall_offline']:
+            headers = ['सभासद प्रकार','सभासद कोड','सभासद नाव','लॉगिन वेळ']
         else:
             headers = ['सभासद कोड', 'सभासद नाव', 'पुस्तक नाव', 'बारकोड', 'तारीख']
+
+        
+
 
         # ---------------- Build table rows ----------------
         table_rows = ""

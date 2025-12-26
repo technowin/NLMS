@@ -192,6 +192,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Your DB middleware should be **AFTER auth and messages**
     'administration.middleware.LibraryDatabaseMiddleware',
+    'L01.middleware.MemberActivityMiddleware',
     # Optional:
     'django_auto_logout.middleware.auto_logout',
     'axes.middleware.AxesMiddleware',

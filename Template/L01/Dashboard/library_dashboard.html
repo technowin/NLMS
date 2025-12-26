@@ -522,10 +522,12 @@ function handleDashboardData(dashboardId, data) {
             $('#dashboard1-content').empty();
             if (data.html) {
                 $('#dashboard1-content').html(data.html);
-                if (typeof renderDashboard1 === 'function' && data.daily && data.eod) {
+                if (typeof renderDashboard1 === 'function' && data.daily && data.eod && data.physical_footfall) {
                     renderDashboard1({
                         daily: data.daily,
                         eod: data.eod,
+                        footfall:data.footfall,
+                        physical_footfall: data.physical_footfall,  // <-- NEW
                         start_date: data.start_date,
                         end_date: data.end_date
                     });
