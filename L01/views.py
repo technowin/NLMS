@@ -6236,33 +6236,34 @@ class ExportStockReportView(View):
         try:
             # Generate PDF with WeasyPrint
             html = HTML(string=html_content)
+
+            font_regular = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Regular.ttf")
+
+            font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Bold.ttf")
+
             
             # Add CSS for better typography
-            css_string = """
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari'),
-                    local('NotoSansDevanagari-Regular'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari Bold'),
-                    local('NotoSansDevanagari-Bold'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf') format('truetype');
-                font-weight: bold;
-                font-style: normal;
-            }
-            
-            body {
-                font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'Sanskrit Text', 'Arial Unicode MS', sans-serif;
-                text-rendering: optimizeLegibility;
-                -webkit-font-smoothing: antialiased;
-            }
-            """
+            css_string = f"""
+                @font-face {{
+                    font-family: 'Noto Sans Devanagari';
+                    src: url('file://{font_regular}');
+                    font-weight: normal;
+                    font-style: normal;
+                }}
+
+                @font-face {{
+                    font-family: 'Noto Sans Devanagari';
+                    src: url('file://{font_bold}');
+                    font-weight: bold;
+                    font-style: normal;
+                }}
+
+                body {{
+                    font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', sans-serif;
+                    text-rendering: optimizeLegibility;
+                }}
+                """
+
             
             css = CSS(string=css_string)
             pdf_data = html.write_pdf(stylesheets=[css])
@@ -6782,33 +6783,34 @@ def export_final_report_to_pdf(report_data):
         try:
             # Generate PDF with WeasyPrint
             weasyprint_html = HTML(string=html_content)  # Use different variable name
+
+            font_regular = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Regular.ttf")
+
+            font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Bold.ttf")
+
             
             # Add CSS for better typography
-            css_string = """
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari'),
-                    local('NotoSansDevanagari-Regular'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari Bold'),
-                    local('NotoSansDevanagari-Bold'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf') format('truetype');
-                font-weight: bold;
-                font-style: normal;
-            }
-            
-            body {
-                font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'Sanskrit Text', 'Arial Unicode MS', sans-serif;
-                text-rendering: optimizeLegibility;
-                -webkit-font-smoothing: antialiased;
-            }
+            css_string = f"""
+                @font-face {{
+                    font-family: 'Noto Sans Devanagari';
+                    src: url('file://{font_regular}');
+                    font-weight: normal;
+                    font-style: normal;
+                }}
+
+                @font-face {{
+                    font-family: 'Noto Sans Devanagari';
+                    src: url('file://{font_bold}');
+                    font-weight: bold;
+                    font-style: normal;
+                }}
+
+                body {{
+                    font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', sans-serif;
+                    text-rendering: optimizeLegibility;
+                }}
             """
+
             
             css = CSS(string=css_string)
             pdf_data = weasyprint_html.write_pdf(stylesheets=[css])
