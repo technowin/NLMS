@@ -6425,10 +6425,9 @@ def generate_final_report(request):
     except Exception as e:
         error_trace = traceback.format_exc()
         error_log.objects.create(
-            function_name='generate_final_report',
-            error_message=str(e),
-            traceback=error_trace,
-            created_at=timezone.now()
+            method='generate_final_report',
+            error=str(e),
+            error_date=timezone.now()
         )
 
         return JsonResponse({
@@ -6487,10 +6486,9 @@ def prepare_report_data_from_stock_reports(stock_reports, stock_year):
     except Exception as e:
         error_trace = traceback.format_exc()
         error_log.objects.create(
-            function_name='generate_final_report',
-            error_message=str(e),
-            traceback=error_trace,
-            created_at=timezone.now()
+            method='generate_final_report',
+            error=str(e),
+            error_date=timezone.now()
         )
             
 
@@ -6808,7 +6806,7 @@ def export_final_report_to_pdf(report_data):
 
                 font_regular = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Regular.ttf")
 
-                font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Bold.ttf")
+                font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSerifDevanagari-Bold.ttf")
 
                 
                 # Add CSS for better typography
@@ -6865,10 +6863,9 @@ def export_final_report_to_pdf(report_data):
     except Exception as e:
         error_trace = traceback.format_exc()
         error_log.objects.create(
-            function_name='generate_final_report',
-            error_message=str(e),
-            traceback=error_trace,
-            created_at=timezone.now()
+            method='generate_final_report',
+            error=str(e),
+            error_date=timezone.now()
         )
 
 
