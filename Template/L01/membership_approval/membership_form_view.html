@@ -1,5 +1,6 @@
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
+{% load encryption_filters %}
 
 {% block title %}सदस्यत्व फॉर्म फॉर्म तपासा{% endblock title %}
 
@@ -470,24 +471,267 @@
 
             {% if not role_id == '3' %}
 
-                {% if not membership.actionperformed or membership.actionperformed == 'rejected' %}
-                
-                    <form id="membershipForm" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <input type="hidden" name="membership_id" value="{{ membership.id }}">
-                        <input type="hidden" name="action" id="actionInput">
-                        <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+                {% if not membership.actionperformed or membership.actionperformed == 'rejected' or membership.status_id == 9 or membership.status_id == 11  %}
 
-                        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
-                            <button type="submit" class="btn btn-success" onclick="document.getElementById('actionInput').value='approved'">
-                                Approve / मान्य करा
-                            </button>
-                            <button type="submit" class="btn btn-danger" onclick="document.getElementById('actionInput').value='rejected'">
-                                Reject / नाकार करा
-                            </button>
+                    {% if membership.status_id == 9 or membership.status_id == 11 %}
+
+                        {% if membership.status_id == 9 %}
+                            <div class="alert alert-warning text-center">
+                                The member has selected offline payment. / सदस्याने ऑफलाइन देयक निवडले आहे.<br>
+                                Please click the button below if you have received the payment. / कृपया रक्कम प्राप्त झाल्यावर खालील बटणावर क्लिक करा.<br>
+                                Thank you! / धन्यवाद!
+                            </div>
+                        {% endif %}
+
+                        <!-- Payment Summary Card -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Renewal Payment Summary / नूतनीकरण देयक सारांश</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Membership Period -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <strong>Membership Period / सदस्यता कालावधी:</strong><br>
+                                        From / प्रारंभ: <span class="badge bg-info">{{ membership.from_date|date:"d/m/Y" }}</span><br>
+                                        To / समाप्ती: <span class="badge bg-info">{{ membership.to_date|date:"d/m/Y" }}</span><br>
+                                        Duration / कालावधी: {{ membership.membership_duration }} months / महिने
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Membership Type / सदस्यता प्रकार:</strong><br>
+                                        {{ membership.membership.membership_type_en }} - {{ membership.membership.membership_type }}
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <!-- Fee Structure (Informational) -->
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <h6>Fee Structure / शुल्क रचना <small class="text-muted">(For reference only / केवळ संदर्भासाठी)</small></h6>
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th width="60%">Fee Type / शुल्क प्रकार</th>
+                                                    <th width="40%" class="text-end">Amount / रक्कम (₹)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="table-secondary">
+                                                    <td>
+                                                        Deposit / जमा रक्कम
+                                                        <br><small class="text-success"><i class="fas fa-check-circle"></i> Paid during initial membership / प्रारंभिक सदस्यतेत दिले</small>
+                                                    </td>
+                                                    <td class="text-end">{{ membership.deposit|default:0|floatformat:2 }}</td>
+                                                </tr>
+                                                <tr class="table-secondary">
+                                                    <td>
+                                                        Entry Fees / प्रवेश शुल्क
+                                                        <br><small class="text-success"><i class="fas fa-check-circle"></i> Paid during initial membership / प्रारंभिक सदस्यतेत दिले</small>
+                                                    </td>
+                                                    <td class="text-end">{{ membership.entry_fees|default:0|floatformat:2 }}</td>
+                                                </tr>
+                                                <tr class="table-primary">
+                                                    <td>
+                                                        <strong>Subscription / वर्गणी</strong>
+                                                        <br><small class="text-danger"><i class="fas fa-money-bill-wave"></i> Payable now / आता देय</small>
+                                                    </td>
+                                                    <td class="text-end"><strong>{{ membership.subscription|default:0|floatformat:2 }}</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Fine Details (only if exists) -->
+                                {% if membership.gap_months or membership.late_fee %}
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <h6>Fine Details / दंड तपशील <small class="text-muted">(Payable if applicable / लागू असल्यास देय)</small></h6>
+                                            <table class="table table-sm table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th width="60%">Fine Type / दंड प्रकार</th>
+                                                        <th width="40%" class="text-end">Amount / रक्कम (₹)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% if membership.gap_months %}
+                                                    <tr class="table-warning">
+                                                        <td>
+                                                            Gap Fine / मागील दंड<br>
+                                                            <small class="text-muted">{{ membership.gap_months }} month(s) gap / {{ membership.gap_months }} महिने मागे</small>
+                                                        </td>
+                                                        <td class="text-end">{{ membership.gap_fine|default:0|floatformat:2 }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    
+                                                    {% if membership.late_fee %}
+                                                    <tr class="table-warning">
+                                                        <td>Late Payment Fee / विलंब शुल्क</td>
+                                                        <td class="text-end">{{ membership.late_fee|default:0|floatformat:2 }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    
+                                                    {% if membership.gap_months or membership.late_fee %}
+                                                    <tr class="table-danger">
+                                                        <td><strong>Total Fine / एकूण दंड</strong></td>
+                                                        <td class="text-end"><strong>{{ membership.total_fine_membership|default:0|floatformat:2 }}</strong></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- PAYABLE AMOUNT (This is what matters!) -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="alert alert-success">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-8">
+                                                    <h4 class="mb-1">Amount to be Paid Now / आता देय रक्कम:</h4>
+                                                    <small class="text-muted">
+                                                        Subscription + Fines (if any) / वर्गणी + दंड (असल्यास)
+                                                    </small>
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    <h1 class="mb-0 text-success">
+                                                        ₹{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}
+                                                    </h1>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Breakdown of Payable Amount -->
+                                        <div class="row mt-2">
+                                            <div class="col-md-12">
+                                                <table class="table table-sm table-borderless">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td width="70%">Subscription / वर्गणी:</td>
+                                                            <td width="30%" class="text-end">₹{{ membership.subscription|default:0|floatformat:2 }}</td>
+                                                        </tr>
+                                                        {% if membership.total_fine_membership %}
+                                                        <tr>
+                                                            <td>Total Fine / एकूण दंड:</td>
+                                                            <td class="text-end">+ ₹{{ membership.total_fine_membership|default:0|floatformat:2 }}</td>
+                                                        </tr>
+                                                        {% endif %}
+                                                        <tr class="border-top">
+                                                            <td><strong>Total Payable Now / एकूण देय रक्कम:</strong></td>
+                                                            <td class="text-end"><strong>₹{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}</strong></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Information Note -->
+                                <div class="alert alert-info small mt-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Note:</strong> Deposit (₹{{ membership.deposit|default:0|floatformat:2 }}) and Entry Fees (₹{{ membership.entry_fees|default:0|floatformat:2 }}) were already paid during initial membership and are not payable now.
+                                    <br><strong>टीप:</strong> जमा रक्कम (₹{{ membership.deposit|default:0|floatformat:2 }}) आणि प्रवेश शुल्क (₹{{ membership.entry_fees|default:0|floatformat:2 }}) प्रारंभिक सदस्यतेत आधीच दिले गेले आहेत आणि आता देय नाहीत.
+                                </div>
+
+                                <!-- Calculation Timestamp -->
+                                {% if membership.fine_calculated_at %}
+                                    <div class="text-muted small text-end">
+                                        Fine calculated on / दंड गणना दिनांक: {{ membership.fine_calculated_at|date:"d/m/Y H:i" }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </form>
 
+                        <!-- Keep your existing payment summary card (unchanged) -->
+
+                        {% if membership.status_id == 9 %}
+                            <!-- Action Form with SweetAlert Confirmation -->
+                            <form id="membershipForm" method="post" enctype="multipart/form-data" class="text-center mt-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                                <input type="hidden" name="action" id="actionInput" value="">
+                                <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+
+                                <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                                    <!-- Approve Button with SweetAlert -->
+                                    <button type="button" class="btn btn-success btn-lg px-5" onclick="confirmApproval()">
+                                        <i class="fas fa-check-circle"></i> Approve Payment / देयक मान्य करा
+                                    </button>
+                                    
+                                    <!-- Reject Button with SweetAlert -->
+                                    <button type="button" class="btn btn-danger btn-lg px-5" onclick="confirmRejection()">
+                                        <i class="fas fa-times-circle"></i> Reject / नाकार करा
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Include SweetAlert -->
+                            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                            <script>
+                                function confirmApproval() {
+                                    const payableAmount = '{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}';
+                                    
+                                    Swal.fire({
+                                        title: 'देयक मान्य करायचे आहे का?',
+                                        text: `तुम्हाला ₹${payableAmount} रक्कम प्राप्त झाली आहे का?`,
+                                        icon: 'question',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'होय, मान्य करा',
+                                        cancelButtonText: 'रद्द करा',
+                                        confirmButtonColor: '#198754',
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            document.getElementById('actionInput').value = 'renewal_approved';
+                                            document.getElementById('membershipForm').submit();
+                                        }
+                                    });
+                                }
+
+                                function confirmRejection() {
+                                    Swal.fire({
+                                        title: 'नूतनीकरण नाकारायचे आहे का?',
+                                        text: 'तुम्ही या सदस्यतेचे नूतनीकरण नाकारणार आहात.',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'होय, नाकारा',
+                                        cancelButtonText: 'रद्द करा',
+                                        confirmButtonColor: '#dc3545',
+                                        cancelButtonColor: '#6c757d',
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            document.getElementById('actionInput').value = 'renewal_rejected';
+                                            document.getElementById('membershipForm').submit();
+                                        }
+                                    });
+                                }
+                            </script>
+
+                        {% endif %}
+                    
+                    {% else %}
+
+                        <form id="membershipForm" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                            <input type="hidden" name="action" id="actionInput">
+                            <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+
+                            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                                <button type="submit" class="btn btn-success" onclick="document.getElementById('actionInput').value='approved'">
+                                    Approve / मान्य करा
+                                </button>
+                                <button type="submit" class="btn btn-danger" onclick="document.getElementById('actionInput').value='rejected'">
+                                    Reject / नाकार करा
+                                </button>
+                            </div>
+                        </form>
+
+                    {% endif %}
+                
                 {% elif membership.status_id == 8 %}
                     <div class="alert alert-warning text-center">
                         The member has selected offline payment. / सदस्याने ऑफलाइन देयक निवडले आहे.<br>

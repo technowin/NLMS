@@ -1,0 +1,400 @@
+
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+.mpsc-info-section {
+    background-color: #f8f9fc;
+    padding: 60px 20px;
+    text-align: center;
+    border-top: 4px solid #0a3d62;
+}
+
+.mpsc-info-section .container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.mpsc-title {
+    font-family: 'Merriweather', 'Georgia', serif;
+    color: #0a3d62;
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.mpsc-description {
+    font-family: 'Georgia', serif;
+    color: #333;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 40px;
+}
+
+/* === Phase Cards === */
+.mpsc-phases {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.phase-card {
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 12px;
+    padding: 25px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0);
+    transition: all 0.3s ease;
+
+    /* ✅ New: make card a flex container for vertical layout */
+    display: flex;
+    flex-direction: column;
+}
+
+.phase-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0);
+}
+
+.phase-card h3 {
+    color: #0a3d62;
+    font-family: 'Merriweather', 'Georgia', serif;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+}
+
+.phase-card p {
+    color: #000000ff;
+    font-family: 'Georgia';
+}
+
+/* ✅ Keep existing button styles but push it to bottom */
+.view-more-btn {
+    display: inline-block;
+    margin-top: auto; /* pushes button to bottom of card */
+    padding: 8px 18px;
+    background-color: #003366; /* deep blue */
+    color: #fff;
+    font-weight: 500;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.view-more-btn:hover {
+    background-color: #b8860b; /* gold hover effect */
+    color: #fff;
+}
+
+.subjects-section {
+    background: #f9f9f9;
+    border-top: 3px solid #003366;
+    padding: 40px 20px;
+}
+
+.subjects-title {
+    color: #003366;
+    font-family: 'Merriweather', 'Georgia', serif;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.subjects-list {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+.subjects-list li {
+    margin-bottom: 10px;
+    color: #000;
+    line-height: 1.6;
+}
+
+/* 🌟 Breadcrumb Styling */
+.breadcrumb {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 15px;
+  font-family: 'Merriweather', 'Georgia', serif;
+  font-size: 16px;
+}
+
+.breadcrumb-item a {
+  color: #0d47a1; /* Deep blue link */
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s ease-in-out;
+}
+
+.breadcrumb-item a:hover {
+  color: #ff0101ff; /* Gold hover color to match your theme */
+  text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+  color: #000000ff; /* Neutral dark gray for active item */
+  font-weight: bold;
+}
+
+/* Optional: Add a subtle divider (>>) look */
+.breadcrumb-item + .breadcrumb-item::before {
+  content: "›"; /* use » or › for arrow look */
+  color: #6c757d;
+  font-weight: 500;
+}
+
+</style>
+{% comment %} Slider {% endcomment %}
+<section class="mpsc-info-section">
+  <div class="container">
+     <!-- Dynamic Title and Description -->
+    <h2 class="mpsc-title">{{ competitive_exam.full_name }}</h2>
+    
+    <br>
+
+    <!-- ✅ Breadcrumb -->
+   <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+            <a href="{% url 'L01:competitive_exams_landing_page' %}">
+                Competitive Exams
+            </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">MPSC</li>
+        </ol>
+    </nav>
+
+    <p class="mpsc-description">
+      {{ competitive_exam.competitive_description }}
+    </p>
+
+    <!-- Dynamic Phases Section -->
+    <div class="mpsc-phases">
+      {% for section in sections %}
+        <div class="phase-card">
+          <h3>{{ section.section_name }}</h3>
+          <p>{{ section.section_description }}</p>
+
+         <a href="javascript:void(0);" class="view-more-btn"
+            onclick="showSubjectsSection('{{ section.encrypted_section_no }}', '{{ section.section_name|escapejs }}')">
+             View More
+         </a>
+
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ✅ Separate Subjects Section -->
+<section id="subjects-section" class="subjects-section" style="display: none; margin-top: 40px;">
+  <div class="container">
+        <!-- Dynamic Section Title -->
+        <h3 id="subjects-title" class="subjects-title"></h3>
+
+        <!-- Dynamic Subjects List -->
+        <ul id="subjects-list" class="subjects-list"></ul>
+
+
+    <!-- Study More Button -->
+        <div style="text-align: center; margin-top: 25px;">
+        <a href="#"  
+            id="study-more-btn" 
+            class="view-more-btn"
+            style="display: inline-block; padding: 10px 25px; background-color: #003366; color: #fff; border-radius: 5px; text-decoration: none; font-weight: 600;">
+            Study More →
+        </a>
+        </div>
+    </div>
+</section>
+
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("dropdownSearch");
+            const options = document.getElementById("dropdownOptions");
+            const items = options.getElementsByTagName("li");
+            const form = document.getElementById("libraryForm");
+            const hiddenInput = document.getElementById("libraryCodeInput");
+
+            // Show all options when input is focused
+            input.addEventListener("focus", function () {
+                options.style.display = "block";
+            });
+
+            // Filter while typing
+            input.addEventListener("input", function () {
+                let filter = input.value.toLowerCase();
+                let hasMatch = false;
+
+                for (let i = 0; i < items.length; i++) {
+                    let txtValue = items[i].textContent || items[i].innerText;
+                    if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                        items[i].style.display = "";
+                        hasMatch = true;
+                    } else {
+                        items[i].style.display = "none";
+                    }
+                }
+
+                if (!hasMatch) {
+                    options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
+                }
+            });
+
+            // Select option & auto-submit form
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener("click", function () {
+                    const selectedValue = this.getAttribute("data-value");
+                    input.value = this.textContent.trim();
+
+                    // Set hidden input & submit form
+                    hiddenInput.value = selectedValue;
+                    form.submit();
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!e.target.closest(".custom-dropdown")) {
+                    options.style.display = "none";
+                }
+            });
+        });
+        
+    
+</script>
+
+    <script>
+        document.getElementById("grid-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("grid-view");
+            document.querySelector(".card-grid").classList.remove("list-view");
+            this.classList.add("active");
+            document.getElementById("list-view-btn").classList.remove("active");
+        });
+
+        document.getElementById("list-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("list-view");
+            document.querySelector(".card-grid").classList.remove("grid-view");
+            this.classList.add("active");
+            document.getElementById("grid-view-btn").classList.remove("active");
+        });
+    </script>
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+   
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {% comment %} {% block extra_javascript %} {% endcomment %}
+
+    {% if messages %}
+        <script>
+            $(document).ready(function() {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                
+                {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags }}',
+                    title: '{{ message.tags|title }}',
+                    text: '{{ message|escapejs }}',
+                    confirmButtonText: 'OK',
+                    background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                    color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                    confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+
+<script>
+    function toggleSubjects(section_no) {
+        // Find the global subjects section
+        const container = document.getElementById("subjects-section");
+        const title = document.getElementById("subjects-title");
+        const list = document.getElementById("subjects-list");
+
+        // Hide existing content first
+        list.innerHTML = "";
+
+        // Get subjects data from preloaded JS object
+        const sectionData = subjectsData[section_no];
+
+        if (sectionData && sectionData.length > 0) {
+            // Update the title
+            title.textContent = "Subjects for Phase " + section_no;
+
+            // Populate subjects
+            sectionData.forEach(sub => {
+                const li = document.createElement("li");
+                li.innerHTML = `<strong>${sub.name}</strong>: ${sub.description}`;
+                list.appendChild(li);
+            });
+
+            // Show the section
+            container.style.display = "block";
+
+            // Smooth scroll to subjects section
+            container.scrollIntoView({ behavior: "smooth" });
+        } else {
+            // Hide section if no data
+            container.style.display = "none";
+        }
+    }
+</script>
+
+
+<script>
+    const subjectsData = {
+        {% for section_no, subjects in subjects_by_section %}
+            "{{ section_no }}": [
+                {% for subject in subjects %}
+                    {
+                        name: "{{ subject.subject_name|escapejs }}",
+                        description: "{{ subject.subject_description|default:''|escapejs }}"
+                    }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+   function showSubjectsSection(sectionNo, sectionName) {
+    const section = subjectsData[sectionNo];
+    const list = document.getElementById("subjects-list");
+    const title = document.getElementById("subjects-title");
+    const container = document.getElementById("subjects-section");
+    const studyMoreBtn = document.getElementById("study-more-btn");
+
+    if (section) {
+        list.innerHTML = "";
+
+        // ✅ Updated title to use sectionName
+        title.textContent = "Subjects for " + sectionName;
+
+        section.forEach(sub => {
+            const li = document.createElement("li");
+            li.innerHTML = `<strong>${sub.name}</strong>: ${sub.description}`;
+            list.appendChild(li);
+        });
+
+        container.style.display = "block";
+        container.scrollIntoView({ behavior: "smooth" });
+
+        // FIXED → Safe placeholder method (unchanged)
+        studyMoreBtn.href =
+            "{% url 'L01:mpsc_topics_logged' section_no=999999 %}".replace("999999", sectionNo);
+
+    } else {
+        container.style.display = "none";
+    }
+}
+
+</script>
+
+{% endblock %}

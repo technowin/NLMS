@@ -1,0 +1,507 @@
+{% extends "bootstrap/horizontal_base.html" %}
+
+{% load static %}
+{% block content %}
+{% load encryption_filters %}
+<link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+<style>
+/* ===== Subjects Section Card ===== */
+.subjects-section .card {
+  background: #f9fafc;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0);
+  padding: 25px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.subjects-section .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0);
+}
+
+/* ===== Title ===== */
+.subjects-section .subjects-title {
+  font-family: 'Merriweather', Georgia, serif;
+  font-weight: 700;
+  color: #002b5c;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.8rem;
+}
+
+/* ===== Accordion ===== */
+.subjects-section .accordion-button {
+  font-weight: 600;
+  background-color: #ffffff;
+  color: #002b5c;
+  border: none;
+  border-bottom: 1px solid #e0e6ed;
+  transition: background-color 0.2s ease;
+box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
+}
+
+.subjects-section .accordion-button:hover {
+  background-color: #f0f4fa;
+   box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
+}
+
+.subjects-section .accordion-button:not(.collapsed) {
+  color: #0a3b8e;
+  background-color: #e7efff;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
+}
+
+/* ===== Accordion Body ===== */
+.subjects-section .accordion-body {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+}
+
+/* ===== Topics Grid (6 per row, auto-fit layout) ===== */
+.topics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr); /* ✅ exactly 6 cards per row */
+  gap: 15px;
+  justify-items: center;
+  align-items: stretch;
+}
+
+/* ===== Topic Card ===== */
+.topic-card {
+  background-color: #f7f9fc;
+  border: 1px solid #dbe3ec;
+  border-radius: 10px;
+  padding: 10px;
+  width: 100%;
+  text-align: center;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  position: relative; /* ✅ needed for bottom-fixed button */
+  min-height: 300px; /* ensures consistent height */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.topic-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0);
+  transform: translateY(-4px);
+}
+
+/* ===== Topic Image ===== */
+.topic-card .topic-img {
+  width: 100%;
+  height: 150px; /* ✅ slightly reduced to fit everything perfectly */
+  {% comment %} object-fit: cover; {% endcomment %}
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+/* ===== Topic Info ===== */
+.topic-info {
+  flex-grow: 1; /* pushes button to bottom */
+}
+
+.topic-name {
+  color: #002b5c;
+  font-weight: bold;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.topic-ref {
+  color: #000;
+  font-size: 0.7rem;
+  font-style: italic;
+  margin-bottom: 25px; /* space for bottom button */
+}
+
+/* ===== Fixed Button (Always visible at bottom of card) ===== */
+.topic-btn-container {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.topic-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background-color: #003366;
+  color: #fff;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.25s ease;
+}
+
+.topic-btn:hover {
+  background-color: #0055aa;
+}
+
+/* ===== Enhanced Topic Image Styling ===== */
+.topic-card .topic-img {
+  width: 100%;
+  height: 170px; /* consistent image height */
+  {% comment %} object-fit: cover; /* crops image nicely */ {% endcomment %}
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #dbe3ec; /* subtle border for neatness */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover effect for professional polish */
+.topic-card:hover .topic-img {
+  transform: scale(1.03);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Container to handle image alignment and overflow cleanly */
+.topic-img-container {
+  width: 100%;
+  height: 130px;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: #f0f4f8; /* fallback background for missing images */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Optional placeholder style (if image not found) */
+.topic-img-container::before {
+  content: "No Image";
+  color: #999;
+  font-size: 0.85rem;
+  font-style: italic;
+  display: none;
+}
+
+.topic-img-container img:empty + .topic-img-container::before {
+  display: block;
+}
+
+
+/* 🌟 Breadcrumb Styling */
+.breadcrumb {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 15px;
+  font-family: 'Merriweather', 'Georgia', serif;
+  font-size: 16px;
+}
+
+.breadcrumb-item a {
+  color: #0d47a1; /* Deep blue link */
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s ease-in-out;
+}
+
+.breadcrumb-item a:hover {
+  color: #ff0101ff; /* Gold hover color to match your theme */
+  text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+  color: #000000ff; /* Neutral dark gray for active item */
+  font-weight: bold;
+}
+
+/* Optional: Add a subtle divider (>>) look */
+.breadcrumb-item + .breadcrumb-item::before {
+  content: "›"; /* use » or › for arrow look */
+  color: #6c757d;
+  font-weight: 500;
+}
+
+
+</style>
+    {% comment %} Slider {% endcomment %}
+
+ <section id="subjects-section" class="subjects-section" style="margin-top: 40px;">
+  <div class="container">
+    <div class="card shadow-sm border-0 rounded-3">
+      <div class="card-body">
+        <h3 class="subjects-title mb-4 text-center">{{ section.section_name }}</h3>
+
+        <!-- ✅ Breadcrumb -->
+
+    <nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb bg-transparent p-0 mb-0">
+    <li class="breadcrumb-item">
+      <a href="{% url 'library_list' %}">Home</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'L01:mpsc_index_logged' %}">mpsc</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Phase {{ section.section_no }}
+    </li>
+  </ol>
+</nav>
+
+        <div class="accordion" id="subjectsAccordion">
+          {% for sdata in subjects_data %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ sdata.subject.subject_id }}">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse{{ sdata.subject.subject_id }}"
+                aria-expanded="false"
+                aria-controls="collapse{{ sdata.subject.subject_id }}"
+              >
+                <i class="fa-solid fa-book me-2"></i>{{ sdata.subject.subject_name }}
+              </button>
+            </h2>
+
+            <div
+              id="collapse{{ sdata.subject.subject_id }}"
+              class="accordion-collapse collapse"
+              aria-labelledby="heading{{ sdata.subject.subject_id }}"
+              data-bs-parent="#subjectsAccordion"
+            >
+              <div class="accordion-body">
+                {% if sdata.topics %}
+                <div class="topics-grid">
+                  {% for topic in sdata.topics %}
+                  <div class="topic-card">
+                    {% if topic.topic_image_url %}
+                    <img
+                      src="{{ MEDIA_URL }}{{ topic.topic_image_url }}"
+                      alt="{{ topic.topic_name }}"
+                      class="topic-img"
+                    >
+                    {% endif %}
+                    <div class="topic-info">
+                      <p class="topic-name"><strong>{{ topic.topic_name }}</strong></p>
+                      {% if topic.topic_reference %}
+                      <p class="topic-ref">{{ topic.topic_reference }}</p>
+                      {% endif %}
+                    </div>
+
+                    <!-- ✅ Fixed Bottom Button -->
+                    <div class="topic-btn-container">
+                   <a href="{% url 'L01:chapters_index' topic_id=topic.topic_id|encrypt%}" 
+                      class="topic-btn">
+                        View Details
+                    </a>
+
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% else %}
+                <p>No topics available for this subject.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <p>No subjects found for this section.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+
+
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("dropdownSearch");
+            const options = document.getElementById("dropdownOptions");
+            const items = options.getElementsByTagName("li");
+            const form = document.getElementById("libraryForm");
+            const hiddenInput = document.getElementById("libraryCodeInput");
+
+            // Show all options when input is focused
+            input.addEventListener("focus", function () {
+                options.style.display = "block";
+            });
+
+            // Filter while typing
+            input.addEventListener("input", function () {
+                let filter = input.value.toLowerCase();
+                let hasMatch = false;
+
+                for (let i = 0; i < items.length; i++) {
+                    let txtValue = items[i].textContent || items[i].innerText;
+                    if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                        items[i].style.display = "";
+                        hasMatch = true;
+                    } else {
+                        items[i].style.display = "none";
+                    }
+                }
+
+                if (!hasMatch) {
+                    options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
+                }
+            });
+
+            // Select option & auto-submit form
+            for (let i = 0; i < items.length; i++) {
+                items[i].addEventListener("click", function () {
+                    const selectedValue = this.getAttribute("data-value");
+                    input.value = this.textContent.trim();
+
+                    // Set hidden input & submit form
+                    hiddenInput.value = selectedValue;
+                    form.submit();
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!e.target.closest(".custom-dropdown")) {
+                    options.style.display = "none";
+                }
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById("grid-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("grid-view");
+            document.querySelector(".card-grid").classList.remove("list-view");
+            this.classList.add("active");
+            document.getElementById("list-view-btn").classList.remove("active");
+        });
+
+        document.getElementById("list-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("list-view");
+            document.querySelector(".card-grid").classList.remove("grid-view");
+            this.classList.add("active");
+            document.getElementById("grid-view-btn").classList.remove("active");
+        });
+    </script>
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {% comment %} {% block extra_javascript %} {% endcomment %}
+
+    {% if messages %}
+        <script>
+            $(document).ready(function() {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                
+                {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags }}',
+                    title: '{{ message.tags|title }}',
+                    text: '{{ message|escapejs }}',
+                    confirmButtonText: 'OK',
+                    background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                    color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                    confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+
+<script>
+function toggleSubjects(section_no) {
+    // Find the global subjects section
+    const container = document.getElementById("subjects-section");
+    const title = document.getElementById("subjects-title");
+    const list = document.getElementById("subjects-list");
+
+    // Hide existing content first
+    list.innerHTML = "";
+
+    // Get subjects data from preloaded JS object
+    const sectionData = subjectsData[section_no];
+
+    if (sectionData && sectionData.length > 0) {
+        // Update the title
+        title.textContent = "Subjects for Phase " + section_no;
+
+        // Populate subjects
+        sectionData.forEach(sub => {
+            const li = document.createElement("li");
+            li.innerHTML = `<strong>${sub.name}</strong>: ${sub.description}`;
+            list.appendChild(li);
+        });
+
+        // Show the section
+        container.style.display = "block";
+
+        // Smooth scroll to subjects section
+        container.scrollIntoView({ behavior: "smooth" });
+    } else {
+        // Hide section if no data
+        container.style.display = "none";
+    }
+}
+</script>
+
+
+<script>
+    // Preload subjects data into JS safely
+    const subjectsData = {
+        {% for sec_no, subjects in subjects_by_section %}
+            "{{ sec_no }}": [
+                {% for subject in subjects %}
+                    {
+                        name: "{{ subject.subject_name|escapejs }}",
+                        description: "{{ subject.subject_description|default:''|escapejs }}"
+                    }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function showSubjectsSection(sectionNo) {
+        const section = subjectsData[sectionNo];
+        const list = document.getElementById("subjects-list");
+        const title = document.getElementById("subjects-title");
+        const container = document.getElementById("subjects-section");
+
+        if (section) {
+            // Clear previous subjects
+            list.innerHTML = "";
+
+            // Update title
+            title.textContent = "Subjects for Phase " + sectionNo;
+
+            // Populate subjects
+            section.forEach(sub => {
+                const li = document.createElement("li");
+                li.innerHTML = `<strong>${sub.name}</strong>: ${sub.description}`;
+                list.appendChild(li);
+            });
+
+            // Show the section
+            container.style.display = "block";
+
+            // Smooth scroll to the section
+            container.scrollIntoView({ behavior: "smooth" });
+        } else {
+            container.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

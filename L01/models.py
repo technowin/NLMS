@@ -48,6 +48,7 @@ class MembershipMaster(models.Model):
     entry_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     subscription_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     fine = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fine_membership = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Membership renewal late fine
     outsider = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     days = models.IntegerField(default=0)
     item = models.IntegerField(default=0)
@@ -162,6 +163,11 @@ class MembershipDetails(models.Model):
     membership_code = models.TextField(null=True, blank=True)
     membership_renew = models.IntegerField(default=0)
     remarks = models.TextField(null=True, blank=True)
+    gap_months = models.IntegerField(null=True, blank=True, default=0)
+    gap_fine = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
+    late_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
+    fine_calculated_at = models.DateTimeField(null=True, blank=True)
+    total_fine_membership = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
 
     class Meta: db_table = "tbl_membershipdetails"
 
@@ -267,6 +273,12 @@ class MembershipDetailsHistory(models.Model):
     email = models.EmailField(max_length=255, null=True, blank=True)
     is_resident_of_nmmc = models.IntegerField(default=0)
     address_same_as_aadhar = models.IntegerField(default=0)
+    remarks = models.TextField(null=True, blank=True)
+    gap_months = models.IntegerField(null=True, blank=True, default=0)
+    gap_fine = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
+    late_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
+    fine_calculated_at = models.DateTimeField(null=True, blank=True)
+    total_fine_membership = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     actionperformed = models.TextField(null=True, blank=True)
     reviewed = models.CharField(max_length=50, null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -304,7 +316,6 @@ class DocumentDetailsHistory(models.Model):
 
     def __str__(self):
         return f"{self.membership.full_name} - {self.document.document_name} ({self.uploaded_at})"
-
 class CirculationCopyStatus(models.Model):
     id = models.AutoField(primary_key=True)
     accession = models.ForeignKey(
@@ -361,7 +372,6 @@ class CirculationCopyStatus(models.Model):
     
     def __str__(self):
         return f"{self.barcode or 'No Barcode'} ({self.current_status or 'Unknown'})"
-    
 class CirculationTransaction(models.Model):
     id = models.AutoField(primary_key=True)
     catalog = models.ForeignKey(BookCatalog,on_delete=models.SET_NULL,null=True,blank=True,db_column="cat_ref_num",related_name="transactions")  # All transactions for this catalog/book title

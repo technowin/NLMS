@@ -93,6 +93,12 @@ urlpatterns = [
     path("save-eod-log/", save_eod_log, name="save_eod_log"),
     path("membership_card/", membership_card, name="membership_card"),
     path("clear-pending-action/", clear_pending_action, name="clear_pending_action"),
+    
+    path('competitive_exams_landing_page/',competitive_exams_landing_page, name='competitive_exams_landing_page'),
+    path('upsc_index_logged/', upsc_index_logged, name='upsc_index_logged'),
+    path('upsc_topics_logged/<str:section_no>/', upsc_topics_logged, name='upsc_topics_logged'),
+    path('mpsc_index_logged/', mpsc_index_logged, name='mpsc_index_logged'),
+    path('mpsc_topics_logged/<str:section_no>/', mpsc_topics_logged, name='mpsc_topics_logged'),
     # ... your other URLs
     
     # urls.py

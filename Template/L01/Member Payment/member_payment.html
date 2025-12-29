@@ -4,28 +4,158 @@
 {% block title %}सदस्यत्व अर्ज पडताळणी{% endblock title %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
+    <style>
+        /* Renewal Notice Styling */
+        .renewal-notice {
+            background: linear-gradient(135deg, #e3f2fd, #f8fbff);
+            border-left: 5px solid #0d6efd;
+            border-right: 1px solid #dee2e6;
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
 
+        .renewal-notice h5 {
+            color: #0c63e4;
+        }
+
+        .renewal-notice p {
+            color: #495057;
+        }
+
+        .renewal-notice .text-muted {
+            color: #6c757d !important;
+        }
+
+        /* Book Return Required Alert Styling */
+        .book-return-alert {
+            background: linear-gradient(135deg, #f8d7da, #fff5f5);
+            border-left: 5px solid #dc3545;
+            border-right: 1px solid #dee2e6;
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .book-return-alert h5 {
+            color: #a71d2a;
+        }
+
+        .book-return-alert p {
+            color: #721c24;
+        }
+
+        .book-return-alert .text-muted {
+            color: #856404 !important;
+        }
+
+        /* Dark mode styles - Renewal Notice */
+        [data-bs-theme="dark"] .renewal-notice {
+            background: linear-gradient(135deg, #1a365d, #2d3748);
+            border-left: 5px solid #4299e1;
+            border-right: 1px solid #4a5568;
+            border-top: 1px solid #4a5568;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        [data-bs-theme="dark"] .renewal-notice h5 {
+            color: #90cdf4;
+        }
+
+        [data-bs-theme="dark"] .renewal-notice p {
+            color: #e2e8f0;
+        }
+
+        [data-bs-theme="dark"] .renewal-notice .text-muted {
+            color: #a0aec0 !important;
+        }
+
+        /* Dark mode styles - Book Return Alert */
+        [data-bs-theme="dark"] .book-return-alert {
+            background: linear-gradient(135deg, #2c0b0e, #3a0d12);
+            border-left: 5px solid #f56565;
+            border-right: 1px solid #4a5568;
+            border-top: 1px solid #4a5568;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        [data-bs-theme="dark"] .book-return-alert h5 {
+            color: #fed7d7;
+        }
+
+        [data-bs-theme="dark"] .book-return-alert p {
+            color: #fed7d7;
+        }
+
+        [data-bs-theme="dark"] .book-return-alert .text-muted {
+            color: #feb2b2 !important;
+        }
+
+        /* Button styling for dark mode */
+        [data-bs-theme="dark"] .btn-warning {
+            background-color: #d69e2e;
+            border-color: #d69e2e;
+            color: #1a202c;
+        }
+
+        [data-bs-theme="dark"] .btn-warning:hover {
+            background-color: #b7791f;
+            border-color: #b7791f;
+            color: #1a202c;
+        }
+
+        /* Renew button specific styling for dark mode */
+        [data-bs-theme="dark"] .renewal-notice .btn-warning {
+            background: linear-gradient(135deg, #d69e2e, #b7791f);
+            border: none;
+            box-shadow: 0 4px 6px rgba(214, 158, 46, 0.3);
+        }
+
+        [data-bs-theme="dark"] .renewal-notice .btn-warning:hover {
+            background: linear-gradient(135deg, #b7791f, #975a16);
+            box-shadow: 0 6px 8px rgba(214, 158, 46, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Alert badge/warning emoji for dark mode */
+        [data-bs-theme="dark"] .book-return-alert h5::before {
+            color: #feb2b2;
+        }
+    </style>    
 {% endblock %}
 
 {% block page_title %}
-{% include "bootstrap/partials/page-title.html" with page_title='सदस्यत्व देयक' sub_title='' %}
+    {% include "bootstrap/partials/page-title.html" with page_title='सदस्यत्व देयक' sub_title='' %}
 {% endblock %}
 
 {% block content %}
 
     <div class="mt-4">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <h2 class="fw-bold">{{library_name_mar}}</h2>
+
+        {% if show_renew_notice and membership_id_enc_for_renew %}
+            <div class="alert alert-info shadow-sm rounded-3 renewal-notice text-center">
+                <h5 class="fw-bold">📢 सदस्यत्व नूतनीकरण आवश्यक</h5>
             </div>
-        </div>
+        {% endif %}
+
+        {% if renew_membership_rejected  %}
+            <div class="alert alert-info shadow-sm rounded-3 renewal-notice text-center">
+                <h5 class="fw-bold">📢 सदस्यत्व नूतनीकरण आवश्यक</h5>
+            </div>
+        {% endif %}
+
+        {% if has_pending_books %}
+            <div class="alert alert-danger shadow-sm rounded-3 book-return-alert text-center">
+                <h5 class="fw-bold">⚠️ पुस्तक परत करणे आवश्यक</h5>
+            </div>
+        {% endif %}
 
         <!-- membership_approval.html -->
         <div class="table-responsive">
@@ -108,12 +238,12 @@
                                 </a>
                                 
                                 {% comment %} Renewal Button {% endcomment %}
-                                {% if m.show_renew_button %}
+                                {% comment %} {% if m.show_renew_button %}
                                     <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ m.membership_id_enc }}" 
                                         class="btn btn-warning btn-sm ms-2">
                                         सदस्यत्व नूतनीकरण करा
                                     </a>
-                                {% endif %}
+                                {% endif %} {% endcomment %}
 
                                 {% if m.status.status_code in 'APP_SUB,APPROVED,PAY_SUCCESS' %}
                                     <a href="#"
@@ -123,6 +253,7 @@
                                         सदस्यत्व रद्द करा
                                     </a>
                                 {% endif %}
+                                
                                 <!-- Bootstrap Modal -->
 
                                 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
@@ -324,6 +455,67 @@
                 </tbody>
             </table>
         </div>
+
+        {% if has_pending_books %}
+            <div class="alert alert-danger mt-4 p-4 shadow-sm rounded-3 book-return-alert text-center">
+                <p class="mb-2 fs-5">
+                    आपल्या नावावर अजूनही पुस्तक जारी आहे.<br>
+                    कृपया सर्व पुस्तके परत केल्यानंतरच सदस्यत्व नूतनीकरण करता येईल.
+                </p>
+
+                <p class="small text-muted">
+                    You currently have issued books that are not yet returned.<br>
+                    Please return all books before renewing your membership.
+                </p>
+
+                <p class="small text-muted mt-2">
+                    अधिक माहितीसाठी कृपया आपल्या ग्रंथालयात भेट द्या.<br>
+                    For more information, please visit your library.<br>
+                    <a href="/L01/membership_dashboard/#currently-reading">
+                        पुस्तके तपासण्यासाठी येथे क्लिक करा / Click here to check your books
+                    </a>
+                </p>
+            </div>
+        {% endif %}
+
+        {% if show_renew_notice and membership_id_enc_for_renew %}
+            <div class="alert alert-info mt-4 p-4 shadow-sm rounded-3 renewal-notice text-center">
+                <p class="mb-2 fs-5">
+                    आपले सदस्यत्व कालावधी संपलेला आहे किंवा आज संपत आहे.<br>
+                    कृपया सेवा सुरू ठेवण्यासाठी सदस्यत्व नूतनीकरण करा.
+                </p>
+
+                <p class="text-muted small mb-3">
+                    Your membership has expired or is expiring today.  
+                    Please renew your membership to continue services.
+                </p>
+
+                <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ membership_id_enc_for_renew }}"
+                    class="btn btn-warning btn-lg px-4">
+                    <i class="fas fa-redo-alt me-2"></i>सदस्यत्व नूतनीकरण करा
+                </a>
+            </div>
+        {% endif %}
+
+        {% if renew_membership_rejected  %}
+            <div class="alert alert-info mt-4 p-4 shadow-sm rounded-3 renewal-notice text-center">
+                <p class="mb-2 fs-5">
+                    आपले सदस्यत्व कालावधी संपलेला आहे किंवा आज संपत आहे.<br>
+                    कृपया सेवा सुरू ठेवण्यासाठी सदस्यत्व नूतनीकरण करा.
+                </p>
+
+                <p class="text-muted small mb-3">
+                    Your membership has expired or is expiring today.  
+                    Please renew your membership to continue services.
+                </p>
+
+                <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ membership_id_enc_for_reject }}"
+                    class="btn btn-warning btn-lg px-4">
+                    <i class="fas fa-redo-alt me-2"></i>सदस्यत्व नूतनीकरण करा
+                </a>
+            </div>
+        {% endif %}
+
         <a href="#" class="back-to-top" id="backToTop">
             <i class="fas fa-arrow-up"></i>
         </a>
@@ -387,9 +579,20 @@
             $('#membershipTable').DataTable({
                 "pageLength": 10,
                 "lengthChange": false,
-                "searching": true,   // <-- enables search box
-                "ordering": true,    // optional: enable column sorting
-                "info": true,        // shows "Showing 1 to 10 of X entries"
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "language": {
+                    "search": "शोधा:",
+                    "lengthMenu": "दाखवा _MENU_ नोंदी",
+                    "info": "दाखवत आहे _START_ ते _END_ एकूण _TOTAL_ नोंदी",
+                    "paginate": {
+                        "first": "पहिला",
+                        "last": "शेवटचा",
+                        "next": "पुढचा",
+                        "previous": "मागचा"
+                    }
+                }
             });
         });
     </script>
@@ -417,7 +620,6 @@
     {% comment %} membership cancellation notice language toggle script {% endcomment %}
     <script>
         function toggleNoticeLanguage(btn) {
-            
             const marathi = document.querySelector('#refundNotice .notice-marathi');
             const english = document.querySelector('#refundNotice .notice-english');
             const showingEnglish = english.style.display === 'block';

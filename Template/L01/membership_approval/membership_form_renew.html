@@ -23,7 +23,8 @@
 
         <form id="membershipForm" method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="hidden" name="membership_id" value="{{ membership.id }}">
+            {% comment %} <input type="hidden" name="membership_id" value="{{ membership.id }}"> {% endcomment %}
+            <input type="hidden" name="membership_id" id="membershipDetailId" value="{{ membership.id }}">
 
             <div class="form-section mt-4">
                 <!-- Membership Type -->
@@ -48,7 +49,10 @@
 
                 <!-- membership Details Table will be rendered here -->
                 <div id="membershipDetails">
-                    <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
+                    {% comment %} <h5 class="form-label mb-3" style="border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px;">
+                        {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
+                    </h5> {% endcomment %}
+                    <h5 class="form-label mb-3 membership-fee-heading">
                         {{ library_details.0.library_name }} Membership Fee Structure / {{ library_details.0.library_name_mar }} सदस्यत्व शुल्क संरचना :-
                     </h5>
                     <div class="table-responsive">
@@ -619,16 +623,46 @@
             resetMembershipForm();
 
             if (encId) {
+
+                var membershipDetailId = $("#membershipDetailId").val();
+
                 $.ajax({
                     url: "{% url 'L01:get_membership_details' %}",
                     type: "GET",
-                    data: { id: encId },
+                    data: { 
+                        id: encId,
+                        membership_detail_id: membershipDetailId 
+                    },
                     success: function (response) {
                         debugger;
                         if (response.success) {
+
+                            $(document).trigger('ajaxMembershipDataLoaded', [response]);
+
                             baseDeposit = parseFloat(response.data.deposit) || 0;
                             baseEntryFees = parseFloat(response.data.entry_fees) || 0;
                             baseSubscription = parseFloat(response.data.subscription_fees) || 0;
+
+                            basefrom_date = response.data1.from_date;
+                            basemembership_duration = response.data1.membership_duration;
+                            baseto_date = response.data1.to_date;
+
+                            if (basefrom_date) {
+                                $("#fromDate").val(basefrom_date);
+                                $("#months").val(basemembership_duration);
+
+                                // NEW: only use backend to_date if available
+                                if (baseto_date) {
+                                    $("#toDate").val(baseto_date);
+                                    $("#fyCapNote").hide();
+                                } else {
+                                    updateToDate();
+                                }
+
+                                $("#depositInput").val(parseFloat(response.data1.deposit) || 0);
+                                $("#entryFeesInput").val(parseFloat(response.data1.entry_fees) || 0);
+                                $("#subscriptionInput").val(parseFloat(response.data1.subscription) || 0);
+                            }
 
                             $("#depositCell").text(formatCurrency(baseDeposit));
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
@@ -665,7 +699,13 @@
                                 $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
                                 $("#months, #toDate").closest(".col-md-6").show();
                                 $("#durationNote").hide();
-                                updateToDate();
+                                //updateToDate();
+                                if (baseto_date) {
+                                    $("#toDate").val(baseto_date);
+                                    $("#fyCapNote").hide();
+                                } else {
+                                    updateToDate();
+                                }
                             }
                         } else {
                             $("#membershipDetails, #membershipDuration, #amountFields").hide();
@@ -686,6 +726,7 @@
         });
 
         $("#fromDate").on("change", function() {
+            debugger;
             updateToDate();
         });
 
@@ -784,7 +825,6 @@
             $("#subscriptionHidden").val(subscription);
         }
 
-
         function resetMembershipForm() {
             $("#membershipDetails, #membershipDuration, #amountFields").hide();
             $("#depositCell, #entryFeesCell, #subscriptionCell").text("");
@@ -798,6 +838,20 @@
             baseEntryFees = 0;
             baseSubscription = 0;
         }
+
+        let initialMembershipType = $("#membershiptype").val();
+        if (initialMembershipType) {
+            $("#membershiptype").trigger("change");
+        }
+
+        // Set min date for From Date to today
+        const fromDateInput = $("#fromDate");
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        const minDate = `${yyyy}-${mm}-${dd}`;
+        fromDateInput.attr("min", minDate);
 
     });
 </script>
@@ -953,6 +1007,430 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 e.target.submit(); // now submit
+            }
+        });
+    });
+</script>
+
+{% comment %} Renewal Fine Calculation (Works WITH your existing code) {% endcomment %}
+<script>
+    // Helper functions
+    function formatFineCurrency(amount) {
+        if (!amount) return "₹ 0";
+        let num = parseFloat(amount);
+        return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
+    }
+
+    function formatFineDate(dateStr) {
+        if (!dateStr) return "-";
+        let date = new Date(dateStr);
+        let day = date.getDate().toString().padStart(2, '0');
+        let month = (date.getMonth() + 1).toString().padStart(2, '0');
+        let year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+    function calculateRenewalGapMonths(startDate, endDate) {
+        if (!startDate || !endDate) return 0;
+        
+        let prevEnd = new Date(startDate);
+        let newStart = new Date(endDate);
+        
+        // If same or earlier month, no gap
+        if (newStart <= prevEnd) return 0;
+        
+        // Get months difference
+        let prevYear = prevEnd.getFullYear();
+        let prevMonth = prevEnd.getMonth();
+        let newYear = newStart.getFullYear();
+        let newMonth = newStart.getMonth();
+        
+        // Calculate total months difference
+        let totalMonthsDiff = (newYear - prevYear) * 12 + (newMonth - prevMonth);
+        
+        // If member starts in the same month they ended, no gap
+        // Example: Ends April 26, starts April 30 → no gap
+        if (totalMonthsDiff === 0) return 0;
+        
+        // The gap is total months difference minus 1
+        // Because if they end in April and start in August:
+        // April to August = 4 months difference, but gap is May, June, July = 3 months
+        return totalMonthsDiff - 1;
+    }
+
+    $(document).ready(function() {
+        // Store variables for fine calculation
+        let previousMembershipEndDate = null;
+        let monthlySubscriptionFee = 0;
+        let monthlyFineFee = 0;
+        let currentMembershipId = null;
+        
+        // Get data from your AJAX response
+        $(document).on('ajaxMembershipDataLoaded', function(event, response) {
+            if (response && response.success) {
+                console.log("AJAX Response Data:", response.data);
+                console.log("fine_membership value:", response.data.fine_membership);
+                
+                previousMembershipEndDate = response.data1.to_date;
+                monthlySubscriptionFee = parseFloat(response.data.subscription_fees) || 0;
+                monthlyFineFee = parseFloat(response.data.fine_membership) || 0;
+                currentMembershipId = $("#membershiptype").val();
+                
+                console.log("Parsed Values:", {
+                    subscription: monthlySubscriptionFee,
+                    fine: monthlyFineFee,
+                    total: monthlySubscriptionFee + monthlyFineFee
+                });
+                
+                // Calculate fines
+                calculateAndDisplayRenewalFines();
+            }
+        });
+
+        // Add CSS for the fine section (only if not already added)
+        if (!$('#renewalFineSection').length) {
+            const fineSectionCSS = `
+                <style>
+                    .renewal-fine-section {
+                        background: linear-gradient(135deg, #fff3cd, #fff8e1);
+                        border: 2px solid #ffc107;
+                        border-radius: 10px;
+                        padding: 20px;
+                        margin-top: 25px;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .renewal-fine-section h5 {
+                        color: #856404;
+                        border-bottom: 2px solid #ffc107;
+                        padding-bottom: 10px;
+                    }
+                    
+                    .fine-breakdown {
+                        background: white;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-top: 15px;
+                        border: 1px solid #dee2e6;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .fine-item {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 8px 0;
+                        border-bottom: 1px dashed #dee2e6;
+                    }
+                    
+                    .fine-item:last-child {
+                        border-bottom: none;
+                    }
+                    
+                    .fine-label {
+                        font-weight: 600;
+                        color: #495057;
+                    }
+                    
+                    .fine-value {
+                        font-weight: 700;
+                        color: #dc3545;
+                    }
+                    
+                    .fine-total {
+                        background: #dc3545;
+                        color: white;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-top: 15px;
+                        font-weight: bold;
+                        font-size: 1.2em;
+                        text-align: center;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .fine-note {
+                        font-size: 0.9em;
+                        color: #6c757d;
+                        margin-top: 10px;
+                        padding: 8px;
+                        background: #f8f9fa;
+                        border-radius: 5px;
+                        border-left: 3px solid #6c757d;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .date-display {
+                        background: #e9ecef;
+                        padding: 8px 12px;
+                        border-radius: 5px;
+                        font-weight: 600;
+                        color: #495057;
+                        margin: 5px 0;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    /* ========== DARK MODE STYLES ========== */
+                    [data-bs-theme="dark"] .renewal-fine-section {
+                        background: linear-gradient(135deg, #1a365d, #2d3748);
+                        border: 2px solid #4299e1;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                    }
+                    
+                    [data-bs-theme="dark"] .renewal-fine-section h5 {
+                        color: #90cdf4;
+                        border-bottom-color: #4299e1;
+                    }
+                    
+                    [data-bs-theme="dark"] .fine-breakdown {
+                        background: #2d3748;
+                        border-color: #4a5568;
+                    }
+                    
+                    [data-bs-theme="dark"] .fine-item {
+                        border-bottom-color: #4a5568;
+                    }
+                    
+                    [data-bs-theme="dark"] .fine-label {
+                        color: #e2e8f0;
+                    }
+                    
+                    [data-bs-theme="dark"] .fine-value {
+                        color: #fc8181;
+                    }
+                    
+                    [data-bs-theme="dark"] .fine-total {
+                        background: #c53030;
+                        color: #f7fafc;
+                        box-shadow: 0 4px 6px rgba(197, 48, 48, 0.3);
+                    }
+                    
+                    [data-bs-theme="dark"] .fine-note {
+                        background: #4a5568;
+                        color: #cbd5e0;
+                        border-left-color: #4299e1;
+                    }
+                    
+                    [data-bs-theme="dark"] .date-display {
+                        background: #4a5568;
+                        color: #e2e8f0;
+                        border: 1px solid #718096;
+                    }
+                    
+                    /* Dark mode icons */
+                    [data-bs-theme="dark"] .renewal-fine-section h5 i,
+                    [data-bs-theme="dark"] .date-display i,
+                    [data-bs-theme="dark"] .fine-total i,
+                    [data-bs-theme="dark"] .fine-note i {
+                        color: #90cdf4;
+                    }
+                    
+                    /* Responsive adjustments */
+                    @media (max-width: 768px) {
+                        .renewal-fine-section {
+                            padding: 15px;
+                            margin-top: 20px;
+                        }
+                        
+                        .fine-breakdown {
+                            padding: 12px;
+                        }
+                        
+                        .date-display {
+                            font-size: 0.9em;
+                            padding: 6px 10px;
+                        }
+                        
+                        .fine-item {
+                            flex-direction: column;
+                            align-items: flex-start;
+                            gap: 5px;
+                        }
+                        
+                        .fine-item .fine-value {
+                            align-self: flex-end;
+                        }
+                    }
+                </style>
+            `;
+            
+            $('head').append(fineSectionCSS);
+            
+            // Create the fine calculation section HTML
+            const fineSectionHTML = `
+                <div id="renewalFineSection" class="renewal-fine-section" style="display: none;">
+                    <h5 class="mb-3">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        Late Renewal Charges / विलंबित नूतनीकरण शुल्क
+                    </h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="date-display">
+                                <i class="fas fa-calendar-times me-2"></i>
+                                Previous Membership End: <span id="prevEndDateDisplay">-</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="date-display">
+                                <i class="fas fa-calendar-plus me-2"></i>
+                                New Membership Start: <span id="newStartDateDisplay">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="fine-breakdown">
+                        <div id="gapInfo" style="display: none;">
+                            <div class="fine-item">
+                                <span class="fine-label">Gap Period:</span>
+                                <span id="gapMonthsDisplay">0 month(s)</span>
+                            </div>
+                            <div class="fine-item">
+                                <span class="fine-label">Monthly Fine (Subscription + Fine):</span>
+                                <span id="monthlyFineRate">₹0</span>
+                            </div>
+                            <div class="fine-item">
+                                <span class="fine-label">Total Gap Fine:</span>
+                                <span id="totalGapFine" class="fine-value">₹0</span>
+                            </div>
+                        </div>
+                        
+                        <div id="lateFeeInfo" style="display: none;">
+                            <div class="fine-item">
+                                <span class="fine-label">Late Fee (after 10th of month):</span>
+                                <span id="lateFeeDisplay" class="fine-value">₹0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="fine-total">
+                            <i class="fas fa-calculator me-2"></i>
+                            Total Late Charges: <span id="totalLateCharges">₹0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="fine-note">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Note: Late renewal charges are calculated based on gap months between previous membership end and new start date. Additional ₹5 late fee applies ONLY if renewal is AFTER expiry date AND date is after 10th of the month.
+                    </div>
+                </div>
+            `;
+            
+            // Insert after the amount fields
+            $('#amountFields').after(fineSectionHTML);
+        }
+
+        // Function to update fine calculation
+        function calculateAndDisplayRenewalFines() {
+            // Skip for lifetime memberships (5, 6)
+            if (currentMembershipId === "5" || currentMembershipId === "6") {
+                $("#renewalFineSection").hide();
+                return;
+            }
+            
+            let newFromDateStr = $("#fromDate").val();
+            
+            // Check if we have all required data
+            if (!previousMembershipEndDate || !newFromDateStr || monthlySubscriptionFee === 0) {
+                $("#renewalFineSection").hide();
+                return;
+            }
+            
+            let prevEndDate = new Date(previousMembershipEndDate);
+            let newStartDate = new Date(newFromDateStr);
+            
+            // Update date displays
+            $("#prevEndDateDisplay").text(formatFineDate(previousMembershipEndDate));
+            $("#newStartDateDisplay").text(formatFineDate(newFromDateStr));
+            
+            // Calculate gap months
+            let gapMonths = calculateRenewalGapMonths(prevEndDate, newStartDate);
+            
+            // Calculate fine for gap months
+            let finePerGapMonth = monthlySubscriptionFee + monthlyFineFee;
+            let totalGapFine = gapMonths * finePerGapMonth;
+            
+            // ========== FIXED LATE FEE LOGIC ==========
+            let lateFee = 0;
+            let newDateDay = newStartDate.getDate();
+            
+            // Late fee ONLY applies if:
+            // 1. Renewal is AFTER expiry date, AND
+            // 2. Renewal day is after 10th of the month
+            if (newStartDate > prevEndDate && newDateDay > 10) {
+                lateFee = 5;
+            }
+            // ==========================================
+            
+            // Total late charges
+            let totalLateCharges = totalGapFine + lateFee;
+            
+            // Update display
+            if (gapMonths > 0) {
+                $("#gapInfo").show();
+                $("#gapMonthsDisplay").text(gapMonths + " month(s)");
+                $("#monthlyFineRate").text(formatFineCurrency(monthlySubscriptionFee) + " + " + formatFineCurrency(monthlyFineFee));
+                $("#totalGapFine").text(formatFineCurrency(totalGapFine));
+            } else {
+                $("#gapInfo").hide();
+            }
+            
+            if (lateFee > 0) {
+                $("#lateFeeInfo").show();
+                $("#lateFeeDisplay").text(formatFineCurrency(lateFee));
+            } else {
+                $("#lateFeeInfo").hide();
+            }
+            
+            $("#totalLateCharges").text(formatFineCurrency(totalLateCharges));
+            
+            // Show the section
+            $("#renewalFineSection").show();
+            
+            // Store in hidden fields for submission
+            $("#gapMonthsHidden, #gapFineHidden, #lateFeeHidden").remove();
+            
+            $('<input>').attr({
+                type: 'hidden',
+                id: 'gapMonthsHidden',
+                name: 'gap_months',
+                value: gapMonths
+            }).appendTo('#membershipForm');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                id: 'gapFineHidden',
+                name: 'gap_fine',
+                value: totalGapFine
+            }).appendTo('#membershipForm');
+            
+            $('<input>').attr({
+                type: 'hidden',
+                id: 'lateFeeHidden',
+                name: 'late_fee',
+                value: lateFee
+            }).appendTo('#membershipForm');
+        }
+        
+        // ========== SIMPLE INTEGRATION ==========
+        // Add fine calculation to your existing event handlers WITHOUT overriding them
+        
+        // Store original handlers
+        const originalFromDateChange = $("#fromDate").data('events')?.change;
+        const originalMonthsChange = $("#months").data('events')?.change;
+        
+        // Add fine calculation AFTER your existing handlers run
+        $("#fromDate").on("change.fineCalculation", function() {
+            setTimeout(calculateAndDisplayRenewalFines, 100);
+        });
+        
+        $("#months").on("change.fineCalculation input.fineCalculation", function() {
+            setTimeout(calculateAndDisplayRenewalFines, 100);
+        });
+        
+        // Also trigger from your AJAX success
+        $(document).on('ajaxSuccess', function(event, xhr, settings) {
+            if (settings.url && settings.url.includes('get_membership_details')) {
+                setTimeout(calculateAndDisplayRenewalFines, 200);
             }
         });
     });

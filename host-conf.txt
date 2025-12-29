@@ -292,4 +292,4 @@ python manage.py migrate Reports --database=2
 python manage.py makemigrations L01
 python manage.py migrate L01 --database=L01
 python manage.py showmigrations L01
-python manage.py migrate L01 0048 --fake 
+python manage.py migrate L01 0049 --fake 

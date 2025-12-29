@@ -299,6 +299,7 @@ def get_membership_details(request):
                 "deposit": str(membership.deposit),
                 "entry_fees": str(membership.entry_fees),
                 "subscription_fees": str(membership.subscription_fees),
+                "fine_membership": str(membership.fine_membership),
             }
             
             data1 = None
@@ -576,7 +577,7 @@ def membership_approval(request):
     TAB_GROUPS = {
         "Application Submitted": ["APP_SUB", "APPROVED"],
         "Payment Offline": ["PAY_OFFLINE", "PAY_SUCCESS", "PAY_PENDING", "PAY_PROGRESS", "PAY_FAIL"],
-        "Renewal Submitted": ["APP_RENEW"],
+        "Renewal Submitted": ["APP_RENEW", "APP_RENEW_REJECT"],
         "Application Cancelled": ["APP_CANCEL"],
         "Rejected": ["REJECT"],
     }
@@ -1157,7 +1158,6 @@ def membership_form_view(request):
                     for lilo in library_details:
                         encrypted_library_code = enc(lilo.library_code)
                         lilo.libraries = encrypted_library_code
-                    print(library_details)
                 
                     membership_options = parameter_master_L01.objects.filter(isactive=1,parameter_name='MembershipForm').order_by('parameter_id')
                     
@@ -1171,8 +1171,6 @@ def membership_form_view(request):
                         for mema in membership_Master:
                             mema.membership_id_enc = enc(str(mema.id))
                             mema.membership_code_enc = enc(str(mema.membership_code)) if mema.membership_code else None
-
-                        print(membership_Master)
                     
                     document_details = DocumentDetails.objects.filter(
                         membership=membership, isactive=1
@@ -1247,6 +1245,47 @@ def membership_form_view(request):
                 except Exception as e:
                     messages.error(request, f"Error processing payment: {str(e)}")
                     return redirect("L01:membership_approval")
+            
+            elif action == "renewal_approved":
+                try:
+                    with transaction.atomic():
+                        membership = get_object_or_404(MembershipDetails, id=membership_id)
+                        
+                        # Update to APPROVED (status_id = 2)
+                        membership.status_id = 2
+                        membership.actionperformed = user_code
+                        membership.reviewed = user_code
+                        membership.reviewed_at = timezone.now()
+                        membership.updated_by = user_code
+                        
+                        # Save
+                        membership.save()
+                        
+                        messages.success(request, "Renewal approved successfully!")
+                        
+                except Exception as e:
+                    messages.error(request, f"Error: {str(e)}")
+
+            elif action == "renewal_rejected":
+                try:
+                    with transaction.atomic():
+                        membership = get_object_or_404(MembershipDetails, id=membership_id)
+                        
+                        # Update to RENEWAL REJECTED (status_id = 11)
+                        membership.status_id = 11
+                        membership.actionperformed = action
+                        membership.reviewed = user_code
+                        membership.reviewed_at = timezone.now()
+                        membership.updated_by = user_code
+                        membership.membership_renew = 0  # Reset renewal flag
+                        
+                        # Save
+                        membership.save()
+                        
+                        messages.warning(request, "Renewal rejected successfully!")
+                        
+                except Exception as e:
+                    messages.error(request, f"Error: {str(e)}")
             
             else:
                 # Step 3: Map actions to status IDs
@@ -1382,6 +1421,12 @@ def membership_payment_index(request):
         if request.method == "GET":
             
             today = date.today()
+            renew_membership = None
+            show_renew_notice = None
+            membership_id_enc_for_renew = None
+            has_pending_books = False
+            lifetime_membership_ids = [5, 6]
+            RENEW_REJECT_CODE = "APP_RENEW_REJECT"
             
             # member's membershp details
             memberships = (
@@ -1393,13 +1438,36 @@ def membership_payment_index(request):
                 mem.membership_id_enc = enc(str(mem.id))        
                 mem.per_month_subscription = mem.membership.subscription_fees if mem.membership else 0
                 
-                mem.show_renew_button = (
-                    mem.to_date is not None and mem.to_date == today
+                if mem.membership_id in lifetime_membership_ids:
+                    continue
+                
+                if mem.to_date and today >= mem.to_date and not renew_membership:
+                    renew_membership = mem
+                    
+                if renew_membership:
+                    has_pending_books = CirculationTransaction.objects.filter(
+                        member=renew_membership,
+                        return_date__isnull=True
+                    ).exists()
+                    
+                show_renew_notice = renew_membership is not None and not has_pending_books
+
+                membership_id_enc_for_renew = (
+                    renew_membership.membership_id_enc
+                    if renew_membership and not has_pending_books
+                    else None
                 )
                 
             # Library Name
             library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
             library_name_mar = library.library_name_mar if library else ""
+            
+            renew_membership_rejected = memberships.filter(status__status_code="APP_RENEW_REJECT").first()
+            
+            membership_id_enc_for_reject = (
+                enc(str(renew_membership_rejected.id))
+                if renew_membership_rejected else None
+            )
                 
             return render(
                 request,
@@ -1409,6 +1477,11 @@ def membership_payment_index(request):
                     "library_code": library_code,
                     "memberships": memberships,
                     "library_name_mar": library_name_mar,
+                    "show_renew_notice": show_renew_notice,
+                    "membership_id_enc_for_renew": membership_id_enc_for_renew,
+                    "has_pending_books": has_pending_books,
+                    "renew_membership_rejected": renew_membership_rejected,
+                    "membership_id_enc_for_reject": membership_id_enc_for_reject,
                 }
             )
             
@@ -1624,7 +1697,10 @@ def membership_form_renew(request):
                             mema.membership_id_enc = encrypted_membership_id
                         print(membership_Master)
                         
-                    membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)    
+                    membership = get_object_or_404(MembershipDetails, id=membershipid, isactive=1)   
+                    
+                    # Get the membership type details directly
+                    current_membership_type = membership.membership  # This is the ForeignKey to MembershipMaster 
                     
                     document_details = DocumentDetails.objects.filter(
                         membership=membership, isactive=1
@@ -1645,6 +1721,9 @@ def membership_form_renew(request):
                 'library_code': library_code,
                 'membership': membership,
                 'documents_map': documents_map,
+                'current_membership_type': current_membership_type,
+                'subscription_fees': membership.membership.subscription_fees,
+                'fine_membership': membership.membership.fine_membership,
             }
                 
             return render(request, template, context)
@@ -1653,8 +1732,6 @@ def membership_form_renew(request):
             with transaction.atomic():
                 membership_id = request.POST.get("membership_id")
                 membership = get_object_or_404(MembershipDetails, id=membership_id)
-
-                updated = False
 
                 # 1️⃣ Field map (only relevant fields)
                 field_map = {
@@ -1665,6 +1742,7 @@ def membership_form_renew(request):
                 }
 
                 # 2️⃣ Detect field changes
+                updated = False
                 for form_field, model_field in field_map.items():
                     new_value = request.POST.get(form_field)
 
@@ -1694,72 +1772,67 @@ def membership_form_renew(request):
                     if new_value != old_value:
                         setattr(membership, field, new_value)
                         updated = True
-                        
-                if updated:
-                    MembershipDetailsHistory.objects.create(
-                        membership=membership,
-                        membershipmaster=membership.membership,  # ✅ FIXED
-                        status=membership.status,
-                        member_type=membership.member_type,
-                        first_name=membership.first_name,
-                        middle_name=membership.middle_name,
-                        last_name=membership.last_name,
-                        first_name_mar=membership.first_name_mar,
-                        middle_name_mar=membership.middle_name_mar,
-                        last_name_mar=membership.last_name_mar,
-                        ward=membership.ward,
-                        other_ward=membership.other_ward,
-                        pincode=membership.pincode,
-                        library_name=membership.library_name,
-                        library_name_mar=membership.library_name_mar,
-                        local_address=membership.local_address,
-                        mobile_no=membership.mobile_no,
-                        occupation=membership.occupation,
-                        office_phone=membership.office_phone,
-                        education=membership.education,
-                        institute_name=membership.institute_name,
-                        recommender_details=membership.recommender_details,
-                        dob=membership.dob,
-                        aadhar_no=membership.aadhar_no,
-                        user_id=membership.user_id,
-                        password=membership.password,
-                        membership_duration=membership.membership_duration,
-                        from_date=membership.from_date,
-                        to_date=membership.to_date,
-                        deposit=membership.deposit,
-                        entry_fees=membership.entry_fees,
-                        subscription=membership.subscription,
-                        email=membership.email,
-                        is_resident_of_nmmc=membership.is_resident_of_nmmc,
-                        address_same_as_aadhar=membership.address_same_as_aadhar,
-                        actionperformed=membership.actionperformed,
-                        reviewed=membership.reviewed,
-                        reviewed_at=membership.reviewed_at,
-                        isactive=membership.isactive,
-                        membership_code=membership.membership_code,
-                        membership_renew=1,  # ✅ history flag
-                        created_at=membership.created_at,
-                        created_by=membership.created_by,
-                        updated_at=membership.updated_at,
-                        updated_by=membership.updated_by,
-                        changed_by=user_code,
-                    )
 
-                # 4️⃣ Save if updated
+                # 4️⃣ Store fine calculation details in NEW SEPARATE COLUMNS
+                gap_months = request.POST.get("gap_months")
+                gap_fine = request.POST.get("gap_fine")
+                late_fee = request.POST.get("late_fee")
+                
+                # Convert to appropriate types
+                gap_months_int = int(gap_months) if gap_months and gap_months.strip() else 0
+                gap_fine_float = float(gap_fine) if gap_fine and gap_fine.strip() else 0.00
+                late_fee_float = float(late_fee) if late_fee and late_fee.strip() else 0.00
+                total_fine_calculated = gap_fine_float + late_fee_float
+                
+                # Check if fine values have changed
+                if (gap_months_int != (membership.gap_months or 0) or
+                    gap_fine_float != (membership.gap_fine or 0.00) or
+                    late_fee_float != (membership.late_fee or 0.00)):
+                    
+                    # Update fine columns (using your exact field names)
+                    membership.gap_months = gap_months_int
+                    membership.gap_fine = gap_fine_float
+                    membership.late_fee = late_fee_float
+                    membership.total_fine_membership = total_fine_calculated  # Your field name
+                    membership.fine_calculated_at = datetime.now()
+                    updated = True
+                    
+                    # Add note to remarks about fine calculation
+                    fine_note = f"[Fine Calculated: {datetime.now().strftime('%Y-%m-%d %H:%M')}] Gap: {gap_months_int} months, Total Fine: ₹{total_fine_calculated:.2f}"
+                    if membership.remarks:
+                        # Check if there's already a fine note and update it
+                        import re
+                        remarks = re.sub(r'\[Fine Calculated:.*?\].*?(?=\n|$)', '', membership.remarks, flags=re.DOTALL)
+                        remarks = remarks.strip()
+                        if remarks:
+                            membership.remarks = f"{remarks}\n{fine_note}"
+                        else:
+                            membership.remarks = fine_note
+                    else:
+                        membership.remarks = fine_note
+
+                # 5️⃣ Save if updated
                 if updated:
                     membership.updated_by = user_code
-                    membership.status_id = 9
+                    membership.status_id = 9  # Renewed status
                     membership.membership_renew = 1
                     membership.actionperformed = None
                     membership.reviewed = None
                     membership.reviewed_at = None
+                    
+                    # ✅ TRIGGER WILL AUTOMATICALLY CREATE HISTORY RECORD!
                     membership.save()
-                    messages.success(request, "Membership updated successfully!")
+                    
+                    messages.success(request, "Membership renewed successfully!")
+                    
+                    # Optional: Log success
+                    print(f"Membership {membership_id} renewed. Trigger created history record.")
+                    
                 else:
                     messages.info(request, "No changes detected. Membership not updated.")
 
-                return redirect("L01:membership_payment_index")     
-   
+                return redirect("L01:membership_payment_index")
+        
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else "library_list"
@@ -9933,3 +10006,221 @@ def export_pdf(data, detail_type):
 def clear_pending_action(request):
     request.session.pop("pending_action", None)
     return JsonResponse({"success": True})
+
+@login_required
+def competitive_exams_landing_page(request, competitive_id=None):
+    # --- SESSION CHECKS ---
+    library_code = request.session.get('library_db')
+    username = request.session.get('username')
+    user_id = request.session.get('user_id')
+    role_id = request.session.get('role_id')
+    # if competitive_id:
+    #     # Show exam details
+    #     exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+    #     return render(request, "L01/competitive_exam_details.html", {
+    #         "MEDIA_URL": settings.MEDIA_URL,
+    #         "exam": exam
+    #     })
+    
+    # Show exam list
+    competitive_exams = CompetitiveExamMaster.objects.all().order_by('full_name')
+    return render(request, "L01/competitive_exams_landing_page.html", {
+        "MEDIA_URL": settings.MEDIA_URL,
+        "competitive_exams": competitive_exams
+    })
+
+@login_required
+def upsc_index_logged(request):
+    try:
+        library_code = request.session.get('library_db')
+
+        if not library_code:
+            return JsonResponse({"error": "Library database not selected"}, status=400)
+
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using(library_code),
+            competitive_id=1
+        )
+
+        # Fetch all related sections linked to UPSC (from selected library DB)
+        sections = Sections.objects.using(library_code).filter(
+            competitive_id=1
+        ).order_by('section_no')
+
+        subjects_by_section = []
+        for section in sections:
+            section.encrypted_section_no = enc(str(section.section_no))
+
+            subjects = Subjects.objects.using(library_code).filter(
+                section_no=section.section_no
+            ).order_by('subject_id')
+
+            subjects_by_section.append(
+                (section.encrypted_section_no, subjects)
+            )
+
+        return render(request, "L01/UPSC/upsc_index_logged.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "sections": sections,
+            "subjects_by_section": subjects_by_section,
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'upsc_index_logged'
+        callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        return JsonResponse({"error": "Oops... Something went wrong!"}, status=500)
+
+@login_required
+def upsc_topics_logged(request, section_no):
+    try:
+        library_code = request.session.get('library_db')
+
+        if not library_code:
+            return JsonResponse({"error": "Library database not selected"}, status=400)
+        #  Get the competitive exam (UPSC)
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using(library_code),
+            competitive_id=1
+        )
+
+        # Fetch the specific section using the passed section_no
+        section_no = int(dec(section_no))
+        section = get_object_or_404(
+            Sections.objects.using(library_code),
+            section_no=section_no
+        )
+
+        #  Fetch all subjects under this section
+        subjects = Subjects.objects.using(library_code).filter(
+            section_no=section.section_no
+        ).order_by('subject_id')
+
+        subjects_data = []
+
+        # For each subject, fetch topics under the same section
+        for subject in subjects:
+            topics = Topics.objects.using(library_code).filter(
+                subject_id=subject.subject_id,
+                section_no=section.section_no
+            ).order_by('topic_id')
+
+            subjects_data.append({
+                "subject": subject,
+                "topics": topics
+            })
+
+        #  Pass the structured data to the template
+        return render(request, "L01/UPSC/upsc_topics_logged.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "section": section,
+            "subjects_data": subjects_data,
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'upsc_topics_logged'
+        callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        return JsonResponse({"error": "Oops... Something went wrong!"}, status=500)
+    
+@login_required
+def mpsc_index_logged(request):
+    try:
+        library_code = request.session.get('library_db')
+
+        if not library_code:
+            return JsonResponse({"error": "Library database not selected"}, status=400)
+
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using(library_code),
+            competitive_id=2
+        )
+
+        # Fetch all related sections linked to UPSC (from selected library DB)
+        sections = Sections.objects.using(library_code).filter(
+            competitive_id=2
+        ).order_by('section_no')
+
+        subjects_by_section = []
+        for section in sections:
+            section.encrypted_section_no = enc(str(section.section_no))
+
+            subjects = Subjects.objects.using(library_code).filter(
+                section_no=section.section_no
+            ).order_by('subject_id')
+
+            subjects_by_section.append(
+                (section.encrypted_section_no, subjects)
+            )
+
+        return render(request, "L01/MPSC/mpsc_index_logged.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "sections": sections,
+            "subjects_by_section": subjects_by_section,
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'mpsc_index_logged'
+        callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        return JsonResponse({"error": "Oops... Something went wrong!"}, status=500)
+    
+@login_required
+def mpsc_topics_logged(request, section_no):
+    try:
+        library_code = request.session.get('library_db')
+
+        if not library_code:
+            return JsonResponse({"error": "Library database not selected"}, status=400)
+        #  Get the competitive exam (UPSC)
+        competitive_exam = get_object_or_404(
+            CompetitiveExamMaster.objects.using(library_code),
+            competitive_id=2
+        )
+
+        # Fetch the specific section using the passed section_no
+        section_no = int(dec(section_no))
+        section = get_object_or_404(
+            Sections.objects.using(library_code),
+            section_no=section_no
+        )
+
+        #  Fetch all subjects under this section
+        subjects = Subjects.objects.using(library_code).filter(
+            section_no=section.section_no
+        ).order_by('subject_id')
+
+        subjects_data = []
+
+        # For each subject, fetch topics under the same section
+        for subject in subjects:
+            topics = Topics.objects.using(library_code).filter(
+                subject_id=subject.subject_id,
+                section_no=section.section_no
+            ).order_by('topic_id')
+
+            subjects_data.append({
+                "subject": subject,
+                "topics": topics
+            })
+
+        #  Pass the structured data to the template
+        return render(request, "L01/MPSC/mpsc_topics_logged.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "competitive_exam": competitive_exam,
+            "section": section,
+            "subjects_data": subjects_data,
+        })
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'mpsc_topics_logged'
+        callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        return JsonResponse({"error": "Oops... Something went wrong!"}, status=500)
