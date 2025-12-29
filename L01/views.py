@@ -6309,33 +6309,34 @@ class ExportStockReportView(View):
         try:
             # Generate PDF with WeasyPrint
             html = HTML(string=html_content)
+
+            font_regular = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Regular.ttf")
+
+            font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSerifDevanagari-Bold.ttf")
+
             
             # Add CSS for better typography
-            css_string = """
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari'),
-                    local('NotoSansDevanagari-Regular'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari Bold'),
-                    local('NotoSansDevanagari-Bold'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf') format('truetype');
-                font-weight: bold;
-                font-style: normal;
-            }
-            
-            body {
-                font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'Sanskrit Text', 'Arial Unicode MS', sans-serif;
-                text-rendering: optimizeLegibility;
-                -webkit-font-smoothing: antialiased;
-            }
-            """
+            css_string = f"""
+                @font-face {{
+                    font-family: 'Noto Sans Devanagari';
+                    src: url('file://{font_regular}');
+                    font-weight: normal;
+                    font-style: normal;
+                }}
+
+                @font-face {{
+                    font-family: 'Noto Sans Devanagari';
+                    src: url('file://{font_bold}');
+                    font-weight: bold;
+                    font-style: normal;
+                }}
+
+                body {{
+                    font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', sans-serif;
+                    text-rendering: optimizeLegibility;
+                }}
+                """
+
             
             css = CSS(string=css_string)
             pdf_data = html.write_pdf(stylesheets=[css])
@@ -6495,422 +6496,451 @@ def generate_final_report(request):
         return response
             
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        error_trace = traceback.format_exc()
+        error_log.objects.create(
+            method='generate_final_report',
+            error=str(e),
+            error_date=timezone.now()
+        )
+
+        return JsonResponse({
+            'success': False,
+            'error': 'Internal server error while generating report'
+        }, status=500)
 
 def prepare_report_data_from_stock_reports(stock_reports, stock_year):
-    """
-    Prepare report data from StockReport queryset
-    """
-    books = []
-    status_counts = {
-        'scanned': 0,
-        'unknown': 0,
-        'total': 0
-    }
-    
-    for report in stock_reports:
-        # Get shelf location name
-        shelf_location = 'N/A'
-        if report.shelf_location:
-            shelf_location = report.shelf_location.location_name
-        
-        # Get date processed as string
-        date_processed = 'N/A'
-        if report.date_processed:
-            date_processed = report.date_processed.strftime('%Y-%m-%d')
-        
-        # Update status counts
-        stock_status_lower = report.stock_status.lower()
-        if 'scanned' in stock_status_lower:
-            status_counts['scanned'] += 1
-        elif 'unknown' in stock_status_lower:
-            status_counts['unknown'] += 1
-        status_counts['total'] += 1
-        
-        book_data = {
-            'barcode': report.barcode,
-            'title': report.title,
-            'shelf_location': shelf_location,
-            'current_status': report.current_status,
-            'stock_status': report.stock_status,
-            'date_processed': date_processed,
+    try:
+        """
+        Prepare report data from StockReport queryset
+        """
+        books = []
+        status_counts = {
+            'scanned': 0,
+            'unknown': 0,
+            'total': 0
         }
-        books.append(book_data)
-    
-    return {
-        'books': books,
-        'summary': status_counts,
-        'stock_year': stock_year.year_name,
-        'stock_year_id': stock_year.id,
-        'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
+        
+        for report in stock_reports:
+            # Get shelf location name
+            shelf_location = 'N/A'
+            if report.shelf_location:
+                shelf_location = report.shelf_location.location_name
+            
+            # Get date processed as string
+            date_processed = 'N/A'
+            if report.date_processed:
+                date_processed = report.date_processed.strftime('%Y-%m-%d')
+            
+            # Update status counts
+            stock_status_lower = report.stock_status.lower()
+            if 'scanned' in stock_status_lower:
+                status_counts['scanned'] += 1
+            elif 'unknown' in stock_status_lower:
+                status_counts['unknown'] += 1
+            status_counts['total'] += 1
+            
+            book_data = {
+                'barcode': report.barcode,
+                'title': report.title,
+                'shelf_location': shelf_location,
+                'current_status': report.current_status,
+                'stock_status': report.stock_status,
+                'date_processed': date_processed,
+            }
+            books.append(book_data)
+        
+        return {
+            'books': books,
+            'summary': status_counts,
+            'stock_year': stock_year.year_name,
+            'stock_year_id': stock_year.id,
+            'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+        }
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        error_log.objects.create(
+            method='generate_final_report',
+            error=str(e),
+            error_date=timezone.now()
+        )
+            
 
 def export_final_report_to_pdf(report_data):
-    """
-    Export final report to PDF format from StockReport data
-    """
     try:
-        from weasyprint import HTML, CSS
-        use_weasyprint = True
-    except ImportError:
-        use_weasyprint = False
-    
-    import io
-    import html as html_module  # Import html module with alias to avoid conflict
-    
-    # Create HTML content with Marathi text
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="mr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>स्टॉक सत्यापन अंतिम अहवाल - {report_data['stock_year']}</title>
-        <style>
-            @page {{
-                size: A4;
-                margin: 1.5cm;
-                
-                @top-center {{
-                    content: "विष्णुदास भावे नाट्य ग्रंथालय - अंतिम स्टॉक अहवाल";
-                    font-size: 14px;
-                    color: #2c3e50;
-                    margin-top: 0.5cm;
-                }}
-                
-                @bottom-center {{
-                    content: "पृष्ठ " counter(page) " / " counter(pages);
-                    font-size: 10px;
-                    margin-bottom: 0.5cm;
-                }}
-            }}
-            
-            body {{
-                font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', 'Nirmala UI', sans-serif;
-                line-height: 1.4;
-                color: #333;
-            }}
-            
-            .header-container {{
-                text-align: center;
-                margin-bottom: 25px;
-            }}
-            
-            .library-name {{
-                font-size: 22px;
-                font-weight: bold;
-                color: #2c3e50;
-                margin: 10px 0;
-            }}
-            
-            .report-title {{
-                font-size: 18px;
-                font-weight: bold;
-                color: #d35400;
-                margin: 5px 0 20px 0;
-                border-bottom: 2px solid #d35400;
-                padding-bottom: 10px;
-            }}
-            
-            .report-subtitle {{
-                font-size: 14px;
-                color: #7f8c8d;
-                margin-bottom: 25px;
-                font-style: italic;
-            }}
-            
-            .report-info {{
-                background-color: #f8f9fa;
-                padding: 15px;
-                border-radius: 5px;
-                border-left: 4px solid #3498db;
-                margin-bottom: 25px;
-            }}
-            
-            .info-row {{
-                margin-bottom: 8px;
-                font-size: 13px;
-            }}
-            
-            .info-label {{
-                font-weight: bold;
-                color: #2c3e50;
-                display: inline-block;
-                width: 150px;
-            }}
-            
-            .info-value {{
-                color: #555;
-            }}
-            
-            .summary-stats {{
-                display: flex;
-                justify-content: space-around;
-                margin: 25px 0;
-                flex-wrap: wrap;
-            }}
-            
-            .stat-box {{
-                background: linear-gradient(45deg, #3498db, #2980b9);
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                text-align: center;
-                min-width: 150px;
-                margin: 5px;
-            }}
-            
-            .stat-value {{
-                font-size: 24px;
-                font-weight: bold;
-                margin: 5px 0;
-            }}
-            
-            .stat-label {{
-                font-size: 14px;
-            }}
-            
-            .data-table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 20px;
-                font-size: 11px;
-            }}
-            
-            .data-table th {{
-                background-color: #2c3e50;
-                color: white;
-                padding: 10px 8px;
-                text-align: left;
-                font-weight: bold;
-                border: 1px solid #ddd;
-            }}
-            
-            .data-table td {{
-                padding: 8px;
-                border: 1px solid #ddd;
-                text-align: left;
-            }}
-            
-            .data-table tr:nth-child(even) {{
-                background-color: #f9f9f9;
-            }}
-            
-            .status-scanned {{
-                color: #27ae60;
-                font-weight: bold;
-            }}
-            
-            .status-unknown {{
-                color: #e74c3c;
-                font-weight: bold;
-            }}
-            
-            .footer {{
-                margin-top: 30px;
-                padding-top: 15px;
-                border-top: 1px solid #eee;
-                font-size: 12px;
-                text-align: center;
-            }}
-            
-            .summary {{
-                font-weight: bold;
-                color: #2c3e50;
-                margin-bottom: 5px;
-            }}
-            
-            .timestamp {{
-                color: #7f8c8d;
-                font-size: 11px;
-            }}
-            
-            .completed-badge {{
-                background-color: #27ae60;
-                color: white;
-                padding: 3px 10px;
-                border-radius: 12px;
-                font-size: 11px;
-                margin-left: 10px;
-            }}
-            
-            /* Print styles */
-            @media print {{
-                body {{
-                    margin: 0;
-                    padding: 0;
-                }}
-                
-                .no-print {{
-                    display: none;
-                }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="header-container">
-            <div class="library-name">विष्णुदास भावे नाट्य ग्रंथालय</div>
-            <div class="report-title">स्टॉक सत्यापन अंतिम अहवाल</div>
-            <div class="report-subtitle">(Stock Verification Final Report)</div>
-        </div>
-        
-        <div class="report-info">
-            <div class="info-row">
-                <span class="info-label">स्टॉक वर्ष:</span>
-                <span class="info-value">{html_module.escape(str(report_data['stock_year']))}</span>
-                <span class="completed-badge">✓ पूर्ण</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">अहवाल क्र.:</span>
-                <span class="info-value">SR/{report_data['stock_year_id']}/{timezone.now().strftime('%Y%m%d')}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">निर्मिती दिनांक:</span>
-                <span class="info-value">{html_module.escape(str(report_data['generated_at']))}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">डेटा स्रोत:</span>
-                <span class="info-value">स्टॉक अहवाल डेटाबेस</span>
-            </div>
-        </div>
-        
-        <div class="summary-stats">
-            <div class="stat-box">
-                <div class="stat-value">{report_data['summary']['total']}</div>
-                <div class="stat-label">एकूण पुस्तके</div>
-            </div>
-            <div class="stat-box" style="background: linear-gradient(45deg, #27ae60, #229954);">
-                <div class="stat-value">{report_data['summary']['scanned']}</div>
-                <div class="stat-label">स्कॅन केलेली</div>
-            </div>
-            <div class="stat-box" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">
-                <div class="stat-value">{report_data['summary']['unknown']}</div>
-                <div class="stat-label">अज्ञात स्थिती</div>
-            </div>
-            <div class="stat-box" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">
-                <div class="stat-value">{report_data['summary']['scanned'] / report_data['summary']['total'] * 100 if report_data['summary']['total'] > 0 else 0:.1f}%</div>
-                <div class="stat-label">स्कॅन दर</div>
-            </div>
-        </div>
-        
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th width="5%">क्र.</th>
-                    <th width="15%">बारकोड</th>
-                    <th width="30%">शीर्षक</th>
-                    <th width="15%">शेल्फ स्थान</th>
-                    <th width="15%">सध्याची स्थिती</th>
-                    <th width="15%">स्टॉक स्थिती</th>
-                    <th width="10%">तारीख</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
-    
-    # Add table rows
-    books = report_data['books']
-    for i, book in enumerate(books):
-        barcode = html_module.escape(str(book.get('barcode', '')))
-        title = html_module.escape(str(book.get('title', '')))
-        shelf_location = html_module.escape(str(book.get('shelf_location', '')))
-        current_status = html_module.escape(str(book.get('current_status', '')))
-        stock_status = html_module.escape(str(book.get('stock_status', '')))
-        date_processed = html_module.escape(str(book.get('date_processed', '')))
-        
-        status_class = 'status-scanned' if 'scanned' in book.get('stock_status', '').lower() else 'status-unknown'
-        
-        html_content += f"""
-                <tr>
-                    <td>{i + 1}</td>
-                    <td>{barcode}</td>
-                    <td>{title}</td>
-                    <td>{shelf_location}</td>
-                    <td>{current_status}</td>
-                    <td class="{status_class}">{stock_status}</td>
-                    <td>{date_processed}</td>
-                </tr>
         """
-    
-    # Close HTML
-    html_content += f"""
-            </tbody>
-        </table>
-        
-        <div class="footer">
-            <div class="summary">एकूण नोंदी: {len(books)}</div>
-            <div class="summary">स्टॉक सत्यापन पूर्ण झाले: {timezone.now().strftime('%d/%m/%Y')}</div>
-            <div class="timestamp">हा अंतिम अहवाल {timezone.now().strftime('%d/%m/%Y %H:%M:%S')} रोजी निर्माण करण्यात आला</div>
-            <div class="timestamp" style="margin-top: 10px;">
-                ** हा एक अधिकृत अहवाल आहे जो स्टॉक सत्यापन प्रक्रिया पूर्ण झाल्यानंतर निर्माण करण्यात आला आहे **
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    pdf_data = None
-    
-    if use_weasyprint:
+        Export final report to PDF format from StockReport data
+        """
         try:
-            # Generate PDF with WeasyPrint
-            weasyprint_html = HTML(string=html_content)  # Use different variable name
+            from weasyprint import HTML, CSS
+            use_weasyprint = True
+        except ImportError:
+            use_weasyprint = False
+        
+        import io
+        import html as html_module  # Import html module with alias to avoid conflict
+        
+        # Create HTML content with Marathi text
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="mr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>स्टॉक सत्यापन अंतिम अहवाल - {report_data['stock_year']}</title>
+            <style>
+                @page {{
+                    size: A4;
+                    margin: 1.5cm;
+                    
+                    @top-center {{
+                        content: "विष्णुदास भावे नाट्य ग्रंथालय - अंतिम स्टॉक अहवाल";
+                        font-size: 14px;
+                        color: #2c3e50;
+                        margin-top: 0.5cm;
+                    }}
+                    
+                    @bottom-center {{
+                        content: "पृष्ठ " counter(page) " / " counter(pages);
+                        font-size: 10px;
+                        margin-bottom: 0.5cm;
+                    }}
+                }}
+                
+                body {{
+                    font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', 'Nirmala UI', sans-serif;
+                    line-height: 1.4;
+                    color: #333;
+                }}
+                
+                .header-container {{
+                    text-align: center;
+                    margin-bottom: 25px;
+                }}
+                
+                .library-name {{
+                    font-size: 22px;
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin: 10px 0;
+                }}
+                
+                .report-title {{
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #d35400;
+                    margin: 5px 0 20px 0;
+                    border-bottom: 2px solid #d35400;
+                    padding-bottom: 10px;
+                }}
+                
+                .report-subtitle {{
+                    font-size: 14px;
+                    color: #7f8c8d;
+                    margin-bottom: 25px;
+                    font-style: italic;
+                }}
+                
+                .report-info {{
+                    background-color: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border-left: 4px solid #3498db;
+                    margin-bottom: 25px;
+                }}
+                
+                .info-row {{
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                }}
+                
+                .info-label {{
+                    font-weight: bold;
+                    color: #2c3e50;
+                    display: inline-block;
+                    width: 150px;
+                }}
+                
+                .info-value {{
+                    color: #555;
+                }}
+                
+                .summary-stats {{
+                    display: flex;
+                    justify-content: space-around;
+                    margin: 25px 0;
+                    flex-wrap: wrap;
+                }}
+                
+                .stat-box {{
+                    background: linear-gradient(45deg, #3498db, #2980b9);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    text-align: center;
+                    min-width: 150px;
+                    margin: 5px;
+                }}
+                
+                .stat-value {{
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin: 5px 0;
+                }}
+                
+                .stat-label {{
+                    font-size: 14px;
+                }}
+                
+                .data-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                    font-size: 11px;
+                }}
+                
+                .data-table th {{
+                    background-color: #2c3e50;
+                    color: white;
+                    padding: 10px 8px;
+                    text-align: left;
+                    font-weight: bold;
+                    border: 1px solid #ddd;
+                }}
+                
+                .data-table td {{
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                }}
+                
+                .data-table tr:nth-child(even) {{
+                    background-color: #f9f9f9;
+                }}
+                
+                .status-scanned {{
+                    color: #27ae60;
+                    font-weight: bold;
+                }}
+                
+                .status-unknown {{
+                    color: #e74c3c;
+                    font-weight: bold;
+                }}
+                
+                .footer {{
+                    margin-top: 30px;
+                    padding-top: 15px;
+                    border-top: 1px solid #eee;
+                    font-size: 12px;
+                    text-align: center;
+                }}
+                
+                .summary {{
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                }}
+                
+                .timestamp {{
+                    color: #7f8c8d;
+                    font-size: 11px;
+                }}
+                
+                .completed-badge {{
+                    background-color: #27ae60;
+                    color: white;
+                    padding: 3px 10px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    margin-left: 10px;
+                }}
+                
+                /* Print styles */
+                @media print {{
+                    body {{
+                        margin: 0;
+                        padding: 0;
+                    }}
+                    
+                    .no-print {{
+                        display: none;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header-container">
+                <div class="library-name">विष्णुदास भावे नाट्य ग्रंथालय</div>
+                <div class="report-title">स्टॉक सत्यापन अंतिम अहवाल</div>
+                <div class="report-subtitle">(Stock Verification Final Report)</div>
+            </div>
             
-            # Add CSS for better typography
-            css_string = """
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari'),
-                    local('NotoSansDevanagari-Regular'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
+            <div class="report-info">
+                <div class="info-row">
+                    <span class="info-label">स्टॉक वर्ष:</span>
+                    <span class="info-value">{html_module.escape(str(report_data['stock_year']))}</span>
+                    <span class="completed-badge">✓ पूर्ण</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">अहवाल क्र.:</span>
+                    <span class="info-value">SR/{report_data['stock_year_id']}/{timezone.now().strftime('%Y%m%d')}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">निर्मिती दिनांक:</span>
+                    <span class="info-value">{html_module.escape(str(report_data['generated_at']))}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">डेटा स्रोत:</span>
+                    <span class="info-value">स्टॉक अहवाल डेटाबेस</span>
+                </div>
+            </div>
             
-            @font-face {
-                font-family: 'Noto Sans Devanagari';
-                src: local('Noto Sans Devanagari Bold'),
-                    local('NotoSansDevanagari-Bold'),
-                    url('file:///usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf') format('truetype');
-                font-weight: bold;
-                font-style: normal;
-            }
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <div class="stat-value">{report_data['summary']['total']}</div>
+                    <div class="stat-label">एकूण पुस्तके</div>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(45deg, #27ae60, #229954);">
+                    <div class="stat-value">{report_data['summary']['scanned']}</div>
+                    <div class="stat-label">स्कॅन केलेली</div>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">
+                    <div class="stat-value">{report_data['summary']['unknown']}</div>
+                    <div class="stat-label">अज्ञात स्थिती</div>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">
+                    <div class="stat-value">{report_data['summary']['scanned'] / report_data['summary']['total'] * 100 if report_data['summary']['total'] > 0 else 0:.1f}%</div>
+                    <div class="stat-label">स्कॅन दर</div>
+                </div>
+            </div>
             
-            body {
-                font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'Sanskrit Text', 'Arial Unicode MS', sans-serif;
-                text-rendering: optimizeLegibility;
-                -webkit-font-smoothing: antialiased;
-            }
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="5%">क्र.</th>
+                        <th width="15%">बारकोड</th>
+                        <th width="30%">शीर्षक</th>
+                        <th width="15%">शेल्फ स्थान</th>
+                        <th width="15%">सध्याची स्थिती</th>
+                        <th width="15%">स्टॉक स्थिती</th>
+                        <th width="10%">तारीख</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        
+        # Add table rows
+        books = report_data['books']
+        for i, book in enumerate(books):
+            barcode = html_module.escape(str(book.get('barcode', '')))
+            title = html_module.escape(str(book.get('title', '')))
+            shelf_location = html_module.escape(str(book.get('shelf_location', '')))
+            current_status = html_module.escape(str(book.get('current_status', '')))
+            stock_status = html_module.escape(str(book.get('stock_status', '')))
+            date_processed = html_module.escape(str(book.get('date_processed', '')))
+            
+            status_class = 'status-scanned' if 'scanned' in book.get('stock_status', '').lower() else 'status-unknown'
+            
+            html_content += f"""
+                    <tr>
+                        <td>{i + 1}</td>
+                        <td>{barcode}</td>
+                        <td>{title}</td>
+                        <td>{shelf_location}</td>
+                        <td>{current_status}</td>
+                        <td class="{status_class}">{stock_status}</td>
+                        <td>{date_processed}</td>
+                    </tr>
             """
+        
+        # Close HTML
+        html_content += f"""
+                </tbody>
+            </table>
             
-            css = CSS(string=css_string)
-            pdf_data = weasyprint_html.write_pdf(stylesheets=[css])
-            
-        except Exception as e:
-            print(f"WeasyPrint generation error: {e}")
-            # Fallback to basic HTML to PDF without CSS
+            <div class="footer">
+                <div class="summary">एकूण नोंदी: {len(books)}</div>
+                <div class="summary">स्टॉक सत्यापन पूर्ण झाले: {timezone.now().strftime('%d/%m/%Y')}</div>
+                <div class="timestamp">हा अंतिम अहवाल {timezone.now().strftime('%d/%m/%Y %H:%M:%S')} रोजी निर्माण करण्यात आला</div>
+                <div class="timestamp" style="margin-top: 10px;">
+                    ** हा एक अधिकृत अहवाल आहे जो स्टॉक सत्यापन प्रक्रिया पूर्ण झाल्यानंतर निर्माण करण्यात आला आहे **
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        pdf_data = None
+        
+        if use_weasyprint:
             try:
-                weasyprint_html = HTML(string=html_content)
-                pdf_data = weasyprint_html.write_pdf()
-            except Exception as e2:
-                print(f"Even basic WeasyPrint failed: {e2}")
-                use_weasyprint = False
-    
-    if not use_weasyprint or pdf_data is None:
-        # Fallback to ReportLab
-        pdf_data = export_final_report_fallback(report_data)
-    
-    # Create HTTP response
-    response = HttpResponse(pdf_data, content_type='application/pdf')
-    
-    # Create filename
-    from django.utils.text import slugify
-    safe_year = slugify(report_data['stock_year'])
-    filename = f"final_stock_report_{safe_year}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
-    return response
+                # Generate PDF with WeasyPrint
+                weasyprint_html = HTML(string=html_content)  # Use different variable name
+
+                font_regular = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Regular.ttf")
+
+                font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSerifDevanagari-Bold.ttf")
+
+                
+                # Add CSS for better typography
+                css_string = f"""
+                    @font-face {{
+                        font-family: 'Noto Sans Devanagari';
+                        src: url('file://{font_regular}');
+                        font-weight: normal;
+                        font-style: normal;
+                    }}
+
+                    @font-face {{
+                        font-family: 'Noto Sans Devanagari';
+                        src: url('file://{font_bold}');
+                        font-weight: bold;
+                        font-style: normal;
+                    }}
+
+                    body {{
+                        font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', sans-serif;
+                        text-rendering: optimizeLegibility;
+                    }}
+                """
+
+                
+                css = CSS(string=css_string)
+                pdf_data = weasyprint_html.write_pdf(stylesheets=[css])
+                
+            except Exception as e:
+                print(f"WeasyPrint generation error: {e}")
+                # Fallback to basic HTML to PDF without CSS
+                try:
+                    weasyprint_html = HTML(string=html_content)
+                    pdf_data = weasyprint_html.write_pdf()
+                except Exception as e2:
+                    print(f"Even basic WeasyPrint failed: {e2}")
+                    use_weasyprint = False
+        
+        if not use_weasyprint or pdf_data is None:
+            # Fallback to ReportLab
+            pdf_data = export_final_report_fallback(report_data)
+        
+        # Create HTTP response
+        response = HttpResponse(pdf_data, content_type='application/pdf')
+        
+        # Create filename
+        from django.utils.text import slugify
+        safe_year = slugify(report_data['stock_year'])
+        filename = f"final_stock_report_{safe_year}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        error_log.objects.create(
+            method='generate_final_report',
+            error=str(e),
+            error_date=timezone.now()
+        )
+
 
 def export_final_report_fallback(report_data):
     """
