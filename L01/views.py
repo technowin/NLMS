@@ -6424,59 +6424,75 @@ def generate_final_report(request):
             
     except Exception as e:
         error_trace = traceback.format_exc()
-        print(error_trace)  # check gunicorn / uwsgi logs
+        error_log.objects.create(
+            function_name='generate_final_report',
+            error_message=str(e),
+            traceback=error_trace,
+            created_at=timezone.now()
+        )
 
-        callproc("stp_error_log",
-                ['export_to_pdf', str(e), error_trace]
-            )
+        return JsonResponse({
+            'success': False,
+            'error': 'Internal server error while generating report'
+        }, status=500)
 
 def prepare_report_data_from_stock_reports(stock_reports, stock_year):
-    """
-    Prepare report data from StockReport queryset
-    """
-    books = []
-    status_counts = {
-        'scanned': 0,
-        'unknown': 0,
-        'total': 0
-    }
-    
-    for report in stock_reports:
-        # Get shelf location name
-        shelf_location = 'N/A'
-        if report.shelf_location:
-            shelf_location = report.shelf_location.location_name
-        
-        # Get date processed as string
-        date_processed = 'N/A'
-        if report.date_processed:
-            date_processed = report.date_processed.strftime('%Y-%m-%d')
-        
-        # Update status counts
-        stock_status_lower = report.stock_status.lower()
-        if 'scanned' in stock_status_lower:
-            status_counts['scanned'] += 1
-        elif 'unknown' in stock_status_lower:
-            status_counts['unknown'] += 1
-        status_counts['total'] += 1
-        
-        book_data = {
-            'barcode': report.barcode,
-            'title': report.title,
-            'shelf_location': shelf_location,
-            'current_status': report.current_status,
-            'stock_status': report.stock_status,
-            'date_processed': date_processed,
+    try:
+        """
+        Prepare report data from StockReport queryset
+        """
+        books = []
+        status_counts = {
+            'scanned': 0,
+            'unknown': 0,
+            'total': 0
         }
-        books.append(book_data)
-    
-    return {
-        'books': books,
-        'summary': status_counts,
-        'stock_year': stock_year.year_name,
-        'stock_year_id': stock_year.id,
-        'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
+        
+        for report in stock_reports:
+            # Get shelf location name
+            shelf_location = 'N/A'
+            if report.shelf_location:
+                shelf_location = report.shelf_location.location_name
+            
+            # Get date processed as string
+            date_processed = 'N/A'
+            if report.date_processed:
+                date_processed = report.date_processed.strftime('%Y-%m-%d')
+            
+            # Update status counts
+            stock_status_lower = report.stock_status.lower()
+            if 'scanned' in stock_status_lower:
+                status_counts['scanned'] += 1
+            elif 'unknown' in stock_status_lower:
+                status_counts['unknown'] += 1
+            status_counts['total'] += 1
+            
+            book_data = {
+                'barcode': report.barcode,
+                'title': report.title,
+                'shelf_location': shelf_location,
+                'current_status': report.current_status,
+                'stock_status': report.stock_status,
+                'date_processed': date_processed,
+            }
+            books.append(book_data)
+        
+        return {
+            'books': books,
+            'summary': status_counts,
+            'stock_year': stock_year.year_name,
+            'stock_year_id': stock_year.id,
+            'generated_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+        }
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        error_log.objects.create(
+            function_name='generate_final_report',
+            error_message=str(e),
+            traceback=error_trace,
+            created_at=timezone.now()
+        )
+            
 
 def export_final_report_to_pdf(report_data):
     try:
@@ -6848,11 +6864,11 @@ def export_final_report_to_pdf(report_data):
         return response
     except Exception as e:
         error_trace = traceback.format_exc()
-        print(error_trace)  # check gunicorn / uwsgi logs
-
-        callproc(
-            "stp_error_log",
-            ['export_to_pdf', str(e), error_trace]
+        error_log.objects.create(
+            function_name='generate_final_report',
+            error_message=str(e),
+            traceback=error_trace,
+            created_at=timezone.now()
         )
 
 
