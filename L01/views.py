@@ -6239,7 +6239,7 @@ class ExportStockReportView(View):
 
             font_regular = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Regular.ttf")
 
-            font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSansDevanagari-Bold.ttf")
+            font_bold = os.path.join(settings.BASE_DIR,"static","fonts","NotoSerifDevanagari-Bold.ttf")
 
             
             # Add CSS for better typography
@@ -6423,7 +6423,12 @@ def generate_final_report(request):
         return response
             
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        error_trace = traceback.format_exc()
+        print(error_trace)  # check gunicorn / uwsgi logs
+
+        callproc("stp_error_log",
+                ['export_to_pdf', str(e), error_trace]
+            )
 
 def prepare_report_data_from_stock_reports(stock_reports, stock_year):
     """

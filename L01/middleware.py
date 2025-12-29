@@ -28,13 +28,21 @@ class MemberActivityMiddleware:
         return response
 
     def should_track(self, path, request):
+        # ❌ Ignore static, media, admin
         if path.startswith(('/static/', '/media/', '/admin/')):
             return False
 
+        # ❌ Ignore AJAX
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return False
 
+        # ❌ Ignore URLs with special characters
+        # Allowed: a-z A-Z 0-9 / _ -
+        if re.search(r'[^a-zA-Z0-9/_-]', path):
+            return False
+
         return True
+
 
     def log_activity(self, session_id, path):
         # ⏱ Avoid duplicate entries on refresh (10 sec rule)
