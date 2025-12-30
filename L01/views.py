@@ -6563,7 +6563,6 @@ def prepare_report_data_from_stock_reports(stock_reports, stock_year):
             error=str(e),
             error_date=timezone.now()
         )
-            
 
 def export_final_report_to_pdf(report_data):
     try:
@@ -6940,7 +6939,6 @@ def export_final_report_to_pdf(report_data):
             error=str(e),
             error_date=timezone.now()
         )
-
 
 def export_final_report_fallback(report_data):
     """
@@ -7611,7 +7609,6 @@ def event_announcement_edit(request, encrypted_id):
         return redirect('L01:event_announcement_index')
 
 # Librarian Dashboard
-
 @login_required
 def dashboard_view(request):
     """
@@ -7645,7 +7642,7 @@ def get_dashboard1_data(request):
         else:
             start_date = end_date = now().date()
 
-        
+       
 
         # ---------- DAILY ----------
         daily = {
@@ -7663,6 +7660,16 @@ def get_dashboard1_data(request):
                         .filter(return_condition_id__in=[17, 18],
                                 return_date__range=[start_date, end_date]).count(),
         }
+        
+        today = date.today()
+        returned_books = CirculationTransaction.objects.using("L01").filter(
+            return_date=today
+        ).values(
+            "id",
+            "barcode",
+            "catalog__cat_ref_num",
+            "catalog__title"
+        )
 
         # ---------- EOD ----------
         payments = PaymentDetails.objects.using("L01")\
@@ -7731,7 +7738,8 @@ def get_dashboard1_data(request):
             "footfall": footfall,
             "physical_footfall": physical_footfall,
             "start_date":start_date,
-            "end_date":end_date
+            "end_date":end_date,
+            "returned_books":list(returned_books)
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -9910,7 +9918,6 @@ def dashboard_export(request):
 
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate
 from reportlab.pdfgen import canvas
-
 
 def export_pdf(data, detail_type):
     try:

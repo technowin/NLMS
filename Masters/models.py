@@ -398,4 +398,28 @@ class LibraryLocationMaster(models.Model):
         return f"{self.location_name} ({self.location_id})"
     
 
+class VisitorActivity(models.Model):
+    session_key = models.CharField(max_length=100, unique=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    click_1 = models.CharField(max_length=255, null=True, blank=True)
+    click_2 = models.CharField(max_length=255, null=True, blank=True)
+    click_3 = models.CharField(max_length=255, null=True, blank=True)
+    click_4 = models.CharField(max_length=255, null=True, blank=True)
+    click_5 = models.CharField(max_length=255, null=True, blank=True)
+    session_start = models.DateTimeField(default=timezone.now)
+    session_end = models.DateTimeField(null=True, blank=True)
+    total_time_seconds = models.PositiveIntegerField(default=0)
+    popup_shown = models.BooleanField(default=False)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.ip_address} - {self.session_key}"
+    
+    class Meta:
+        db_table = 'tbl_visitor_activity'
+
     

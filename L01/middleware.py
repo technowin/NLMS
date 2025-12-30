@@ -2,6 +2,8 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import MemberScreenActivity
 import re
+from django.urls import resolve, Resolver404
+
 
 
 
@@ -28,7 +30,7 @@ class MemberActivityMiddleware:
         return response
 
     def should_track(self, path, request):
-        # ❌ Ignore static, media, admin
+    # ❌ Ignore static, media, admin
         if path.startswith(('/static/', '/media/', '/admin/')):
             return False
 
@@ -37,11 +39,17 @@ class MemberActivityMiddleware:
             return False
 
         # ❌ Ignore URLs with special characters
-        # Allowed: a-z A-Z 0-9 / _ -
         if re.search(r'[^a-zA-Z0-9/_-]', path):
             return False
 
+        # ❌ Ignore URLs NOT present in L01 urls.py
+        try:
+            resolve(path)
+        except Resolver404:
+            return False
+
         return True
+
 
 
     def log_activity(self, session_id, path):

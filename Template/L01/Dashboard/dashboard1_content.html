@@ -1,5 +1,8 @@
 <!-- dashboard1_content.html - FIXED VERSION -->
 <!-- ================= FILTER CARD ================= -->
+
+
+
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3 align-items-end">
@@ -31,13 +34,24 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">EOD (End Of Day)</h5>
-                <canvas id="eodChart"></canvas>
+    <div class="card h-100">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0">EOD (End Of Day)</h5>
+
+                <!-- Button on top -->
+                <button class="btn btn-success btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#todayTasksModal">
+                    Today Tasks
+                </button>
             </div>
+
+            <canvas id="eodChart"></canvas>
         </div>
     </div>
+</div>
+
 </div>
 
 <br>
@@ -83,6 +97,46 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="todayTasksModal" tabindex="-1"
+     aria-labelledby="todayTasksLabel">
+
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="todayTasksLabel">Today's Returned Books</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+    <form method="POST" action="{% url 'L01:save_eod_log' %}">
+    {% csrf_token %}
+
+    <div class="modal-body">
+        <table class="table table-bordered" id="returnedBooksTable">
+            <thead>
+                <tr>
+                    <th>Book Name</th>
+                    <th>Put on Shelf?</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <input type="hidden" name="all_ids" id="all_ids">
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>
+
+
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let dailyChart, eodChart, transactionTable, currentLabel, currentDetailType, footfallChart,physicalFootfallChart;
@@ -667,5 +721,47 @@ function downloadReport(format) {
     window.location.href = url;
 }
 
+$('#todayTasksModal').on('show.bs.modal', function () {
+    if (window.returnedBooks && window.returnedBooks.length) {
+        renderReturnedBooksTable(window.returnedBooks);
+    } else {
+        $('#returnedBooksTable tbody').html(
+            '<tr><td colspan="2">No books returned today.</td></tr>'
+        );
+    }
+});
+
+
+
+function renderReturnedBooksTable(returnedBooks) {
+    let rows = '';
+    let ids = [];
+
+    if (!returnedBooks || !returnedBooks.length) {
+        rows = `<tr><td colspan="2">No books returned today.</td></tr>`;
+    } else {
+        returnedBooks.forEach(t => {
+            rows += `
+                <tr>
+                    <td>
+                        ${t.catalog__title}
+                        <br>
+                        <small class="text-muted">Barcode: ${t.barcode}</small>
+                    </td>
+                    <td>
+                        <input type="checkbox" name="shelved_${t.id}" value="1">
+                        <input type="hidden" name="catalog_${t.id}" value="${t.catalog__id}">
+                        <input type="hidden" name="barcode_${t.id}" value="${t.barcode}">
+                    </td>
+                </tr>
+            `;
+            ids.push(t.id);
+        });
+    }
+
+    $('#returnedBooksTable tbody').html(rows);
+    $('#all_ids').val(ids.join(','));
+}
 
 </script>
+

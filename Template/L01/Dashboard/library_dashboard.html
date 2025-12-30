@@ -522,8 +522,10 @@ function handleDashboardData(dashboardId, data) {
             $('#dashboard1-content').empty();
             if (data.html) {
                 $('#dashboard1-content').html(data.html);
+                   window.returnedBooks = data.returned_books || [];
                 if (typeof renderDashboard1 === 'function' && data.daily && data.eod && data.physical_footfall) {
                     renderDashboard1({
+                        returned_books: data.returned_books,
                         daily: data.daily,
                         eod: data.eod,
                         footfall:data.footfall,
