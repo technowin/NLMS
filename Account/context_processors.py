@@ -1,3 +1,5 @@
+# Context Proessor 477
+
 from django.conf import settings
 from Account.models import *
 from L01.models import *
@@ -10,27 +12,35 @@ from datetime import date
 
 def logged_in_user(request):
     try:
+        # =========================
+        # DEFAULTS
+        # =========================
         membership_active = False
         user = ''
+        reports = ''
+        menu_items = []
+
         session_cookie_age_seconds = settings.AUTO_LOGOUT['IDLE_TIME']
-        session_timeout_minutes = session_cookie_age_seconds 
+        session_timeout_minutes = session_cookie_age_seconds
+
         username = request.session.get('username', '')
         full_name = request.session.get('full_name', '')
         user_id = request.session.get('user_id', '')
         role_id = request.session.get('role_id', '')
-        library_code = request.session.get('library_db', None) 
+        library_code = request.session.get('library_db', None)
+
         role_name = ''
-        if request.user.is_authenticated:
-            user = str(request.user.id or '')
-
-        reports = ''    
-        menu_items = []
-
-        # Default profile picture
         file_path = '/static/images/user.png'
         library_name_show = None
         library_details = None
+        membershipshow = None
 
+        if request.user.is_authenticated:
+            user = str(request.user.id or '')
+
+        # =========================
+        # LOAD MENU & ROLE
+        # =========================
         if user_id and role_id:
             current_db = get_current_service() or 'default'
 
@@ -38,7 +48,9 @@ def logged_in_user(request):
                 library_code = None
 
             if library_code:
-                library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+                library_details = tbl_librarymasterL01.objects.filter(
+                    library_code=library_code
+                ).first()
 
             if library_details:
                 library_name_show = library_details.library_name_mar
@@ -46,11 +58,14 @@ def logged_in_user(request):
             role_obj = roles.objects.using(current_db).get(id=role_id)
             role_name = role_obj.role_name
 
-            # Fetch menu items from stored procedure
-            menu_data = callproc("stp_get_side_navbar_details", [user_id, role_id])
+            menu_data = callproc(
+                "stp_get_side_navbar_details",
+                [user_id, role_id]
+            )
+
             items = []
             for row in menu_data:
-                item = {
+                items.append({
                     'id': row[1],
                     'name': row[2],
                     'action': row[3],
@@ -62,18 +77,22 @@ def logged_in_user(request):
                     'sub_menu2': row[9],
                     'menu_icon': row[10],
                     'badge': row[11] if len(row) > 11 else None
-                }
-                items.append(item)
+                })
 
-            # Build hierarchy
+            # Build menu hierarchy
             for item in items:
-                item['children'] = [i for i in items if i['parent_id'] == item['id']]
+                item['children'] = [
+                    i for i in items if i['parent_id'] == item['id']
+                ]
 
-            menu_items = [item for item in items if item['parent_id'] == -1]
+            menu_items = [
+                item for item in items if item['parent_id'] == -1
+            ]
 
-        membershipshow = None
-
-        if role_id == '3':  # Member role
+        # =========================
+        # MEMBER ROLE LOGIC
+        # =========================
+        if role_id == '3':  # Member
             try:
                 user_obj = CustomUser.objects.get(id=user_id)
                 username = user_obj.username
@@ -81,28 +100,66 @@ def logged_in_user(request):
                 username = None
 
             if username:
-                try:
-                    membershipshow = MembershipDetails.objects.get(user_id=username)
-                except MembershipDetails.DoesNotExist:
-                    membershipshow = None
+                membershipshow = (
+                    MembershipDetails.objects
+                    .select_related('status', 'membership')
+                    .filter(user_id=username)
+                    .first()
+                )
 
-                # Fetch profile picture
                 if membershipshow:
+                    # Profile picture
                     try:
-                        document = DocumentDetails.objects.get(membership_id=membershipshow.id, document_id=1)
+                        document = DocumentDetails.objects.get(
+                            membership_id=membershipshow.id,
+                            document_id=1
+                        )
                         file_path = document.file_path
                     except DocumentDetails.DoesNotExist:
                         file_path = '/static/images/user.png'
 
-                    # Check membership validity
+                    # =========================
+                    # ACCESS RULES
+                    # =========================
                     today = date.today()
-                    if membershipshow.from_date and membershipshow.to_date:
-                        membership_active = True
-                        if not (membershipshow.from_date <= today <= membershipshow.to_date):
-                            # Only show “सदस्यत्व देयक” menu when membership expired
-                            menu_items = [item for item in menu_items if item['name'] == "सदस्यत्व देयक"]
-                            membership_active = False
 
+                    FULL_MENU_ACCESS_STATUSES = {
+                        "PAY_SUCCESS",
+                    }
+
+                    LIFETIME_MEMBERSHIP_IDS = {
+                        5, 6,   # lifetime memberships
+                    }
+
+                    has_valid_status = (
+                        membershipshow.status
+                        and membershipshow.status.status_code in FULL_MENU_ACCESS_STATUSES
+                    )
+
+                    is_lifetime = (
+                        membershipshow.membership
+                        and membershipshow.membership.id in LIFETIME_MEMBERSHIP_IDS
+                    )
+
+                    has_valid_dates = (
+                        membershipshow.from_date
+                        and membershipshow.to_date
+                        and membershipshow.from_date <= today <= membershipshow.to_date
+                    )
+
+                    if has_valid_status and (is_lifetime or has_valid_dates):
+                        membership_active = True
+                    else:
+                        # Restrict menu → only Membership Payment
+                        menu_items = [
+                            item for item in menu_items
+                            if item['name'] == "सदस्यत्व देयक"
+                        ]
+                        membership_active = False
+
+        # =========================
+        # CONTEXT RETURN
+        # =========================
         return {
             'role_id': role_id,
             'username': username,
@@ -112,15 +169,14 @@ def logged_in_user(request):
             'reports': reports,
             'menu_items': menu_items,
             'profile_picture_url': settings.MEDIA_URL + file_path,
-            'membershipshow': membershipshow, 
-            'library_name_show': library_name_show, 
-            'membership_active': membership_active, 
+            'membershipshow': membershipshow,
+            'library_name_show': library_name_show,
+            'membership_active': membership_active,
         }
+
     except Exception as e:
-        # Log the exception if needed
         print(f"Error in context processor: {e}")
         return {}
-
 
 # def logged_in_user(request):
 #     user = ''

@@ -69,7 +69,7 @@
                     <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
                     <button onclick="decreaseFont()" class="fontControlBtn" title="Decrease Font Size">A-</button>
                     <button onclick="resetFont()" class="fontControlBtn" title="Reset Font Size">A</button>
-                    <button onclick="toggleLanguage()" class="fontControlBtn" title="Change Language">English</button>
+                    <button onclick="toggleLanguage()" class="fontControlBtn" title="Change Language">मराठी</button>
                 </div>
             </div>
 
@@ -143,17 +143,6 @@
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
                         </ul>
                     </li>
-
-                    {% if request.session.library_db == "L01" %}
-                        <li style="list-style:none; text-decoration:none;">
-                            <a href="{% url 'Login' %}" class="no-hover-underline"
-                                style="background:#f0c040; padding:8px 18px; border-radius:20px;
-                                        color:#333; font-weight:600; border:2px solid #d8a735;
-                                        white-space:nowrap;">
-                                    Login
-                            </a>
-                        </li>
-                    {% endif %}
 
                     <li class="icon">
                         <a href="javascript:void(0);" onclick="toggleNavbar('navbar-english')">☰</a>

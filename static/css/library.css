@@ -1,7 +1,7 @@
 
 /* ========================= Global Variables ========================= */
 :root {
-    --primary-color:  #333399;
+    --primary-color:  #015296;
     --secondary-color: #002147;
     --font-family: "Merriweather", serif;
     --text-color: #ffffff;
@@ -1000,7 +1000,7 @@ footer a:hover {
   top: 50%;
   left: 12px;
   transform: translateY(-50%);
-  color:  #333399;
+  color:  #015296;
   font-size: 1.1rem;
   pointer-events: none;
 }
@@ -1019,7 +1019,7 @@ footer a:hover {
 }
 
 .dropdown-input:focus {
-  border-color:  #333399;
+  border-color:  #015296;
   box-shadow: 0 0 8px rgba(1,82,150,0.25);
   outline: none;
 }
@@ -1052,7 +1052,7 @@ footer a:hover {
 }
 
 .dropdown-options li:hover {
-  background:  #333399;
+  background:  #015296;
   color: #fff;
 }
 
@@ -1068,7 +1068,7 @@ footer a:hover {
 
 .library-cta .join-link {
     all: unset;         /* remove button styles */
-    color:  #333399;
+    color:  #015296;
     font-weight: bold;
     cursor: pointer;
     text-decoration: underline;
@@ -1222,7 +1222,7 @@ footer a:hover {
 
 /* Primary */
 .primary-btn {
-    background-color: #333399;
+    background-color: #015296;
     color: #ffffff;
 }
 
@@ -1233,7 +1233,7 @@ footer a:hover {
 /* Secondary */
 .secondary-btn {
     background-color: #EDEDF4;
-    color: #333399;
+    color: #015296;
 }
 
 .secondary-btn:hover {
@@ -1243,20 +1243,20 @@ footer a:hover {
 /* Force dropdown background + text visibility */
 .hero-dropdown .dropdown-options {
     background-color: #ffffff !important;
-    color: #333399 !important;
+    color: #015296 !important;
     border: 1px solid #ddd;
 }
 
 /* Each option */
 .hero-dropdown .dropdown-options li {
-    color: #333399 !important;
+    color: #015296 !important;
     background-color: #ffffff;
     font-weight: 500;
 }
 
 /* Search input text */
 .hero-dropdown .dropdown-input {
-    color: #333399;
+    color: #015296;
 }
 
 /* Placeholder color */
@@ -1266,6 +1266,6 @@ footer a:hover {
 
 /* Dropdown option hover effect */
 .hero-dropdown .dropdown-options li:hover {
-    background-color: #333399 !important; /* Primary */
+    background-color: #015296 !important; /* Primary */
     color: #ffffff !important;           /* White text */
 }

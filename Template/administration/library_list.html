@@ -24,7 +24,7 @@
                                 <!-- USER TYPES HERE -->
                                 <input type="text"
                                     class="dropdown-search dropdown-input"
-                                    placeholder="Search Library..."
+                                    value="{% if library_details %}{{ library_details.0.library_name }}{% endif %}"
                                     autocomplete="off"
                                     required>
                             </div>
@@ -80,13 +80,15 @@
                                 <!-- USER TYPES HERE -->
                                 <input type="text"
                                     class="dropdown-search dropdown-input"
-                                    placeholder="Search Library..."
+                                    value="{% if library_details %}{{ library_details.0.library_name }}{% endif %}"
                                     autocomplete="off"
                                     required>
                             </div>
 
                             <!-- REAL VALUE SENT TO BACKEND -->
-                            <input type="hidden" name="library_code" class="library-code">
+                            <!-- FIX: Set the initial value from first library -->
+                            <input type="hidden" name="library_code" class="library-code" 
+                                value="{% if library_details %}{{ library_details.0.libraries }}{% endif %}">
 
                             <ul class="dropdown-options">
                                 {% for library in library_details %}
@@ -122,9 +124,9 @@
     <section id="libraries-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title" id="section-english" style="display:none">Find Out Libraries in NMMC</h2>
+                {% comment %} <h2 class="section-title" id="section-english" style="display:none">Find Out Libraries in NMMC</h2> {% endcomment %}
 
-                <h2 class="section-title" id="section-marathi">नवी मुंबई महानगरपालिकेतील ग्रंथालय शोधा</h2>
+                {% comment %} <h2 class="section-title" id="section-marathi">नवी मुंबई महानगरपालिकेतील ग्रंथालय शोधा</h2> {% endcomment %}
 
                 <!-- View Toggle (Desktop Only) -->
                 <div class="view-toggle">
@@ -275,6 +277,90 @@
             });
         });
 
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // Initialize all dropdowns
+            document.querySelectorAll(".custom-dropdown").forEach(dropdown => {
+
+                const input = dropdown.querySelector(".dropdown-search");
+                const options = dropdown.querySelector(".dropdown-options");
+                const hiddenInput = dropdown.querySelector(".library-code");
+                const items = options.querySelectorAll("li");
+
+                // ✅ FIX: Set initial hidden input value from first item
+                if (hiddenInput.value === "" && items.length > 0) {
+                    // Get value from first library option
+                    const firstItemValue = items[0].dataset.value;
+                    hiddenInput.value = firstItemValue;
+                    console.log('Initialized hidden input with value:', firstItemValue);
+                }
+
+                input.addEventListener("focus", () => {
+                    options.style.display = "block";
+                });
+
+                input.addEventListener("input", () => {
+                    const filter = input.value.toLowerCase();
+                    hiddenInput.value = ""; // ❗ clear invalid selection
+
+                    let hasMatch = false;
+                    items.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(filter)) {
+                            item.style.display = "";
+                            hasMatch = true;
+                        } else {
+                            item.style.display = "none";
+                        }
+                    });
+
+                    if (!hasMatch) {
+                        options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
+                    }
+                });
+
+                items.forEach(item => {
+                    item.addEventListener("click", () => {
+                        input.value = item.textContent.trim();
+                        hiddenInput.value = item.dataset.value; // ✅ THIS FIXES BACKEND
+                        console.log('Selected library code:', item.dataset.value);
+                        options.style.display = "none";
+                    });
+                });
+
+                document.addEventListener("click", (e) => {
+                    if (!dropdown.contains(e.target)) {
+                        options.style.display = "none";
+                    }
+                });
+
+            });
+
+            // ✅ Validate before submitting Login button
+            document.querySelectorAll('form').forEach(form => {
+                const loginBtn = form.querySelector('.secondary-btn');
+                if (loginBtn) {
+                    loginBtn.addEventListener('click', function(e) {
+                        const hiddenInput = form.querySelector('.library-code');
+                        if (!hiddenInput || !hiddenInput.value) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Library Required',
+                                text: 'Please select a library first',
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+                            console.log('Submitting login with library code:', hiddenInput.value);
+                        }
+                    });
+                }
+            });
+
+        });
     </script>
 
 {% endblock %}

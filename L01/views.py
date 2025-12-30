@@ -1251,35 +1251,153 @@ def membership_form_view(request):
                     with transaction.atomic():
                         membership = get_object_or_404(MembershipDetails, id=membership_id)
                         
-                        # Update to APPROVED (status_id = 2)
-                        membership.status_id = 2
-                        membership.actionperformed = user_code
+                        # ✅ STEP 1: Find and delete staging record
+                        staging_record = MembershipRenewalStaging.objects.filter(
+                            membership=membership,
+                            status='pending'
+                        ).first()
+                        
+                        if staging_record:
+                            staging_record.delete()
+                        
+                        # ✅ STEP 2: Create payment using values from MembershipDetails
+                        # Convert all to float for calculation
+                        deposit = float(membership.deposit or 0)
+                        entry_fees = float(membership.entry_fees or 0)
+                        total_subscription = float(membership.subscription or 0)
+                        
+                        # Convert Decimal to float for fine
+                        total_fine = float(membership.total_fine_membership or 0)
+                        
+                        # Get monthly rate (already float)
+                        monthly_subscription = float(membership.membership.subscription_fees or 0)
+                        
+                        # Calculate total amount (all floats now)
+                        total_amount = deposit + entry_fees + total_subscription + total_fine
+                        
+                        # Create payment record
+                        payment = PaymentDetails.objects.create(
+                            membership=membership,
+                            payment_mode="Offline",
+                            payment_type="Membership Renewal",
+                            payment_method="Cash/Cheque/Other",
+                            
+                            # Amounts from MembershipDetails table
+                            deposit_amount=deposit,
+                            entry_fee_amount=entry_fees,
+                            
+                            # Subscription from MembershipDetails
+                            monthly_subscription_amount=monthly_subscription,  # ₹20 per month
+                            total_subscription_amount=total_subscription,      # ₹60 total
+                            
+                            # Fine amounts from MembershipDetails
+                            fine_amount=total_fine,
+                            book_fine_amount=0,
+                            
+                            # Dates from MembershipDetails
+                            subscription_from=membership.from_date,
+                            subscription_to=membership.to_date,
+                            
+                            # Status and tracking
+                            status_id=5,
+                            user_id=membership.user_id,
+                            membership_code=membership.membership_code,
+                            created_by=user_code,
+                            updated_by=user_code,
+                            payment_date=timezone.now().date(),
+                            
+                            # Payment breakdown
+                            remarks=(
+                                f"Renewal approved by {user_code}\n"
+                                f"Subscription: ₹{monthly_subscription}/month × {membership.membership_duration or 1} months = ₹{total_subscription}\n"
+                                f"Deposit: ₹{deposit} | Entry Fees: ₹{entry_fees}\n"
+                                f"Fine: ₹{total_fine}\n"
+                                f"Total: ₹{total_amount}"
+                            )
+                        )
+                        
+                        # ✅ STEP 3: Update membership status
+                        membership.status_id = 5 # RENEWED status
+                        membership.actionperformed = action
                         membership.reviewed = user_code
                         membership.reviewed_at = timezone.now()
                         membership.updated_by = user_code
                         
-                        # Save
+                        # ✅ STEP 4: Add approval note
+                        approval_note = (
+                            f"[Renewal Approved: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] "
+                            f"Approved by: {user_code} | Payment ID: {payment.id}"
+                        )
+                        
+                        if membership.remarks:
+                            membership.remarks = f"{membership.remarks}\n{approval_note}"
+                        else:
+                            membership.remarks = approval_note
+                        
                         membership.save()
                         
-                        messages.success(request, "Renewal approved successfully!")
+                        messages.success(request, f"Renewal approved! Payment record #{payment.id} created.")
                         
                 except Exception as e:
                     messages.error(request, f"Error: {str(e)}")
-
+            
             elif action == "renewal_rejected":
                 try:
                     with transaction.atomic():
                         membership = get_object_or_404(MembershipDetails, id=membership_id)
                         
-                        # Update to RENEWAL REJECTED (status_id = 11)
-                        membership.status_id = 11
+                        # ✅ STEP 1: Find the pending staging record for this membership
+                        staging_record = MembershipRenewalStaging.objects.filter(
+                            membership=membership,
+                            status='pending'
+                        ).first()
+                        
+                        if staging_record:
+                            # ✅ STEP 2: REVERT membership data to OLD values from staging
+                            membership.from_date = staging_record.old_from_date
+                            membership.to_date = staging_record.old_to_date
+                            membership.membership_duration = staging_record.old_duration
+                            membership.deposit = staging_record.old_deposit
+                            membership.entry_fees = staging_record.old_entry_fees
+                            membership.subscription = staging_record.old_subscription
+                            
+                            # Revert membership type if changed
+                            if staging_record.old_membership_id:
+                                try:
+                                    old_membership_type = MembershipMaster.objects.get(id=staging_record.old_membership_id)
+                                    membership.membership = old_membership_type
+                                except MembershipMaster.DoesNotExist:
+                                    pass  # Keep current if old not found
+                            
+                            # ✅ STEP 3: Reset fine calculation fields if they were changed
+                            # (Optional: You might want to revert these too if they were part of renewal)
+                            membership.gap_months = 0
+                            membership.gap_fine = 0.00
+                            membership.late_fee = 0.00
+                            membership.total_fine_membership = 0.00
+                            
+                            # ✅ STEP 5: DELETE the staging record
+                            staging_record.delete()
+                        
+                        # ✅ STEP 6: Update membership status and tracking fields (your existing code)
+                        membership.status_id = 11  # RENEWAL REJECTED
                         membership.actionperformed = action
                         membership.reviewed = user_code
                         membership.reviewed_at = timezone.now()
                         membership.updated_by = user_code
                         membership.membership_renew = 0  # Reset renewal flag
                         
-                        # Save
+                        # ✅ STEP 7: Add rejection note to remarks
+                        rejection_note = f"[Renewal Rejected: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] Rejected by: {user_code}"
+                        if request.POST.get('rejection_reason'):
+                            rejection_note += f", Reason: {request.POST.get('rejection_reason')}"
+                        
+                        if membership.remarks:
+                            membership.remarks = f"{membership.remarks}\n{rejection_note}"
+                        else:
+                            membership.remarks = rejection_note
+                        
+                        # ✅ STEP 8: Save membership with reverted data
                         membership.save()
                         
                         messages.warning(request, "Renewal rejected successfully!")
@@ -1732,6 +1850,65 @@ def membership_form_renew(request):
             with transaction.atomic():
                 membership_id = request.POST.get("membership_id")
                 membership = get_object_or_404(MembershipDetails, id=membership_id)
+                
+                # ✅ FIRST: Check for existing pending renewal
+                existing_pending = MembershipRenewalStaging.objects.filter(
+                    membership=membership,
+                    status='pending'
+                ).first()
+             
+                # Parse dates and convert types
+                new_from_date_str = request.POST.get("fromDate")
+                new_to_date_str = request.POST.get("toDate")
+                new_duration_str = request.POST.get("months")
+                new_membership_type_str = request.POST.get("membershiptype")
+                
+                # Convert NEW values
+                new_from_date = None
+                new_to_date = None
+                new_duration = None
+                new_membership_id = None
+                
+                if new_from_date_str:
+                    new_from_date = datetime.strptime(new_from_date_str, "%Y-%m-%d").date()
+                if new_to_date_str:
+                    new_to_date = datetime.strptime(new_to_date_str, "%Y-%m-%d").date()
+                if new_duration_str:
+                    new_duration = int(new_duration_str)
+                if new_membership_type_str:
+                    new_membership_id = int(new_membership_type_str)
+                
+                # Get monetary NEW values
+                new_deposit = float(request.POST.get("deposit", 0))
+                new_entry_fees = float(request.POST.get("entry_fees", 0))
+                new_subscription = float(request.POST.get("subscription", 0))
+                
+                # ✅ THIRD: Create staging record with OLD (from DB) and NEW (from POST)
+                staging_record = MembershipRenewalStaging.objects.create(
+                    membership=membership,
+                    
+                    # Store OLD data (current membership values from database)
+                    old_from_date=membership.from_date,  # ← From DB
+                    old_to_date=membership.to_date,      # ← From DB
+                    old_duration=membership.membership_duration,  # ← From DB
+                    old_deposit=membership.deposit,      # ← From DB
+                    old_entry_fees=membership.entry_fees, # ← From DB
+                    old_subscription=membership.subscription, # ← From DB
+                    old_membership_id=membership.membership.id if membership.membership else None,  # ← From DB
+                    
+                    # Store NEW data (from form submission directly)
+                    new_from_date=new_from_date,  # ← From POST request
+                    new_to_date=new_to_date,      # ← From POST request
+                    new_duration=new_duration,    # ← From POST request
+                    new_deposit=new_deposit,      # ← From POST request
+                    new_entry_fees=new_entry_fees, # ← From POST request
+                    new_subscription=new_subscription, # ← From POST request
+                    new_membership_id=new_membership_id,  # ← From POST request
+                    
+                    status='pending',
+                    created_by=user_code,
+                    remarks="Renewal submitted - awaiting approval"
+                )
 
                 # 1️⃣ Field map (only relevant fields)
                 field_map = {
@@ -4267,6 +4444,7 @@ def membership_dashboard(request):
         # Get membership details
         membership = MembershipDetails.objects.get(user_id=username)
         membership_code = membership.membership_code
+        member_id = get_object_or_404(MembershipDetails, membership_code =  membership_code)
         
         # Current date for calculations
         today = timezone.now().date()
@@ -4275,22 +4453,22 @@ def membership_dashboard(request):
         due_soon_threshold = today + timedelta(days=2)
         
         # Get currently borrowed books (return_date is null)
-        currently_borrowed = CirculationTransaction.objects.filter(
-            membership_code=membership_code,
+        currently_borrowed = CirculationTransaction.objects.using('L01').filter(
+            member=member_id,
             return_date__isnull=True
         ).count()
         
         # Get due soon books (due date within 2 days and not returned)
-        due_soon = CirculationTransaction.objects.filter(
-            membership_code=membership_code,
+        due_soon = CirculationTransaction.objects.using('L01').filter(
+            member=member_id,
             due_date__lte=due_soon_threshold,
             due_date__gte=today,
             return_date__isnull=True
         ).count()
         
         # Get overdue books (due date passed and not returned)
-        overdue = CirculationTransaction.objects.filter(
-            membership_code=membership_code,
+        overdue = CirculationTransaction.objects.using('L01').filter(
+            member=member_id,
             due_date__lt=today,
             return_date__isnull=True
         ).count()
@@ -4298,7 +4476,7 @@ def membership_dashboard(request):
         # Get latest 3 borrowed books with catalog details
         latest_books = []
         transactions = CirculationTransaction.objects.filter(
-            membership_code=membership_code,
+            member=member_id,
             return_date__isnull=True
         ).select_related('catalog').order_by('-issue_date')[:3]
         pending_action = request.session.get("pending_action")
@@ -4347,6 +4525,7 @@ def get_book_cover(catalog):
         # Return default book cover if any error occurs
         return "{% static 'images/default-book-cover.jpg' %}"
     
+@login_required
 def get_borrowing_history(request):
     """AJAX view to get member's borrowing history"""
     username = request.session.get('username')
@@ -4358,10 +4537,11 @@ def get_borrowing_history(request):
         # Get membership details
         membership = MembershipDetails.objects.get(user_id=username)
         membership_code = membership.membership_code
+        member = get_object_or_404(MembershipDetails, membership_code=membership_code )
         
         # Get all circulation transactions for this member
         transactions = CirculationTransaction.objects.filter(
-            membership_code=membership_code
+            member=member
         ).select_related('catalog', 'return_condition').order_by('-issue_date')
         
         history_data = []

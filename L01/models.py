@@ -854,3 +854,44 @@ class MemberScreenActivity(models.Model):
     class Meta:
         db_table = 'tbl_member_activity'
 
+class MembershipRenewalStaging(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    id = models.AutoField(primary_key=True)
+    membership = models.ForeignKey(
+        MembershipDetails, 
+        on_delete=models.CASCADE,
+        related_name='staging_requests'
+    )
+    
+    # OLD data (copied from MembershipDetails when form is submitted)
+    old_from_date = models.DateField(null=True, blank=True)
+    old_to_date = models.DateField(null=True, blank=True)
+    old_duration = models.IntegerField(null=True, blank=True)
+    old_deposit = models.FloatField(null=True, blank=True)
+    old_entry_fees = models.FloatField(null=True, blank=True)
+    old_subscription = models.FloatField(null=True, blank=True)
+    old_membership_id = models.IntegerField(null=True, blank=True)
+    
+    # NEW data (entered by member in renewal form)
+    new_from_date = models.DateField(null=True, blank=True)
+    new_to_date = models.DateField(null=True, blank=True)
+    new_duration = models.IntegerField(null=True, blank=True)
+    new_deposit = models.FloatField(null=True, blank=True)
+    new_entry_fees = models.FloatField(null=True, blank=True)
+    new_subscription = models.FloatField(null=True, blank=True)
+    new_membership_id = models.IntegerField(null=True, blank=True)
+    
+    # Status and tracking
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    remarks = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = models.CharField(max_length=50, null=True, blank=True)
+    
+    class Meta:
+        db_table = "tbl_membership_renewal_staging"
+        ordering = ['-created_at']

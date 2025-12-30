@@ -43,7 +43,7 @@
                 <!-- Logo dark -->
                 {% comment %} <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'LMS_Dashboard' %}{% endif %}" class="logo-dark"> {% endcomment %}
                 <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'L01:dashboard' %}{% endif %}"class="logo-dark"> 
-                <span style="color:#333399 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
+                <span style="color:#015296 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
                     
                         <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
                             {% if library_name_show %}
@@ -380,17 +380,24 @@
 
             <li class="dropdown">
                 <a class="nav-link dropdown-toggle arrow-none nav-user px-2" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
-                    <span class="account-user-avatar">
+                    {% comment %} <span class="account-user-avatar">
                         {% if membershipshow %}
                             <img src="{{ profile_picture_url }}" alt="user-image" width="32" class="rounded-circle">
                         {% else %}
                             <img src="{% static 'img/user.png' %}" alt="user-image" width="32" class="rounded-circle">
                         {% endif %}
-                    </span>
-                    {% comment %} <span class="account-user-avatar">
-                        <!-- Check if the user has a profile picture URL, otherwise fall back to the default image -->
-                        <img src="{% if profile_picture_url %}{{ profile_picture_url }}{% else %}{% static 'img/user.png' %}{% endif %}" alt="user-image" width="32" class="rounded-circle">
                     </span> {% endcomment %}
+                    <span class="account-user-avatar">
+                        {% if membershipshow and profile_picture_url %}
+                            {% if profile_picture_url|lower|slice:"-4:" == ".pdf" %}
+                                <img src="{% static 'img/user.png' %}" alt="user-image" width="32" class="rounded-circle">
+                            {% else %}
+                                <img src="{{ profile_picture_url }}" alt="user-image" width="32" class="rounded-circle">
+                            {% endif %}
+                        {% else %}
+                            <img src="{% static 'img/user.png' %}" alt="user-image" width="32" class="rounded-circle">
+                        {% endif %}
+                    </span>
 
                     <span class="d-lg-flex flex-column gap-1 d-none">
                         <h5 class="my-0">{{ full_name }}</h5>
