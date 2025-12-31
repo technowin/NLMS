@@ -131,6 +131,35 @@
         }
     </style>  
 
+    <style>
+        .d-flex .btn {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .d-flex .btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .d-flex .btn i {
+            font-size: 14px;
+        }
+        
+        /* Dark mode support */
+        [data-bs-theme="dark"] .d-flex .btn {
+            border-color: #495057;
+        }
+        
+        [data-bs-theme="dark"] .d-flex .btn:hover {
+            box-shadow: 0 2px 5px rgba(255,255,255,0.1);
+        }
+    </style>
 
 {% endblock %}
 
@@ -211,45 +240,70 @@
                             <td>{{ m.subscription }}</td>
                             <td>
                                 
-                                <!-- सदस्यत्व देयक बटण -->
-                                {% if m.status.status_code == "APPROVED" %}
-                                    <a href="#" class="btn btn-success btn-sm" 
+                                <div class="d-flex gap-1 align-items-center">
+                                    <!-- सदस्यत्व देयक बटण (Payment Button) -->
+                                    {% if m.status.status_code == "APPROVED" %}
+                                        <a href="#" 
+                                        class="btn btn-sm btn-outline-success p-1" 
                                         data-bs-toggle="modal" 
-                                        data-bs-target="#paymentModal">
-                                            सदस्यत्व देयक
-                                    </a>
-                                {% endif %}
-                                
-                                {% comment %} Payment Receipt Download Button {% endcomment %}
-                                {% if m.status.status_code == "PAY_SUCCESS" %}
-                                    <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
-                                        class="btn btn-success btn-sm" >
-                                        देयक पावती डाउनलोड करा
-                                    </a>
-                                {% endif %}
+                                        data-bs-target="#paymentModal"
+                                        data-bs-toggle="tooltip"
+                                        title="सदस्यत्व देयक">
+                                            <i class="fas fa-credit-card"></i>
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <!-- Edit Icon (for APP_SUB or REJECT status) -->
+                                    {% if m.status.status_code == "APP_SUB" or m.status.status_code == "REJECT" %}
+                                        <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-sm btn-outline-success p-1" 
+                                        data-bs-toggle="tooltip" 
+                                        title="संपादित करा">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    {% endif %}
 
-                                {% comment %} Form check button {% endcomment %}
-                                <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
-                                    class="btn btn-primary btn-sm ms-2">
-                                        फॉर्म तपासा
-                                </a>
-                                
-                                {% comment %} Renewal Button {% endcomment %}
-                                {% comment %} {% if m.show_renew_button %}
-                                    <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ m.membership_id_enc }}" 
-                                        class="btn btn-warning btn-sm ms-2">
-                                        सदस्यत्व नूतनीकरण करा
+                                    <!-- View Icon (always shown) -->
+                                    <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-sm btn-outline-primary p-1" 
+                                        data-bs-toggle="tooltip" 
+                                        title="फॉर्म तपासा">
+                                            <i class="fas fa-eye"></i>
                                     </a>
-                                {% endif %} {% endcomment %}
 
-                                {% if m.status.status_code in 'APP_SUB,APPROVED,PAY_SUCCESS' %}
-                                    <a href="#"
-                                        class="btn btn-danger btn-sm ms-2"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#cancelMembershipModal{{ m.membership_id_enc }}">
-                                        सदस्यत्व रद्द करा
-                                    </a>
-                                {% endif %}
+                                    <!-- Cancel Membership Icon (for certain statuses) -->
+                                    {% if m.status.status_code in 'APP_SUB,APPROVED,PAY_SUCCESS' %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger p-1" 
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#cancelMembershipModal{{ m.membership_id_enc }}"
+                                                data-bs-toggle="tooltip" 
+                                                title="सदस्यत्व रद्द करा">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    {% endif %}
+
+                                    <!-- Download Receipt Icons (for PAY_SUCCESS status) -->
+                                    {% if m.status.status_code == "PAY_SUCCESS" %}
+                                        <!-- Initial Membership Receipt -->
+                                        <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
+                                        class="btn btn-sm btn-outline-success p-1" 
+                                        data-bs-toggle="tooltip" 
+                                        title="प्रारंभिक देयक पावती डाऊनलोड करा">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        
+                                        <!-- Renewal Receipt (only if it's a renewal) -->
+                                        {% if m.membership_renew == 1 %}
+                                            <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}&type=renewal" 
+                                            class="btn btn-sm btn-outline-info p-1" 
+                                            data-bs-toggle="tooltip" 
+                                            title="नूतनीकरण पावती डाऊनलोड करा">
+                                                <i class="fas fa-redo"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
                                 
                                 <!-- Bootstrap Modal -->
 

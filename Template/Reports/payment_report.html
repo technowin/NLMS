@@ -1017,6 +1017,10 @@
                         // 🔹 Add deposit & fine rows
                         rows += `
                             <tr class="table-warning fw-bold">
+                                <td>प्रवेश शुल्क (Entry Fees)</td>
+                                <td>${data.entry_fees.toFixed(2)}</td>
+                            </tr>
+                            <tr class="table-warning fw-bold">
                                 <td>एकूण ठेव (Total Deposit)</td>
                                 <td>${data.deposit_total.toFixed(2)}</td>
                             </tr>
@@ -1025,7 +1029,7 @@
                                 <td>${data.fine_total.toFixed(2)}</td>
                             </tr>
                         `;
-
+                        summaryData.push({ key: "प्रवेश शुल्क (Entry Fees)", value: data.entry_fees.toFixed(2) });
                         summaryData.push({ key: "एकूण ठेव (Total Deposit)", value: data.deposit_total.toFixed(2) });
                         summaryData.push({ key: "दंड रक्कम (Fine Amount)", value: data.fine_total.toFixed(2) });
 

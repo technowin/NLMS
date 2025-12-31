@@ -215,6 +215,7 @@ class PaymentDetails(models.Model):
     total_subscription_amount = models.FloatField(null=True, blank=True)
     fine_amount = models.FloatField(null=True, blank=True)
     book_fine_amount = models.FloatField(null=True, blank=True)
+    adjusted_amount = models.FloatField(null=True, blank=True, default=0.0)
     subscription_from = models.DateField(null=True, blank=True)
     subscription_to = models.DateField(null=True, blank=True)
     status = models.ForeignKey(StatusMaster,on_delete=models.SET_NULL,null=True,blank=True,db_column="status_id",related_name="payment_statuses")

@@ -930,6 +930,7 @@ def get_payment_preview(request):
                     membership_summary[label]["total"] += float(pay.total_subscription_amount or 0)
 
         # Step 5️⃣ - Overall totals
+        entry_fees = payments.aggregate(total=Sum("entry_fee_amount")).get("total") or 0
         total_deposit = payments.aggregate(total=Sum("deposit_amount")).get("total") or 0
         total_fine = payments.aggregate(total=Sum("fine_amount")).get("total") or 0
         total_subscription = sum(v["total"] for v in membership_summary.values())
@@ -946,6 +947,7 @@ def get_payment_preview(request):
 
         # Step 7️⃣ - Final data
         data = {
+            "entry_fees":round(entry_fees, 2),
             "deposit_total": round(total_deposit, 2),
             "fine_total": round(total_fine, 2),
             "total_subscription_amount": round(total_subscription, 2),

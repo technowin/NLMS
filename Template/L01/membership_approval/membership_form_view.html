@@ -597,7 +597,7 @@
                                                     </small>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <h1 class="mb-0 text-success">
+                                                    <h1 class="mb-0 text-success" id="finalPayableAmount">
                                                         ₹{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}
                                                     </h1>
                                                 </div>
@@ -616,12 +616,12 @@
                                                         {% if membership.total_fine_membership %}
                                                         <tr>
                                                             <td>Total Fine / एकूण दंड:</td>
-                                                            <td class="text-end">+ ₹{{ membership.total_fine_membership|default:0|floatformat:2 }}</td>
+                                                            <td class="text-end" id="displayFineAmount">+ ₹{{ membership.total_fine_membership|default:0|floatformat:2 }}</td>
                                                         </tr>
                                                         {% endif %}
                                                         <tr class="border-top">
                                                             <td><strong>Total Payable Now / एकूण देय रक्कम:</strong></td>
-                                                            <td class="text-end"><strong>₹{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}</strong></td>
+                                                            <td class="text-end"><strong id="displayTotalAmount">₹{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}</strong></td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -655,6 +655,43 @@
                                 <input type="hidden" name="membership_id" value="{{ membership.id }}">
                                 <input type="hidden" name="action" id="actionInput" value="">
                                 <input type="hidden" name="user_id" value="{{ membership.user_id }}">
+                                
+                                <!-- Adjusted Amount Field INSIDE THE FORM -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-warning">
+                                        <h5 class="mb-0">Fine Adjustment / दंड समायोजन</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label for="adjusted_amount" class="form-label">
+                                                        <strong>Adjusted Amount / समायोजित रक्कम (₹)</strong>
+                                                        <small class="text-muted d-block">Enter different amount if needed / आवश्यक असल्यास भिन्न रक्कम प्रविष्ट करा</small>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">₹</span>
+                                                        <input type="number" 
+                                                            class="form-control" 
+                                                            id="adjusted_amount" 
+                                                            name="adjusted_amount"
+                                                            min="0"
+                                                            step="0.01"
+                                                            placeholder="Leave empty to use calculated fine / गणना केलेला दंड वापरण्यासाठी रिक्त ठेवा"
+                                                            value="">
+                                                    </div>
+                                                    <div class="form-text">
+                                                        {% if membership.total_fine_membership %}
+                                                            Calculated fine: ₹{{ membership.total_fine_membership|default:0|floatformat:2 }}
+                                                        {% else %}
+                                                            No fine calculated / दंड गणना केलेली नाही
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
                                     <!-- Approve Button with SweetAlert -->
@@ -673,11 +710,26 @@
                             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                             <script>
                                 function confirmApproval() {
-                                    const payableAmount = '{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}';
+                                    const subscriptionAmount = parseFloat('{{ membership.subscription|default:0 }}');
+                                    const totalFineAmount = parseFloat('{{ membership.total_fine_membership|default:0 }}') || 0;
+                                    const adjustedAmountInput = document.getElementById('adjusted_amount');
+                                    
+                                    let finalFineAmount = totalFineAmount;
+                                    let adjustedAmount = null;
+                                    
+                                    // If adjusted amount is entered, use it
+                                    if (adjustedAmountInput && adjustedAmountInput.value.trim() !== '') {
+                                        adjustedAmount = parseFloat(adjustedAmountInput.value);
+                                        if (!isNaN(adjustedAmount) && adjustedAmount >= 0) {
+                                            finalFineAmount = adjustedAmount;
+                                        }
+                                    }
+                                    
+                                    const totalPayable = subscriptionAmount + finalFineAmount;
                                     
                                     Swal.fire({
                                         title: 'देयक मान्य करायचे आहे का?',
-                                        text: `तुम्हाला ₹${payableAmount} रक्कम प्राप्त झाली आहे का?`,
+                                        text: `तुम्हाला ₹${totalPayable.toFixed(2)} रक्कम प्राप्त झाली आहे का?`,
                                         icon: 'question',
                                         showCancelButton: true,
                                         confirmButtonText: 'होय, मान्य करा',
@@ -709,7 +761,6 @@
                                     });
                                 }
                             </script>
-
                         {% endif %}
                     
                     {% else %}
@@ -1647,6 +1698,137 @@
             }
         });
     });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function updatePayableAmounts() {
+        const subscriptionAmount = parseFloat('{{ membership.subscription|default:0 }}');
+        const originalFineAmount = parseFloat('{{ membership.total_fine_membership|default:0 }}') || 0;
+        const adjustedAmountInput = document.getElementById('adjusted_amount');
+        
+        let finalFineAmount = originalFineAmount;
+        let adjustedAmount = null;
+        
+        // If adjusted amount is entered, use it
+        if (adjustedAmountInput && adjustedAmountInput.value.trim() !== '') {
+            adjustedAmount = parseFloat(adjustedAmountInput.value);
+            if (!isNaN(adjustedAmount) && adjustedAmount >= 0) {
+                finalFineAmount = adjustedAmount;
+            }
+        }
+        
+        // Calculate total payable
+        const totalPayable = subscriptionAmount + finalFineAmount;
+        
+        // Update display
+        const displayFineElement = document.getElementById('displayFineAmount');
+        const displayTotalElement = document.getElementById('displayTotalAmount');
+        const finalPayableElement = document.getElementById('finalPayableAmount');
+        
+        if (displayFineElement) {
+            if (finalFineAmount > 0) {
+                // Show adjusted text if amount is adjusted
+                if (adjustedAmount !== null && adjustedAmount !== originalFineAmount) {
+                    displayFineElement.innerHTML = `+ ₹${finalFineAmount.toFixed(2)} <small class="text-muted">(Original: ₹${originalFineAmount.toFixed(2)})</small>`;
+                } else {
+                    displayFineElement.textContent = `+ ₹${finalFineAmount.toFixed(2)}`;
+                }
+                displayFineElement.style.display = '';
+            } else {
+                displayFineElement.style.display = 'none';
+            }
+        }
+        
+        if (displayTotalElement) {
+            displayTotalElement.textContent = `₹${totalPayable.toFixed(2)}`;
+        }
+        
+        if (finalPayableElement) {
+            finalPayableElement.textContent = `₹${totalPayable.toFixed(2)}`;
+        }
+    }
+
+    // Update when adjusted amount changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const adjustedAmountInput = document.getElementById('adjusted_amount');
+        if (adjustedAmountInput) {
+            adjustedAmountInput.addEventListener('input', updatePayableAmounts);
+            adjustedAmountInput.addEventListener('change', updatePayableAmounts);
+        }
+        
+        // Initial calculation
+        updatePayableAmounts();
+    });
+
+    function confirmApproval() {
+        const subscriptionAmount = parseFloat('{{ membership.subscription|default:0 }}');
+        const originalFineAmount = parseFloat('{{ membership.total_fine_membership|default:0 }}') || 0;
+        const adjustedAmountInput = document.getElementById('adjusted_amount');
+        
+        let finalFineAmount = originalFineAmount;
+        let adjustedAmount = null;
+        
+        // Check if adjusted amount is provided
+        if (adjustedAmountInput && adjustedAmountInput.value.trim() !== '') {
+            adjustedAmount = parseFloat(adjustedAmountInput.value);
+            if (!isNaN(adjustedAmount) && adjustedAmount >= 0) {
+                finalFineAmount = adjustedAmount;
+            }
+        }
+        
+        const totalPayable = subscriptionAmount + finalFineAmount;
+        
+        let message = `Confirm the final amount to be collected:\n\n`;
+        message += `Subscription: ₹${subscriptionAmount.toFixed(2)}\n`;
+        
+        if (originalFineAmount > 0) {
+            message += `Original Fine: ₹${originalFineAmount.toFixed(2)}\n`;
+        }
+        
+        if (adjustedAmount !== null && adjustedAmount !== originalFineAmount) {
+            message += `Adjusted Fine: ₹${adjustedAmount.toFixed(2)}\n`;
+        }
+        
+        message += `\nTotal Payable: ₹${totalPayable.toFixed(2)}`;
+        
+        Swal.fire({
+            title: 'Approve Payment? / देयक मान्य करायचे आहे का?',
+            text: message,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Approve / होय, मान्य करा',
+            cancelButtonText: 'Cancel / रद्द करा',
+            confirmButtonColor: '#198754',
+            width: '600px',
+            customClass: {
+                popup: 'text-start'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('actionInput').value = 'renewal_approved';
+                document.getElementById('membershipForm').submit();
+            }
+        });
+    }
+
+    function confirmRejection() {
+        Swal.fire({
+            title: 'नूतनीकरण नाकारायचे आहे का?',
+            text: 'तुम्ही या सदस्यतेचे नूतनीकरण नाकारणार आहात.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'होय, नाकारा',
+            cancelButtonText: 'रद्द करा',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('actionInput').value = 'renewal_rejected';
+                document.getElementById('membershipForm').submit();
+            }
+        });
+    }
 </script>
 
 {% endblock %}

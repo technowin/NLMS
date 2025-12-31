@@ -1251,6 +1251,9 @@ def membership_form_view(request):
                     with transaction.atomic():
                         membership = get_object_or_404(MembershipDetails, id=membership_id)
                         
+                        # Get adjusted amount from form
+                        adjusted_amount = request.POST.get('adjusted_amount')
+                        
                         # ✅ STEP 1: Find and delete staging record
                         staging_record = MembershipRenewalStaging.objects.filter(
                             membership=membership,
@@ -1266,14 +1269,28 @@ def membership_form_view(request):
                         entry_fees = float(membership.entry_fees or 0)
                         total_subscription = float(membership.subscription or 0)
                         
-                        # Convert Decimal to float for fine
-                        total_fine = float(membership.total_fine_membership or 0)
+                        # ORIGINAL FINE (from calculation)
+                        original_fine = float(membership.total_fine_membership or 0)
                         
                         # Get monthly rate (already float)
                         monthly_subscription = float(membership.membership.subscription_fees or 0)
                         
-                        # Calculate total amount (all floats now)
-                        total_amount = deposit + entry_fees + total_subscription + total_fine
+                        # Process adjusted amount if provided
+                        adjusted_amount_float = None
+                        if adjusted_amount and adjusted_amount.strip() != '':
+                            try:
+                                adjusted_amount_float = float(adjusted_amount)
+                            except ValueError:
+                                # If invalid number, ignore adjustment
+                                pass
+                        
+                        # Determine which fine amount to use for calculation
+                        fine_to_use = original_fine
+                        if adjusted_amount_float is not None:
+                            fine_to_use = adjusted_amount_float
+                        
+                        # Calculate total amount
+                        total_amount = deposit + entry_fees + total_subscription + fine_to_use
                         
                         # Create payment record
                         payment = PaymentDetails.objects.create(
@@ -1287,12 +1304,15 @@ def membership_form_view(request):
                             entry_fee_amount=entry_fees,
                             
                             # Subscription from MembershipDetails
-                            monthly_subscription_amount=monthly_subscription,  # ₹20 per month
-                            total_subscription_amount=total_subscription,      # ₹60 total
+                            monthly_subscription_amount=monthly_subscription,
+                            total_subscription_amount=total_subscription,
                             
-                            # Fine amounts from MembershipDetails
-                            fine_amount=total_fine,
+                            # FINE AMOUNT: Always store ORIGINAL calculated fine
+                            fine_amount=original_fine,
                             book_fine_amount=0,
+                            
+                            # ADJUSTED AMOUNT: Store adjusted amount if provided
+                            adjusted_amount=adjusted_amount_float,
                             
                             # Dates from MembershipDetails
                             subscription_from=membership.from_date,
@@ -1311,7 +1331,9 @@ def membership_form_view(request):
                                 f"Renewal approved by {user_code}\n"
                                 f"Subscription: ₹{monthly_subscription}/month × {membership.membership_duration or 1} months = ₹{total_subscription}\n"
                                 f"Deposit: ₹{deposit} | Entry Fees: ₹{entry_fees}\n"
-                                f"Fine: ₹{total_fine}\n"
+                                f"Original Fine: ₹{original_fine}\n"
+                                f"{'Adjusted Fine: ₹' + str(adjusted_amount_float) if adjusted_amount_float is not None else ''}\n"
+                                f"Fine Charged: ₹{fine_to_use}\n"
                                 f"Total: ₹{total_amount}"
                             )
                         )
@@ -1324,9 +1346,13 @@ def membership_form_view(request):
                         membership.updated_by = user_code
                         
                         # ✅ STEP 4: Add approval note
+                        adjustment_note = ""
+                        if adjusted_amount_float is not None and adjusted_amount_float != original_fine:
+                            adjustment_note = f" | Fine adjusted: ₹{original_fine} → ₹{adjusted_amount_float}"
+                        
                         approval_note = (
                             f"[Renewal Approved: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] "
-                            f"Approved by: {user_code} | Payment ID: {payment.id}"
+                            f"Approved by: {user_code} | Payment ID: {payment.id}{adjustment_note}"
                         )
                         
                         if membership.remarks:
@@ -1336,8 +1362,12 @@ def membership_form_view(request):
                         
                         membership.save()
                         
-                        messages.success(request, f"Renewal approved! Payment record #{payment.id} created.")
-                        
+                        # Show appropriate success message
+                        if adjusted_amount_float is not None and adjusted_amount_float != original_fine:
+                            messages.success(request, f"Renewal approved with adjusted fine! Original: ₹{original_fine}, Adjusted: ₹{adjusted_amount_float}. Payment record #{payment.id} created.")
+                        else:
+                            messages.success(request, f"Renewal approved! Payment record #{payment.id} created.")
+                            
                 except Exception as e:
                     messages.error(request, f"Error: {str(e)}")
             
@@ -1630,12 +1660,24 @@ def membership_payment_index(request):
 def membership_paymentreceipt_download(request):
     try:
         membership_id = dec(request.GET.get("membershipid"))
+        receipt_type = request.GET.get("type", "initial")  # Default to initial
+        
         membership = get_object_or_404(MembershipDetails, id=membership_id)
         membership_master = membership.membership
-        payments = PaymentDetails.objects.filter(
-            membership=membership,
-            payment_type='Membership'
-        ).order_by('-id')[:1] 
+        
+        # ✅ Conditional payment query based on type parameter
+        if receipt_type == "renewal":
+            # Get RENEWAL payments only
+            payments = PaymentDetails.objects.filter(
+                membership=membership,
+                payment_type='Membership Renewal'
+            ).order_by('-id')[:1] 
+        else:
+            # Get INITIAL membership payments only (default)
+            payments = PaymentDetails.objects.filter(
+                membership=membership,
+                payment_type='Membership'
+            ).order_by('-id')[:1] 
 
         buffer = BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
@@ -1671,8 +1713,13 @@ def membership_paymentreceipt_download(request):
         c.setFont("Merriweather", 24)
         c.drawString(text_x, text_y, "Navi Mumbai Municipal Corporation")
 
-        c.setFont("Merriweather", 14)
-        c.drawString(text_x, text_y - 30, "Membership Payment Receipt")
+        # Different title based on receipt type
+        if receipt_type == "renewal":
+            c.setFont("Merriweather", 14)
+            c.drawString(text_x, text_y - 30, "Membership Renewal Payment Receipt")
+        else:
+            c.setFont("Merriweather", 14)
+            c.drawString(text_x, text_y - 30, "Membership Payment Receipt")
 
         # Move y down for next content
         y = y - logo_height - 30
@@ -1688,7 +1735,6 @@ def membership_paymentreceipt_download(request):
             ["User ID", membership.user_id],
             ["Library", membership.library_name],
             ["Membership Name", membership_master.membership_type_en],
-            ["Membership Duration", f"{membership.membership_duration} months ({membership.from_date} to {membership.to_date})"]
         ]
 
         table = Table(table_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
@@ -1715,66 +1761,100 @@ def membership_paymentreceipt_download(request):
 
         payment_data_list = []
         for idx, p in enumerate(payments, start=1):
-            payment_data_list.append(["Field", "Details"])
             payment_data_list.append(["Payment Date", str(p.payment_date)])
             payment_data_list.append(["Payment Mode", str(p.payment_mode)])
             payment_data_list.append(["Payment Status", str(p.status.status_name if p.status else "")])
-            payment_data_list.append(["Deposit (₹)", f"{p.deposit_amount or 0:.2f}"])
-            payment_data_list.append(["Entry Fee (₹)", f"{p.entry_fee_amount or 0:.2f}"])
-            payment_data_list.append(["Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
-            payment_data_list.append(["Total Paid (₹)", f"{p.total_subscription_amount or 0:.2f}"])
-            payment_data_list.append(["Transaction / Remarks", f"{p.transaction_id or ''} {('(' + p.remarks + ')' if p.remarks else '')}"])
+            
+            # ✅ Use dates from Payment table, format as DD-MM-YYYY
+            if p.subscription_from and p.subscription_to:
+                # Format dates as DD-MM-YYYY
+                from_date = p.subscription_from.strftime("%d-%m-%Y")
+                to_date = p.subscription_to.strftime("%d-%m-%Y")
+                payment_data_list.append(["Membership Duration", f"{from_date} to {to_date}"])
+            
+            if receipt_type == "renewal":
+                # ✅ RENEWAL receipt
+                payment_data_list.append(["Monthly Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
+                payment_data_list.append(["Total Subscription (₹)", f"{p.total_subscription_amount or 0:.2f}"])
+                
+                # ✅ Fine calculations for renewal
+                if p.fine_amount or p.adjusted_amount:
+                    if p.adjusted_amount and p.adjusted_amount > 0 and p.adjusted_amount != p.fine_amount:
+                        payment_data_list.append(["Original Fine (₹)", f"{p.fine_amount or 0:.2f}"])
+                        payment_data_list.append(["Adjusted Fine (₹)", f"{p.adjusted_amount or 0:.2f}"])
+                        total_paid = (p.total_subscription_amount or 0) + (p.adjusted_amount or 0)
+                    else:
+                        payment_data_list.append(["Fine Amount (₹)", f"{p.fine_amount or 0:.2f}"])
+                        total_paid = (p.total_subscription_amount or 0) + (p.fine_amount or 0)
+                else:
+                    total_paid = p.total_subscription_amount or 0
+                
+                # Add empty row for separation
+                payment_data_list.append(["", ""])
+                payment_data_list.append(["Total Amount Paid (₹)", f"{total_paid:.2f}"])
+                
+            else:
+                # ✅ INITIAL membership receipt
+                payment_data_list.append(["Deposit (₹)", f"{p.deposit_amount or 0:.2f}"])
+                payment_data_list.append(["Entry Fee (₹)", f"{p.entry_fee_amount or 0:.2f}"])
+                payment_data_list.append(["Monthly Subscription (₹)", f"{p.monthly_subscription_amount or 0:.2f}"])
+                payment_data_list.append(["Total Subscription (₹)", f"{p.total_subscription_amount or 0:.2f}"])
+                
+                # ✅ Calculate Total Amount Paid for initial receipt
+                total_paid = (p.deposit_amount or 0) + (p.entry_fee_amount or 0) + (p.total_subscription_amount or 0)
+                
+                # Add empty row for separation
+                payment_data_list.append(["", ""])
+                payment_data_list.append(["Total Amount Paid (₹)", f"{total_paid:.2f}"])
 
         if not payment_data_list:
             payment_data_list = [["No payments found", ""]]
 
         payment_table = Table(payment_data_list, colWidths=[60*mm, 100*mm], hAlign='LEFT')
         payment_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-            ('FONTNAME', (0, 0), (-1, 0), 'Merriweather-Bold'),
-            ('FONTNAME', (0, 1), (-1, -1), 'Merriweather'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Merriweather'),
             ('FONTSIZE', (0, 0), (-1, -1), 12),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('GRID', (0, 0), (-1, -3), 0.5, colors.black),  # Grid for all except last 2 rows
+            ('GRID', (0, -2), (-1, -1), 0.5, colors.black),  # Grid for total row
+            ('LINEABOVE', (0, -2), (-1, -2), 1, colors.black),  # Line above total
+            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),  # Highlight total row
+            ('FONTNAME', (0, -1), (-1, -1), 'Merriweather-Bold'),  # Bold total
+            ('FONTSIZE', (0, -1), (-1, -1), 14),  # Larger font for total
             ('TOPPADDING', (0,0), (-1,-1), 6),
             ('BOTTOMPADDING', (0,0), (-1,-1), 6),
         ]))
         payment_table.wrapOn(c, width, height)
         payment_table.drawOn(c, left_margin, y - (len(payment_data_list) * 20))
-        y = y - (len(payment_data_list) * 20) - 20
+        y = y - (len(payment_data_list) * 20) - 40  # Extra space after payment table
 
-        # ---------------- Membership Summary Table ----------------
-        y -= 10
-        c.setFont("Merriweather-Bold", 14)
-        c.drawString(left_margin, y, "Membership Summary:")
-        y -= 20
-
-        sub_data = [
-            ["Total Subscription Fee (₹)", f"{membership.subscription:.2f}"]
-        ]
-
-        summary_table = Table(sub_data, colWidths=[60*mm, 100*mm], hAlign='LEFT')
-        summary_table.setStyle(TableStyle([
-            ('FONTNAME', (0,0), (-1,-1), 'Merriweather'),
-            ('FONTSIZE', (0,0), (-1,-1), 12),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('TOPPADDING', (0,0), (-1,-1), 6),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ]))
-        summary_table.wrapOn(c, width, height)
-        summary_table.drawOn(c, left_margin, y - (len(sub_data) * 20))
-        y = y - (len(sub_data) * 20) - 20
+        # ---------------- Notes Section ----------------
+        if receipt_type == "renewal":
+            # ✅ Note for renewal receipt
+            note_text = "Note: Deposit and Entry Fee were paid during initial membership and are not payable again."
+            c.setFont("Merriweather", 10)
+            c.setFillColor(colors.darkblue)
+            c.drawString(left_margin, y, note_text)
+            y -= 20
 
         # Footer
-        c.setFont("Merriweather", 12)
-        c.drawString(left_margin, bottom_margin, "This is a computer-generated receipt and does not require signature. NMMC Library")
-
+        footer_y = bottom_margin + 15
+        
+        # ✅ Right side: Page number
+        c.drawString(right_margin - 50, footer_y, "Page 1 of 1")
+        
         c.save()
         buffer.seek(0)
-        response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="payment_receipt_{membership.user_id}.pdf"'
+        
+        # Different filename based on receipt type
+        if receipt_type == "renewal":
+            response = HttpResponse(buffer, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="renewal_receipt_{membership.user_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+        else:
+            response = HttpResponse(buffer, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="payment_receipt_{membership.user_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+        
         return response
 
     except Exception as e:

@@ -189,6 +189,10 @@ urlpatterns = [
     path('set_library_session_and_login', set_library_session_and_login, name='set_library_session_and_login'),
     path('L01/', include(('L01.urls', 'L01'), namespace='L01')),
     path('L02/', include(('L02.urls', 'L02'), namespace='L02')),
+    
+    path('track-click/', track_click, name='track_click'),
+    path('should-show-popup/', should_show_popup, name='should_show_popup'),
+    path('save-lead/', save_lead, name='save_lead'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

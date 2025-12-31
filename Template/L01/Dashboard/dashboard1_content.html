@@ -23,6 +23,8 @@
     </div>
 </div>
 
+<input type="hidden" id="label" >
+
 <!-- ================= DASHBOARD 1 CONTAINER ================= -->
 <div id="transaction_container" class="row">
     <div class="col-md-6">
@@ -342,105 +344,36 @@ function renderEodChart(eod) {
 // ------------------- SHOW TRANSACTION TABLE -------------------
 // ------------------- SHOW TRANSACTION TABLE -------------------
 function showTransactionTable(detailType, label) {
-    console.log('showTransactionTable called with:', detailType, label);
-    
+    console.log('showTransactionTable:', detailType, label);
+
     currentLabel = label;
     currentDetailType = detailType;
-    
-    // Set modal title
+
+    $('#label').val(label);
+
     $('#transactionModalTitle').text(label + ' Details');
-    
-    // Show the modal first
-    const modalElement = document.getElementById('transactionModal');
-    const modal = new bootstrap.Modal(modalElement);
+
+    const modal = new bootstrap.Modal(
+        document.getElementById('transactionModal')
+    );
     modal.show();
-    
-    // Clear existing table content
-    $('#transaction-table').html(`
-        <thead>
-            <tr>
-                ${['monthly','total','fine','book_fine'].includes(detailType) 
-                    ? '<th>Member Code</th><th>Member Name</th><th>Payment Date</th><th>Amount</th>'
-                    : '<th>Member Code</th><th>Member Name</th><th>Book Title</th><th>Book Barcode</th><th>Date</th>'
-                }
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td colspan="${['monthly','total','fine','book_fine'].includes(detailType) ? '4' : '5'}" class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    Loading data...
-                </td>
-            </tr>
-        </tbody>
-    `);
-    
-    // Destroy existing DataTable if it exists
+
+    // Destroy old DataTable if exists
     if ($.fn.DataTable.isDataTable('#transaction-table')) {
         $('#transaction-table').DataTable().destroy();
         $('#transaction-table').empty();
     }
-    
-    // Get filter values
+
     const fromDate = $('#from_date').val();
     const toDate = $('#to_date').val();
-    
-    console.log('Filters - From:', fromDate, 'To:', toDate);
-    
-    // Test AJAX call first to see if data is coming
-    $.ajax({
-        url: '/L01/dashboard/details/',
-        type: 'GET',
-        data: {
-            detail_type: detailType,
-            from_date: fromDate,
-            to_date: toDate,
-            draw: 1,
-            start: 0,
-            length: 10,
-            'search[value]': ''
-        },
-        success: function(response) {
-            console.log('AJAX Response:', response);
-            
-            if (response.error) {
-                $('#transaction-table').html(`
-                    <div class="alert alert-danger">
-                        Error: ${response.error}
-                    </div>
-                `);
-                return;
-            }
-            
-            // If data is returned, initialize DataTable
-            if (response.data && response.data.length > 0) {
-                initializeDataTable(detailType, fromDate, toDate);
-            } else {
-                $('#transaction-table').html(`
-                    <div class="alert alert-info">
-                        No data found for the selected criteria.
-                    </div>
-                `);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX Error:', error);
-            console.error('Response:', xhr.responseText);
-            
-            $('#transaction-table').html(`
-                <div class="alert alert-danger">
-                    Failed to load data. Please check console for details.
-                    <br>Error: ${error}
-                </div>
-            `);
-        }
-    });
+
+    // 🔥 ONLY ONE CALL — DataTables handles it
+    initializeDataTable(detailType, fromDate, toDate, label);
 }
 
+
 // Separate function to initialize DataTable
-function initializeDataTable(detailType, fromDate, toDate) {
+function initializeDataTable(detailType, fromDate, toDate,label) {
     console.log('initializeDataTable called for:', detailType);
     
     // Define columns
@@ -550,6 +483,7 @@ function initializeDataTable(detailType, fromDate, toDate) {
             data: function(d) {
                 // Build parameters
                 const params = {
+                    label: label,
                     detail_type: detailType,
                     from_date: fromDate,
                     to_date: toDate,
@@ -710,11 +644,13 @@ function downloadReport(format) {
 
     const fromDate = $('#from_date').val();
     const toDate = $('#to_date').val();
+    const label = $('#label').val();
 
     const url = `/L01/dashboard/export/?` +
         `detail_type=${currentDetailType}` +
         `&from_date=${fromDate}` +
         `&to_date=${toDate}` +
+        `&label=${label}` +
         `&format=${format}`;
 
     // IMPORTANT: normal redirect to force download

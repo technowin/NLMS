@@ -193,6 +193,7 @@ MIDDLEWARE = [
     # Your DB middleware should be **AFTER auth and messages**
     'administration.middleware.LibraryDatabaseMiddleware',
     'L01.middleware.MemberActivityMiddleware',
+    'Masters.middleware.VisitorTrackingMiddleware',
     # Optional:
     'django_auto_logout.middleware.auto_logout',
     'axes.middleware.AxesMiddleware',

@@ -4058,3 +4058,68 @@ def ebook_edit(request):
         callproc("stp_error_log", [fun, str(e), request.user.id])
         messages.error(request, "Oops... Something went wrong!")
         return redirect('ebook_catalog_index')
+    
+
+def track_click(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        page = data.get('page')
+
+        visitor, _ = VisitorActivity.objects.using('default').get_or_create(
+            session_key=request.session.session_key
+        )
+
+        for i in range(1, 6):
+            if getattr(visitor, f'click_{i}') is None:
+                setattr(visitor, f'click_{i}', page)
+                visitor.save(using='default')
+                break
+
+        return JsonResponse({'status': 'ok'})
+
+    
+def should_show_popup(request):
+    try:
+        visitor = VisitorActivity.objects.using('default').get(
+            session_key=request.session.session_key
+        )
+
+        seconds = int((timezone.now() - visitor.session_start).total_seconds())
+
+        if seconds >= 300000 and not visitor.popup_shown:
+            visitor.popup_shown = True
+            visitor.total_time_seconds = seconds
+            visitor.save()
+            return JsonResponse({'show_popup': True})
+
+        return JsonResponse({'show_popup': False})
+    except Exception as e:
+        print("❌ Unexpected Error:", e)
+
+def save_lead(request):
+    try:
+        if request.method == "POST":
+
+            if not request.session.session_key:
+                request.session.create()
+
+            session = request.session.session_key
+
+            visitor, created = VisitorActivity.objects.using('default').get_or_create(
+                session_key=session
+            )
+
+            visitor.name = request.POST.get('name')
+            visitor.phone = request.POST.get('phone')
+            visitor.email = request.POST.get('email')
+
+            visitor.save(using='default')  # 🔥 IMPORTANT
+
+            return JsonResponse({'status': 'saved'})
+
+        return JsonResponse({'status': 'invalid'}, status=400)
+
+    except Exception as e:
+        print("❌ Unexpected Error:", e)
+        return JsonResponse({'status': 'error'}, status=500)
+

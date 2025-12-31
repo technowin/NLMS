@@ -26,16 +26,25 @@
                 </a>
             </div> {% endcomment %}
 
-            <div class="logo-topbar d-none d-md-block">
+             <div class="logo-topbar d-none d-md-block">
                 <!-- Logo light -->
                 {% comment %} <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'LMS_Dashboard' %}{% endif %}"class="logo-light"> {% endcomment %}
                 <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'L01:dashboard' %}{% endif %}"class="logo-light">
                     <span style="color:white !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
                         
-                            <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
-                                {% if library_name_show %}
-                                    &nbsp;&nbsp;{{ library_name_show }}
-                                {% endif %}
+                            <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" 
+                                alt="logo" style="height:50px;">
+
+                            {% if library_name_show %}
+                                <span>
+                                    नवी मुंबई महानगरपालिका – {{ library_name_show }}
+                                </span>
+                            {% else %}
+                                <span>
+                                    
+                                </span>
+                            {% endif %}
+
                         
                     </span>
                 </a>
@@ -43,16 +52,25 @@
                 <!-- Logo dark -->
                 {% comment %} <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'LMS_Dashboard' %}{% endif %}" class="logo-dark"> {% endcomment %}
                 <a href="{% if role_id == '3' %}{% url 'L01:membership_dashboard' %}{% else %}{% url 'L01:dashboard' %}{% endif %}"class="logo-dark"> 
-                <span style="color:#015296 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
+                <span style="color:#333399 !important; font-family:'Merriweather',serif; font-size:15px; font-weight:600; letter-spacing:0.5px;">
                     
-                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" style="height:50px;">
+                       <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" 
+                                alt="logo" style="height:50px;">
+
                             {% if library_name_show %}
-                                &nbsp;&nbsp;{{ library_name_show }}
+                                <span>
+                                    नवी मुंबई महानगरपालिका – {{ library_name_show }}
+                                </span>
+                            {% else %}
+                                <span>
+                                    
+                                </span>
                             {% endif %}
                     
                     </span>
                 </a>
             </div>
+
 
             <!-- Sidebar Menu Toggle Button -->
             <button class="button-toggle-menu">
