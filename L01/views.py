@@ -8014,6 +8014,7 @@ def get_transaction_details(request):
         # Get parameters from request
         start_date = request.GET.get('from_date')
         end_date = request.GET.get('to_date')
+        label = request.GET.get('label')
         detail_type = request.GET.get('detail_type')
         draw = int(request.GET.get('draw', 1))
         start = int(request.GET.get('start', 0))
@@ -8207,57 +8208,124 @@ def get_transaction_details(request):
 
         elif detail_type == "footfall_online":
             from datetime import datetime, time
+            from django.db.models import OuterRef, Subquery, Q
 
             start_datetime = datetime.combine(start_date, time.min)
             end_datetime = datetime.combine(end_date, time.max)
-            
 
-            qs = MemberLoginSession.objects.using("L01").select_related(
-                'member'
-            ).filter(
-                login_time__range=[start_datetime, end_datetime]
+            # 🔑 Subquery: latest screen activity per MEMBER
+            latest_activity = (
+                MemberScreenActivity.objects.using("L01")
+                .filter(
+                    session__member_id=OuterRef('session__member_id'),
+                    visited_at__range=[start_datetime, end_datetime],
+                    screen_name=label
+                )
+                .order_by('-visited_at')
+                .values('visited_at')[:1]
             )
 
+            qs = (
+                MemberScreenActivity.objects.using("L01")
+                .select_related(
+                    'session',
+                    'session__member',
+                    'session__member__membership'
+                )
+                .filter(
+                    visited_at=Subquery(latest_activity),
+                    screen_name=label  # 🔑 important for MySQL correctness
+                )
+            )
+
+            # 🔍 Search filter
             if search_value:
                 qs = qs.filter(
-                    Q(member__membership_code__icontains=search_value) |
-                    Q(member__first_name_mar__icontains=search_value) |
-                    Q(member__last_name_mar__icontains=search_value)
+                    Q(session__member__membership_code__icontains=search_value) |
+                    Q(session__member__first_name_mar__icontains=search_value) |
+                    Q(session__member__last_name_mar__icontains=search_value)
                 )
 
             total_records = qs.count()
-            qs = qs.order_by('-login_time')[start:start + length]
+            qs = qs.order_by('-visited_at')[start:start + length]
 
             for obj in qs:
                 data.append({
-                    "membership_type": obj.member.membership.membership_type if obj.member else "",
-                    "membership_code": obj.member.membership_code if obj.member else "",
-                    "member_name": f"{obj.member.first_name_mar or ''} {obj.member.last_name_mar or ''}".strip(),
-                    "login_time": obj.login_time.isoformat() if obj.login_time else "",
+                    "membership_type": obj.session.member.membership.membership_type if obj.session.member else "",
+                    "membership_code": obj.session.member.membership_code if obj.session.member else "",
+                    "member_name": f"{obj.session.member.first_name_mar or ''} {obj.session.member.last_name_mar or ''}".strip(),
+                    "login_time": obj.session.login_time.isoformat() if obj.session.login_time else "",
+                    "visited_at": obj.visited_at.isoformat() if obj.visited_at else "",
                 })
 
+
+
         elif detail_type == "footfall_offline":
-            from datetime import datetime, time
+            from datetime import datetime, date, time
+            from django.db.models import Q
 
-            start_datetime = datetime.combine(start_date, time.min)
-            end_datetime = datetime.combine(end_date, time.max)
+            # -----------------------------
+            # 1️⃣ Ensure start_date is date
+            # -----------------------------
+            if isinstance(start_date, date):
+                from_date_obj = start_date
+            else:
+                from_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
 
-            qs = MemberEntryExit.objects.using("L01").filter(
-                entry_time__range=[start_datetime, end_datetime]
+            if isinstance(end_date, date):
+                to_date_obj = end_date
+            else:
+                to_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+            # -----------------------------
+            # 2️⃣ Parse label (day + month)
+            # -----------------------------
+            # label example: "2 Nov"
+            label_date = datetime.strptime(label, "%d-%b")
+
+            # Use year from from_date
+            entry_date = label_date.replace(year=from_date_obj.year).date()
+
+            entry_start = datetime.combine(entry_date, time.min)
+            entry_end = datetime.combine(entry_date, time.max)
+
+            # -----------------------------
+            # 3️⃣ Fetch offline entries
+            # -----------------------------
+            qs = (
+                MemberEntryExit.objects.using("L01")
+                .filter(entry_time__range=[entry_start, entry_end])
+                .order_by('-entry_time')
             )
 
+            # -----------------------------
+            # 4️⃣ Search filter
+            # -----------------------------
             if search_value:
                 qs = qs.filter(
                     Q(membership_code__icontains=search_value)
                 )
 
-            total_records = qs.count()
-            qs = qs.order_by('-entry_time')[start:start + length]
+            # -----------------------------
+            # 5️⃣ DISTINCT membership_code (MySQL-safe)
+            # -----------------------------
+            qs = list(qs)
 
-            # ✅ FIX: evaluate queryset BEFORE using __in
-            membership_codes = list(
-                qs.values_list('membership_code', flat=True)
-            )
+            seen = set()
+            unique_entries = []
+
+            for obj in qs:
+                if obj.membership_code not in seen:
+                    seen.add(obj.membership_code)
+                    unique_entries.append(obj)
+
+            total_records = len(unique_entries)
+            unique_entries = unique_entries[start:start + length]
+
+            # -----------------------------
+            # 6️⃣ Fetch member details
+            # -----------------------------
+            membership_codes = [obj.membership_code for obj in unique_entries]
 
             member_map = {
                 m.membership_code: m
@@ -8266,7 +8334,10 @@ def get_transaction_details(request):
                 )
             }
 
-            for obj in qs:
+            # -----------------------------
+            # 7️⃣ Build response
+            # -----------------------------
+            for obj in unique_entries:
                 member = member_map.get(obj.membership_code)
 
                 data.append({
@@ -8279,12 +8350,6 @@ def get_transaction_details(request):
                     "login_time": obj.entry_time.isoformat() if obj.entry_time else "",
                 })
 
-
-
-
-        
-        else:
-            print(f"Unknown detail_type: {detail_type}")
         
         print(f"DEBUG: Returning {len(data)} records out of {total_records} total")
         
@@ -8305,7 +8370,6 @@ def get_transaction_details(request):
             "data": [],
             "error": str(e)
         }, status=500)
-
 # for Dashboard 2 Librarian
 def catalog_data_ajax(request):
     
@@ -9949,7 +10013,7 @@ def view_book_detail_kiosk(request):
         messages.error(request, "Unable to load book details.")
         return redirect("L01/visit_Library_catalogue_kiosk")
     
-def get_dashboard_detail_data(detail_type, from_date, to_date):
+def get_dashboard_detail_data(detail_type, from_date, to_date, label):
     from django.db.models.functions import Coalesce
     """
     Returns list of dicts for dashboard export
@@ -10053,72 +10117,130 @@ def get_dashboard_detail_data(detail_type, from_date, to_date):
         )
     elif detail_type == "footfall_online":
         from datetime import datetime, time
+        from django.db.models import OuterRef, Subquery
 
         start_datetime = datetime.combine(from_date, time.min)
         end_datetime = datetime.combine(to_date, time.max)
 
+        # 🔑 Latest screen activity per member (MySQL safe)
+        latest_activity = (
+            MemberScreenActivity.objects.using("L01")
+            .filter(
+                session__member_id=OuterRef('session__member_id'),
+                visited_at__range=[start_datetime, end_datetime],
+                screen_name=label
+            )
+            .order_by('-visited_at')
+            .values('visited_at')[:1]
+        )
+
         qs = (
-            MemberLoginSession.objects.using("L01")
-            .select_related('member', 'member__membership')
-            .filter(login_time__range=[start_datetime, end_datetime])
-            .order_by('-login_time')
+            MemberScreenActivity.objects.using("L01")
+            .select_related(
+                'session',
+                'session__member',
+                'session__member__membership'
+            )
+            .filter(
+                visited_at=Subquery(latest_activity),
+                screen_name=label
+            )
+            .order_by('-visited_at')
         )
 
         return [
             {
-                "membership_type": obj.member.membership.membership_type if obj.member else "",
-                "member_code": obj.member.membership_code if obj.member else "",
+                "membership_type": obj.session.member.membership.membership_type if obj.session.member else "",
+                "member_code": obj.session.member.membership_code if obj.session.member else "",
                 "member_name": (
-                    f"{obj.member.first_name_mar or ''} "
-                    f"{obj.member.last_name_mar or ''}"
-                ).strip() if obj.member else "",
-                "login_time": obj.login_time
+                    f"{obj.session.member.first_name_mar or ''} "
+                    f"{obj.session.member.last_name_mar or ''}"
+                ).strip() if obj.session.member else "",
+                "login_time": obj.session.login_time,
+                "visited_at": obj.visited_at,
             }
             for obj in qs
         ]
+
     elif detail_type == "footfall_offline":
-        from datetime import datetime, time
+        from datetime import datetime, date, time
+        from django.db.models import Q
 
-        start_datetime = datetime.combine(from_date, time.min)
-        end_datetime = datetime.combine(to_date, time.max)
+        # -----------------------------
+        # 1️⃣ Ensure from_date is date
+        # -----------------------------
+        if isinstance(from_date, date):
+            from_date_obj = from_date
+        else:
+            from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
 
+        # -----------------------------
+        # 2️⃣ Parse label (format: 18-Nov)
+        # -----------------------------
+        label_date = datetime.strptime(label, "%d-%b")
+
+        # year from from_date
+        entry_date = label_date.replace(year=from_date_obj.year).date()
+
+        entry_start = datetime.combine(entry_date, time.min)
+        entry_end = datetime.combine(entry_date, time.max)
+
+        # -----------------------------
+        # 3️⃣ Fetch offline entries (that day only)
+        # -----------------------------
         qs = (
             MemberEntryExit.objects.using("L01")
-            .filter(entry_time__range=[start_datetime, end_datetime])
+            .filter(entry_time__range=[entry_start, entry_end])
             .order_by('-entry_time')
         )
 
-        # evaluate queryset first (MySQL safe)
-        membership_codes = list(
-            qs.values_list('membership_code', flat=True)
-        )
+        # -----------------------------
+        # 4️⃣ DISTINCT membership_code (MySQL-safe)
+        # -----------------------------
+        qs = list(qs)
+
+        seen = set()
+        unique_entries = []
+
+        for obj in qs:
+            if obj.membership_code not in seen:
+                seen.add(obj.membership_code)
+                unique_entries.append(obj)
+
+        # -----------------------------
+        # 5️⃣ Fetch member details
+        # -----------------------------
+        membership_codes = [obj.membership_code for obj in unique_entries]
 
         member_map = {
             m.membership_code: m
             for m in MembershipDetails.objects.using("L01")
-            .select_related('membership')
+            .select_related("membership")
             .filter(membership_code__in=membership_codes)
         }
 
+        # -----------------------------
+        # 6️⃣ Build response
+        # -----------------------------
         return [
             {
                 "membership_type": (
-                    member_map.get(obj.membership_code).membership.membership_type
-                    if member_map.get(obj.membership_code) else ""
+                    member_map[obj.membership_code].membership.membership_type
+                    if obj.membership_code in member_map else ""
                 ),
                 "member_code": obj.membership_code,
                 "member_name": (
-                    f"{member_map.get(obj.membership_code).first_name_mar or ''} "
-                    f"{member_map.get(obj.membership_code).last_name_mar or ''}"
-                ).strip() if member_map.get(obj.membership_code) else "",
-                "login_time": obj.entry_time
+                    f"{member_map[obj.membership_code].first_name_mar or ''} "
+                    f"{member_map[obj.membership_code].last_name_mar or ''}"
+                ).strip() if obj.membership_code in member_map else "",
+                "login_time": obj.entry_time,
             }
-            for obj in qs
+            for obj in unique_entries
         ]
 
 
-    return []
 
+    return []
 def make_naive(dt):
     if dt and hasattr(dt, 'tzinfo') and dt.tzinfo:
         return dt.replace(tzinfo=None)
@@ -10158,6 +10280,7 @@ def dashboard_export(request):
     from_date = request.GET.get('from_date')
     to_date = request.GET.get('to_date')
     format_type = request.GET.get('format')
+    label = request.GET.get('label')
 
     
     from_date_str = request.GET.get('from_date')
@@ -10166,7 +10289,7 @@ def dashboard_export(request):
     from_date = datetime.strptime(from_date_str, "%Y-%m-%d").date()
     to_date = datetime.strptime(to_date_str, "%Y-%m-%d").date()
 
-    data = get_dashboard_detail_data(detail_type, from_date, to_date)
+    data = get_dashboard_detail_data(detail_type, from_date, to_date, label)
 
     if format_type == 'excel':
         return export_excel(data, detail_type)
