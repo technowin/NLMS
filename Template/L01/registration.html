@@ -1069,53 +1069,46 @@
             }
 
             let from = new Date(fromDateStr);
-
-            // Normal month-end calculation
-            let temp = new Date(from);
-            if (!isNaN(requestedMonths)) temp.setMonth(temp.getMonth() + requestedMonths);
-            let normalToDateUTC = new Date(Date.UTC(temp.getFullYear(), temp.getMonth(), 0));
-
-            // FY cap = 31 March next year if fromMonth > 3 else current year
             let fromYear = from.getFullYear();
-            let fromMonth = from.getMonth() + 1;
-            let capYear = (fromMonth <= 3) ? fromYear : fromYear + 1;
-            let fyCapDateUTC = new Date(Date.UTC(capYear, 2, 31)); // 31 March
+            let fromMonth = from.getMonth();
 
-            let finalDateUTC;
-            if (!isNaN(requestedMonths) && normalToDateUTC > fyCapDateUTC) {
-                finalDateUTC = fyCapDateUTC;
-            } else if (!isNaN(requestedMonths)) {
-                finalDateUTC = normalToDateUTC;
-            } else {
-                finalDateUTC = from; // For memberships 5 or 6 without months
-            }
+            // Calculate target month (for 1 month: same month, for 2 months: next month, etc.)
+            let targetYear = fromYear;
+            let targetMonth = fromMonth + requestedMonths - 1; // -1 because 1 month = same month
+            
+            // Adjust year if months go beyond 12
+            targetYear += Math.floor(targetMonth / 12);
+            targetMonth = targetMonth % 12;
 
-            let finalLocalDate = new Date(finalDateUTC.getUTCFullYear(), finalDateUTC.getUTCMonth(), finalDateUTC.getUTCDate());
+            // Always get last day of target month
+            let normalToDate = new Date(targetYear, targetMonth + 1, 0);
 
-            // calculate effective months only if months input exists
-            let effectiveMonths = (!isNaN(requestedMonths)) ? monthsSpannedInclusive(from, finalLocalDate) : null;
+            // Calculate FY cap (March 31)
+            let fromMonthNum = from.getMonth() + 1;
+            let capYear = (fromMonthNum <= 3) ? fromYear : fromYear + 1;
+            let fyCapDate = new Date(capYear, 2, 31); // March 31
 
-            // overwrite months input if FY cap reduces it
-            if (!isNaN(requestedMonths) && finalDateUTC.getTime() === fyCapDateUTC.getTime() && normalToDateUTC > fyCapDateUTC) {
-                $("#months").val(effectiveMonths);
+            let finalDate;
+            if (!isNaN(requestedMonths) && normalToDate > fyCapDate) {
+                finalDate = fyCapDate;
                 $("#fyCapNote").html(
                     `⚠ FY cap applied: Membership cannot extend beyond 31-Mar-${capYear}. Please see the librarian for further options.`
                 ).fadeIn();
+                
+                let actualMonths = monthsSpannedInclusive(from, finalDate);
+                $("#months").val(actualMonths);
             } else {
+                finalDate = normalToDate;
                 $("#fyCapNote").hide();
             }
 
-            // update toDate input
-            const yyyy = finalLocalDate.getFullYear();
-            const mm = String(finalLocalDate.getMonth() + 1).padStart(2, "0");
-            const dd = String(finalLocalDate.getDate()).padStart(2, "0");
+            // Format and set
+            const yyyy = finalDate.getFullYear();
+            const mm = String(finalDate.getMonth() + 1).padStart(2, "0");
+            const dd = String(finalDate.getDate()).padStart(2, "0");
             $("#toDate").val(`${yyyy}-${mm}-${dd}`);
 
-            // Only update amounts if membership is NOT 5 or 6
-            let membershipType = $("#membershiptype").val();
-            if (membershipType !== "5" && membershipType !== "6") {
-                updateAmountFields();
-            }
+            updateAmountFields();
         }
 
         function updateAmountFields() {
