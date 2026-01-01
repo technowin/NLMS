@@ -632,7 +632,8 @@
 
     {% if library.books %}
         <div class="library-books-section">
-            <h4>Books Available in {{ library.library_name }}</h4>
+            {% comment %} <h4>{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4> {% endcomment %}
+            <h4>{{ library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
                 <div class="book-gallery">
                     {% for book in library.books %}
                         <div class="book-item">
@@ -788,7 +789,7 @@
 
 {% if library.ebooks %}
     <div class="library-books-section">
-        <h4>eBooks Available in {{ library.library_name }}</h4>
+        <h4>{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
 
         <div class="book-gallery">
             {% for ebook in library.ebooks %}

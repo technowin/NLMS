@@ -1,5 +1,8 @@
 {% extends "Shared/landingPageLayout.html" %}
 {% load static %}
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title=section.section_name %}
+{% endblock %}
 {% block content %}
 {% load encryption_filters %}
   <style>
@@ -183,7 +186,7 @@
     }
 
 
-    /* 🌟 Breadcrumb Styling */
+    {% comment %} /* 🌟 Breadcrumb Styling */
     .breadcrumb {
       background: transparent;
       padding: 0;
@@ -214,7 +217,7 @@
       content: "›"; /* use » or › for arrow look */
       color: #6c757d;
       font-weight: 500;
-    }
+    } {% endcomment %}
   </style>
     {% comment %} Slider {% endcomment %}
 
@@ -226,7 +229,7 @@
 
             <!-- ✅ Breadcrumb -->
 
-            <nav aria-label="breadcrumb" class="mb-3">
+            {% comment %} <nav aria-label="breadcrumb" class="mb-3">
               <ol class="breadcrumb bg-transparent p-0 mb-0">
                 <li class="breadcrumb-item">
                   <a href="{% url 'library_list' %}">Home</a>
@@ -238,7 +241,7 @@
                   Phase {{ section.section_no }}
                 </li>
               </ol>
-            </nav>
+            </nav> {% endcomment %}
 
             <div class="accordion" id="subjectsAccordion">
               {% for sdata in subjects_data %}
@@ -282,12 +285,15 @@
                         </div>
 
                         <!-- ✅ Fixed Bottom Button -->
+                        {% with encrypted_topic_id=topic.topic_id|encrypt %}
                         <div class="topic-btn-container">
-                          <a href="{% url 'Login' %}?next={% url 'L01:mpsc_chapters_index' topic_id=topic.topic_id|encrypt %}" 
-                          class="topic-btn">
-                            View details
-                        </a>
+                            <a href="{% url 'Login' %}?next={% url 'L01:mpsc_chapters_index' topic_id=encrypted_topic_id %}"
+                              class="topic-btn">
+                                View details
+                            </a>
                         </div>
+                        {% endwith %}
+
                       </div>
                       {% endfor %}
                     </div>
@@ -302,6 +308,11 @@
               {% endfor %}
             </div>
           </div>
+        </div>
+         <div class="text-center mt-4">
+            <button onclick="history.back()" class="btn" style="background-color: #1e7ae6; color: white; border-color: #1e7ae6;margin-bottom: 50px;">
+              <i class="fas fa-arrow-left me-1"></i> Go Back
+            </button>
         </div>
       </div>
     </section>

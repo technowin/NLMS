@@ -1,5 +1,8 @@
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='अध्याय अनुक्रमणिका' %}
+{% endblock %}
 {% block content %}
 {% load encryption_filters %}
 <style>
@@ -151,7 +154,7 @@
   color: #6c757d;
   border-color: #dee2e6;
 }
-
+{% comment %} 
 /* 🌟 Breadcrumb Styling */
 .breadcrumb {
   background: transparent;
@@ -183,10 +186,12 @@
   content: "›"; /* use » or › for arrow look */
   color: #6c757d;
   font-weight: 500;
-}
+} {% endcomment %}
 
 
 </style>
+
+
 {% comment %} Slider {% endcomment %}
 
 <!-- ✅ Chapters Section -->
@@ -269,8 +274,19 @@
           ></div>
         </div>
 
+        {% comment %} <div class="text-center mt-4">
+          <button onclick="history.back()" class="btn" style="background-color: #1e7ae6; color: white; border-color: #1e7ae6;">
+            <i class="fas fa-arrow-left me-1"></i> Go Back
+          </button>
+        </div> {% endcomment %}
+
       </div>
     </div>
+    <div class="text-center mt-4">
+          <button onclick="history.back()" class="btn" style="background-color: #1e7ae6; color: white; border-color: #1e7ae6;margin-bottom: 50px;">
+            <i class="fas fa-arrow-left me-1"></i> Go Back
+          </button>
+        </div>
   </div>
 </section>
 

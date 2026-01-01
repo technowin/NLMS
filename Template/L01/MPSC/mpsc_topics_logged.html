@@ -1,9 +1,12 @@
 {% extends "bootstrap/horizontal_base.html" %}
-
 {% load static %}
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title=section.section_name %}
+{% endblock %}
 {% block content %}
 {% load encryption_filters %}
 <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 <style>
 /* ===== Subjects Section Card ===== */
@@ -185,8 +188,38 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
   display: block;
 }
 
+.back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    background: #003366; /* Fallback color */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 5px 20px rgba(0, 51, 102, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+}
 
-/* 🌟 Breadcrumb Styling */
+.back-to-top.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    background: #0055aa;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 85, 170, 0.5);
+}
+
+{% comment %} /* 🌟 Breadcrumb Styling */
 .breadcrumb {
   background: transparent;
   padding: 0;
@@ -217,13 +250,13 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
   content: "›"; /* use » or › for arrow look */
   color: #6c757d;
   font-weight: 500;
-}
+} {% endcomment %}
 
 
 </style>
     {% comment %} Slider {% endcomment %}
 
- <section id="subjects-section" class="subjects-section" style="margin-top: 40px;">
+ <section id="subjects-section" class="subjects-section" style="margin-top: 10px;">
   <div class="container">
     <div class="card shadow-sm border-0 rounded-3">
       <div class="card-body">
@@ -231,19 +264,19 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
 
         <!-- ✅ Breadcrumb -->
 
-    <nav aria-label="breadcrumb" class="mb-3">
-  <ol class="breadcrumb bg-transparent p-0 mb-0">
-    <li class="breadcrumb-item">
-      <a href="{% url 'library_list' %}">Home</a>
-    </li>
-    <li class="breadcrumb-item">
-      <a href="{% url 'L01:mpsc_index_logged' %}">mpsc</a>
-    </li>
-    <li class="breadcrumb-item active" aria-current="page">
-      Phase {{ section.section_no }}
-    </li>
-  </ol>
-</nav>
+    {% comment %} <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb bg-transparent p-0 mb-0">
+        <li class="breadcrumb-item">
+          <a href="{% url 'library_list' %}">Home</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'L01:mpsc_index_logged' %}">mpsc</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+          Phase {{ section.section_no }}
+        </li>
+      </ol>
+    </nav> {% endcomment %}
 
         <div class="accordion" id="subjectsAccordion">
           {% for sdata in subjects_data %}
@@ -309,8 +342,16 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
         </div>
       </div>
     </div>
+     <div class="text-center mt-4">
+          <button onclick="history.back()" class="btn" style="background-color: #1e7ae6; color: white; border-color: #1e7ae6;margin-bottom: 50px;">
+            <i class="fas fa-arrow-left me-1"></i> Go Back
+          </button>
+      </div>
   </div>
+
 </section>
+<a href="#" class="back-to-top" id="backToTop"><i class="fas fa-arrow-up"></i> </a>
+
 
 
 
@@ -503,5 +544,27 @@ function toggleSubjects(section_no) {
             container.style.display = "none";
         }
     }
+</script>
+<script>
+    // Back to Top Button
+    const backToTopButton = document.getElementById('backToTop');
+    
+    console.log('Back to top button element:', backToTopButton); // Debug line
+    
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            backToTopButton.classList.add('active');
+        } else {
+            backToTopButton.classList.remove('active');
+        }
+    });
+    
+    backToTopButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
 </script>
 {% endblock %}

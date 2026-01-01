@@ -212,23 +212,22 @@ def Login(request):
                     membership_id = None
             if membership_id == 8:
 
-                # Practitioner trying to access Ebook or restricted catalog
-                if ebook_id or pdf_url or encrypted_cat_ref_num:
-                    messages.error(
-                        request,
-                        "This section is not available for Practitioner Branch (अभ्यासिका शाखा)"
-                    )
+                # Clear any previous pending action
+                request.session.pop("pending_action", None)
 
-                    # Redirect safely to allowed section
-                    return redirect("L01:membership_dashboard")
-            
-
-                # ✅ Practitioner allowed normal navigation
+                # ❌ Practitioner blocked from direct access
                 if next_url:
-                    return redirect(next_url)
-                else:
+                    request.session["pending_action"] = {
+                        "type": "next_url",
+                        "url": next_url,
+                        "message": "ही कारवाई अभ्यासिका शाखेपुरती मर्यादित आहे."
+                    }
+
+                    request.session.set_expiry(0)
 
                     return redirect("L01:membership_dashboard")
+
+                return redirect("L01:membership_dashboard")
                 
             if str(user.role_id) == '3' and member:
                 try:

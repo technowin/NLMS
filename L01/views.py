@@ -162,7 +162,9 @@ def index(request):
                 for ebook in ebooks
             ]
 
+        library = library_details.first()
         library_name = library_details.first().library_name if library_details.exists() else ""
+        # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
         library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
 
     else:

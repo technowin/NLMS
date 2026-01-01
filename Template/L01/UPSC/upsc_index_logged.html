@@ -1,152 +1,176 @@
 
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title='केंद्रीय लोकसेवा आयोग' %}
+{% endblock %}
 
 {% block content %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-<style>
-.upsc-info-section {
-    background-color: #f8f9fc;
-    padding: 60px 20px;
-    text-align: center;
-    border-top: 4px solid #0a3d62;
-}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .upsc-info-section {
+            background-color: #f8f9fc;
+            padding: 60px 20px;
+            text-align: center;
+            
+            {% comment %} border-top: 4px solid #0a3d62; {% endcomment %}
+        }
 
-.upsc-info-section .container {
-    max-width: 1000px;
-    margin: 0 auto;
-}
+        .upsc-info-section .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
 
-.upsc-title {
-    font-family: 'Merriweather', 'Georgia', serif;
-    color: #0a3d62;
-    font-weight: 700;
-    font-size: 2rem;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-}
+        .upsc-title {
+            font-family: 'Merriweather', 'Georgia', serif;
+            color: #0a3d62;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
 
-.upsc-description {
-    font-family: 'Georgia', serif;
-    color: #333;
-    font-size: 1.1rem;
-    line-height: 1.8;
-    margin-bottom: 40px;
-}
+        .upsc-description {
+            font-family: 'Georgia', serif;
+            color: #333;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 40px;
+        }
 
-/* === Phase Cards === */
-.upsc-phases {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
-}
+        /* === Phase Cards === */
+        .upsc-phases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
 
-.phase-card {
-    background: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 12px;
-    padding: 25px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0);
-    transition: all 0.3s ease;
+        .phase-card {
+            background: #ffffff;
+            border: 1px solid #dcdcdc;
+            border-radius: 12px;
+            padding: 25px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0);
+            transition: all 0.3s ease;
 
-    /* ✅ New: make card a flex container for vertical layout */
-    display: flex;
-    flex-direction: column;
-}
+            /* ✅ New: make card a flex container for vertical layout */
+            display: flex;
+            flex-direction: column;
+        }
 
-.phase-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 15px rgba(0,0,0);
-}
+        .phase-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0);
+        }
 
-.phase-card h3 {
-    color: #0a3d62;
-    font-family: 'Merriweather', 'Georgia', serif;
-    font-size: 1.3rem;
-    margin-bottom: 10px;
-}
+        .phase-card h3 {
+            color: #0a3d62;
+            font-family: 'Merriweather', 'Georgia', serif;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
 
-.phase-card p {
-    color: #000000ff;
-    font-family: 'Georgia';
-}
+        .phase-card p {
+            color: #000000ff;
+            font-family: 'Georgia';
+        }
 
-/* ✅ Keep existing button styles but push it to bottom */
-.view-more-btn {
-    display: inline-block;
-    margin-top: auto; /* pushes button to bottom of card */
-    padding: 8px 18px;
-    background-color: #003366; /* deep blue */
-    color: #fff;
-    font-weight: 500;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: 0.3s ease;
-}
+        /* ✅ Keep existing button styles but push it to bottom */
+        .view-more-btn {
+            display: inline-block;
+            margin-top: auto; /* pushes button to bottom of card */
+            padding: 8px 18px;
+            background-color: #003366; /* deep blue */
+            color: #fff;
+            font-weight: 500;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: 0.3s ease;
+        }
 
-.view-more-btn:hover {
-    background-color: #b8860b; /* gold hover effect */
-    color: #fff;
-}
+        .view-more-btn:hover {
+            background-color: #b8860b; /* gold hover effect */
+            color: #fff;
+        }
 
-.subjects-section {
-    background: #f9f9f9;
-    border-top: 3px solid #003366;
-    padding: 40px 20px;
-}
+        .subjects-section {
+            background: #f9f9f9;
+            border-top: 3px solid #003366;
+            padding: 40px 20px;
+        }
 
-.subjects-title {
-    color: #003366;
-    font-family: 'Merriweather', 'Georgia', serif;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-}
+        .subjects-title {
+            color: #003366;
+            font-family: 'Merriweather', 'Georgia', serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
 
-.subjects-list {
-    list-style-type: disc;
-    margin-left: 20px;
-}
+        .subjects-list {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
 
-.subjects-list li {
-    margin-bottom: 10px;
-    color: #000;
-    line-height: 1.6;
-}
+        .subjects-list li {
+            margin-bottom: 10px;
+            color: #000;
+            line-height: 1.6;
+        }
 
-/* 🌟 Breadcrumb Styling */
-.breadcrumb {
-  background: transparent;
-  padding: 0;
-  margin-bottom: 15px;
-  font-family: 'Merriweather', 'Georgia', serif;
-  font-size: 16px;
-}
-
-.breadcrumb-item a {
-  color: #0d47a1; /* Deep blue link */
-  text-decoration: none;
-  font-weight: bold;
-  transition: color 0.2s ease-in-out;
-}
-
-.breadcrumb-item a:hover {
-  color: #ff0101ff; /* Gold hover color to match your theme */
-  text-decoration: underline;
-}
-
-.breadcrumb-item.active {
-  color: #000000ff; /* Neutral dark gray for active item */
-  font-weight: bold;
-}
-
-/* Optional: Add a subtle divider (>>) look */
-.breadcrumb-item + .breadcrumb-item::before {
-  content: "›"; /* use » or › for arrow look */
-  color: #6c757d;
-  font-weight: 500;
-}
-
-</style>
+    </style>
+    <style>
+        /* Back to Top Button */
+            .back-to-top {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background-color: #4e73df;
+                color: white;
+                text-align: center;
+                line-height: 50px;
+                font-size: 20px;
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+                z-index: 999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .back-to-top:hover {
+                background-color: #2e59d9;
+                transform: translateY(-3px);
+            }
+            
+            .back-to-top.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            .back-to-top i {
+                transition: transform 0.3s ease;
+            }
+            
+            .back-to-top:hover i {
+                transform: translateY(-3px);
+            }
+            
+            /* Dark mode styles */
+            body.dark-mode .back-to-top {
+                background-color: #6c63ff;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+            }
+            
+            body.dark-mode .back-to-top:hover {
+                background-color: #5a52d6;
+            }
+    </style>
 {% comment %} Slider {% endcomment %}
 <section class="upsc-info-section">
   <div class="container">
@@ -156,7 +180,7 @@
     <br>
 
     <!-- ✅ Breadcrumb -->
-   <nav aria-label="breadcrumb" class="mb-3">
+   {% comment %} <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
             <a href="{% url 'L01:competitive_exams_landing_page' %}">
@@ -165,7 +189,7 @@
             </li>
             <li class="breadcrumb-item active" aria-current="page">UPSC</li>
         </ol>
-    </nav>
+    </nav> {% endcomment %}
 
     <p class="upsc-description">
       {{ competitive_exam.competitive_description }}
@@ -186,6 +210,8 @@
         </div>
       {% endfor %}
     </div>
+
+    
   </div>
 </section>
 
@@ -210,7 +236,7 @@
         </div>
     </div>
 </section>
-<a href="#" class="back-to-top" id="backToTop">
+        <a href="#" class="back-to-top" id="backToTop">
             <i class="fas fa-arrow-up"></i>
         </a>
 

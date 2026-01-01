@@ -1,14 +1,15 @@
-
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
-
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title=competitive_exam.full_name %}
+{% endblock %}
 {% block content %}
 <style>
 .mpsc-info-section {
     background-color: #f8f9fc;
     padding: 60px 20px;
     text-align: center;
-    border-top: 4px solid #0a3d62;
+    
 }
 
 .mpsc-info-section .container {
@@ -112,7 +113,7 @@
     line-height: 1.6;
 }
 
-/* 🌟 Breadcrumb Styling */
+{% comment %} /* 🌟 Breadcrumb Styling */
 .breadcrumb {
   background: transparent;
   padding: 0;
@@ -143,7 +144,7 @@
   content: "›"; /* use » or › for arrow look */
   color: #6c757d;
   font-weight: 500;
-}
+} {% endcomment %}
 
 </style>
 {% comment %} Slider {% endcomment %}
@@ -155,7 +156,7 @@
     <br>
 
     <!-- ✅ Breadcrumb -->
-   <nav aria-label="breadcrumb" class="mb-3">
+   {% comment %} <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
             <a href="{% url 'L01:competitive_exams_landing_page' %}">
@@ -164,7 +165,7 @@
             </li>
             <li class="breadcrumb-item active" aria-current="page">MPSC</li>
         </ol>
-    </nav>
+    </nav> {% endcomment %}
 
     <p class="mpsc-description">
       {{ competitive_exam.competitive_description }}
@@ -211,9 +212,9 @@
 </section>
 
 <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const input = document.getElementById("dropdownSearch");
-            const options = document.getElementById("dropdownOptions");
+ document.addEventListener("DOMContentLoaded", function () {
+   const input = document.getElementById("dropdownSearch");
+   const options = document.getElementById("dropdownOptions");
             const items = options.getElementsByTagName("li");
             const form = document.getElementById("libraryForm");
             const hiddenInput = document.getElementById("libraryCodeInput");
@@ -261,7 +262,7 @@
                     options.style.display = "none";
                 }
             });
-        });
+        });                         
         
     
 </script>

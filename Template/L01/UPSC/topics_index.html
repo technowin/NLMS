@@ -1,5 +1,9 @@
-{% extends "Shared/landingPageLayout.html" %}
+{% extends "Shared/landingPageLayout.html" %} 
+{% comment %} {% extends "bootstrap/horizontal_base.html" %} {% endcomment %}
 {% load static %}
+{% block page_title %}
+{% include "bootstrap/partials/page-title.html" with page_title=section.section_name %}
+{% endblock %}
 {% block content %}
 {% load encryption_filters %}
 <style>
@@ -183,7 +187,7 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
 }
 
 
-/* 🌟 Breadcrumb Styling */
+{% comment %} /* 🌟 Breadcrumb Styling */
 .breadcrumb {
   background: transparent;
   padding: 0;
@@ -214,7 +218,7 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
   content: "›"; /* use » or › for arrow look */
   color: #6c757d;
   font-weight: 500;
-}
+} {% endcomment %}
 
 
 </style>
@@ -228,19 +232,7 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
 
         <!-- ✅ Breadcrumb -->
 
-    <nav aria-label="breadcrumb" class="mb-3">
-  <ol class="breadcrumb bg-transparent p-0 mb-0">
-    <li class="breadcrumb-item">
-      <a href="{% url 'library_list' %}">Home</a>
-    </li>
-    <li class="breadcrumb-item">
-      <a href="{% url 'L01:upsc_ebook_index' %}">UPSC</a>
-    </li>
-    <li class="breadcrumb-item active" aria-current="page">
-      Phase {{ section.section_no }}
-    </li>
-  </ol>
-</nav>
+    
 
         <div class="accordion" id="subjectsAccordion">
           {% for sdata in subjects_data %}
@@ -306,10 +298,28 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
         </div>
       </div>
     </div>
+        <div class="text-center mt-4">
+          <button onclick="history.back()" class="btn" style="background-color: #1e7ae6; color: white; border-color: #1e7ae6;margin-bottom: 50px;">
+            <i class="fas fa-arrow-left me-1"></i> Go Back
+          </button>
+        </div>
   </div>
 </section>
 
 
+{% comment %} <nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb bg-transparent p-0 mb-0">
+    <li class="breadcrumb-item">
+      <a href="{% url 'library_list' %}">Home</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'L01:upsc_ebook_index' %}">UPSC</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      Phase {{ section.section_no }}
+    </li>
+  </ol>
+</nav> {% endcomment %}
 
 
 
@@ -317,8 +327,7 @@ box-shadow: inset 0 -1px 0 rgba(0, 0, 0);
 
 
 
-
-    <script>
+<script>
         document.addEventListener("DOMContentLoaded", function () {
             const input = document.getElementById("dropdownSearch");
             const options = document.getElementById("dropdownOptions");
