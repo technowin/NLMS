@@ -133,7 +133,7 @@
 
     <style>
         .d-flex .btn {
-            width: 32px;
+            {% comment %} width: 32px; {% endcomment %}
             height: 32px;
             display: inline-flex;
             align-items: center;
@@ -225,7 +225,7 @@
                                     <span class="badge bg-warning text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% elif m.status.status_code == "APP_RENEW" %}
                                     <span class="badge bg-success text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
-                                {% elif m.status.status_code == "APP_CANCEL" %}
+                                {% elif m.status.status_code == "APP_CANCEL_REQ" %}
                                     <span class="badge bg-dark text-white px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
                                 {% else %}
                                     <span class="badge bg-light text-dark px-3 py-2" style="font-size:0.9rem;">{{ m.status.status_name }}</span>
@@ -411,11 +411,15 @@
                                         <div class="modal-dialog modal-dialog-centered modal-lg">
                                             <div class="modal-content rounded-3 shadow-lg">
 
-                                                <div class="modal-header bg-danger text-white">
+                                                <div class="modal-header {% if m.has_pending_books %}bg-warning{% else %}bg-danger text-white{% endif %}">
                                                     <h5 class="modal-title fw-bold" id="cancelMembershipLabel{{ m.membership_id_enc }}">
-                                                        सदस्यत्व रद्द करण्याची पुष्टी
+                                                        {% if m.has_pending_books %}
+                                                            ⚠️ सदस्यत्व रद्द करणे शक्य नाही
+                                                        {% else %}
+                                                            सदस्यत्व रद्द करण्याची पुष्टी
+                                                        {% endif %}
                                                     </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    <button type="button" class="btn-close {% if not m.has_pending_books %}btn-close-white{% endif %}" data-bs-dismiss="modal"></button>
                                                 </div>
 
                                                 <div class="modal-body">
@@ -461,41 +465,70 @@
                                                         </tbody>
                                                     </table>
 
-                                                    <!-- Marathi & English notice -->
-                                                    <div class="alert alert-warning text-center mt-4 fw-bold" id="refundNotice">
-                                                        <div class="notice-marathi">
-                                                            <strong>महत्वाची सूचना:</strong><br>
-                                                            जर आपण सभासदत्व रद्द केले, तर फक्त <strong>ठेव</strong> रक्कमच परत मिळेल.<br>
-                                                            इतर शुल्क जसे की <strong>प्रवेश शुल्क</strong>, <strong>मासिक सभासद शुल्क</strong> किंवा <strong>एकूण सभासद शुल्क</strong> परत मिळणार नाहीत.<br>
-                                                            कृपया हे लक्षात घेऊनच पुढे कार्यवाही करा.
-                                                        </div>
+                                                    <!-- Check if member has pending books -->
+                                                    {% if m.has_pending_books %}
+                                                        <!-- Pending books warning in modal -->
+                                                        <div class="alert alert-danger text-center mt-4 fw-bold" id="pendingBooksWarning{{ m.membership_id_enc }}">
+                                                            <div class="notice-marathi">
+                                                                <strong>⚠️ सदस्यत्व रद्द करणे शक्य नाही!</strong><br>
+                                                                आपल्या नावावर अजूनही <strong>{{ m.pending_books_count }}</strong> पुस्तक/पुस्तके ग्रंथालयात परत केलेली नाहीत.<br>
+                                                                कृपया सर्व पुस्तके ग्रंथालयात परत केल्यानंतरच सदस्यत्व रद्द करा.<br>
+                                                                <span class="text-muted small">पुस्तके परत करण्यासाठी ग्रंथालयात भेट द्या.</span>
+                                                            </div>
 
-                                                        <div class="notice-english" style="display:none;">
-                                                            <strong>Important Notice:</strong><br>
-                                                            If you cancel the membership, only the <strong>deposit</strong> amount will be refunded.<br>
-                                                            Other fees such as <strong>entry fee</strong>, <strong>monthly membership fee</strong>, or <strong>total subscription fee</strong> will not be refunded.<br>
-                                                            Please proceed only after understanding this condition.
-                                                        </div>
+                                                            <div class="notice-english" style="display:none;">
+                                                                <strong>⚠️ Membership Cancellation Not Allowed!</strong><br>
+                                                                You still have <strong>{{ m.pending_books_count }}</strong> book(s) not returned to the library.<br>
+                                                                Please return all books to the library before cancelling your membership.<br>
+                                                                <span class="text-muted small">Visit the library to return the books.</span>
+                                                            </div>
 
-                                                        <button type="button" class="btn btn-sm btn-outline-dark mt-3" onclick="toggleNoticeLanguage(this)">
-                                                            इंग्रजी भाषांतर दाखवा
-                                                        </button>
-                                                    </div>
+                                                            <button type="button" class="btn btn-sm btn-outline-dark mt-3" onclick="togglePendingBooksWarning('{{ m.membership_id_enc }}', this)">
+                                                                इंग्रजी भाषांतर दाखवा
+                                                            </button>
+                                                        </div>
+                                                    {% else %}
+                                                        <!-- Original refund notice (shown when no pending books) -->
+                                                        <div class="alert alert-warning text-center mt-4 fw-bold" id="refundNotice{{ m.membership_id_enc }}">
+                                                            <div class="notice-marathi">
+                                                                <strong>महत्वाची सूचना:</strong><br>
+                                                                जर आपण सभासदत्व रद्द केले, तर फक्त <strong>ठेव</strong> रक्कमच परत मिळेल.<br>
+                                                                इतर शुल्क जसे की <strong>प्रवेश शुल्क</strong>, <strong>मासिक सभासद शुल्क</strong> किंवा <strong>एकूण सभासद शुल्क</strong> परत मिळणार नाहीत.<br>
+                                                                कृपया हे लक्षात घेऊनच पुढे कार्यवाही करा.
+                                                            </div>
+
+                                                            <div class="notice-english" style="display:none;">
+                                                                <strong>Important Notice:</strong><br>
+                                                                If you cancel the membership, only the <strong>deposit</strong> amount will be refunded.<br>
+                                                                Other fees such as <strong>entry fee</strong>, <strong>monthly membership fee</strong>, or <strong>total subscription fee</strong> will not be refunded.<br>
+                                                                Please proceed only after understanding this condition.
+                                                            </div>
+
+                                                            <button type="button" class="btn btn-sm btn-outline-dark mt-3" onclick="toggleNoticeLanguage('{{ m.membership_id_enc }}', this)">
+                                                                इंग्रजी भाषांतर दाखवा
+                                                            </button>
+                                                        </div>
+                                                    {% endif %}
                                                 </div>
 
                                                 <div class="modal-footer d-flex justify-content-between">
                                                     <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">
                                                         मागे जा
                                                     </button>
-                                                    <button type="button" class="btn btn-danger px-4 py-2"
-                                                            onclick="confirmCancel('{{ m.membership_id_enc }}')">
-                                                        सदस्यत्व रद्द करा
-                                                    </button>
+                                                    
+                                                    <!-- Show cancel button only if NO pending books -->
+                                                    {% if not m.has_pending_books %}
+                                                        <button type="button" class="btn btn-danger px-4 py-2"
+                                                                onclick="confirmCancel('{{ m.membership_id_enc }}')">
+                                                            सदस्यत्व रद्द करा
+                                                        </button>
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </form>
+
                             </td>
                         </tr>
                     {% empty %}
@@ -651,9 +684,35 @@
     
     {% comment %} membership cancellation notice language toggle script {% endcomment %}
     <script>
-        function toggleNoticeLanguage(btn) {
-            const marathi = document.querySelector('#refundNotice .notice-marathi');
-            const english = document.querySelector('#refundNotice .notice-english');
+        function toggleNoticeLanguage(membershipId, btn) {
+            const modal = document.getElementById('cancelMembershipModal' + membershipId);
+            
+            // Escape the ID for CSS selector
+            const escapedId = CSS.escape('refundNotice' + membershipId);
+            const marathi = modal.querySelector(`#${escapedId} .notice-marathi`);
+            const english = modal.querySelector(`#${escapedId} .notice-english`);
+            
+            const showingEnglish = english.style.display === 'block';
+            
+            if (showingEnglish) {
+                english.style.display = 'none';
+                marathi.style.display = 'block';
+                btn.textContent = 'इंग्रजी भाषांतर दाखवा';
+            } else {
+                marathi.style.display = 'none';
+                english.style.display = 'block';
+                btn.textContent = 'मराठी भाषांतर दाखवा';
+            }
+        }
+
+        function togglePendingBooksWarning(membershipId, btn) {
+            const modal = document.getElementById('cancelMembershipModal' + membershipId);
+            
+            // Escape the ID for CSS selector
+            const escapedId = CSS.escape('pendingBooksWarning' + membershipId);
+            const marathi = modal.querySelector(`#${escapedId} .notice-marathi`);
+            const english = modal.querySelector(`#${escapedId} .notice-english`);
+            
             const showingEnglish = english.style.display === 'block';
             
             if (showingEnglish) {

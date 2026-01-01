@@ -58,8 +58,6 @@
 
     </head>
 
-
-
     <body>
 
         <!-- Lead Capture Modal -->
@@ -152,23 +150,38 @@
                 <div class="top-bar">
                     <!-- Left: logo + title -->
                     <div class="brand-left" id="brand-english" style="display: none;">
-                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="NMMC Logo" class="logo">
-                        <div class="brand-text">
-                            <h1 class="header-title">Navi Mumbai Muncipal Corporation</h1>
-                            <h2 class="sub-title">Public Library</h2>
-                        </div>
-                    </div> 
+                       <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:65px; width:auto; object-fit:contain;">
+                            <div class="brand-text">
+                                <h3 class="header-title">Navi Mumbai Muncipal Corporation</h3>
+                                <h4 class="sub-title">Public Library</h4>
+                            </div>
+                        </div> 
 
-                    <div class="brand-left" id="brand-marathi">
-                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo">
+                        <div class="brand-left" id="brand-marathi">
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:65px; width:auto; object-fit:contain;">
                         <div class="brand-text">
-                            <h1 class="header-title">नवी मुंबई महानगरपालिका</h1>
-                            <h2 class="sub-title">सार्वजनिक ग्रंथालय</h2>
+                            <h3 class="header-title">नवी मुंबई महानगरपालिका</h3>
+                            <h4 class="sub-title">सार्वजनिक ग्रंथालय</h4>
                         </div>
                     </div>
 
+                    {% if library_name %}
+                        <div id ="english-title" style="display: none;" > 
+                            <h3  style="margin: 0;color: var(--primary-color);font-weight: 600;text-align: center;white-space: nowrap;">
+                                {{ library_name }}
+                            </h3>
+                        </div>
+                        <div id ="marathi-title"> 
+                            <h3 style="margin: 0;color: var(--primary-color);font-weight: 600;text-align: center;white-space: nowrap;">
+                                {{ library_name_mar }}
+                            </h3>
+                        </div>
+                    {% endif %}
+
+                    {% comment %} </div> {% endcomment %}
+
                     <!-- Right logo -->
-                    <img src="{% static 'images/administrative/layout_img.png' %}" alt="NMMC Logo" class="logo right-logo">
+                   <img src="{% static 'images/administrative/layout_img.png' %}"alt="NMMC Logo"class="logo right-logo"style="height:65px; width:auto; object-fit:contain;">
                 </div>
 
             <!-- Navbar -->
@@ -412,10 +425,12 @@
             const brandEnglish = document.getElementById('brand-english');
             const headMarathi = document.getElementById('head-marathi');
             const headEnglish = document.getElementById('head-english');
-            const marathihero = document.getElementById('hero-marathi');
-            const englishhero = document.getElementById('hero-english');
+            //const marathihero = document.getElementById('hero-marathi');
+            //const englishhero = document.getElementById('hero-english');
             const marathisection = document.getElementById('section-marathi');
             const englishsection= document.getElementById('section-english');
+            const marathititle = document.getElementById('marathi-title');
+            const englishtitle = document.getElementById('english-title');
 
             const langBtn = document.querySelector('.fontControlBtn[onclick="toggleLanguage()"]');
 
@@ -429,6 +444,8 @@
                 brandEnglish.style.display = 'none';
                 headMarathi.style.display = 'flex';
                 headEnglish.style.display = 'none';
+                marathititle.style.display = 'block';
+                englishtitle.style.display = 'none';
                 marathihero.style.display = 'block';
                 englishhero.style.display = 'none';
                 marathisection.style.display = 'block';
@@ -444,6 +461,8 @@
                 brandEnglish.style.display = 'flex';
                 headMarathi.style.display = 'none';
                 headEnglish.style.display = 'flex';
+                marathititle.style.display = 'none';
+                englishtitle.style.display = 'block';
                 marathihero.style.display = 'none';
                 englishhero.style.display = 'block';
                 marathisection.style.display = 'none';
@@ -486,32 +505,39 @@
             }, 300000);
 
             // Submit lead form
+            // Submit lead form
             $('#leadForm').on('submit', function (e) {
                 e.preventDefault();
 
-                let name = $('input[name="name"]').val().trim();
+                let name  = $('input[name="name"]').val().trim();
                 let phone = $('input[name="phone"]').val().trim();
                 let email = $('input[name="email"]').val().trim();
 
                 // 🔹 REGEX PATTERNS
-                const nameRegex = /^[A-Za-z\s]{2,}$/;
+                const nameRegex  = /^[A-Za-z\s]{2,}$/;
                 const phoneRegex = /^[0-9]{10}$/;
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-                // 🔴 Name validation
+                // 🔴 Name validation (always required)
                 if (!nameRegex.test(name)) {
-                    alert("Name should contain only letters and spaces (no special characters).");
+                    alert("Name should contain only letters and spaces (minimum 2 characters).");
                     return;
                 }
 
-                // 🔴 Phone validation
-                if (!phoneRegex.test(phone)) {
+                // 🔴 At least ONE of phone or email must be provided
+                if (phone === '' && email === '') {
+                    alert("Please enter either a phone number or an email address.");
+                    return;
+                }
+
+                // 🔴 Phone validation (ONLY if provided)
+                if (phone !== '' && !phoneRegex.test(phone)) {
                     alert("Phone number must be exactly 10 digits.");
                     return;
                 }
 
-                // 🔴 Email validation
-                if (!emailRegex.test(email)) {
+                // 🔴 Email validation (ONLY if provided)
+                if (email !== '' && !emailRegex.test(email)) {
                     alert("Please enter a valid email address.");
                     return;
                 }
@@ -529,10 +555,11 @@
                             document.getElementById('leadModal')
                         ).hide();
                         alert("Thank you!");
-                        $('#leadForm')[0].reset(); // clear form
+                        $('#leadForm')[0].reset();
                     }
                 });
             });
+
         });
     </script>
 

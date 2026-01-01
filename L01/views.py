@@ -163,6 +163,7 @@ def index(request):
             ]
 
         library_name = library_details.first().library_name if library_details.exists() else ""
+        library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
 
     else:
         # -------------------------------------------
@@ -228,6 +229,7 @@ def index(request):
     return render(request, "L01/index.html", {
         'libraries': library_details,
         'library_name': library_name,
+        'library_name_mar':library_name_mar,
         'MEDIA_URL': settings.MEDIA_URL
     })
     
@@ -578,7 +580,7 @@ def membership_approval(request):
         "Application Submitted": ["APP_SUB", "APPROVED"],
         "Payment Offline": ["PAY_OFFLINE", "PAY_SUCCESS", "PAY_PENDING", "PAY_PROGRESS", "PAY_FAIL"],
         "Renewal Submitted": ["APP_RENEW", "APP_RENEW_REJECT"],
-        "Application Cancelled": ["APP_CANCEL"],
+        "Application Cancelled": ["APP_CANCEL_REQ", "APP_CANCEL"],
         "Rejected": ["REJECT"],
     }
 
@@ -1572,40 +1574,51 @@ def membership_payment_index(request):
             renew_membership = None
             show_renew_notice = None
             membership_id_enc_for_renew = None
-            has_pending_books = False
+            has_pending_books_for_renew = False  # Renamed for clarity
             lifetime_membership_ids = [5, 6]
             RENEW_REJECT_CODE = "APP_RENEW_REJECT"
             
-            # member's membershp details
+            # member's membership details
             memberships = (
                 MembershipDetails.objects
                 .select_related("status", "membership")
                 .filter(user_id=username)
             )
+            
             for mem in memberships:
                 mem.membership_id_enc = enc(str(mem.id))        
                 mem.per_month_subscription = mem.membership.subscription_fees if mem.membership else 0
                 
+                # ✅ Check for pending books for EACH membership
+                pending_books_query = CirculationTransaction.objects.filter(
+                    member=mem,
+                    return_date__isnull=True
+                )
+                mem.has_pending_books = pending_books_query.exists()
+                mem.pending_books_count = pending_books_query.count()  # Add this line for counting
+                
                 if mem.membership_id in lifetime_membership_ids:
                     continue
                 
+                # Renewal logic
                 if mem.to_date and today >= mem.to_date and not renew_membership:
                     renew_membership = mem
                     
-                if renew_membership:
-                    has_pending_books = CirculationTransaction.objects.filter(
-                        member=renew_membership,
-                        return_date__isnull=True
-                    ).exists()
+            # Check if the renewal membership has pending books
+            if renew_membership:
+                has_pending_books_for_renew = CirculationTransaction.objects.filter(
+                    member=renew_membership,
+                    return_date__isnull=True
+                ).exists()
                     
-                show_renew_notice = renew_membership is not None and not has_pending_books
+            show_renew_notice = renew_membership is not None and not has_pending_books_for_renew
 
-                membership_id_enc_for_renew = (
-                    renew_membership.membership_id_enc
-                    if renew_membership and not has_pending_books
-                    else None
-                )
-                
+            membership_id_enc_for_renew = (
+                enc(str(renew_membership.id))
+                if renew_membership and not has_pending_books_for_renew
+                else None
+            )
+            
             # Library Name
             library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
             library_name_mar = library.library_name_mar if library else ""
@@ -1616,7 +1629,7 @@ def membership_payment_index(request):
                 enc(str(renew_membership_rejected.id))
                 if renew_membership_rejected else None
             )
-                
+                    
             return render(
                 request,
                 "L01/Member Payment/member_payment.html",
@@ -1627,11 +1640,11 @@ def membership_payment_index(request):
                     "library_name_mar": library_name_mar,
                     "show_renew_notice": show_renew_notice,
                     "membership_id_enc_for_renew": membership_id_enc_for_renew,
-                    "has_pending_books": has_pending_books,
+                    "has_pending_books_for_renew": has_pending_books_for_renew,  # Updated variable name
                     "renew_membership_rejected": renew_membership_rejected,
                     "membership_id_enc_for_reject": membership_id_enc_for_reject,
                 }
-            )
+            )  
             
         if request.method == "POST":
             membership_id = dec(request.POST.get("membership_id"))
@@ -2138,38 +2151,90 @@ def membership_form_cancellation(request):
             return JsonResponse({"success": False, "message": "Invalid request method."})
         
         if request.method == "POST":
-            
             membership_id = dec(request.POST.get("membership_id"))
             membership = get_object_or_404(MembershipDetails, id=membership_id)
             
             action_by = request.POST.get("action_by")  # 'member' or 'librarian'
 
             if action_by == "member":
-                # ✅ Step 1: Member requests cancellation
-                cancelled_status = StatusMaster.objects.filter(status_name__iexact="Application Cancelled").first()
+                # ✅ Check if member has any pending books
+                has_pending_books = CirculationTransaction.objects.filter(
+                    member=membership,
+                    return_date__isnull=True
+                ).exists()
+                
+                if has_pending_books:
+                    messages.error(
+                        request,
+                        "सदस्यत्व रद्द करणे शक्य नाही. कारण आपल्या नावावर अजूनही पुस्तके ग्रंथालयात परत केलेली नाहीत."
+                        " कृपया सर्व पुस्तके परत केल्यानंतरच सदस्यत्व रद्द करा."
+                    )
+                    return redirect("L01:membership_payment_index")
+                
+                # ✅ Step 1: Member requests cancellation (only if no pending books)
+                cancelled_status = StatusMaster.objects.filter(status_code__iexact="APP_CANCEL_REQ").first()
                 if not cancelled_status:
                     raise Exception("Cancelled status not found in StatusMaster.")
 
                 membership.status = cancelled_status
                 membership.updated_by = user_id
                 membership.remarks = "Cancelled by Member (Pending Librarian Approval)"
-                # membership.save()
+                membership.save()
+                
+                messages.success(
+                    request,
+                    "सदस्यत्व रद्द करण्याची विनंती यशस्वीरित्या सबमिट केली आहे."
+                    " ग्रंथालय प्रशासकाच्या मंजुरीनंतर तुमची ठेव परत केली जाईल."
+                )
                 return redirect("L01:membership_payment_index")
 
             elif action_by == "librarian":
+                # ✅ Check if member has any pending books before approving cancellation
+                has_pending_books = CirculationTransaction.objects.filter(
+                    member=membership,
+                    return_date__isnull=True
+                ).exists()
+                
+                if has_pending_books:
+                    # Count pending books for better error message
+                    pending_count = CirculationTransaction.objects.filter(
+                        member=membership,
+                        return_date__isnull=True
+                    ).count()
+                    
+                    return JsonResponse({
+                        "success": False, 
+                        "message": f"सदस्यत्व रद्द करणे शक्य नाही. सदस्याच्या नावावर अजूनही {pending_count} पुस्तक/पुस्तके परत केलेली नाहीत. कृपया प्रथम सर्व पुस्तके परत करा."
+                    })
+                
+                # ✅ Check if already cancelled
+                if membership.status.status_code == "APP_CANCEL":
+                    return JsonResponse({
+                        "success": False, 
+                        "message": "हे सदस्यत्व आधीच रद्द केले गेले आहे."
+                    })
+                
+                # ✅ Get the correct cancelled status
+                cancelled_status = StatusMaster.objects.filter(status_code__iexact="APP_CANCEL").first()
+                if not cancelled_status:
+                    raise Exception("APP_CANCEL status not found in StatusMaster.")
+                
                 # ✅ Step 2: Librarian confirms cancellation & deactivates user + membership
-                membership.updated_by = user_id  # librarian’s ID (for audit)
+                membership.status = cancelled_status
+                membership.updated_by = user_id  # librarian's ID (for audit)
                 membership.remarks = "Cancellation Approved by Librarian"
-                membership.isactive = 0  # deactivate membership record
-                # membership.save()
-
-                # Deactivate the member's user account (not librarian’s)
+                membership.save()
+                
+                # ✅ Deactivate the member's user account (not librarian's)
                 member_user = CustomUser.objects.filter(username=membership.user_id).first()
                 if member_user:
                     member_user.is_active = False
-                    # member_user.save()
-
-                return JsonResponse({"success": True, "message": "सदस्यत्व रद्द प्रक्रिया यशस्वीपणे पूर्ण झाली आहे."})
+                    member_user.save()
+                
+                return JsonResponse({
+                    "success": True, 
+                    "message": "सदस्यत्व यशस्वीपणे रद्द केले गेले आहे. ठेव रकमेची परतावा प्रक्रिया सुरू केली गेली आहे."
+                })
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)

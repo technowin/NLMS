@@ -117,7 +117,7 @@
                                                     {% elif m.status.status_code == 'PAY_PROGRESS' %}bg-info text-dark
                                                     {% elif m.status.status_code == 'PAY_OFFLINE' %}bg-warning text-dark
                                                     {% elif m.status.status_code == 'APP_RENEW' %}bg-success text-white
-                                                    {% elif m.status.status_code == 'APP_CANCEL' %}bg-dark text-white
+                                                    {% elif m.status.status_code == 'APP_CANCEL_REQ' %}bg-dark text-white
                                                     {% else %}bg-light text-dark{% endif %} 
                                                     px-3 py-2">
                                                     {{ m.status.status_name }}
@@ -126,48 +126,28 @@
                                             <td>{% if m.membership_duration %}{{ m.membership_duration }} महिने{% else %}-{% endif %}</td>
                                             <td>{% if m.from_date and m.to_date %}{{ m.from_date|date:"d-m-Y" }} ते {{ m.to_date|date:"d-m-Y" }}{% else %}-{% endif %}</td>
                                             <td>{{ m.subscription }}</td>
-                                            {% comment %} <td>
-                                                {% if m.status.status_code == "APP_SUB" or m.status.status_code == "REJECT" %}
-                                                    <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
-                                                    class="btn btn-success btn-sm">संपादित करा</a>
-                                                {% endif %}
-
-                                                <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
-                                                class="btn btn-primary btn-sm ms-2">फॉर्म तपासा</a>
-
-                                                {% if m.status.status_code == "APP_CANCEL" %}
-                                                    <button type="button" class="btn btn-danger btn-sm" onclick="openCancelModal('{{ m.membership_id_enc }}')">
-                                                        सभासदत्व रद्द करणे स्वीकारा
-                                                    </button>
-                                                {% endif %}
-
-                                                {% if m.status.status_code == "PAY_SUCCESS" %}
-                                                    <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
-                                                    class="btn btn-success btn-sm">देयक पावती डाउनलोड करा</a>
-                                                {% endif %}
-                                            </td> {% endcomment %}
                                             <td>
                                                 <div class="d-flex gap-1">
                                                     <!-- Edit Icon (for APP_SUB or REJECT status) -->
                                                     {% if m.status.status_code == "APP_SUB" or m.status.status_code == "REJECT" %}
                                                         <a href="{% url 'L01:membership_form_edit' %}?membershipid={{ m.membership_id_enc }}" 
-                                                        class="btn btn-sm btn-outline-success p-1" 
-                                                        data-bs-toggle="tooltip" 
-                                                        title="संपादित करा">
-                                                            <i class="fas fa-edit"></i>
+                                                            class="btn btn-sm btn-outline-success p-1" 
+                                                            data-bs-toggle="tooltip" 
+                                                            title="संपादित करा">
+                                                                <i class="fas fa-edit"></i>
                                                         </a>
                                                     {% endif %}
 
                                                     <!-- View Icon (always shown) -->
                                                     <a href="{% url 'L01:membership_form_view' %}?membershipid={{ m.membership_id_enc }}" 
-                                                    class="btn btn-sm btn-outline-primary p-1" 
-                                                    data-bs-toggle="tooltip" 
-                                                    title="फॉर्म तपासा">
-                                                        <i class="fas fa-eye"></i>
+                                                        class="btn btn-sm btn-outline-primary p-1" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="फॉर्म तपासा">
+                                                            <i class="fas fa-eye"></i>
                                                     </a>
 
-                                                    <!-- Cancel Membership Icon (for APP_CANCEL status) -->
-                                                    {% if m.status.status_code == "APP_CANCEL" %}
+                                                    <!-- Cancel Membership Icon (for APP_CANCEL_REQ status) -->
+                                                    {% if m.status.status_code == "APP_CANCEL_REQ" %}
                                                         <button type="button" 
                                                                 class="btn btn-sm btn-outline-danger p-1" 
                                                                 onclick="openCancelModal('{{ m.membership_id_enc }}')"
@@ -181,19 +161,19 @@
                                                     {% if m.status.status_code == "PAY_SUCCESS" %}
                                                         <!-- For initial membership -->
                                                         <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}" 
-                                                        class="btn btn-sm btn-outline-success p-1" 
-                                                        data-bs-toggle="tooltip" 
-                                                        title="देयक पावती डाऊनलोड करा">
-                                                            <i class="fas fa-download"></i>
+                                                            class="btn btn-sm btn-outline-success p-1" 
+                                                            data-bs-toggle="tooltip" 
+                                                            title="देयक पावती डाऊनलोड करा">
+                                                                <i class="fas fa-download"></i>
                                                         </a>
                                                         
                                                         <!-- For renewal memberships, you might want a separate icon or show it differently -->
                                                         {% if m.membership_renew == 1 %}
                                                             <a href="{% url 'L01:membership_paymentreceipt_download' %}?membershipid={{ m.membership_id_enc }}&type=renewal" 
-                                                            class="btn btn-sm btn-outline-info p-1 ms-1" 
-                                                            data-bs-toggle="tooltip" 
-                                                            title="नूतनीकरण पावती डाऊनलोड करा">
-                                                                <i class="fas fa-redo"></i>
+                                                                class="btn btn-sm btn-outline-info p-1 ms-1" 
+                                                                data-bs-toggle="tooltip" 
+                                                                title="नूतनीकरण पावती डाऊनलोड करा">
+                                                                    <i class="fas fa-redo"></i>
                                                             </a>
                                                         {% endif %}
                                                     {% endif %}

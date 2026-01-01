@@ -43,7 +43,7 @@ body {
 
 .header-title {
     /* font-size: 1.8rem; */
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     margin-bottom: 3%;
     color: var(--primary-color);
@@ -61,6 +61,7 @@ body {
 .navbar {
     background-color: var(--primary-color);
     overflow: visible; /* important for dropdowns */
+    padding: 0 0;
 }
 
 .navbar ul li {
@@ -146,11 +147,15 @@ body {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0px 20px;
-        /* padding: 0px 40px; latest Changed */
-        /* padding: 20px 40px; */
+        padding: 10px 20px;
+        height: 75px;
         background-color: var(--header-bg);
     }
+
+    /* Force top bar height */
+   
+/* Fix logo / images */
+
 
     .navbar ul li.icon {
         display: none;
@@ -221,7 +226,7 @@ body {
 
     .header-title {
         /* font-size: 1.5rem; */
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-sm);
     }
 
     .sub-title {
@@ -250,6 +255,7 @@ body {
 /* ========================= Header Utility Row ========================= */
 .headerUtilityRow {
     display: flex;
+    padding: 4px 16px;
     align-items: center;
     justify-content: space-between;
     /* background-color: #f1f1f1; */
@@ -294,7 +300,9 @@ body {
 @media all and (max-width: 1000px) {
 
     .govLink {
-        font-size: var(--font-size-sm);
+        /* font-size: var(--font-size-sm); */
+        font-size: 13px;
+        line-height: 1.2;
         margin-top: 1%;
         padding: 18px;
         font-family: "Merriweather", serif;
@@ -308,8 +316,12 @@ body {
     }
 
     .fontControlBtn {
-        padding: 5px 10px;
-        font-size: 13px;
+        /* padding: 5px 10px;
+        font-size: 13px; */
+        padding: 2px 6px;     /* ↓ reduces box size */
+        font-size: 12px;
+        line-height: 1.1;
+        min-height: auto;
     }
 
     .fontControlContainer {
