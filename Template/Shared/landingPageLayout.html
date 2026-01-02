@@ -3,21 +3,22 @@
 <html lang="en">
     <head>
         {% block head %}
-        <meta charset="UTF-8">
-        <title>NMMC Library</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta charset="UTF-8">
+            <title>NMMC Library</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- Bootstrap CSS (ONLY ONE) -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+            <!-- Bootstrap CSS (ONLY ONE) -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        <!-- FontAwesome -->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+            <!-- FontAwesome -->
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
-        <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
 
-        <!-- Your CSS -->
-        <link href="{% static 'css/library.css' %}" rel="stylesheet">
-            {% block extra_css %}{% endblock %}
+            <!-- Your CSS -->
+            <link href="{% static 'css/library.css' %}" rel="stylesheet">
+            {% block extra_css %}
+            {% endblock %}
             
         {% endblock %}
 
@@ -117,16 +118,23 @@
                     <div class="govLinkContainer">
                         <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                             aria-label="Welcome to NMMC Library official website">
-                                NMMC, Library Department
+                            NMMC, Library Department
                             <span class="underlineHover"></span>
                         </a>
                     </div>
-
+                    
+                    <!-- Add this contact info section -->
+                    <div class="headerContactInfo">
+                        <div class="contact-itemm email">contact@nmmc.gov.in</div>
+                        <div class="contact-itemm phone">+91 22 2756 1234</div>
+                        <div class="contact-itemm helpline">1800-222-999</div>
+                    </div>
+                    
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
                         <button onclick="decreaseFont()" class="fontControlBtn" title="Decrease Font Size">A-</button>
                         <button onclick="resetFont()" class="fontControlBtn" title="Reset Font Size">A</button>
-                        <button onclick="toggleLanguage()" class="fontControlBtn" title="Change Language">Marathi</button>
+                        <button onclick="toggleLanguage()" class="fontControlBtnn" title="Change Language">Marathi</button>
                     </div>
                 </div>
 
@@ -138,12 +146,19 @@
                             <span class="underlineHover"></span>
                         </a>
                     </div>
-
+                    
+                    <!-- Marathi contact info -->
+                    <div class="headerContactInfo">
+                        <div class="contact-itemm email">संपर्क@nmmc.gov.in</div>
+                        <div class="contact-itemm phone">+९१ २२ २७५६ १२३४</div>
+                        <div class="contact-itemm helpline">१८००-२२२-९९९</div>
+                    </div>
+                    
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="अक्षर आकार वाढवा">अ+</button>
                         <button onclick="decreaseFont()" class="fontControlBtn" title="अक्षर आकार कमी करा">अ-</button>
                         <button onclick="resetFont()" class="fontControlBtn" title="अक्षर आकार रीसेट करा">अ</button>
-                        <button onclick="toggleLanguage()" class="fontControlBtn" title="Change Language">English</button>
+                        <button onclick="toggleLanguage()" class="fontControlBtnn" title="Change Language">English</button>
                     </div>
                 </div>
                 
@@ -184,7 +199,7 @@
                    <img src="{% static 'images/administrative/layout_img.png' %}"alt="NMMC Logo"class="logo right-logo"style="height:65px; width:auto; object-fit:contain;">
                 </div>
 
-            <!-- Navbar -->
+                <!-- Navbar -->
                 <nav class="navbar" id="navbar-english" style="display: none;">
                     <ul>
                         <li class="nav-item"><a href="{% url 'library_list' %}">Home</a></li>
@@ -215,17 +230,6 @@
                                 <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
                             </ul>
                         </li>
-
-                        {% comment %} {% if request.session.library_db == "L01" %}
-                            <li style="list-style:none; text-decoration:none;">
-                                <a href="{% url 'Login' %}" class="no-hover-underline"
-                                    style="background:#f0c040; padding:8px 18px; border-radius:20px;
-                                            color:#333; font-weight:600; border:2px solid #d8a735;
-                                            white-space:nowrap;">
-                                        Login
-                                </a>
-                            </li>
-                        {% endif %} {% endcomment %}
 
                         <li class="icon">
                             <a href="javascript:void(0);" onclick="toggleNavbar('navbar-english')">☰</a>
@@ -264,17 +268,6 @@
                             </ul>
                         </li>
 
-                        {% comment %} {% if request.session.library_db == "L01" %}
-                            <li style="list-style:none; text-decoration:none;">
-                                <a href="{% url 'Login' %}" class="no-hover-underline" 
-                                    style="background:#f0c040; padding:8px 18px; border-radius:20px;
-                                                color:#333; font-weight:600; border:2px solid #d8a735;
-                                                white-space:nowrap;">
-                                    लॉगिन
-                                </a>
-                            </li>
-                        {% endif %} {% endcomment %}
-
                         <li class="icon">
                             <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>
                         </li>
@@ -290,24 +283,216 @@
         </main>
 
         <!-- Default Marathi Footer -->
+        <!-- Enhanced Footer HTML -->
         <footer id="footer-marathi">
-            <div class="footer-content">
-                <p class="footer-left">&copy; 2025 नवी मुंबई महानगरपालिका. सर्व हक्क राखीव.</p>
-                <p class="footer-right">
-                    डिझाईन आणि विकास :
-                    <a href="https://technowinitinfra.com/" target="_blank">टेक्नोविन आयटी इन्फ्रा प्रा. लि.</a>
-                </p>
+            <div class="footer-container">
+                <!-- Top Section: Quick Links & Info -->
+                <div class="footer-top">
+                    <div class="footer-section">
+                        <h4 class="footer-heading">त्वरित लिंक</h4>
+                        <ul class="footer-links">
+                            <li><a href="#">मुख्य पृष्ठ</a></li>
+                            <li><a href="#">आमच्याबद्दल</a></li>
+                            <li><a href="#">सेवा</a></li>
+                            <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC तयारी</a></li>
+                            <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC तयारी</a></li>
+                            <li><a href="#">संपर्क</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4 class="footer-heading">संपर्क माहिती</h4>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>नवी मुंबई महानगरपालिका, ग्रंथालय विभाग,<br>सिव्हिल लाईन्स, वाशी, नवी मुंबई - ४००७०३</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fas fa-phone"></i>
+                                <span>+९१ २२ २७५६ १२३४</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>संपर्क@nmmc.gov.in</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fas fa-clock"></i>
+                                <span>सोम-शनि: सकाळी ९ - संध्याकाळी ६</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4 class="footer-heading">महत्वाची लिंक</h4>
+                        <ul class="footer-links">
+                            <li><a href="https://www.nmmc.gov.in/" target="_blank">NMMC अधिकृत वेबसाइट</a></li>
+                            <li><a href="https://mahait.org/" target="_blank">महाराष्ट्र IT पोर्टल</a></li>
+                            <li><a href="https://www.mpsc.gov.in/" target="_blank">MPSC अधिकृत वेबसाइट</a></li>
+                            <li><a href="https://upsc.gov.in/" target="_blank">UPSC अधिकृत वेबसाइट</a></li>
+                            <li><a href="#">सूचना कायदा</a></li>
+                            <li><a href="#">गोपनीयता धोरण</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Middle Section: Social & Newsletter -->
+                <div class="footer-middle">
+                    <div class="social-links">
+                        <h4 class="footer-heading">आमचे अनुसरण करा</h4>
+                        <div class="social-icons">
+                            <a href="#" class="social-icon" title="Facebook" aria-label="Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="#" class="social-icon" title="Twitter" aria-label="Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="#" class="social-icon" title="YouTube" aria-label="YouTube">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                            <a href="#" class="social-icon" title="Instagram" aria-label="Instagram">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="mailto:contact@nmmc.gov.in" class="social-icon" title="Email" aria-label="Email">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="newsletter">
+                        <h4 class="footer-heading">बातमीपत्रिका सदस्यता</h4>
+                        <p class="newsletter-text">नवीनतम माहिती आणि सूचनांसाठी सदस्य व्हा</p>
+                        <form class="newsletter-form">
+                            <input type="email" placeholder="तुमचा ईमेल टाका" required>
+                            <button type="submit">सदस्य व्हा</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Bottom Section: Copyright -->
+                <div class="footer-bottom">
+                    <div class="footer-bottom-content">
+                        <p class="copyright">
+                            &copy; 2025 नवी मुंबई महानगरपालिका. सर्व हक्क राखीव.
+                        </p>
+                        <p class="developer">
+                            डिझाईन आणि विकास: 
+                            <a href="https://technowinitinfra.com/" target="_blank">टेक्नोविन आयटी इन्फ्रा प्रा. लि.</a>
+                        </p>
+                    </div>
+                    <div class="footer-utility">
+                        <a href="#" class="utility-link">साइटमॅप</a>
+                        <span class="separator">|</span>
+                        <a href="#" class="utility-link">सहाय्य</a>
+                        <span class="separator">|</span>
+                        <a href="#" class="utility-link">अस्वीकरण</a>
+                    </div>
+                </div>
             </div>
         </footer>
 
-        <!-- Hidden English Footer -->
         <footer id="footer-english" style="display: none;">
-            <div class="footer-content">
-                <p class="footer-left">&copy; 2025 Navi Mumbai Municipal Corporation. All rights reserved.</p>
-                <p class="footer-right">
-                    Designed and Developed by 
-                    <a href="https://technowinitinfra.com/" target="_blank">Technowin IT Infra Pvt Ltd</a>
-                </p>
+            <div class="footer-container">
+                <!-- Top Section: Quick Links & Info -->
+                <div class="footer-top">
+                    <div class="footer-section">
+                        <h4 class="footer-heading">Quick Links</h4>
+                        <ul class="footer-links">
+                            <li><a href="#">Home</a></li>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">Services</a></li>
+                            <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC Preparation</a></li>
+                            <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC Preparation</a></li>
+                            <li><a href="#">Contact</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4 class="footer-heading">Contact Information</h4>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Navi Mumbai Municipal Corporation, Library Department,<br>Civil Lines, Vashi, Navi Mumbai - 400703</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fas fa-phone"></i>
+                                <span>+91 22 2756 1234</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>contact@nmmc.gov.in</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fas fa-clock"></i>
+                                <span>Mon-Sat: 9 AM - 6 PM</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4 class="footer-heading">Important Links</h4>
+                        <ul class="footer-links">
+                            <li><a href="https://www.nmmc.gov.in/" target="_blank">Official NMMC Website</a></li>
+                            <li><a href="https://mahait.org/" target="_blank">Maharashtra IT Portal</a></li>
+                            <li><a href="https://www.mpsc.gov.in/" target="_blank">Official MPSC Website</a></li>
+                            <li><a href="https://upsc.gov.in/" target="_blank">Official UPSC Website</a></li>
+                            <li><a href="#">RTI Act</a></li>
+                            <li><a href="#">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Middle Section: Social & Newsletter -->
+                <div class="footer-middle">
+                    <div class="social-links">
+                        <h4 class="footer-heading">Follow Us</h4>
+                        <div class="social-icons">
+                            <a href="#" class="social-icon" title="Facebook" aria-label="Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="#" class="social-icon" title="Twitter" aria-label="Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="#" class="social-icon" title="YouTube" aria-label="YouTube">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                            <a href="#" class="social-icon" title="Instagram" aria-label="Instagram">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="mailto:contact@nmmc.gov.in" class="social-icon" title="Email" aria-label="Email">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="newsletter">
+                        <h4 class="footer-heading">Newsletter Subscription</h4>
+                        <p class="newsletter-text">Subscribe for latest updates and notifications</p>
+                        <form class="newsletter-form">
+                            <input type="email" placeholder="Enter your email" required>
+                            <button type="submit">Subscribe</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Bottom Section: Copyright -->
+                <div class="footer-bottom">
+                    <div class="footer-bottom-content">
+                        <p class="copyright">
+                            &copy; 2025 Navi Mumbai Municipal Corporation. All rights reserved.
+                        </p>
+                        <p class="developer">
+                            Designed and Developed by: 
+                            <a href="https://technowinitinfra.com/" target="_blank">Technowin IT Infra Pvt Ltd</a>
+                        </p>
+                    </div>
+                    <div class="footer-utility">
+                        <a href="#" class="utility-link">Sitemap</a>
+                        <span class="separator">|</span>
+                        <a href="#" class="utility-link">Help</a>
+                        <span class="separator">|</span>
+                        <a href="#" class="utility-link">Disclaimer</a>
+                    </div>
+                </div>
             </div>
         </footer>
         
@@ -416,7 +601,7 @@
 
     <script>
         function toggleLanguage() {
-            debugger;
+            // Get all elements
             const marathiFooter = document.getElementById('footer-marathi');
             const englishFooter = document.getElementById('footer-english');
             const navbarMarathi = document.getElementById('navbar-marathi');
@@ -425,53 +610,90 @@
             const brandEnglish = document.getElementById('brand-english');
             const headMarathi = document.getElementById('head-marathi');
             const headEnglish = document.getElementById('head-english');
-            //const marathihero = document.getElementById('hero-marathi');
-            //const englishhero = document.getElementById('hero-english');
+            const marathihero = document.getElementById('hero-marathi');
+            const englishhero = document.getElementById('hero-english');
             const marathisection = document.getElementById('section-marathi');
-            const englishsection= document.getElementById('section-english');
+            const englishsection = document.getElementById('section-english');
             const marathititle = document.getElementById('marathi-title');
             const englishtitle = document.getElementById('english-title');
-
+            
+            // Get the language toggle button
             const langBtn = document.querySelector('.fontControlBtn[onclick="toggleLanguage()"]');
 
-            if (marathiFooter.style.display === 'none') {
-                // Switch to Marathi
-                marathiFooter.style.display = 'block';
-                englishFooter.style.display = 'none';
-                navbarMarathi.style.display = 'block';
-                navbarEnglish.style.display = 'none';
-                brandMarathi.style.display = 'flex';
-                brandEnglish.style.display = 'none';
-                headMarathi.style.display = 'flex';
-                headEnglish.style.display = 'none';
-                marathititle.style.display = 'block';
-                englishtitle.style.display = 'none';
-                marathihero.style.display = 'block';
-                englishhero.style.display = 'none';
-                marathisection.style.display = 'block';
-                englishsection.style.display = 'none';
-                langBtn.textContent = 'English';
+            // Check current state by looking at header display
+            if (headEnglish.style.display === 'none' || window.getComputedStyle(headEnglish).display === 'none') {
+                // Currently showing Marathi, switch to ENGLISH
+                console.log('Switching to English');
+                
+                // Footer
+                if (marathiFooter) marathiFooter.style.display = 'none';
+                if (englishFooter) englishFooter.style.display = 'block';
+                
+                // Navbar
+                if (navbarMarathi) navbarMarathi.style.display = 'none';
+                if (navbarEnglish) navbarEnglish.style.display = 'block';
+                
+                // Brand
+                if (brandMarathi) brandMarathi.style.display = 'none';
+                if (brandEnglish) brandEnglish.style.display = 'flex';
+                
+                // Header
+                if (headMarathi) headMarathi.style.display = 'none';
+                if (headEnglish) headEnglish.style.display = 'flex';
+                
+                // Hero section
+                if (marathihero) marathihero.style.display = 'none';
+                if (englishhero) englishhero.style.display = 'block';
+                
+                // Other sections
+                if (marathisection) marathisection.style.display = 'none';
+                if (englishsection) englishsection.style.display = 'block';
+                
+                // Titles
+                if (marathititle) marathititle.style.display = 'none';
+                if (englishtitle) englishtitle.style.display = 'block';
+                
+                // Update button text
+                if (langBtn) langBtn.textContent = 'मराठी';
+                
             } else {
-                // Switch to English
-                marathiFooter.style.display = 'none';
-                englishFooter.style.display = 'block';
-                navbarMarathi.style.display = 'none';
-                navbarEnglish.style.display = 'block';
-                brandMarathi.style.display = 'none';
-                brandEnglish.style.display = 'flex';
-                headMarathi.style.display = 'none';
-                headEnglish.style.display = 'flex';
-                marathititle.style.display = 'none';
-                englishtitle.style.display = 'block';
-                marathihero.style.display = 'none';
-                englishhero.style.display = 'block';
-                marathisection.style.display = 'none';
-                englishsection.style.display = 'block';
-                langBtn.textContent = 'मराठी';
+                // Currently showing English, switch to MARATHI
+                console.log('Switching to Marathi');
+                
+                // Footer
+                if (marathiFooter) marathiFooter.style.display = 'block';
+                if (englishFooter) englishFooter.style.display = 'none';
+                
+                // Navbar
+                if (navbarMarathi) navbarMarathi.style.display = 'block';
+                if (navbarEnglish) navbarEnglish.style.display = 'none';
+                
+                // Brand
+                if (brandMarathi) brandMarathi.style.display = 'flex';
+                if (brandEnglish) brandEnglish.style.display = 'none';
+                
+                // Header
+                if (headMarathi) headMarathi.style.display = 'flex';
+                if (headEnglish) headEnglish.style.display = 'none';
+                
+                // Hero section
+                if (marathihero) marathihero.style.display = 'block';
+                if (englishhero) englishhero.style.display = 'none';
+                
+                // Other sections
+                if (marathisection) marathisection.style.display = 'block';
+                if (englishsection) englishsection.style.display = 'none';
+                
+                // Titles
+                if (marathititle) marathititle.style.display = 'block';
+                if (englishtitle) englishtitle.style.display = 'none';
+                
+                // Update button text
+                if (langBtn) langBtn.textContent = 'English';
             }
         }
     </script>
-   
+
     <script>
         $(document).ready(function () {
 

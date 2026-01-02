@@ -171,15 +171,9 @@
 
     <div class="mt-4">
 
-        {% if show_renew_notice and membership_id_enc_for_renew or renew_membership_rejected %}
+        {% if show_renew_notice and membership_id_enc_for_renew %}
             <div class="alert alert-info shadow-sm rounded-3 renewal-notice text-center">
                 <h5 class="fw-bold">📢 सदस्यत्व नूतनीकरण आवश्यक</h5>
-            </div>
-        {% endif %}
-
-        {% if has_pending_books %}
-            <div class="alert alert-danger shadow-sm rounded-3 book-return-alert text-center">
-                <h5 class="fw-bold">⚠️ पुस्तक परत करणे आवश्यक</h5>
             </div>
         {% endif %}
 
@@ -540,38 +534,21 @@
             </table>
         </div>
 
-        {% if has_pending_books %}
-            <div class="alert alert-danger mt-4 p-4 shadow-sm rounded-3 book-return-alert text-center">
-                <p class="mb-2 fs-5">
-                    आपल्या नावावर अजूनही पुस्तक जारी आहे.<br>
-                    कृपया सर्व पुस्तके परत केल्यानंतरच सदस्यत्व नूतनीकरण करता येईल.
-                </p>
+        {% for m in memberships %}
+            {% if m.is_expired and m.has_pending_books %}
+                <div class="alert alert-danger shadow-sm rounded-3 book-return-alert text-center">
+                    <h5 class="fw-bold">⚠️ पुस्तक परत करणे आवश्यक</h5>
+                    <p>आपले सदस्यत्व कालावधी संपला आहे, परंतु आपण {{ m.pending_books_count }} पुस्तके ग्रंथालयात परत केलेली नाहीत.</p>
+                </div>
+            {% endif %}
+        {% endfor %}
 
-                <p class="small text-muted">
-                    You currently have issued books that are not yet returned.<br>
-                    Please return all books before renewing your membership.
-                </p>
-
-                <p class="small text-muted mt-2">
-                    अधिक माहितीसाठी कृपया आपल्या ग्रंथालयात भेट द्या.<br>
-                    For more information, please visit your library.<br>
-                    <a href="/L01/membership_dashboard/#currently-reading">
-                        पुस्तके तपासण्यासाठी येथे क्लिक करा / Click here to check your books
-                    </a>
-                </p>
-            </div>
-        {% endif %}
-
-        {% if show_renew_notice and membership_id_enc_for_renew or renew_membership_rejected %}
+        <!-- Renewal button section -->
+        {% if show_renew_notice and membership_id_enc_for_renew %}
             <div class="alert alert-info mt-4 p-4 shadow-sm rounded-3 renewal-notice text-center">
                 <p class="mb-2 fs-5">
-                    आपले सदस्यत्व कालावधी संपलेला आहे किंवा आज संपत आहे.<br>
+                    आपले सदस्यत्व कालावधी संपलेला आहे.<br>
                     कृपया सेवा सुरू ठेवण्यासाठी सदस्यत्व नूतनीकरण करा.
-                </p>
-
-                <p class="text-muted small mb-3">
-                    Your membership has expired or is expiring today.  
-                    Please renew your membership to continue services.
                 </p>
 
                 <a href="{% url 'L01:membership_form_renew' %}?membershipid={{ membership_id_enc_for_renew }}"

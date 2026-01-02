@@ -1571,67 +1571,67 @@ def membership_payment_index(request):
         role_id = request.session["role_id"]
 
         if request.method == "GET":
-            
             today = date.today()
-            renew_membership = None
-            show_renew_notice = None
-            membership_id_enc_for_renew = None
-            has_pending_books_for_renew = False  # Renamed for clarity
-            lifetime_membership_ids = [5, 6]
-            RENEW_REJECT_CODE = "APP_RENEW_REJECT"
             
-            # member's membership details
+            # Get all memberships
             memberships = (
                 MembershipDetails.objects
                 .select_related("status", "membership")
                 .filter(user_id=username)
             )
             
+            renewal_candidates = []
+            
             for mem in memberships:
-                mem.membership_id_enc = enc(str(mem.id))        
+                mem.membership_id_enc = enc(str(mem.id))
                 mem.per_month_subscription = mem.membership.subscription_fees if mem.membership else 0
                 
-                # ✅ Check for pending books for EACH membership
+                # Check for pending books
                 pending_books_query = CirculationTransaction.objects.filter(
                     member=mem,
                     return_date__isnull=True
                 )
                 mem.has_pending_books = pending_books_query.exists()
-                mem.pending_books_count = pending_books_query.count()  # Add this line for counting
+                mem.pending_books_count = pending_books_query.count()
                 
-                if mem.membership_id in lifetime_membership_ids:
-                    continue
+                # Check if membership is expired (EXCLUDE LIFETIME MEMBERSHIPS - IDs 5 and 6)
+                mem.membership_id = mem.membership.id if mem.membership else None
                 
-                # Renewal logic
-                if mem.to_date and today >= mem.to_date and not renew_membership:
-                    renew_membership = mem
-                    
-            # Check if the renewal membership has pending books
-            if renew_membership:
-                has_pending_books_for_renew = CirculationTransaction.objects.filter(
-                    member=renew_membership,
-                    return_date__isnull=True
-                ).exists()
-                    
-            show_renew_notice = renew_membership is not None and not has_pending_books_for_renew
-
-            membership_id_enc_for_renew = (
-                enc(str(renew_membership.id))
-                if renew_membership and not has_pending_books_for_renew
-                else None
+                # Skip lifetime memberships from expiration check (IDs 5 and 6)
+                if mem.membership_id in [5, 6]:  # LB and PB - Lifetime memberships
+                    mem.is_expired = False  # Lifetime memberships never expire
+                elif mem.to_date:
+                    mem.is_expired = today >= mem.to_date
+                else:
+                    mem.is_expired = False
+                
+                # Check if eligible for renewal (expired AND no pending books AND not lifetime)
+                if mem.is_expired and not mem.has_pending_books:
+                    renewal_candidates.append(mem)
+            
+            # Get first renewal candidate
+            renew_membership = renewal_candidates[0] if renewal_candidates else None
+            
+            # Set variables for template
+            show_renew_notice = renew_membership is not None
+            membership_id_enc_for_renew = enc(str(renew_membership.id)) if renew_membership else None
+            has_pending_books_for_renew = False  # Already filtered out
+            
+            # Check for rejected renewals (exclude lifetime memberships)
+            renew_membership_rejected = memberships.filter(
+                status__status_code="APP_RENEW_REJECT"
+            ).exclude(
+                membership__id__in=[5, 6]  # Exclude lifetime memberships by ID
+            ).first()
+            
+            membership_id_enc_for_reject = (
+                enc(str(renew_membership_rejected.id)) if renew_membership_rejected else None
             )
             
             # Library Name
             library = tbl_librarymasterL01.objects.filter(library_code=library_code, is_active=1).first()
             library_name_mar = library.library_name_mar if library else ""
             
-            renew_membership_rejected = memberships.filter(status__status_code="APP_RENEW_REJECT").first()
-            
-            membership_id_enc_for_reject = (
-                enc(str(renew_membership_rejected.id))
-                if renew_membership_rejected else None
-            )
-                    
             return render(
                 request,
                 "L01/Member Payment/member_payment.html",
@@ -1642,12 +1642,12 @@ def membership_payment_index(request):
                     "library_name_mar": library_name_mar,
                     "show_renew_notice": show_renew_notice,
                     "membership_id_enc_for_renew": membership_id_enc_for_renew,
-                    "has_pending_books_for_renew": has_pending_books_for_renew,  # Updated variable name
+                    "has_pending_books_for_renew": has_pending_books_for_renew,
                     "renew_membership_rejected": renew_membership_rejected,
                     "membership_id_enc_for_reject": membership_id_enc_for_reject,
                 }
-            )  
-            
+            )
+           
         if request.method == "POST":
             membership_id = dec(request.POST.get("membership_id"))
             payment_type = request.POST.get("payment_type")
@@ -5243,10 +5243,17 @@ def membership_card(request):
                 ).first()
 
                 if document and document.file_path:
-                    if document.file_path.startswith(settings.MEDIA_URL):
-                        user_image_url = document.file_path
+                    file_path_lower = document.file_path.lower()
+                    
+                    if file_path_lower.endswith('.pdf'):
+                        # If PDF, set user_image_url to None to use default image
+                        user_image_url = None
                     else:
-                        user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
+                        # Not a PDF, use the file path
+                        if document.file_path.startswith(settings.MEDIA_URL):
+                            user_image_url = document.file_path
+                        else:
+                            user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
             except Exception:
                 pass
 
