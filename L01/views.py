@@ -1034,6 +1034,21 @@ def membership_form_edit(request):
                     if new_value != old_value:
                         setattr(membership, model_field, new_value)
                         updated = True
+                        
+                # --- Calculate to_date based on from_date and months ---
+                from_date = membership.from_date
+                months = membership.membership_duration
+                
+                if from_date and months:
+                    # Calculate to_date by adding months to from_date
+                    # Using relativedelta to handle month-end dates correctly
+                    from dateutil.relativedelta import relativedelta
+                    new_to_date = from_date + relativedelta(months=months, days=-1)  # Subtract 1 day to get end of period
+                    
+                    # Check if to_date changed
+                    if new_to_date != membership.to_date:
+                        membership.to_date = new_to_date
+                        updated = True
 
                 # --- Handle monetary fields ---
                 money_fields = {
