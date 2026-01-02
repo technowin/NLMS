@@ -403,7 +403,8 @@ body {
     color: #333333;
     border: none;
     padding: 10px 14px;
-    font-size: 14px;
+    /* font-size: 14px; */
+    font-size: 18px;
     cursor: pointer;
     transition: all 0.25s ease;
     display: flex;
