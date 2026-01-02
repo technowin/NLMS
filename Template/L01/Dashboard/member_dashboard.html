@@ -343,10 +343,10 @@
 
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <button class="btn btn-sm btn-outline-secondary" onclick="cancelAction()">
-                            रद्द करा/Cancel
+                            रद्द करा
                         </button>
                         <button class="btn btn-sm btn-success" onclick="openBook()">
-                            पुस्तक उघडा/Open Book
+                            पुस्तक उघडा
                         </button>
                     </div>
                 </div>
@@ -1417,29 +1417,42 @@
 </script>
 
 <script>
-
     document.addEventListener("DOMContentLoaded", function () {
         debugger
         const toastEl = document.getElementById("actionToast");
 
+        // Prevent re-show on refresh
+        if (sessionStorage.getItem("actionToastShown") === "true") {
+            return;
+        }
+
         if (toastEl && typeof bootstrap !== "undefined") {
             const toast = new bootstrap.Toast(toastEl, {
-                delay: 15000,
+                delay: 20000,
                 autohide: true
             });
+
             toast.show();
-            // Add hover pause for progress bar
-            toastElement.addEventListener('mouseenter', function() {
+
+            // ✅ HARD guarantee hide after 20 seconds
+            setTimeout(() => {
+                toast.hide();
+                // ✅ Mark as shown ONLY AFTER hiding
+                sessionStorage.setItem("actionToastShown", "true");
+            }, 20000);
+
+            // Pause on hover
+            toastEl.addEventListener('mouseenter', function () {
                 this.style.setProperty('--progress-animation-play-state', 'paused');
             });
-            
-            toastElement.addEventListener('mouseleave', function() {
+
+            toastEl.addEventListener('mouseleave', function () {
                 this.style.setProperty('--progress-animation-play-state', 'running');
             });
-            
-            // Smooth button clicks
-            toastElement.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', function(e) {
+
+            // Button click animation
+            toastEl.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', function (e) {
                     e.preventDefault();
                     this.style.transform = 'scale(0.95)';
                     setTimeout(() => {
@@ -1449,7 +1462,6 @@
             });
         }
     });
-
 
     function openBook() {
         window.location.href = "{{ pending_action.url }}";
@@ -1465,10 +1477,25 @@
             const toastEl = document.getElementById('actionToast');
             const toast = bootstrap.Toast.getInstance(toastEl);
             toast.hide();
+
+            // ✅ Ensure it never shows again
+            sessionStorage.setItem("actionToastShown", "true");
         });
     }
-
 </script>
+
+{% if sweet_alert %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    Swal.fire({
+      title: "{{ sweet_alert.title }}",
+      text: "{{ sweet_alert.text }}",
+      icon: "{{ sweet_alert.icon }}",
+      confirmButtonText: "OK"
+    });
+  });
+</script>
+{% endif %}
 
 {% endblock %}
 

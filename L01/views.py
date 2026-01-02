@@ -4627,6 +4627,7 @@ def membership_dashboard(request):
             return_date__isnull=True
         ).select_related('catalog').order_by('-issue_date')[:3]
         pending_action = request.session.get("pending_action")
+        sweet_alert = request.session.get("sweet_alert")
         for transaction in transactions:
             book_data = {
                 'transaction': transaction,
@@ -4637,7 +4638,7 @@ def membership_dashboard(request):
                 'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None
             }
             latest_books.append(book_data)
-        
+        request.session.pop("sweet_alert", None)
         context = {
             'username': username,
             'membership_code': membership_code,
@@ -4647,6 +4648,7 @@ def membership_dashboard(request):
             'latest_books': latest_books,
             'today': today,
             'pending_action': pending_action,    # send to template
+            'sweet_alert': sweet_alert,
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)

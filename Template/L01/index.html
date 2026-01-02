@@ -201,202 +201,7 @@
         transform: translateY(-1px) scale(0.98);
     }
 
-    /* ================= Zoom Modal ================= */
-
-    .zoom-modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        justify-content: center; /* center horizontally */
-        align-items: center;     /* center vertically */
-        background-color: rgba(0,0,0,0.85);
-    }
-
-    .zoom-modal-content-wrapper {
-        display: flex;
-        width: 70%;
-        max-width: 900px;
-        height: 70%;
-        max-height: 600px;
-        background-color: #fff;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-        animation: fadeInScale 0.4s ease;
-    }
-
-    .zoom-modal-left {
-        flex: 1;
-        background-color: #f9f9f9;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 15px;
-    }
-
-    .zoom-modal-left img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    }
-
-    .zoom-modal-right {
-        flex: 1;
-        padding: 25px;
-        overflow-y: auto;
-        background: linear-gradient(120deg, #f7f7f7, #e2e2e2);
-    }
-
-    .zoom-modal-right h2 {
-        margin-top: 0;
-        font-size: 1.8rem;
-        color: #333;
-        font-family: 'Merriweather', Georgia, serif;
-    }
-
-    .zoom-modal-right p {
-        margin: 10px 0;
-        font-size: 1rem;
-        color: #555;
-        line-height: 1.5;
-    }
-
-    .login-btn {
-        margin-top: 20px;
-        padding: 10px 25px;
-        background: linear-gradient(135deg, #015296 0%, #015296 100%);
-        color: white;
-        border: none;
-        border-radius: 30px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }
-
-    .login-btn:hover {
-        transform: translateY(-2px);
-        font-weight: bold;
-        box-shadow: 0 8px 25px rgba(0,0,0);
-    }
-
-    .close-zoom {
-        position: absolute;
-        top: 150px;
-        right: calc(30% - 40px);
-        color: black;
-        font-size: 36px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 1010;
-        transition: transform 0.3s ease;
-    }
-
-    .close-zoom:hover {
-        color: red;
-        transform: rotate(90deg);
-    }
-
-    @keyframes fadeInScale {
-        0% { opacity: 0; transform: scale(0.8); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-
-    /* ================= Media Queries for Mobile Responsiveness ================= */
-
-    @media screen and (max-width: 768px) {
-        /* For tablets and smaller screens */
-        .zoom-modal-content-wrapper {
-            width: 90%;  /* Adjust width for smaller screens */
-            height: 80%; /* Adjust height */
-        }
-
-        /* Left (Image) Section */
-        .zoom-modal-left {
-            padding: 10px;  /* Less padding for mobile/tablets */
-        }
-
-        /* Right (Text Info) Section */
-        .zoom-modal-right {
-            padding: 15px;  /* Less padding for mobile/tablets */
-        }
-
-        .zoom-modal-right h2 {
-            font-size: 1.5rem;  /* Smaller font size for mobile */
-        }
-
-        .zoom-modal-right p {
-            font-size: 0.9rem;  /* Smaller text for mobile */
-        }
-
-        .login-btn {
-            padding: 8px 20px;  /* Smaller button for mobile */
-            font-size: 0.9rem;  /* Adjust button text size */
-        }
-
-        /* Close Button */
-        .close-zoom {
-            font-size: 28px;  /* Smaller close button for mobile */
-        }
-    }
-
-    @media screen and (max-width: 480px) {
-        /* For mobile screens */
-
-        .zoom-modal-content-wrapper {
-            width: 95%;  /* Take up almost the whole screen width */
-            height: 85%; /* Adjust height */
-            flex-direction: column; /* Stack image above text */
-        }
-
-        /* Left (Image) Section */
-        .zoom-modal-left {
-            padding: 5px;  /* Less padding for mobile */
-            width: 100%;  /* Full width */
-            height: 48%; /* 2 items per row with some gap */
-        }
-
-        .zoom-modal-left img {
-            width: 60%;
-            height: 93%!important;
-        }
-
-        /* Right (Text Info) Section */
-        .zoom-modal-right {
-            padding: 10px;  /* Less padding for mobile */
-            width: 100%;  /* Full width */
-        }
-
-        .zoom-modal-right h2 {
-            font-size: 1.3rem;  /* Smaller font size for mobile */
-        }
-
-        .zoom-modal-right p {
-            font-size: 0.85rem;  /* Smaller text for mobile */
-        }
-
-        .login-btn {
-            padding: 6px 18px;  /* Smaller button for mobile */
-            font-size: 0.85rem;  /* Adjust button text size */
-        }
-
-        /* Close Button */
-        .close-zoom {
-            font-size: 24px;  /* Smaller close button */
-        }
-    }
-
-    @keyframes fadeIn {
-        from {opacity: 0;}
-        to {opacity: 1;}
-    }
-
+    
 
     /* For tablets and mobile devices with smaller screens */
     @media (max-width: 768px) {
@@ -505,6 +310,311 @@
     .view-more-btn:hover {
         background-color: #007bff;  /* Lighter blue on hover */
         transform: scale(1.05);  /* Slightly enlarge the button */
+    }
+</style>
+<style>
+    /* Modal Base Styles */
+    .zoom-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    
+    .zoom-modal.show {
+        display: flex;
+        animation: fadeIn 0.3s;
+    }
+    
+    .zoom-modal-content-wrapper {
+        display: flex;
+        width: 90%;
+        max-width: 1200px;
+        height: 85vh; /* Increased height */
+        max-height: 800px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .zoom-modal-left {
+        width: 45%;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border-right: 1px solid #e9ecef;
+    }
+    
+    .zoom-modal-right {
+        width: 55%;
+        padding: 30px;
+        overflow-y: auto; /* Scroll only if content overflows */
+    }
+    
+    .book-info-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Image Styles */
+    #zoomedImage {
+        max-height: 400px;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Thumbnail Styles */
+    .image-preview-container {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .thumbnail-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        min-width: 80px;
+    }
+    
+    .thumbnail {
+        width: 80px;
+        height: 100px;
+        object-fit: cover;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        opacity: 0.7;
+    }
+    
+    .thumbnail:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+    
+    .thumbnail.active {
+        border-color: #007bff;
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+    }
+    
+    .thumbnail-wrapper span {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #555;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    /* Book Info Styles */
+    .book-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin: 25px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-item strong {
+        color: #333;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+    
+    .info-item span {
+        color: #666;
+        font-size: 15px;
+        line-height: 1.4;
+    }
+    
+    /* Description Section */
+    .book-description-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        flex-grow: 1;
+    }
+    
+    .description-item {
+        margin-bottom: 20px;
+    }
+    
+    .description-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .description-item strong {
+        display: block;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+    
+    .description-item span {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.6;
+        display: block;
+    }
+    
+    /* Close Button */
+    .close-zoom {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s;
+        z-index: 1001;
+    }
+    
+    .close-zoom:hover {
+        color: #007bff;
+    }
+    
+    /* Login Button */
+    .login-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.3s;
+        margin-top: 25px;
+        align-self: flex-start;
+    }
+    
+    .login-btn:hover {
+        background: #0056b3;
+    }
+    
+    /* Scrollbar Styling */
+    .zoom-modal-right::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .zoom-modal-right::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .zoom-modal-right::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .zoom-modal-right::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    /* Title Styling */
+    #zoomBookTitle {
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 24px;
+        line-height: 1.3;
+    }
+    
+    #zoomBookSubtitle {
+        color: #666;
+        font-size: 16px;
+        margin-bottom: 20px;
+        font-style: italic;
+    }
+    
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .zoom-modal-content-wrapper {
+            width: 95%;
+            height: 90vh;
+        }
+        
+        .book-info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .zoom-modal-content-wrapper {
+            flex-direction: column;
+            height: 95vh;
+            max-height: none;
+        }
+        
+        .zoom-modal-left,
+        .zoom-modal-right {
+            width: 100%;
+            height: auto;
+        }
+        
+        .zoom-modal-left {
+            padding: 20px;
+            border-right: none;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        #zoomedImage {
+            max-height: 300px;
+        }
+        
+        .thumbnail {
+            width: 70px;
+            height: 90px;
+        }
+        
+        .close-zoom {
+            top: 10px;
+            right: 20px;
+            font-size: 35px;
+        }
     }
 </style>
 
@@ -630,22 +740,22 @@
             </div>
         </div>
 
-    {% if library.books %}
-        <div class="library-books-section">
-            {% comment %} <h4>{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4> {% endcomment %}
-            <h4>{{ library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
+        {% if library.books %}
+            <div class="library-books-section">
+                <h4>{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
                 <div class="book-gallery">
                     {% for book in library.books %}
                         <div class="book-item">
                             <div class="book-flip" id="book-flip-{{ forloop.counter }}">
                                 <div class="book-flip-inner">
-
                                     {% if book.front_page_photo %}
                                         <div class="book-flip-front">
-                                            <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}"
+                                            <img src="{{ MEDIA_URL }}{{ book.front_page_photo|urlencode }}"
                                                 alt="{{ book.title }} Front Cover"
                                                 class="book-image"
                                                 onclick="zoomImage(this)"
+                                                data-front-image="{{ MEDIA_URL }}{{ book.front_page_photo|urlencode }}"
+                                                data-last-image="{% if book.last_page_photo %}{{ MEDIA_URL }}{{ book.last_page_photo|urlencode }}{% endif %}"
                                                 data-author="{{ book.author }}"
                                                 data-title="{{ book.title }}"
                                                 data-subtitle="{{ book.subtitle }}"
@@ -661,13 +771,14 @@
                                                 data-ebook_available="{{ book.ebook_available }}"
                                                 data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
                                         </div>
-
                                     {% elif book.last_page_photo %}
                                         <div class="book-flip-back">
-                                            <img src="{{ MEDIA_URL }}{{ book.last_page_photo }}"
+                                            <img src="{{ MEDIA_URL }}{{ book.last_page_photo|urlencode }}"
                                                 alt="{{ book.title }} Back Cover"
                                                 class="book-image"
                                                 onclick="zoomImage(this)"
+                                                data-front-image="{{ MEDIA_URL }}{{ book.front_page_photo|urlencode }}"
+                                                data-last-image="{% if book.last_page_photo %}{{ MEDIA_URL }}{{ book.last_page_photo|urlencode }}{% endif %}"
                                                 data-author="{{ book.author }}"
                                                 data-title="{{ book.title }}"
                                                 data-subtitle="{{ book.subtitle }}"
@@ -683,40 +794,58 @@
                                                 data-ebook_available="{{ book.ebook_available }}"
                                                 data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
                                         </div>
-
                                     {% else %}
-                                        <!-- ✅ NO IMAGE FALLBACK -->
-                                        <div class="book-flip-front"
+                                        <!-- ✅ BOOK ICON WITH DUMMY COVER -->
+                                        <div class="book-flip-front book-no-image"
                                             style="
                                                 display:flex;
                                                 align-items:center;
                                                 justify-content:center;
-                                                background:#f3f4f6;
-                                                color:#6b7280;
-                                                font-weight:600;
-                                                font-size:14px;
-                                                border-radius:8px;
+                                                background: #f5f5f5;
+                                                border: 1px solid #ddd;
+                                                border-radius: 4px;
                                                 height:220px;
-                                            ">
-                                            No Image Available
+                                                cursor:pointer;
+                                                padding: 15px;
+                                                text-align: center;
+                                                position: relative;
+                                            "
+                                            onclick="zoomFromTitle(this)"
+                                            data-image=""
+                                            data-last-image=""
+                                            data-author="{{ book.author }}"
+                                            data-title="{{ book.title }}"
+                                            data-subtitle="{{ book.subtitle }}"
+                                            data-publisher="{{ book.publisher }}"
+                                            data-isbn_issn="{{ book.isbn_issn }}"
+                                            data-edition="{{ book.edition }}"
+                                            data-publication_place="{{ book.publication_place }}"
+                                            data-year_of_publication="{{ book.year_of_publication }}"
+                                            data-pages="{{ book.pages }}"
+                                            data-remarks="{{ book.remarks }}"
+                                            data-language="{{ book.language }}"
+                                            data-description="{{ book.description }}"
+                                            data-ebook_available="{{ book.ebook_available }}"
+                                            data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
+                                            <div style="font-size: 48px; margin-bottom: 10px;">
+                                                📚
+                                            </div>
+                                            <div style="font-size: 12px; margin-bottom: 5px; opacity: 0.9;">
+                                                {{ book.title|truncatechars:40 }}
+                                            </div>
+                                            <div style="font-size: 11px; opacity: 0.8;">
+                                                {% if book.author %}{{ book.author|truncatechars:30 }}{% endif %}
+                                            </div>
                                         </div>
                                     {% endif %}
-
                                 </div>
                             </div>
                             <br>
-                            <button class="flip-btn" onclick="flipBook('book-flip-{{ forloop.counter }}')">
-                                <i class="fas fa-sync-alt"></i> Flip
-                            </button>
-  
-
-
-                            <!-- ⭐ Title -->
-                            <!-- ⭐ Title (click opens modal) -->
                             <p class="book-title"
                                 style="margin-bottom: 4px; cursor:pointer;"
                                 onclick="zoomFromTitle(this)"
-                                data-image="{% if book.front_page_photo %}{{ MEDIA_URL }}{{ book.front_page_photo }}{% endif %}"
+                                data-image="{% if book.front_page_photo %}{{ MEDIA_URL }}{{ book.front_page_photo|urlencode }}{% endif %}"
+                                data-last-image="{% if book.last_page_photo %}{{ MEDIA_URL }}{{ book.last_page_photo|urlencode }}{% endif %}"
                                 data-author="{{ book.author }}"
                                 data-title="{{ book.title }}"
                                 data-subtitle="{{ book.subtitle }}"
@@ -758,227 +887,290 @@
                                     </span>
                                 {% endif %}
                             </p>
-
                         </div>
                     {% endfor %}
                 </div>
 
-                <!-- View More Button -->
-            <div class="view-more-btn-container" style="display:flex; justify-content:center; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+                {% comment %} <!-- View More Button -->
+                <div class="view-more-btn-container" style="display:flex; justify-content:center; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+                    <!-- View More Button -->
+                    <a href="{% url 'L01:view_catalogue' %}"
+                        style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
+                        onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.transform='translateY(-2px) scale(1.05)';"
+                        onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)'; this.style.transform='translateY(0) scale(1)';">
+                        <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
+                    </a>
 
-            <!-- View More Button -->
-            <a href="{% url 'L01:view_catalogue' %}"
-                style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
-                onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.transform='translateY(-2px) scale(1.05)';"
-                onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)'; this.style.transform='translateY(0) scale(1)';">
-                <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
-            </a>
+                    <!-- Login Button -->
+                    <a href="{% url 'Login' %}"
+                        style="background:linear-gradient(135deg, #10b981, #047857); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
+                        onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)'; this.style.transform='translateY(-2px) scale(1.05)';"
+                        onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)'; this.style.transform='translateY(0) scale(1)';">
+                        <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
+                    </a>
+                </div> {% endcomment %}
+                <br>
+            </div>
+        {% endif %}
 
-            <!-- Login Button -->
-            <a href="{% url 'Login' %}"
-                style="background:linear-gradient(135deg, #10b981, #047857); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
-                onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)'; this.style.transform='translateY(-2px) scale(1.05)';"
-                onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)'; this.style.transform='translateY(0) scale(1)';">
-                <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
-            </a>
+        {% if library.ebooks %}
+            <div class="library-books-section">
+                <h4>{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
 
-        </div>
-        <br>
-        </div>
-    {% endif %}
+                <div class="book-gallery">
+                    {% for ebook in library.ebooks %}
+                    <div class="book-item">
+                        <div class="book-flip" id="ebook-flip-{{ forloop.counter }}">
+                            <div class="book-flip-inner">
+                                {% if ebook.eb_front_page_photo %}
+                                    <div class="book-flip-front">
+                                        <img src="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo|urlencode }}"
+                                            alt="{{ ebook.eb_title }} Front Cover"
+                                            class="book-image"
+                                            onclick="zoomImage(this)"
+                                            data-front-image="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo|urlencode }}"
+                                            data-last-image="{% if ebook.eb_last_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                                            data-title="{{ ebook.eb_title }}"
+                                            data-subtitle="{{ ebook.eb_subtitle }}"
+                                            data-author="{{ ebook.eb_author }}"
+                                            data-publisher="{{ ebook.eb_publisher }}"
+                                            data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                            data-edition="{{ ebook.eb_edition }}"
+                                            data-subject="{{ ebook.eb_subject }}"
+                                            data-publication_place="{{ ebook.eb_publication_place }}"
+                                            data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                            data-pages="{{ ebook.eb_pages }}"
+                                            data-remarks="{{ ebook.remarks }}"
+                                            data-language="{{ ebook.eb_language }}"
+                                            data-description="{{ ebook.eb_keywords }}"
+                                            data-pdf_file="{{ ebook.eb_pdf_url }}"
+                                            data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                            data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                    </div>
+                                {% elif ebook.eb_last_page_photo %}
+                                    <div class="book-flip-back">
+                                        <img src="{{ MEDIA_URL }}{{ ebook.eb_last_page_photo|urlencode }}"
+                                            alt="{{ ebook.eb_title }} Back Cover"
+                                            class="book-image"
+                                            onclick="zoomImage(this)"
+                                            data-front-image="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo|urlencode }}"
+                                            data-last-image="{% if ebook.eb_last_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                                            data-title="{{ ebook.eb_title }}"
+                                            data-subtitle="{{ ebook.eb_subtitle }}"
+                                            data-author="{{ ebook.eb_author }}"
+                                            data-publisher="{{ ebook.eb_publisher }}"
+                                            data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                            data-edition="{{ ebook.eb_edition }}"
+                                            data-subject="{{ ebook.eb_subject }}"
+                                            data-publication_place="{{ ebook.eb_publication_place }}"
+                                            data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                            data-pages="{{ ebook.eb_pages }}"
+                                            data-remarks="{{ ebook.remarks }}"
+                                            data-language="{{ ebook.eb_language }}"
+                                            data-description="{{ ebook.eb_keywords }}"
+                                            data-pdf_file="{{ ebook.eb_pdf_url }}"
+                                            data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                            data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                    </div>
+                                {% else %}
+                            <!-- ✅ STANDARD EBOOK COVER FOR NO IMAGE -->
+                                <div class="book-flip-front"
+                                    style="
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        background: #e8f0fe;
+                                        border: 1px solid #c6dafc;
+                                        border-radius: 4px;
+                                        height:220px;
+                                        cursor:pointer;
+                                        padding: 15px;
+                                        text-align: center;
+                                        position: relative;
+                                    "
+                                    onclick="zoomFromTitle(this)"
+                                    data-image=""
+                                    data-last-image=""
+                                    data-author="{{ ebook.eb_author }}"
+                                    data-title="{{ ebook.eb_title }}"
+                                    data-subtitle="{{ ebook.eb_subtitle }}"
+                                    data-publisher="{{ ebook.eb_publisher }}"
+                                    data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                    data-edition="{{ ebook.eb_edition }}"
+                                    data-publication_place="{{ ebook.eb_publication_place }}"
+                                    data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                    data-pages="{{ ebook.eb_pages }}"
+                                    data-remarks="{{ ebook.eb_remarks }}"
+                                    data-language="{{ ebook.eb_language }}"
+                                    data-description="{{ ebook.eb_description }}"
+                                    data-ebook_available="{{ ebook.eb_ebook_available }}"
+                                    data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                    data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                        <!-- Tablet/Device Outline -->
+                                        <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
+                                            <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
+                                            <div style="font-size: 30px; color: #4a90e2;">
+                                                📱
+                                            </div>
+                                            <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
+                                                E-BOOK
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="margin-top: 10px;">
+                                            <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
+                                                {{ ebook.eb_title|truncatechars:25 }}
+                                            </div>
+                                            {% if ebook.eb_author %}
+                                            <div style="font-size: 11px; color: #666;">
+                                                {{ ebook.eb_author|truncatechars:20 }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <br>
 
-{% if library.ebooks %}
-    <div class="library-books-section">
-        <h4>{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
+                    <p class="book-title"
+                        style="margin-bottom: 4px; cursor:pointer;"
+                        onclick="zoomFromTitle(this)"
+                        data-image="{% if ebook.eb_front_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_front_page_photo|urlencode }}{% endif %}"
+                        data-last-image="{% if ebook.eb_last_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                        data-author="{{ ebook.eb_author }}"
+                        data-title="{{ ebook.eb_title }}"
+                        data-subtitle="{{ ebook.eb_subtitle }}"
+                        data-publisher="{{ ebook.eb_publisher }}"
+                        data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                        data-edition="{{ ebook.eb_edition }}"
+                        data-publication_place="{{ ebook.eb_publication_place }}"
+                        data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                        data-pages="{{ ebook.eb_pages }}"
+                        data-remarks="{{ ebook.eb_remarks }}"
+                        data-language="{{ ebook.eb_language }}"
+                        data-description="{{ ebook.eb_description }}"
+                        data-ebook_available="{{ ebook.eb_ebook_available }}"
+                        data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                        data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                            {{ ebook.eb_title }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
 
-        <div class="book-gallery">
-            {% for ebook in library.ebooks %}
-            <div class="book-item">
+                <!-- Buttons -->
+                <div class="view-more-btn-container"
+                    style="display:flex; justify-content:center; gap:12px; align-items:center;
+                            margin-top:10px; flex-wrap:wrap;">
+                    <a href="{% url 'L01:view_ebook_catalogue' %}"
+                    style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff;
+                            text-decoration:none; padding:8px 18px; border-radius:30px;
+                            font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                            transition:all 0.3s ease;"
+                    onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)';this.style.transform='translateY(-2px) scale(1.05)';"
+                    onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)';this.style.transform='translateY(0) scale(1)';">
+                        <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
+                    </a>
 
-                <div class="book-flip" id="ebook-flip-{{ forloop.counter }}">
-                    <div class="book-flip-inner">
-
-                     {% if ebook.eb_front_page_photo %}
-    <div class="book-flip-front">
-        <img src="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo }}"
-             alt="{{ ebook.eb_title }} Front Cover"
-             class="book-image"
-             onclick="zoomImage(this)"
-
-             data-title="{{ ebook.eb_title }}"
-             data-subtitle="{{ ebook.eb_subtitle }}"
-             data-author="{{ ebook.eb_author }}"
-             data-publisher="{{ ebook.eb_publisher }}"
-             data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-             data-edition="{{ ebook.eb_edition }}"
-             data-subject="{{ ebook.eb_subject }}"
-             data-publication_place="{{ ebook.eb_publication_place }}"
-             data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-             data-pages="{{ ebook.eb_pages }}"
-             data-remarks="{{ ebook.remarks }}"
-             data-language="{{ ebook.eb_language }}"
-             data-description="{{ ebook.eb_keywords }}"
-             data-pdf_file="{{ ebook.eb_pdf_url }}"
-             data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-             data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-    </div>
-
-{% elif ebook.eb_last_page_photo %}
-    <div class="book-flip-back">
-        <img src="{{ MEDIA_URL }}{{ ebook.eb_last_page_photo }}"
-             alt="{{ ebook.eb_title }} Back Cover"
-             class="book-image"
-             onclick="zoomImage(this)"
-
-             data-title="{{ ebook.eb_title }}"
-             data-subtitle="{{ ebook.eb_subtitle }}"
-             data-author="{{ ebook.eb_author }}"
-             data-publisher="{{ ebook.eb_publisher }}"
-             data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-             data-edition="{{ ebook.eb_edition }}"
-             data-subject="{{ ebook.eb_subject }}"
-             data-publication_place="{{ ebook.eb_publication_place }}"
-             data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-             data-pages="{{ ebook.eb_pages }}"
-             data-remarks="{{ ebook.remarks }}"
-             data-language="{{ ebook.eb_language }}"
-             data-description="{{ ebook.eb_keywords }}"
-             data-pdf_file="{{ ebook.eb_pdf_url }}"
-             data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-             data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-    </div>
-
-{% else %}
-    <!-- ✅ NO IMAGE FALLBACK -->
-    <div class="book-flip-front"
-         style="
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            height:220px;
-            background:#f3f4f6;
-            color:#6b7280;
-            font-size:14px;
-            font-weight:600;
-            border-radius:8px;
-         ">
-        No Image Available
-    </div>
-{% endif %}
-
+                    <a href="{% url 'Login' %}"
+                    style="background:linear-gradient(135deg, #10b981, #047857); color:#fff;
+                            text-decoration:none; padding:8px 18px; border-radius:30px;
+                            font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                            transition:all 0.3s ease;"
+                    onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)';this.style.transform='translateY(-2px) scale(1.05)';"
+                    onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)';this.style.transform='translateY(0) scale(1)';">
+                        <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        <div id="zoomModal" class="zoom-modal">
+            <span class="close-zoom" onclick="closeZoom()">&times;</span>
+            <div class="zoom-modal-content-wrapper">
+                <!-- Left: Book Image -->
+                <div class="zoom-modal-left">
+                    <img id="zoomedImage" src="" alt="Book Image">
+                    
+                    <!-- Image Preview Thumbnails -->
+                    <div class="image-preview-container">
+                        <div class="thumbnail-wrapper">
+                            <img class="thumbnail active" 
+                                id="frontPageThumb" 
+                                src="" 
+                                alt="Front Page" 
+                                onclick="switchImage(this, 'front')">
+                            <span>Front Cover</span>
+                        </div>
+                        <div class="thumbnail-wrapper">
+                            <img class="thumbnail" 
+                                id="lastPageThumb" 
+                                src="" 
+                                alt="Last Page" 
+                                onclick="switchImage(this, 'last')">
+                            <span>Back Cover</span>
+                        </div>
                     </div>
                 </div>
-<br>
-                <!-- Flip Button -->
-                <button class="flip-btn"
-                        onclick="flipBook('ebook-flip-{{ forloop.counter }}')">
-                    <i class="fas fa-sync-alt"></i> Flip
-                </button>
 
-                <p class="book-title"
-                    style="margin-bottom: 4px; cursor:pointer;"
-                    onclick="zoomFromTitle(this)"
-                    data-image="{% if ebook.eb_front_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_front_page_photo }}{% endif %}"
-                    data-author="{{ ebook.eb_author }}"
-                    data-title="{{ ebook.eb_title }}"
-                    data-subtitle="{{ ebook.eb_subtitle }}"
-                    data-publisher="{{ ebook.eb_publisher }}"
-                    data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-                    data-edition="{{ ebook.eb_edition }}"
-                    data-publication_place="{{ ebook.eb_publication_place }}"
-                    data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-                    data-pages="{{ ebook.eb_pages }}"
-                    data-remarks="{{ ebook.eb_remarks }}"
-                    data-language="{{ ebook.eb_language }}"
-                    data-description="{{ ebook.eb_description }}"
-                    data-ebook_available="{{ ebook.eb_ebook_available }}"
-                    data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-                    data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-                        {{ ebook.eb_title }}
-                    </p>
-
-
-
+                <!-- Right: Book Info -->
+                <div class="zoom-modal-right">
+                    <div class="book-info-content">
+                        <h1 id="zoomBookTitle">Book Title</h1>
+                        <p id="zoomBookSubtitle"></p>
+                        
+                        <div class="book-info-grid">
+                            <div class="info-item">
+                                <strong>Author:</strong> <span id="zoomBookAuthor"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Publisher:</strong> <span id="zoomBookPublisher"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>ISBN/ISSN:</strong> <span id="zoomBookISBN"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Edition:</strong> <span id="zoomBookEdition"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Language:</strong> <span id="zoomBookLanguage"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Publication Place:</strong> <span id="zoomBookPlace"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Year of Publication:</strong> <span id="zoomBookYear"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Pages:</strong> <span id="zoomBookPages"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="book-description-section">
+                            <div class="description-item">
+                                <strong>Remarks:</strong> <span id="zoomBookRemarks"></span>
+                            </div>
+                            <div class="description-item">
+                                <strong>Description:</strong> <span id="zoomBookDescription"></span>
+                            </div>
+                        </div>
+                        
+                        <span id="zoomEncryptedEbookId" style="display:none;"></span>
+                        <span id="zoomEncryptedPdfUrl" style="display:none;"></span>
+                        <span id="zoomEncryptedCatRefNum" style="display:none;"></span>
+                        
+                        <button class="login-btn" onclick="zoomRedirectLogin()">Login to Access</button>
+                    </div>
+                </div>
             </div>
-            {% endfor %}
         </div>
-
-        <!-- Buttons -->
-        <div class="view-more-btn-container"
-            style="display:flex; justify-content:center; gap:12px; align-items:center;
-                    margin-top:10px; flex-wrap:wrap;">
-
-             <a href="{% url 'L01:view_ebook_catalogue' %}"
-            style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff;
-                    text-decoration:none; padding:8px 18px; border-radius:30px;
-                    font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                    transition:all 0.3s ease;"
-            onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)';this.style.transform='translateY(-2px) scale(1.05)';"
-            onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)';this.style.transform='translateY(0) scale(1)';">
-
-                <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
-            </a>
-
-            <a href="{% url 'Login' %}"
-            style="background:linear-gradient(135deg, #10b981, #047857); color:#fff;
-                    text-decoration:none; padding:8px 18px; border-radius:30px;
-                    font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                    transition:all 0.3s ease;"
-            onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)';this.style.transform='translateY(-2px) scale(1.05)';"
-            onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)';this.style.transform='translateY(0) scale(1)';">
-
-                <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
-            </a>
-
-        </div>
-
-    </div>
-    {% endif %}
-
-</div>
-<br>
-    </div>
-
-
-<!-- ================= Zoom Modal ================= -->
-<div id="zoomModal" class="zoom-modal">
-    <span class="close-zoom" onclick="closeZoom()">&times;</span>
-    <div class="zoom-modal-content-wrapper">
-        <!-- Left: Book Image -->
-        <div class="zoom-modal-left">
-            <img id="zoomedImage" src="" alt="Book Image">
-        </div>
-
-        <!-- Right: Book Info -->
-        <div class="zoom-modal-right">
-            <h2 id="zoomBookTitle">Book Title</h2>
-            <p id="zoomBookSubtitle"></p>
-            <p><strong>Author:</strong> <span id="zoomBookAuthor"></span></p>
-            <p><strong>Publisher:</strong> <span id="zoomBookPublisher"></span></p>
-            <p><strong>ISBN/ISSN:</strong> <span id="zoomBookISBN"></span></p>
-            <p><strong>Edition:</strong> <span id="zoomBookEdition"></span></p>
-            {% comment %} <p><strong>Subject:</strong> <span id="zoomBookSubject"></span></p> {% endcomment %}
-            <p><strong>Language:</strong> <span id="zoomBookLanguage"></span></p>
-            <p><strong>Publication Place:</strong> <span id="zoomBookPlace"></span></p>
-            <p><strong>Year of Publication:</strong> <span id="zoomBookYear"></span></p>
-            <p><strong>Pages:</strong> <span id="zoomBookPages"></span></p>
-            <p><strong>Remarks:</strong> <span id="zoomBookRemarks"></span></p>
-            <p><strong>Description:</strong> <span id="zoomBookDescription"></span></p>
-            <span id="zoomEncryptedEbookId" style="display:none;"></span>
-            <span id="zoomEncryptedPdfUrl" style="display:none;"></span>
-            <span id="zoomEncryptedCatRefNum" style="display:none;"></span>
-            <button class="login-btn" onclick="zoomRedirectLogin()">Login to Access</button>
-
-
-
-            {% comment %} <button class="login-btn" onclick="window.location.href='{% url 'Login' %}'">Login to Access</button> {% endcomment %}
-        </div>
-    </div>
+    {% endfor %}
+                
 </div>
 
-
-
-{% endfor %}
+    
 
 
     <script>
@@ -1013,11 +1205,18 @@
         }
     </script>
 
-    <script>
+   <script>
+        // Function to open modal when clicking on book image
         function zoomImage(img) {
             const modal = document.getElementById("zoomModal");
             const modalImg = document.getElementById("zoomedImage");
+            const frontPageThumb = document.getElementById("frontPageThumb");
+            const lastPageThumb = document.getElementById("lastPageThumb");
 
+            // Get image URLs from data attributes
+            const frontImageUrl = img.getAttribute('data-front-image') || img.src;
+            const lastImageUrl = img.getAttribute('data-last-image') || '';
+            
             // Core fields
             const modalAuthor = document.getElementById("zoomBookAuthor");
             const modalTitle = document.getElementById("zoomBookTitle");
@@ -1025,102 +1224,197 @@
             const modalPublisher = document.getElementById("zoomBookPublisher");
             const modalISBN = document.getElementById("zoomBookISBN");
             const modalEdition = document.getElementById("zoomBookEdition");
-            
             const modalLanguage = document.getElementById("zoomBookLanguage");
             const modalPlace = document.getElementById("zoomBookPlace");
             const modalYear = document.getElementById("zoomBookYear");
             const modalPages = document.getElementById("zoomBookPages");
             const modalRemarks = document.getElementById("zoomBookRemarks");
             const modalDescription = document.getElementById("zoomBookDescription");
-            
 
             // Show modal
             modal.style.display = "flex";
-            modal.classList.add("show");
+            document.body.style.overflow = "hidden"; // Prevent scrolling
+
+            // Set main image and thumbnails
+            modalImg.src = frontImageUrl;
+            frontPageThumb.src = frontImageUrl;
+            
+            if (lastImageUrl) {
+                lastPageThumb.src = lastImageUrl;
+                lastPageThumb.style.display = 'block';
+                document.querySelectorAll('.thumbnail-wrapper')[1].style.display = 'flex';
+            } else {
+                lastPageThumb.style.display = 'none';
+                document.querySelectorAll('.thumbnail-wrapper')[1].style.display = 'none';
+            }
+
+            // Set active thumbnail
+            frontPageThumb.classList.add('active');
+            lastPageThumb.classList.remove('active');
 
             // Assign values safely
-            modalImg.src = img.src;
-            modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
-            modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
-            modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
-            modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
-            modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
-            modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
-            modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
-            modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
-            modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
-            modalPages.textContent = img.getAttribute('data-pages') || "N/A";
-            modalRemarks.textContent = img.getAttribute('data-remarks') || "";
-            modalDescription.textContent = img.getAttribute('data-description') || "";
+            if (modalAuthor) modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
+            if (modalTitle) modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
+            if (modalSubtitle) modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
+            if (modalPublisher) modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
+            if (modalISBN) modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
+            if (modalEdition) modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
+            if (modalLanguage) modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
+            if (modalPlace) modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
+            if (modalYear) modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
+            if (modalPages) modalPages.textContent = img.getAttribute('data-pages') || "N/A";
+            if (modalRemarks) modalRemarks.textContent = img.getAttribute('data-remarks') || "";
+            if (modalDescription) modalDescription.textContent = img.getAttribute('data-description') || "";
 
             // Set encrypted ebook_id + pdf_url
-            document.getElementById("zoomEncryptedEbookId").textContent =
-                img.getAttribute("data-encrypted-ebook-id") || "";
-
-            document.getElementById("zoomEncryptedPdfUrl").textContent =
-                img.getAttribute("data-encrypted-pdf-url") || "";
-
-            document.getElementById("zoomEncryptedCatRefNum").textContent =
-                img.getAttribute("data-encrypted-cat-ref-num") || "";
-
+            const encryptedEbookId = document.getElementById("zoomEncryptedEbookId");
+            const encryptedPdfUrl = document.getElementById("zoomEncryptedPdfUrl");
+            const encryptedCatRefNum = document.getElementById("zoomEncryptedCatRefNum");
+            
+            if (encryptedEbookId) encryptedEbookId.textContent = img.getAttribute("data-encrypted-ebook-id") || "";
+            if (encryptedPdfUrl) encryptedPdfUrl.textContent = img.getAttribute("data-encrypted-pdf-url") || "";
+            if (encryptedCatRefNum) encryptedCatRefNum.textContent = img.getAttribute("data-encrypted-cat-ref-num") || "";
         }
 
-        function closeZoom() {
-            const modal = document.getElementById("zoomModal");
-            modal.style.display = "none";
-            modal.classList.remove("show");
-        }
-
-        // Close modal on click outside image
-        document.getElementById("zoomModal").addEventListener("click", function (e) {
-            if (e.target.id === "zoomModal") {
-                closeZoom();
-            }
-        });
-    </script>
-
-    <script>
+        // Function to open modal when clicking on book title
         function zoomFromTitle(el) {
-            debugger;
-            // Set image
-            const imageSrc = el.dataset.image || '';
-            document.getElementById("zoomedImage").src = imageSrc;
-
+            {% comment %} console.log("zoomFromTitle called", el); {% endcomment %}
+            
+            const modal = document.getElementById("zoomModal");
+            if (!modal) {
+                console.error("zoomModal not found!");
+                return;
+            }
+            
+            const modalImg = document.getElementById("zoomedImage");
+            const frontPageThumb = document.getElementById("frontPageThumb");
+            const lastPageThumb = document.getElementById("lastPageThumb");
+            
+            // Get image URLs from data attributes
+            const frontImageUrl = el.getAttribute('data-image') || '';
+            const lastImageUrl = el.getAttribute('data-last-image') || '';
+            
+            
             // Fill modal data
-            document.getElementById("zoomBookTitle").innerText = el.dataset.title || '';
-            document.getElementById("zoomBookSubtitle").innerText = el.dataset.subtitle || '';
-            document.getElementById("zoomBookAuthor").innerText = el.dataset.author || '';
-            document.getElementById("zoomBookPublisher").innerText = el.dataset.publisher || '';
-            document.getElementById("zoomBookISBN").innerText = el.dataset.isbn_issn || '';
-            document.getElementById("zoomBookEdition").innerText = el.dataset.edition || '';
-            document.getElementById("zoomBookLanguage").innerText = el.dataset.language || '';
-            document.getElementById("zoomBookPlace").innerText = el.dataset.publication_place || '';
-            document.getElementById("zoomBookYear").innerText = el.dataset.year_of_publication || '';
-            document.getElementById("zoomBookPages").innerText = el.dataset.pages || '';
-            document.getElementById("zoomBookRemarks").innerText = el.dataset.remarks || '';
-            document.getElementById("zoomBookDescription").innerText = el.dataset.description || '';
+            const zoomBookTitle = document.getElementById("zoomBookTitle");
+            const zoomBookSubtitle = document.getElementById("zoomBookSubtitle");
+            const zoomBookAuthor = document.getElementById("zoomBookAuthor");
+            const zoomBookPublisher = document.getElementById("zoomBookPublisher");
+            const zoomBookISBN = document.getElementById("zoomBookISBN");
+            const zoomBookEdition = document.getElementById("zoomBookEdition");
+            const zoomBookLanguage = document.getElementById("zoomBookLanguage");
+            const zoomBookPlace = document.getElementById("zoomBookPlace");
+            const zoomBookYear = document.getElementById("zoomBookYear");
+            const zoomBookPages = document.getElementById("zoomBookPages");
+            const zoomBookRemarks = document.getElementById("zoomBookRemarks");
+            const zoomBookDescription = document.getElementById("zoomBookDescription");
+
+            if (zoomBookTitle) zoomBookTitle.textContent = el.getAttribute('data-title') || '';
+            if (zoomBookSubtitle) zoomBookSubtitle.textContent = el.getAttribute('data-subtitle') || '';
+            if (zoomBookAuthor) zoomBookAuthor.textContent = el.getAttribute('data-author') || '';
+            if (zoomBookPublisher) zoomBookPublisher.textContent = el.getAttribute('data-publisher') || '';
+            if (zoomBookISBN) zoomBookISBN.textContent = el.getAttribute('data-isbn_issn') || '';
+            if (zoomBookEdition) zoomBookEdition.textContent = el.getAttribute('data-edition') || '';
+            if (zoomBookLanguage) zoomBookLanguage.textContent = el.getAttribute('data-language') || '';
+            if (zoomBookPlace) zoomBookPlace.textContent = el.getAttribute('data-publication_place') || '';
+            if (zoomBookYear) zoomBookYear.textContent = el.getAttribute('data-year_of_publication') || '';
+            if (zoomBookPages) zoomBookPages.textContent = el.getAttribute('data-pages') || '';
+            if (zoomBookRemarks) zoomBookRemarks.textContent = el.getAttribute('data-remarks') || '';
+            if (zoomBookDescription) zoomBookDescription.textContent = el.getAttribute('data-description') || '';
 
             // Set encrypted ebook_id + pdf_url
-            document.getElementById("zoomEncryptedEbookId").textContent =
-                    el.getAttribute("data-encrypted-ebook-id") || "";
+            const encryptedEbookId = document.getElementById("zoomEncryptedEbookId");
+            const encryptedPdfUrl = document.getElementById("zoomEncryptedPdfUrl");
+            const encryptedCatRefNum = document.getElementById("zoomEncryptedCatRefNum");
+            
+            if (encryptedEbookId) encryptedEbookId.textContent = el.getAttribute("data-encrypted-ebook-id") || "";
+            if (encryptedPdfUrl) encryptedPdfUrl.textContent = el.getAttribute("data-encrypted-pdf-url") || "";
+            if (encryptedCatRefNum) encryptedCatRefNum.textContent = el.getAttribute("data-encrypted-cat-ref-num") || "";
 
-            document.getElementById("zoomEncryptedPdfUrl").textContent =
-                    el.getAttribute("data-encrypted-pdf-url") || "";
+            // Set main image and thumbnails
+            if (modalImg && frontPageThumb) {
+                modalImg.src = frontImageUrl || '/static/images/no-image.jpg';
+                frontPageThumb.src = frontImageUrl || '/static/images/no-image.jpg';
+            }
+            
+            // Handle last page image
+            if (lastPageThumb) {
+                if (lastImageUrl && lastImageUrl !== '') {
+                    lastPageThumb.src = lastImageUrl;
+                    lastPageThumb.style.display = 'block';
+                    const thumbnailWrappers = document.querySelectorAll('.thumbnail-wrapper');
+                    if (thumbnailWrappers.length > 1) {
+                        thumbnailWrappers[1].style.display = 'flex';
+                    }
+                } else {
+                    lastPageThumb.style.display = 'none';
+                    const thumbnailWrappers = document.querySelectorAll('.thumbnail-wrapper');
+                    if (thumbnailWrappers.length > 1) {
+                        thumbnailWrappers[1].style.display = 'none';
+                    }
+                }
+            }
 
-            document.getElementById("zoomEncryptedCatRefNum").textContent =
-                    el.getAttribute("data-encrypted-cat-ref-num") || "";
+            // Set active thumbnail
+            if (frontPageThumb && lastPageThumb) {
+                frontPageThumb.classList.add('active');
+                lastPageThumb.classList.remove('active');
+            }
 
             // Show modal
-            document.getElementById("zoomModal").style.display = "flex";
+            modal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+        }
+
+        function switchImage(thumbnailElement, imageType) {
+            const modalImg = document.getElementById("zoomedImage");
+            const frontPageThumb = document.getElementById("frontPageThumb");
+            const lastPageThumb = document.getElementById("lastPageThumb");
             
+            // Update main image
+            if (modalImg) modalImg.src = thumbnailElement.src;
+            
+            // Update active states
+            if (frontPageThumb) frontPageThumb.classList.remove('active');
+            if (lastPageThumb) lastPageThumb.classList.remove('active');
+            thumbnailElement.classList.add('active');
         }
 
         // Close modal
         function closeZoom() {
-            document.getElementById("zoomModal").style.display = "none";
+            const modal = document.getElementById("zoomModal");
+            if (modal) {
+                modal.style.display = "none";
+                document.body.style.overflow = "auto"; // Restore scrolling
+            }
         }
-    </script>
 
+        // Close modal on click outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const zoomModal = document.getElementById("zoomModal");
+            if (zoomModal) {
+                zoomModal.addEventListener("click", function (e) {
+                    if (e.target === zoomModal) {
+                        closeZoom();
+                    }
+                });
+            }
+            
+            // Close with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeZoom();
+                }
+            });
+            
+            // Close modal button
+            const closeZoomBtn = document.querySelector('.close-zoom');
+            if (closeZoomBtn) {
+                closeZoomBtn.addEventListener('click', closeZoom);
+            }
+        });
+
+    </script>
     <script>
         function toggleDescription(btn) {
             const desc = document.getElementById("libraryDescription");

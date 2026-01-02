@@ -250,16 +250,25 @@ def Login(request):
 
                 # Clear any previous pending action
                 request.session.pop("pending_action", None)
+                if next_url:
+                    request.session["sweet_alert"] = {
+                        "title": "Access Restricted",
+                        "text": "तुम्ही अभ्यासिका शाखेचे सदस्य असाल तरच तुम्हाला यात प्रवेश मिळेल.",
+                        "icon": "warning"
+                    }
+
+                    request.session.set_expiry(0)
+                    return redirect("L01:membership_dashboard")
 
                 # Ebook + PDF intent
-                if ebook_id and pdf_url:
+                elif ebook_id and pdf_url:
                     file_url = settings.MEDIA_URL + pdf_url
                     final_pdf_url = request.build_absolute_uri(file_url)
 
                     request.session["pending_action"] = {
                         "type": "pdf",
                         "url": final_pdf_url,
-                        "message": "You tried to open an eBook."
+                        "message": "कृपया आपले ई-बुक उघडण्यासाठी पुढे जा."
                     }
 
                 # Catalog detail intent
