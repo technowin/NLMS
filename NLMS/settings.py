@@ -23,15 +23,15 @@ from cryptography.fernet import Fernet
 # fernet = Fernet(SECRET_KEY)
 # DECRYPTED_PASSWORD = fernet.decrypt(ENCRYPTED_PASSWORD.encode()).decode()
 
-ALLOWED_HOSTS = ['3.111.76.175']
-# ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 # DEBUG = True   
 
 # SITE_URL = "http://localhost:8000"  # for local development
-SITE_URL = "http://3.111.76.175"  # for production development
+# SITE_URL = "http://3.111.76.175"  # for production development
+# SITE_URL = "http://43.205.183.251"  # for production development
 
 import mimetypes
 mimetypes.add_type("application/javascript", ".mjs")
@@ -199,12 +199,10 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-    'http://15.207.169.98',
     'https://push3.aclgateway.com'
 ]
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
-    'http://15.207.169.98',
     'https://push3.aclgateway.com'
 ]
 AUTO_LOGOUT = {
