@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.contrib.sessions.models import Session
 from .thread_local import set_current_service
 from django.conf import settings
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def library_list(request):
     Db.closeConnection()
@@ -16,45 +17,113 @@ def library_list(request):
     cursor = m.cursor()
     
     try:
-        # ✅ bring location in same query
-        library_details = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
-
-        for lilo in library_details:
+        # Check if it's an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Get page from POST data
+            page = request.POST.get('page', 1)
+            
+            # Get all active libraries
+            library_list = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+            
+            # Add encrypted library code
+            for lilo in library_list:
+                encrypted_library_code = enc(lilo.library_code)
+                lilo.libraries = encrypted_library_code
+            
+            # Paginate
+            paginator = Paginator(library_list, 4)
+            
+            try:
+                libraries_page = paginator.page(page)
+            except (PageNotAnInteger, EmptyPage):
+                libraries_page = paginator.page(1)
+            
+            # Convert to serializable data
+            libraries_data = []
+            for library in libraries_page:
+                libraries_data.append({
+                    'id': library.id,
+                    'library_name': library.library_name,
+                    'library_name_mar': library.library_name_mar,
+                    'location_name': library.location.location_name if library.location else '',
+                    'est_year': library.est_year,
+                    'about_library': library.about_library,
+                    'image_url': library.image_url,
+                    'libraries': library.libraries  # encrypted code
+                })
+            
+            return JsonResponse({
+                'libraries': libraries_data,
+                'has_next': libraries_page.has_next(),
+                'has_previous': libraries_page.has_previous(),
+                'current_page': int(page),
+                'total_pages': paginator.num_pages,
+                'total_count': paginator.count
+            })
+        
+        # Regular request (first page)
+        library_list = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+        
+        # Add encrypted library code
+        for lilo in library_list:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
         
+        # Only get first page for initial load
+        paginator = Paginator(library_list, 4)
+        library_details = paginator.page(1)
+        
         return render(request, 'administration/library_list.html', {
             'library_details': library_details,
-            'MEDIA_URL': settings.MEDIA_URL
+            'MEDIA_URL': settings.MEDIA_URL,
+            'total_pages': paginator.num_pages,
+            'total_count': paginator.count
         })
     
     except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else 'library_list'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
-    
+
 def service_redirect(request):
-    # Get the library code from POST
-    service_code_decrypted = request.POST.get('library_code')
-    service_code = dec(service_code_decrypted)
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        # Get the library code from POST
+        service_code_decrypted = request.POST.get('library_code')
+        service_code = dec(service_code_decrypted)
 
-    # Save to session
-    request.session['library_db'] = service_code
-    request.session.modified = True  # mark session as changed
+        # Save to session
+        request.session['library_db'] = service_code
+        request.session.modified = True  # mark session as changed
 
-    # Update thread-local storage for database routing
-    set_current_service(service_code)
+        # Update thread-local storage for database routing
+        set_current_service(service_code)
 
-    # Redirect based on service code
-    if service_code == "L01":
-        return redirect("L01:index")
-    elif service_code == "L02":
-        return redirect("L02:index")
-    else:
-        return redirect("default:library_list")
+        # Redirect based on service code
+        if service_code == "L01":
+            return redirect("L01:index")
+        elif service_code == "L02":
+            return redirect("L02:index")
+        else:
+            return redirect("library_list_index")
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("Meta_Index")
 
 def set_library_session_and_login(request):
     Db.closeConnection()
@@ -68,6 +137,41 @@ def set_library_session_and_login(request):
                 request.session['library_db'] = library_code_decrypted
         return redirect('Login')  # actual login page
     except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("Meta_Index")
+    
+def library_list_index(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        library_code = request.session.get('library_db', None)
+
+        if library_code:
+            library_details = LibraryMaster.objects.using('default').filter(
+                is_active=1, 
+                library_code=library_code
+            )
+
+            library = library_details.first()
+            library_name = library_details.first().library_name if library_details.exists() else ""
+            # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
+            library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
+
+        return render(request, "administration/library_list_index.html", {
+            'libraries': library_details,
+            'library_name': library_name,
+            'library_name_mar':library_name_mar,
+            'MEDIA_URL': settings.MEDIA_URL
+        })
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else 'library_list'
         cursor.callproc("stp_error_log", [fun, str(e), ''])

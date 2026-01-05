@@ -2,6 +2,203 @@
 {% load static %}
 {% block content %}
 
+    <style>
+
+        /* Loading spinner */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.25em;
+        }
+
+        /* No libraries message */
+        .no-libraries {
+            grid-column: 1 / -1;
+            padding: 3rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .no-libraries i {
+            color: #dee2e6;
+        }
+
+        /* Smooth transitions */
+        .library-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .library-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Alert styling */
+        .alert {
+            grid-column: 1 / -1;
+            margin: 1rem 0;
+        }
+
+        /* Optional: Update card button to match primary color */
+        .card-btn {
+            background-color: #015296;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .card-btn:hover {
+            background-color: #013a6b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(1, 82, 150, 0.2);
+        }
+
+        .card-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Ensure 2 columns in grid view on desktop */
+        @media (min-width: 768px) {
+            .card-grid.grid-view {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+            
+            .card-grid.list-view {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 767px) {
+            .card-grid.grid-view {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Pagination Styles with Primary Color #015296 */
+        .pagination-container {
+            margin-top: 3rem;
+            padding: 1.5rem 0;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .pagination {
+            margin-bottom: 0.5rem;
+            --primary-color: #015296;
+            --primary-hover: #013a6b;
+            --primary-light: #e6f0fa;
+        }
+
+        .page-item .page-link {
+            color: #015296; /* Primary color */
+            background-color: white;
+            border: 1px solid #dee2e6;
+            padding: 0.6rem 1.2rem;
+            margin: 0 0.25rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-item.active .page-link {
+            background-color: #015296; /* Primary color */
+            border-color: #015296;
+            color: white;
+            box-shadow: 0 2px 5px rgba(1, 82, 150, 0.3);
+        }
+
+        .page-item:not(.disabled):not(.active) .page-link:hover {
+            background-color: #e6f0fa; /* Light blue tint */
+            border-color: #015296;
+            color: #015296;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .page-item:not(.disabled):not(.active) .page-link:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-item.disabled .page-link {
+            color: #adb5bd;
+            pointer-events: none;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        /* Active page number styling */
+        .page-item.active .page-link {
+            position: relative;
+            font-weight: 600;
+        }
+
+        .page-item.active .page-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+        }
+
+        /* Dark mode support */
+        [data-bs-theme="dark"] .pagination-container {
+            border-top-color: #444;
+        }
+
+        [data-bs-theme="dark"] .page-link {
+            background-color: #2d3748;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+
+        [data-bs-theme="dark"] .page-link:hover {
+            background-color: #1a202c;
+            border-color: #015296;
+        }
+
+        [data-bs-theme="dark"] .page-item.active .page-link {
+            background-color: #015296;
+            border-color: #015296;
+            color: white;
+        }
+
+        [data-bs-theme="dark"] .page-item:not(.disabled):not(.active) .page-link:hover {
+            background-color: rgba(1, 82, 150, 0.2);
+            color: #a0d2ff;
+        }
+
+        [data-bs-theme="dark"] .page-item.disabled .page-link {
+            background-color: #1a202c;
+            color: #718096;
+        }
+
+        [data-bs-theme="dark"] .pagination-info {
+            color: #a0aec0;
+        }
+    </style>
+
     <section class="hero-section" id="hero-english"
         style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
 
@@ -124,11 +321,7 @@
     <section id="libraries-section">
         <div class="container">
             <div class="section-header">
-                {% comment %} <h2 class="section-title" id="section-english" style="display:none">Find Out Libraries in NMMC</h2> {% endcomment %}
-
-                {% comment %} <h2 class="section-title" id="section-marathi">नवी मुंबई महानगरपालिकेतील ग्रंथालय शोधा</h2> {% endcomment %}
-
-                <!-- View Toggle (Desktop Only) -->
+                <!-- View Toggle -->
                 <div class="view-toggle">
                     <button id="grid-view-btn" title="Grid View" class="active">
                         <i class="fas fa-th-large"></i>
@@ -139,26 +332,40 @@
                 </div>
             </div>
 
-            <div class="card-grid">
+            <!-- Libraries Container -->
+            <div id="libraries-container" class="card-grid">
+                <!-- Libraries will be loaded here via JavaScript -->
                 {% for library in library_details %}
                     <div class="library-card">
-                        {% comment %} <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="library-img"> {% endcomment %}
                         <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="library-img">
                         <div class="library-content">
-                            {% comment %} <h3>{{ library.library_name }}{% if library.location %} - {{ library.location.location_name }}{% endif %}</h3> {% endcomment %}
                             <h3>{{ library.library_name_mar }}{% if library.location %} - {{ library.location.location_name }}{% endif %}</h3>
                             <h4>Established: {{ library.est_year }}</h4>
-                            <p>{{ library.about_library }}</p>
+                            <p>{{ library.about_library|truncatechars:200 }}</p>
                             
                             <form method="POST" action="{% url 'service_redirect' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="library_code" value="{{ library.libraries }}">
                                 <button type="submit" class="card-btn">View More</button>
                             </form>
-
                         </div>
                     </div>
                 {% endfor %}
+            </div>
+
+            <!-- JavaScript Pagination Controls (No URL changes) -->
+            <div id="js-pagination-container" class="pagination-container">
+                <nav aria-label="Library pagination">
+                    <ul class="pagination justify-content-center" id="js-pagination">
+                        <!-- Pages will be generated by JavaScript -->
+                    </ul>
+                </nav>
+                
+                <div class="pagination-info text-center mt-2">
+                    <span id="page-info" class="text-muted">
+                        Page 1 of {{ total_pages|default:1 }}
+                    </span>
+                </div>
             </div>
 
             <!-- Hidden form -->
@@ -166,9 +373,11 @@
                 {% csrf_token %}
                 <input type="hidden" name="library_code" id="libraryCodeInput">
             </form>
-           
         </div>
     </section>
+
+    <!-- CSRF Token for AJAX -->
+    {% csrf_token %}
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -360,6 +569,210 @@
                 }
             });
 
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            let currentPage = 1;
+            let totalPages = {{ total_pages|default:1 }};
+            
+            // Initialize pagination
+            initializePagination();
+            
+            function initializePagination() {
+                const paginationContainer = document.getElementById('js-pagination');
+                paginationContainer.innerHTML = '';
+                
+                // Previous button
+                const prevLi = document.createElement('li');
+                prevLi.className = 'page-item';
+                if (currentPage === 1) prevLi.classList.add('disabled');
+                
+                const prevLink = document.createElement('a');
+                prevLink.className = 'page-link';
+                prevLink.href = '#';
+                prevLink.innerHTML = '&laquo;';
+                prevLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (currentPage > 1) {
+                        currentPage--;
+                        loadPage(currentPage);
+                    }
+                });
+                
+                prevLi.appendChild(prevLink);
+                paginationContainer.appendChild(prevLi);
+                
+                // Page numbers (show up to 5 pages)
+                const startPage = Math.max(1, currentPage - 2);
+                const endPage = Math.min(totalPages, startPage + 4);
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageLi = document.createElement('li');
+                    pageLi.className = 'page-item';
+                    if (i === currentPage) pageLi.classList.add('active');
+                    
+                    const pageLink = document.createElement('a');
+                    pageLink.className = 'page-link';
+                    pageLink.href = '#';
+                    pageLink.textContent = i;
+                    pageLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        currentPage = i;
+                        loadPage(currentPage);
+                    });
+                    
+                    pageLi.appendChild(pageLink);
+                    paginationContainer.appendChild(pageLi);
+                }
+                
+                // Next button
+                const nextLi = document.createElement('li');
+                nextLi.className = 'page-item';
+                if (currentPage === totalPages) nextLi.classList.add('disabled');
+                
+                const nextLink = document.createElement('a');
+                nextLink.className = 'page-link';
+                nextLink.href = '#';
+                nextLink.innerHTML = '&raquo;';
+                nextLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        loadPage(currentPage);
+                    }
+                });
+                
+                nextLi.appendChild(nextLink);
+                paginationContainer.appendChild(nextLi);
+                
+                // Update page info
+                document.getElementById('page-info').textContent = 
+                    `Page ${currentPage} of ${totalPages}`;
+            }
+            
+            function loadPage(page) {
+                // Show loading indicator
+                const librariesContainer = document.getElementById('libraries-container');
+                librariesContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading libraries...</p>
+                    </div>
+                `;
+                
+                // Send AJAX request
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `page=${page}`
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Update total pages
+                    totalPages = data.total_pages;
+                    currentPage = data.current_page;
+                    
+                    // Render libraries
+                    renderLibraries(data.libraries);
+                    
+                    // Update pagination
+                    initializePagination();
+                    
+                    // Smooth scroll to top of section
+                    document.getElementById('libraries-section').scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    librariesContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> Failed to load libraries. Please try again.
+                        </div>
+                    `;
+                    
+                    // Re-initialize pagination
+                    initializePagination();
+                });
+            }
+            
+            function renderLibraries(libraries) {
+                const librariesContainer = document.getElementById('libraries-container');
+                const mediaUrl = '{{ MEDIA_URL }}';
+                
+                if (libraries.length === 0) {
+                    librariesContainer.innerHTML = `
+                        <div class="no-libraries text-center py-5">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                            <h4>No libraries found</h4>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                libraries.forEach(library => {
+                    html += `
+                        <div class="library-card">
+                            <img src="${mediaUrl}${library.image_url}" alt="${library.library_name}" class="library-img">
+                            <div class="library-content">
+                                <h3>${library.library_name_mar}${library.location_name ? ' - ' + library.location_name : ''}</h3>
+                                <h4>Established: ${library.est_year || 'N/A'}</h4>
+                                <p>${library.about_library ? library.about_library.substring(0, 200) + '...' : ''}</p>
+                                
+                                <form method="POST" action="{% url 'service_redirect' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="library_code" value="${library.libraries}">
+                                    <button type="submit" class="card-btn">View More</button>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                librariesContainer.innerHTML = html;
+                
+                // Re-attach event listeners to new forms if needed
+                attachFormListeners();
+            }
+            
+            function attachFormListeners() {
+                // Any additional form event listeners can go here
+            }
+            
+            // Initialize view toggle
+            document.getElementById("grid-view-btn").addEventListener("click", function () {
+                document.getElementById("libraries-container").classList.add("grid-view");
+                document.getElementById("libraries-container").classList.remove("list-view");
+                this.classList.add("active");
+                document.getElementById("list-view-btn").classList.remove("active");
+            });
+
+            document.getElementById("list-view-btn").addEventListener("click", function () {
+                document.getElementById("libraries-container").classList.add("list-view");
+                document.getElementById("libraries-container").classList.remove("grid-view");
+                this.classList.add("active");
+                document.getElementById("grid-view-btn").classList.remove("active");
+            });
         });
     </script>
 

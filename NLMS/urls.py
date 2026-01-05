@@ -69,6 +69,7 @@ urlpatterns = [
     path("reset_password",reset_password, name="reset_password"),
     path("change_password",change_password, name="change_password"),
     path("forget_password_change",forget_password_change, name="forget_password_change"),
+    path("library_list_index", library_list_index,name='library_list_index'),
 
     # Masters
     path('masters/', masters, name='masters'),
