@@ -3,6 +3,203 @@
 {% block content %}
 
     <style>
+        /* Add to your CSS */
+        .login-badge {
+            margin-left: 8px;
+            font-size: 0.9em;
+            color: #015296;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Style for library items with membership */
+        .dropdown-options li[data-has-membership="1"] {
+            position: relative;
+            font-weight: 600;
+        }
+
+        .dropdown-options li[data-has-membership="1"]:hover::before {
+            content: 'Login available ✓';
+            position: absolute;
+            background: #015296;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        /* Style for library items without membership */
+        .dropdown-options li[data-has-membership="0"] {
+            opacity: 0.8;
+        }
+    </style>
+
+    <style>
+        /* Commissioner Corner Image Styles */
+        .commissioner-corner-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 12px;
+            flex-shrink: 0;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .commissioner-corner-button:hover .commissioner-corner-image {
+            transform: scale(1.1);
+            border-color: #015296;
+        }
+
+        .commissioner-corner-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .commissioner-corner-button:hover .commissioner-corner-thumb {
+            transform: scale(1.1);
+        }
+
+        /* Commissioner Corner Button Styles */
+        .commissioner-corner-container {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 100;
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .commissioner-corner-button {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 12px 18px;
+            text-decoration: none;
+            color: #2c3e50;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            max-width: 280px;
+            backdrop-filter: blur(5px);
+        }
+
+        .commissioner-corner-button:hover {
+            transform: translateY(-3px) translateX(3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            border-color: #015296;
+            background: white;
+            color: #015296;
+        }
+
+        .commissioner-corner-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .commissioner-corner-text span {
+            display: block;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            color: inherit;
+            line-height: 1.2;
+        }
+
+        .commissioner-corner-text small {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 500;
+            opacity: 0.9;
+            line-height: 1.2;
+        }
+
+        .commissioner-corner-button:hover .commissioner-corner-text small {
+            color: #015296;
+        }
+
+        /* Animation */
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive Design for Corner Button */
+        @media (max-width: 992px) {
+            .commissioner-corner-container {
+                top: 20px;
+                left: 20px;
+            }
+            
+            .commissioner-corner-button {
+                max-width: 250px;
+                padding: 10px 15px;
+            }
+            
+            .commissioner-corner-text span {
+                font-size: 0.95rem;
+            }
+            
+            .commissioner-corner-text small {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .commissioner-corner-container {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin: 20px auto 30px;
+                display: flex;
+                justify-content: center;
+            }
+            
+            .commissioner-corner-button {
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .commissioner-corner-container {
+                margin: 15px auto 25px;
+            }
+            
+            .commissioner-corner-button {
+                max-width: 280px;
+                padding: 10px 12px;
+            }
+            
+            .commissioner-corner-text span {
+                font-size: 0.9rem;
+            }
+        }
+
+    </style>    
+
+    <style>
         /* ================= DROPDOWN ALIGNMENT FIXES ================= */
         .dropdown-container {
             text-align: left !important;
@@ -265,6 +462,20 @@
 
     <section class="hero-section" id="hero-english"
         style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
+        <!-- Commissioner Button - TOP LEFT CORNER -->
+        <div class="commissioner-corner-container">
+            <a href="{% url 'commissioner_message' %}" class="commissioner-corner-button">
+                <div class="commissioner-corner-image">
+                    <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
+                        alt="Commissioner" class="commissioner-corner-thumb">
+                </div>
+                <div class="commissioner-corner-text">
+                    <span id="commissioner-button-english-hero">Commissioner's Message</span>
+                    <small id="commissioner-subtitle-english-hero">Read Message</small>
+                </div>
+            </a>
+        </div>
+        
         <div class="hero-overlay">
             <div class="hero-text">
                 <h1>Welcome to NMMC Library</h1>
@@ -288,12 +499,23 @@
 
                             <input type="hidden" name="library_code" class="library-code" 
                                 value="{% if all_libraries %}{{ all_libraries.0.libraries }}{% endif %}">
+                            
+                            <!-- Hidden field to store membership link status -->
+                            <input type="hidden" name="has_membership_link" class="has-membership-link" 
+                                value="{% if initial_has_membership %}1{% else %}0{% endif %}">
 
                             <ul class="dropdown-options">
                                 {% for library in all_libraries %}
-                                    <li data-value="{{ library.libraries }}" data-name="{{ library.library_name }}">
+                                    {% with has_membership=library.membership_page_link|default:""|stringformat:"s"|length %}
+                                    <li data-value="{{ library.libraries }}" 
+                                        data-name="{{ library.library_name }}"
+                                        data-has-membership="{% if library.membership_page_link and library.membership_page_link.strip %}1{% else %}0{% endif %}">
                                         {{ library.library_name }}
+                                        {% if library.membership_page_link and library.membership_page_link.strip %}
+                                            <span class="login-badge">🔐</span>
+                                        {% endif %}
                                     </li>
+                                    {% endwith %}
                                 {% endfor %}
                             </ul>
                         </div>
@@ -305,7 +527,9 @@
                         </button>
                         <button type="submit"
                             formaction="{% url 'set_library_session_and_login' %}"
-                            class="hero-btn secondary-btn">Login
+                            class="hero-btn secondary-btn login-btn" 
+                            style="display: {% if initial_has_membership %}inline-block{% else %}none{% endif %};">
+                            Login
                         </button>
                     </div>
                 </form>
@@ -314,6 +538,20 @@
     </section>
 
     <section class="hero-section" id="hero-marathi" style="background-image: url('{% static "images/administrative/slider.jpg" %}');">
+        <!-- Commissioner Button - TOP LEFT CORNER -->
+        <div class="commissioner-corner-container">
+            <a href="{% url 'commissioner_message' %}" class="commissioner-corner-button">
+                <div class="commissioner-corner-image">
+                    <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
+                        alt="Commissioner" class="commissioner-corner-thumb">
+                </div>
+                <div class="commissioner-corner-text">
+                    <span id="commissioner-button-marathi-hero">आयुक्तांचा संदेश</span>
+                    <small id="commissioner-subtitle-marathi-hero">संदेश वाचा</small>
+                </div>
+            </a>
+        </div>
+        
         <div class="hero-overlay">
             <div class="hero-text">
                 <h1 id="hero-title">नवी मुंबई महानगरपालिका ग्रंथालयात आपले स्वागत आहे</h1>
@@ -337,12 +575,23 @@
 
                             <input type="hidden" name="library_code" class="library-code" 
                                 value="{% if all_libraries %}{{ all_libraries.0.libraries }}{% endif %}">
+                            
+                            <!-- Hidden field to store membership link status -->
+                            <input type="hidden" name="has_membership_link" class="has-membership-link" 
+                                value="{% if initial_has_membership %}1{% else %}0{% endif %}">
 
                             <ul class="dropdown-options">
                                 {% for library in all_libraries %}
-                                    <li data-value="{{ library.libraries }}" data-name="{{ library.library_name }}">
+                                    {% with has_membership=library.membership_page_link|default:""|stringformat:"s"|length %}
+                                    <li data-value="{{ library.libraries }}" 
+                                        data-name="{{ library.library_name }}"
+                                        data-has-membership="{% if library.membership_page_link and library.membership_page_link.strip %}1{% else %}0{% endif %}">
                                         {{ library.library_name }}
+                                        {% if library.membership_page_link and library.membership_page_link.strip %}
+                                            <span class="login-badge">🔐</span>
+                                        {% endif %}
                                     </li>
+                                    {% endwith %}
                                 {% endfor %}
                             </ul>
                         </div>
@@ -354,7 +603,9 @@
                         </button>
                         <button type="submit"
                             formaction="{% url 'set_library_session_and_login' %}"
-                            class="hero-btn secondary-btn">Login
+                            class="hero-btn secondary-btn login-btn" 
+                            style="display: {% if initial_has_membership %}inline-block{% else %}none{% endif %};">
+                            Login
                         </button>
                     </div>
                 </form>
@@ -453,6 +704,7 @@
 
     <!-- DROPDOWN JAVASCRIPT (Works for both English and Marathi) -->
     <script>
+        // Update your DROPDOWN JAVASCRIPT
         document.addEventListener("DOMContentLoaded", function () {
             console.log("=== INITIALIZING DROPDOWNS ===");
             
@@ -463,31 +715,26 @@
                 const searchInput = dropdown.querySelector('.dropdown-search');
                 const dropdownOptions = dropdown.querySelector('.dropdown-options');
                 const hiddenInput = dropdown.querySelector('.library-code');
+                const membershipHiddenInput = dropdown.querySelector('.has-membership-link');
+                const form = dropdown.closest('form');
+                const loginBtn = form ? form.querySelector('.login-btn') : null;
                 const listItems = dropdownOptions.querySelectorAll('li');
                 
                 console.log("Found", listItems.length, "library items");
-                
-                // Store original items for reset
-                const originalHTML = dropdownOptions.innerHTML;
+                console.log("Login button found:", !!loginBtn);
                 
                 // Show dropdown when input is focused
                 searchInput.addEventListener('focus', function() {
-                    console.log("Input focused");
                     dropdownOptions.style.display = 'block';
                 });
                 
                 // Search functionality
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase().trim();
-                    console.log("Searching for:", searchTerm);
-                    
-                    // Reset dropdown to original state
-                    dropdownOptions.innerHTML = originalHTML;
-                    const updatedItems = dropdownOptions.querySelectorAll('li');
                     
                     if (searchTerm === '') {
                         // Show all items if search is empty
-                        updatedItems.forEach(item => {
+                        listItems.forEach(item => {
                             item.style.display = 'flex';
                         });
                         return;
@@ -496,8 +743,8 @@
                     let matchFound = false;
                     
                     // Filter items
-                    updatedItems.forEach(item => {
-                        const itemText = item.textContent.toLowerCase();
+                    listItems.forEach(item => {
+                        const itemText = item.textContent.replace('🔐', '').toLowerCase().trim();
                         if (itemText.includes(searchTerm)) {
                             item.style.display = 'flex';
                             matchFound = true;
@@ -505,43 +752,49 @@
                             item.style.display = 'none';
                         }
                     });
-                    
-                    // Add "No results" message if needed
-                    if (!matchFound) {
-                        console.log("No matches found, showing message");
-                        const noResults = document.createElement('li');
-                        noResults.textContent = '❌ No results found';
-                        noResults.style.cssText = 'color: #888; padding: 10px 15px; text-align: left; cursor: default;';
-                        dropdownOptions.appendChild(noResults);
-                    }
                 });
                 
                 // Handle item selection
                 dropdownOptions.addEventListener('click', function(e) {
-                    if (e.target.tagName === 'LI') {
-                        const li = e.target;
-                        
-                        // Don't process "No results" item
-                        if (li.textContent.includes('❌')) return;
-                        
-                        const libraryName = li.dataset.name || li.textContent.replace('📚 ', '').trim();
-                        const libraryValue = li.dataset.value;
-                        
-                        console.log("Selected:", libraryName, "Value:", libraryValue);
-                        
-                        searchInput.value = libraryName;
-                        hiddenInput.value = libraryValue;
-                        dropdownOptions.style.display = 'none';
-                        
-                        // Reset dropdown for next search
-                        dropdownOptions.innerHTML = originalHTML;
-                        searchInput.value = libraryName;
+                    let target = e.target;
+                    
+                    // Find the LI element (could be clicking on span inside li)
+                    while (target && target.tagName !== 'LI') {
+                        target = target.parentElement;
+                        if (!target) return;
+                    }
+                    
+                    const li = target;
+                    
+                    // Don't process if this is not a library item
+                    if (li.textContent.includes('❌')) return;
+                    
+                    const libraryName = li.dataset.name || li.textContent.replace('🔐', '').trim();
+                    const libraryValue = li.dataset.value;
+                    const hasMembership = li.dataset.hasMembership === '1';
+                    
+                    console.log("Selected:", libraryName, "Value:", libraryValue, "Has Login:", hasMembership);
+                    
+                    searchInput.value = libraryName;
+                    hiddenInput.value = libraryValue;
+                    membershipHiddenInput.value = hasMembership ? '1' : '0';
+                    dropdownOptions.style.display = 'none';
+                    
+                    // Show/hide login button based on membership link
+                    if (loginBtn) {
+                        if (hasMembership) {
+                            loginBtn.style.display = 'inline-block';
+                            loginBtn.style.opacity = '1';
+                            loginBtn.style.cursor = 'pointer';
+                        } else {
+                            loginBtn.style.display = 'none';
+                        }
                     }
                 });
                 
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function(event) {
-                    if (!dropdown.contains(event.target)) {
+                    if (!dropdown.contains(event.target) && !event.target.closest('.dropdown-options')) {
                         dropdownOptions.style.display = 'none';
                     }
                 });
@@ -570,6 +823,7 @@
                 button.addEventListener('click', function(e) {
                     const form = this.closest('form');
                     const hiddenInput = form.querySelector('.library-code');
+                    const membershipInput = form.querySelector('.has-membership-link');
                     
                     if (!hiddenInput || !hiddenInput.value) {
                         e.preventDefault();
@@ -577,6 +831,18 @@
                             icon: 'error',
                             title: 'Library Required',
                             text: 'Please select a library from the dropdown first',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+                    
+                    // Additional check: Don't allow login if library doesn't have membership link
+                    if (!membershipInput || membershipInput.value !== '1') {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Login Not Available',
+                            text: 'This library does not have a membership/login system. Please select another library.',
                             confirmButtonText: 'OK'
                         });
                     }
@@ -604,7 +870,7 @@
         });
     </script>
 
-        <!-- PAGINATION JAVASCRIPT (Separate from dropdown) -->
+    <!-- PAGINATION JAVASCRIPT (Separate from dropdown) -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -886,6 +1152,86 @@
             
             // Initial view toggle setup
             initializeViewToggle();
+        });
+    </script>
+
+    <script>
+        function syncHeroWithLayout() {
+            const headEnglish = document.getElementById('head-english');
+            const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+            
+            // Get all commissioner text elements
+            const commissionerMarathiIds = [
+                'commissioner-button-marathi-hero',
+                'commissioner-subtitle-marathi-hero'
+            ];
+            const commissionerEnglishIds = [
+                'commissioner-button-english-hero',
+                'commissioner-subtitle-english-hero'
+            ];
+            
+            if (isEnglish) {
+                // Show English hero, hide Marathi hero
+                document.getElementById('hero-english').style.display = 'block';
+                document.getElementById('hero-marathi').style.display = 'none';
+                
+                // Show English text, hide Marathi text
+                commissionerMarathiIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                commissionerEnglishIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+            } else {
+                // Show Marathi hero, hide English hero
+                document.getElementById('hero-english').style.display = 'none';
+                document.getElementById('hero-marathi').style.display = 'block';
+                
+                // Show Marathi text, hide English text
+                commissionerMarathiIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+                commissionerEnglishIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+        }
+
+        // Call this function on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Hero page loaded - syncing with layout");
+            syncHeroWithLayout();
+            
+            // Store original function
+            const originalToggle = window.toggleLanguage;
+            
+            // Create enhanced version
+            window.toggleLanguage = function() {
+                console.log("Enhanced toggleLanguage called");
+                // Call original to change layout
+                if (originalToggle) originalToggle();
+                // Sync hero content
+                setTimeout(syncHeroWithLayout, 100);
+            };
+            
+            // Also observe changes to layout
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'style') {
+                        syncHeroWithLayout();
+                    }
+                });
+            });
+            
+            // Observe layout header for changes
+            const headEnglish = document.getElementById('head-english');
+            if (headEnglish) {
+                observer.observe(headEnglish, { attributes: true });
+            }
         });
     </script>
 

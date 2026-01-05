@@ -20,26 +20,38 @@ def library_list(request):
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
         
-        # Add encrypted library code to ALL libraries
+        # Add encrypted library code and membership link status to ALL libraries
         for lilo in all_libraries:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
+            
+            # Check if membership_page_link exists and is not empty/blank
+            has_membership_link = bool(
+                lilo.membership_page_link and 
+                str(lilo.membership_page_link).strip() != '' and
+                str(lilo.membership_page_link).strip() != 'None'
+            )
+            lilo.has_membership_link = has_membership_link
         
-        # Handle AJAX requests for pagination (grid display only)
+        # Handle AJAX requests for pagination
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             page = request.GET.get('page', 1)
-            
-            # Create paginator for display grid only
-            paginator = Paginator(all_libraries, 4)  # 4 libraries per page for grid
+            paginator = Paginator(all_libraries, 4)
             
             try:
                 libraries_page = paginator.page(page)
             except (PageNotAnInteger, EmptyPage):
                 libraries_page = paginator.page(1)
             
-            # Prepare data for JSON response (grid only)
+            # Prepare data for JSON response
             libraries_data = []
             for library in libraries_page:
+                has_membership_link = bool(
+                    library.membership_page_link and 
+                    str(library.membership_page_link).strip() != '' and
+                    str(library.membership_page_link).strip() != 'None'
+                )
+                
                 libraries_data.append({
                     'id': library.id,
                     'library_name': library.library_name,
@@ -48,7 +60,8 @@ def library_list(request):
                     'est_year': library.est_year,
                     'about_library': library.about_library,
                     'image_url': library.image_url,
-                    'libraries': library.libraries  # encrypted code
+                    'libraries': library.libraries,  # encrypted code
+                    'has_membership_link': has_membership_link
                 })
             
             return JsonResponse({
@@ -60,7 +73,7 @@ def library_list(request):
                 'total_count': paginator.count
             })
         
-        # Regular request - paginate for grid display
+        # Regular request
         paginator = Paginator(all_libraries, 4)
         page = request.GET.get('page', 1)
         
@@ -69,12 +82,23 @@ def library_list(request):
         except (PageNotAnInteger, EmptyPage):
             library_details = paginator.page(1)
         
+        # Get first library's membership status for initial display
+        initial_has_membership = False
+        if all_libraries and len(all_libraries) > 0:
+            first_library = all_libraries[0]
+            initial_has_membership = bool(
+                first_library.membership_page_link and 
+                str(first_library.membership_page_link).strip() != '' and
+                str(first_library.membership_page_link).strip() != 'None'
+            )
+        
         return render(request, 'administration/library_list.html', {
-            'library_details': library_details,  # Paginated for grid display (4 per page)
-            'all_libraries': all_libraries,      # ALL libraries for dropdown (no pagination)
+            'library_details': library_details,
+            'all_libraries': all_libraries,
             'MEDIA_URL': settings.MEDIA_URL,
             'total_pages': paginator.num_pages,
-            'total_count': paginator.count
+            'total_count': paginator.count,
+            'initial_has_membership': initial_has_membership  # Add this
         })
     
     except Exception as e:
