@@ -300,31 +300,33 @@ def get_membership_details(request):
             )
 
             data = {
-                "deposit": str(membership.deposit),
-                "entry_fees": str(membership.entry_fees),
-                "subscription_fees": str(membership.subscription_fees),
-                "fine_membership": str(membership.fine_membership),
+                "deposit": str(membership.deposit) if hasattr(membership, 'deposit') and membership.deposit is not None else "0",
+                "entry_fees": str(membership.entry_fees) if hasattr(membership, 'entry_fees') and membership.entry_fees is not None else "0",
+                "subscription_fees": str(membership.subscription_fees) if hasattr(membership, 'subscription_fees') and membership.subscription_fees is not None else "0",
+                "fine_membership": str(membership.fine_membership) if hasattr(membership, 'fine_membership') and membership.fine_membership is not None else "0",
             }
             
             data1 = None
             
             if membership_detail_id:
-                
-                
                 membershipDetails = MembershipDetails.objects.filter(
                     id=membership_detail_id,
                     isactive=1
                 ).first()
-
-                data1 = {
-                    "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
-                    "membership_duration": membershipDetails.membership_duration,
-                    "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
-                    
-                    "deposit": str(membershipDetails.deposit) if membershipDetails and membershipDetails.deposit else str(membership.deposit),  
-                    "entry_fees": str(membershipDetails.entry_fees) if membershipDetails and membershipDetails.entry_fees else str(membership.entry_fees),
-                    "subscription": str(membershipDetails.subscription) if membershipDetails and membershipDetails.subscription else str(membership.subscription),
-                }
+                
+                if membershipDetails:
+                    data1 = {
+                        "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
+                        "membership_duration": membershipDetails.membership_duration,
+                        "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
+                        
+                        # Note: MembershipDetails has 'subscription' field, MembershipMaster has 'subscription_fees'
+                        "deposit": str(membershipDetails.deposit) if membershipDetails.deposit is not None else str(membership.deposit) if hasattr(membership, 'deposit') and membership.deposit is not None else "0",  
+                        "entry_fees": str(membershipDetails.entry_fees) if membershipDetails.entry_fees is not None else str(membership.entry_fees) if hasattr(membership, 'entry_fees') and membership.entry_fees is not None else "0",
+                        "subscription": str(membershipDetails.subscription) if membershipDetails.subscription is not None else str(membership.subscription_fees) if hasattr(membership, 'subscription_fees') and membership.subscription_fees is not None else "0",
+                    }
+                else:
+                    data1 = None
 
             return JsonResponse({
                 "success": True,
@@ -338,10 +340,69 @@ def get_membership_details(request):
                 "error": "Membership not found"
             })
         except Exception as e: 
+            import traceback
+            print(f"Error in get_membership_details: {str(e)}")
+            print(traceback.format_exc())
             return JsonResponse({
                 "success": False,
                 "error": str(e)
             })
+            
+# def get_membership_details(request):
+#     if request.method == "GET":
+#         enc_id = request.GET.get("id")
+#         membership_detail_id = request.GET.get("membership_detail_id", "")
+#         try:
+#             membership_id = enc_id  # decrypt if needed
+
+#             membership = MembershipMaster.objects.get(
+#                 id=membership_id,
+#                 isactive=1
+#             )
+
+#             data = {
+#                 "deposit": str(membership.deposit),
+#                 "entry_fees": str(membership.entry_fees),
+#                 "subscription_fees": str(membership.subscription_fees),
+#                 "fine_membership": str(membership.fine_membership),
+#             }
+            
+#             data1 = None
+            
+#             if membership_detail_id:
+                
+                
+#                 membershipDetails = MembershipDetails.objects.filter(
+#                     id=membership_detail_id,
+#                     isactive=1
+#                 ).first()
+
+#                 data1 = {
+#                     "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
+#                     "membership_duration": membershipDetails.membership_duration,
+#                     "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
+                    
+#                     "deposit": str(membershipDetails.deposit) if membershipDetails and membershipDetails.deposit else str(membership.deposit),  
+#                     "entry_fees": str(membershipDetails.entry_fees) if membershipDetails and membershipDetails.entry_fees else str(membership.entry_fees),
+#                     "subscription": str(membershipDetails.subscription) if membershipDetails and membershipDetails.subscription else str(membership.subscription),
+#                 }
+
+#             return JsonResponse({
+#                 "success": True,
+#                 "data": data,
+#                 "data1": data1
+#             })
+
+#         except MembershipMaster.DoesNotExist:
+#             return JsonResponse({
+#                 "success": False,
+#                 "error": "Membership not found"
+#             })
+#         except Exception as e: 
+#             return JsonResponse({
+#                 "success": False,
+#                 "error": str(e)
+#             })
 
 # membership form filled by member first time registeration
 
@@ -975,6 +1036,7 @@ def membership_form_edit(request):
                     "membertype": "member_type_id",     # FK to parameter_master_L01
                     "months": "membership_duration",
                     "fromDate": "from_date",
+                    "toDate": "to_date",  
                     "dob": "dob",
                 }
                 
@@ -1035,21 +1097,6 @@ def membership_form_edit(request):
                         setattr(membership, model_field, new_value)
                         updated = True
                         
-                # --- Calculate to_date based on from_date and months ---
-                from_date = membership.from_date
-                months = membership.membership_duration
-                
-                if from_date and months:
-                    # Calculate to_date by adding months to from_date
-                    # Using relativedelta to handle month-end dates correctly
-                    from dateutil.relativedelta import relativedelta
-                    new_to_date = from_date + relativedelta(months=months, days=-1)  # Subtract 1 day to get end of period
-                    
-                    # Check if to_date changed
-                    if new_to_date != membership.to_date:
-                        membership.to_date = new_to_date
-                        updated = True
-
                 # --- Handle monetary fields ---
                 money_fields = {
                     "deposit": "deposit",
