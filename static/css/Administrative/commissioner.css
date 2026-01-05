@@ -1,0 +1,446 @@
+/* Commissioner Page Styles */
+:root {
+    --primary-color: #015296;
+    --primary-light: #e6f0fa;
+    --primary-dark: #013a6b;
+    --accent-color: #f39c12;
+    --text-dark: #2c3e50;
+    --text-light: #555;
+    --white: #ffffff;
+    --off-white: #f8f9fa;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.15);
+    --border-radius: 12px;
+    --transition: all 0.3s ease;
+}
+
+/* Page Container */
+.commissioner-page {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 60px 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header Section */
+.commissioner-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--primary-color);
+    position: relative;
+}
+
+.commissioner-header h1 {
+    font-size: 2.5rem;
+    color: var(--text-dark);
+    margin-bottom: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.commissioner-header .subtitle {
+    font-size: 1.4rem;
+    color: var(--primary-color);
+    font-style: italic;
+    margin-bottom: 0;
+}
+
+/* Content Container */
+.commissioner-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    position: relative;
+}
+
+/* Photo Section - Fixed overlay visible by default */
+.commissioner-photo {
+    flex: 0 0 350px;
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+    align-self: flex-start;
+}
+
+.photo-container {
+    position: relative;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: var(--transition);
+    background: var(--white);
+}
+
+.photo-container:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.photo-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: var(--transition);
+}
+
+.photo-container:hover img {
+    transform: scale(1.02);
+}
+
+/* Photo overlay - visible by default (no hover needed) */
+.photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    color: var(--white);
+    padding: 25px 20px 20px;
+    text-align: center;
+    transform: translateY(0); /* Always visible */
+    opacity: 1; /* Always visible */
+}
+
+.photo-overlay h3 {
+    font-size: 1.5rem;
+    margin: 0 0 5px;
+    font-weight: 600;
+    color: var(--white);
+}
+
+.photo-overlay p {
+    font-size: 1rem;
+    margin: 0;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+/* Message Section */
+.commissioner-message {
+    flex: 1;
+    min-width: 300px;
+}
+
+.message-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.message-header h2 {
+    font-size: 2.2rem;
+    color: var(--text-dark);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.message-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-light);
+    font-style: italic;
+    margin-bottom: 0;
+}
+
+.message-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-dark);
+}
+
+.message-text p {
+    margin-bottom: 25px;
+    text-align: justify;
+}
+
+/* Quote Styling */
+.quote {
+    background: var(--off-white);
+    border-left: 4px solid var(--primary-color);
+    padding: 25px;
+    margin: 30px 0;
+    font-style: italic;
+    font-size: 1.3rem;
+    line-height: 1.6;
+    color: var(--text-dark);
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    box-shadow: var(--shadow);
+}
+
+/* Decorative Elements */
+.decorative-line {
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+    margin: 40px 0;
+}
+
+/* Call to Action Section */
+.cta-section {
+    text-align: center;
+    margin-top: 50px;
+    padding: 40px;
+    background: linear-gradient(135deg, var(--text-dark), var(--primary-color));
+    border-radius: var(--border-radius);
+    color: var(--white);
+}
+
+.cta-section h3 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    color: var(--white);
+}
+
+.cta-section p {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-btn {
+    display: inline-block;
+    padding: 12px 35px;
+    background: var(--white);
+    color: var(--text-dark);
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    border: 2px solid var(--white);
+}
+
+.cta-btn:hover {
+    background: transparent;
+    color: var(--white);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.commissioner-header,
+.commissioner-photo,
+.commissioner-message,
+.cta-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.commissioner-photo {
+    animation-delay: 0.2s;
+}
+
+.commissioner-message {
+    animation-delay: 0.4s;
+}
+
+.cta-section {
+    animation-delay: 0.6s;
+}
+
+/* Shadow effect for better visibility */
+.photo-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 15px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .commissioner-photo {
+        flex: 0 0 300px;
+    }
+    
+    .commissioner-header h1 {
+        font-size: 2.2rem;
+    }
+    
+    .message-header h2 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .commissioner-content {
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .commissioner-photo {
+        position: relative;
+        top: 0;
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .commissioner-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .commissioner-header .subtitle {
+        font-size: 1.2rem;
+    }
+    
+    .message-header h2 {
+        font-size: 1.8rem;
+    }
+    
+    .message-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .quote {
+        font-size: 1.2rem;
+        padding: 20px;
+    }
+    
+    .message-text {
+        font-size: 1rem;
+    }
+    
+    .cta-section {
+        padding: 30px 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .commissioner-page {
+        padding: 20px 0 40px;
+    }
+    
+    .commissioner-header {
+        margin-bottom: 30px;
+    }
+    
+    .commissioner-header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .photo-overlay h3 {
+        font-size: 1.3rem;
+    }
+    
+    .message-header h2 {
+        font-size: 1.6rem;
+    }
+    
+    .quote {
+        font-size: 1.1rem;
+    }
+    
+    .cta-section h3 {
+        font-size: 1.5rem;
+    }
+    
+    .cta-btn {
+        padding: 10px 25px;
+        font-size: 1rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .commissioner-page {
+        background: white;
+        padding: 0;
+    }
+    
+    .cta-section {
+        background: #f0f0f0;
+        color: black;
+    }
+    
+    .cta-section h3 {
+        color: black;
+    }
+    
+    .cta-btn {
+        display: none;
+    }
+}
+
+/* Breadcrumb Navigation Styles */
+.breadcrumb-nav {
+    margin-bottom: 25px;
+    padding: 10px 0;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    list-style: none;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    color: #6c757d;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    display: inline-block;
+    padding: 0 10px;
+    color: #015296;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.breadcrumb-item a {
+    color: #015296;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #013a6b;
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Responsive breadcrumb */
+@media (max-width: 768px) {
+    .breadcrumb-nav {
+        margin-bottom: 20px;
+    }
+    
+    .breadcrumb {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .breadcrumb-item {
+        font-size: 0.85rem;
+    }
+}

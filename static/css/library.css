@@ -1347,7 +1347,7 @@ footer .footer-container {
 /* Section */
 #libraries-section {
     background-color: var(--header-bg);
-    padding: 50px 0;
+    padding: 25px 0;
     font-family: var(--font-family);
 }
 
@@ -1357,7 +1357,7 @@ footer .footer-container {
     flex-direction: column; /* stack vertically */
     align-items: center;    /* center horizontally */
     text-align: center;
-    margin-bottom: 40px;
+    /* margin-bottom: 40px; */
     position: relative;
 }
 

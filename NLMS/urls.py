@@ -194,6 +194,9 @@ urlpatterns = [
     path('track-click/', track_click, name='track_click'),
     path('should-show-popup/', should_show_popup, name='should_show_popup'),
     path('save-lead/', save_lead, name='save_lead'),
+    
+    # Layout
+    path('commissioner-message/', commissioner_message, name='commissioner_message'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

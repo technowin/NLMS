@@ -17,28 +17,27 @@ def library_list(request):
     cursor = m.cursor()
     
     try:
-        # Check if it's an AJAX request
+        # Get ALL active libraries for dropdown (no pagination)
+        all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+        
+        # Add encrypted library code to ALL libraries
+        for lilo in all_libraries:
+            encrypted_library_code = enc(lilo.library_code)
+            lilo.libraries = encrypted_library_code
+        
+        # Handle AJAX requests for pagination (grid display only)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # Get page from POST data
-            page = request.POST.get('page', 1)
+            page = request.GET.get('page', 1)
             
-            # Get all active libraries
-            library_list = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
-            
-            # Add encrypted library code
-            for lilo in library_list:
-                encrypted_library_code = enc(lilo.library_code)
-                lilo.libraries = encrypted_library_code
-            
-            # Paginate
-            paginator = Paginator(library_list, 4)
+            # Create paginator for display grid only
+            paginator = Paginator(all_libraries, 4)  # 4 libraries per page for grid
             
             try:
                 libraries_page = paginator.page(page)
             except (PageNotAnInteger, EmptyPage):
                 libraries_page = paginator.page(1)
             
-            # Convert to serializable data
+            # Prepare data for JSON response (grid only)
             libraries_data = []
             for library in libraries_page:
                 libraries_data.append({
@@ -61,36 +60,35 @@ def library_list(request):
                 'total_count': paginator.count
             })
         
-        # Regular request (first page)
-        library_list = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+        # Regular request - paginate for grid display
+        paginator = Paginator(all_libraries, 4)
+        page = request.GET.get('page', 1)
         
-        # Add encrypted library code
-        for lilo in library_list:
-            encrypted_library_code = enc(lilo.library_code)
-            lilo.libraries = encrypted_library_code
-        
-        # Only get first page for initial load
-        paginator = Paginator(library_list, 4)
-        library_details = paginator.page(1)
+        try:
+            library_details = paginator.page(page)
+        except (PageNotAnInteger, EmptyPage):
+            library_details = paginator.page(1)
         
         return render(request, 'administration/library_list.html', {
-            'library_details': library_details,
+            'library_details': library_details,  # Paginated for grid display (4 per page)
+            'all_libraries': all_libraries,      # ALL libraries for dropdown (no pagination)
             'MEDIA_URL': settings.MEDIA_URL,
             'total_pages': paginator.num_pages,
             'total_count': paginator.count
         })
     
     except Exception as e:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'error': str(e)}, status=500)
-        
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else 'library_list'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
         print(f"error: {e}")
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
-
+    
 def service_redirect(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -177,4 +175,26 @@ def library_list_index(request):
         cursor.callproc("stp_error_log", [fun, str(e), ''])
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
-        return redirect("Meta_Index")
+        return redirect("library_list_index")
+    
+def commissioner_message(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        context = {
+            'page_title': 'Message from Commissioner',
+            'page_title_mar': 'आयुक्तांचे संदेश',
+            'MEDIA_URL': settings.MEDIA_URL
+        }
+        return render(request, 'administration/commissioner_message.html', context)
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("commissioner_message")

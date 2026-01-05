@@ -3,6 +3,70 @@
 {% block content %}
 
     <style>
+        /* ================= DROPDOWN ALIGNMENT FIXES ================= */
+        .dropdown-container {
+            text-align: left !important;
+        }
+
+        .custom-dropdown {
+            text-align: left !important;
+            position: relative;
+        }
+
+        .dropdown-input {
+            text-align: left !important;
+            padding: 12px 15px 12px 45px !important; /* More left padding for icon */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .dropdown-options {
+            text-align: left !important;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            list-style: none;
+            padding: 0;
+        }
+
+        .dropdown-options li {
+            text-align: left !important;
+            justify-content: flex-start !important;
+            padding: 10px 15px !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-options li:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Search icon positioning */
+        .input-wrapper {
+            position: relative !important;
+            width: 100%;
+        }
+
+        .input-wrapper .search-icon {
+            position: absolute !important;
+            left: 15px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            pointer-events: none !important;
+            z-index: 2;
+        }
 
         /* Loading spinner */
         .spinner-border {
@@ -88,7 +152,7 @@
 
         /* Pagination Styles with Primary Color #015296 */
         .pagination-container {
-            margin-top: 3rem;
+            {% comment %} margin-top: 3rem; {% endcomment %}
             padding: 1.5rem 0;
             border-top: 1px solid #e0e0e0;
         }
@@ -201,59 +265,50 @@
 
     <section class="hero-section" id="hero-english"
         style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
-
         <div class="hero-overlay">
             <div class="hero-text">
-
                 <h1>Welcome to NMMC Library</h1>
                 <p>Explore our libraries and discover knowledge.</p>
 
-                <form method="POST" action="{% url 'service_redirect' %}">
+                <!-- ENGLISH DROPDOWN FORM -->
+                <form method="POST" action="{% url 'service_redirect' %}" id="dropdown-form-english">
                     {% csrf_token %}
 
-                    <!-- SEARCHABLE DROPDOWN -->
                     <div class="dropdown-container hero-dropdown">
-                        <div class="custom-dropdown">
-
+                        <div class="custom-dropdown english-dropdown">
                             <div class="input-wrapper">
                                 <i class="fas fa-search search-icon"></i>
-
-                                <!-- USER TYPES HERE -->
                                 <input type="text"
                                     class="dropdown-search dropdown-input"
-                                    value="{% if library_details %}{{ library_details.0.library_name }}{% endif %}"
+                                    value="{% if all_libraries %}{{ all_libraries.0.library_name }}{% endif %}"
                                     autocomplete="off"
-                                    required>
+                                    required
+                                    id="library-search-english">
                             </div>
 
-                            <!-- REAL VALUE SENT TO BACKEND -->
-                            <input type="hidden" name="library_code" class="library-code">
+                            <input type="hidden" name="library_code" class="library-code" 
+                                value="{% if all_libraries %}{{ all_libraries.0.libraries }}{% endif %}">
 
                             <ul class="dropdown-options">
-                                {% for library in library_details %}
-                                    <li data-value="{{ library.libraries }}">
-                                        📚 {{ library.library_name }}
+                                {% for library in all_libraries %}
+                                    <li data-value="{{ library.libraries }}" data-name="{{ library.library_name }}">
+                                        {{ library.library_name }}
                                     </li>
                                 {% endfor %}
                             </ul>
-
                         </div>
                     </div>
 
-                    <!-- ACTION BUTTONS -->
                     <div class="hero-buttons mt-3">
                         <button type="submit" class="hero-btn primary-btn">
                             View More
                         </button>
-
                         <button type="submit"
                             formaction="{% url 'set_library_session_and_login' %}"
                             class="hero-btn secondary-btn">Login
                         </button>
                     </div>
-
                 </form>
-
             </div>
         </div>
     </section>
@@ -264,57 +319,46 @@
                 <h1 id="hero-title">नवी मुंबई महानगरपालिका ग्रंथालयात आपले स्वागत आहे</h1>
                 <p id="hero-subtitle">आमच्या ग्रंथालयांचा शोध घ्या आणि ज्ञान मिळवा.</p>
 
-                <form method="POST" action="{% url 'service_redirect' %}">
+                <!-- MARATHI DROPDOWN FORM -->
+                <form method="POST" action="{% url 'service_redirect' %}" id="dropdown-form-marathi">
                     {% csrf_token %}
 
-                    <!-- SEARCHABLE DROPDOWN -->
                     <div class="dropdown-container hero-dropdown">
-                        <div class="custom-dropdown">
-
+                        <div class="custom-dropdown marathi-dropdown">
                             <div class="input-wrapper">
                                 <i class="fas fa-search search-icon"></i>
-
-                                <!-- USER TYPES HERE -->
                                 <input type="text"
                                     class="dropdown-search dropdown-input"
-                                    value="{% if library_details %}{{ library_details.0.library_name }}{% endif %}"
+                                    value="{% if all_libraries %}{{ all_libraries.0.library_name }}{% endif %}"
                                     autocomplete="off"
-                                    required>
+                                    required
+                                    id="library-search-marathi">
                             </div>
 
-                            <!-- REAL VALUE SENT TO BACKEND -->
-                            <!-- FIX: Set the initial value from first library -->
                             <input type="hidden" name="library_code" class="library-code" 
-                                value="{% if library_details %}{{ library_details.0.libraries }}{% endif %}">
+                                value="{% if all_libraries %}{{ all_libraries.0.libraries }}{% endif %}">
 
                             <ul class="dropdown-options">
-                                {% for library in library_details %}
-                                    <li data-value="{{ library.libraries }}">
-                                        📚 {{ library.library_name }}
+                                {% for library in all_libraries %}
+                                    <li data-value="{{ library.libraries }}" data-name="{{ library.library_name }}">
+                                        {{ library.library_name }}
                                     </li>
                                 {% endfor %}
                             </ul>
-
                         </div>
                     </div>
 
-                    <!-- ACTION BUTTONS -->
                     <div class="hero-buttons mt-3">
                         <button type="submit" class="hero-btn primary-btn">
                             View More
                         </button>
-
                         <button type="submit"
                             formaction="{% url 'set_library_session_and_login' %}"
                             class="hero-btn secondary-btn">Login
                         </button>
                     </div>
-
                 </form>
-
-
             </div>
-
         </div>
     </section>
 
@@ -379,80 +423,9 @@
     <!-- CSRF Token for AJAX -->
     {% csrf_token %}
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            document.querySelectorAll(".custom-dropdown").forEach(dropdown => {
-
-                const input = dropdown.querySelector(".dropdown-search");
-                const options = dropdown.querySelector(".dropdown-options");
-                const hiddenInput = dropdown.querySelector(".library-code");
-                const items = options.querySelectorAll("li");
-
-                input.addEventListener("focus", () => {
-                    options.style.display = "block";
-                });
-
-                input.addEventListener("input", () => {
-                    const filter = input.value.toLowerCase();
-                    hiddenInput.value = ""; // ❗ clear invalid selection
-
-                    let hasMatch = false;
-                    items.forEach(item => {
-                        const text = item.textContent.toLowerCase();
-                        if (text.includes(filter)) {
-                            item.style.display = "";
-                            hasMatch = true;
-                        } else {
-                            item.style.display = "none";
-                        }
-                    });
-
-                    if (!hasMatch) {
-                        options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
-                    }
-                });
-
-                items.forEach(item => {
-                    item.addEventListener("click", () => {
-                        input.value = item.textContent.trim();
-                        hiddenInput.value = item.dataset.value; // ✅ THIS FIXES BACKEND
-                        options.style.display = "none";
-                    });
-                });
-
-                document.addEventListener("click", (e) => {
-                    if (!dropdown.contains(e.target)) {
-                        options.style.display = "none";
-                    }
-                });
-
-            });
-
-        });
-    </script>
-
-    <script>
-        document.getElementById("grid-view-btn").addEventListener("click", function () {
-            document.querySelector(".card-grid").classList.add("grid-view");
-            document.querySelector(".card-grid").classList.remove("list-view");
-            this.classList.add("active");
-            document.getElementById("list-view-btn").classList.remove("active");
-        });
-
-        document.getElementById("list-view-btn").addEventListener("click", function () {
-            document.querySelector(".card-grid").classList.add("list-view");
-            document.querySelector(".card-grid").classList.remove("grid-view");
-            this.classList.add("active");
-            document.getElementById("grid-view-btn").classList.remove("active");
-        });
-    </script>
-
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    {% comment %} {% block extra_javascript %} {% endcomment %}
 
     {% if messages %}
         <script>
@@ -478,100 +451,160 @@
         </script>
     {% endif %}
 
-    <script>
-        // Set hidden input when user clicks a library
-        document.querySelectorAll('.dropdown-options li').forEach(li => {
-            li.addEventListener('click', function() {
-                document.querySelector('.library-code').value = this.dataset.value;
-            });
-        });
-
-    </script>
-
+    <!-- DROPDOWN JAVASCRIPT (Works for both English and Marathi) -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-
-            // Initialize all dropdowns
-            document.querySelectorAll(".custom-dropdown").forEach(dropdown => {
-
-                const input = dropdown.querySelector(".dropdown-search");
-                const options = dropdown.querySelector(".dropdown-options");
-                const hiddenInput = dropdown.querySelector(".library-code");
-                const items = options.querySelectorAll("li");
-
-                // ✅ FIX: Set initial hidden input value from first item
-                if (hiddenInput.value === "" && items.length > 0) {
-                    // Get value from first library option
-                    const firstItemValue = items[0].dataset.value;
-                    hiddenInput.value = firstItemValue;
-                    console.log('Initialized hidden input with value:', firstItemValue);
-                }
-
-                input.addEventListener("focus", () => {
-                    options.style.display = "block";
+            console.log("=== INITIALIZING DROPDOWNS ===");
+            
+            // Function to initialize a dropdown
+            function initSearchableDropdown(dropdown) {
+                console.log("Initializing dropdown:", dropdown);
+                
+                const searchInput = dropdown.querySelector('.dropdown-search');
+                const dropdownOptions = dropdown.querySelector('.dropdown-options');
+                const hiddenInput = dropdown.querySelector('.library-code');
+                const listItems = dropdownOptions.querySelectorAll('li');
+                
+                console.log("Found", listItems.length, "library items");
+                
+                // Store original items for reset
+                const originalHTML = dropdownOptions.innerHTML;
+                
+                // Show dropdown when input is focused
+                searchInput.addEventListener('focus', function() {
+                    console.log("Input focused");
+                    dropdownOptions.style.display = 'block';
                 });
-
-                input.addEventListener("input", () => {
-                    const filter = input.value.toLowerCase();
-                    hiddenInput.value = ""; // ❗ clear invalid selection
-
-                    let hasMatch = false;
-                    items.forEach(item => {
-                        const text = item.textContent.toLowerCase();
-                        if (text.includes(filter)) {
-                            item.style.display = "";
-                            hasMatch = true;
+                
+                // Search functionality
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    console.log("Searching for:", searchTerm);
+                    
+                    // Reset dropdown to original state
+                    dropdownOptions.innerHTML = originalHTML;
+                    const updatedItems = dropdownOptions.querySelectorAll('li');
+                    
+                    if (searchTerm === '') {
+                        // Show all items if search is empty
+                        updatedItems.forEach(item => {
+                            item.style.display = 'flex';
+                        });
+                        return;
+                    }
+                    
+                    let matchFound = false;
+                    
+                    // Filter items
+                    updatedItems.forEach(item => {
+                        const itemText = item.textContent.toLowerCase();
+                        if (itemText.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                            matchFound = true;
                         } else {
-                            item.style.display = "none";
+                            item.style.display = 'none';
                         }
                     });
-
-                    if (!hasMatch) {
-                        options.innerHTML = `<li style="color:#888; padding:0.6rem 1rem;">❌ No results found</li>`;
+                    
+                    // Add "No results" message if needed
+                    if (!matchFound) {
+                        console.log("No matches found, showing message");
+                        const noResults = document.createElement('li');
+                        noResults.textContent = '❌ No results found';
+                        noResults.style.cssText = 'color: #888; padding: 10px 15px; text-align: left; cursor: default;';
+                        dropdownOptions.appendChild(noResults);
                     }
                 });
-
-                items.forEach(item => {
-                    item.addEventListener("click", () => {
-                        input.value = item.textContent.trim();
-                        hiddenInput.value = item.dataset.value; // ✅ THIS FIXES BACKEND
-                        console.log('Selected library code:', item.dataset.value);
-                        options.style.display = "none";
-                    });
-                });
-
-                document.addEventListener("click", (e) => {
-                    if (!dropdown.contains(e.target)) {
-                        options.style.display = "none";
+                
+                // Handle item selection
+                dropdownOptions.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'LI') {
+                        const li = e.target;
+                        
+                        // Don't process "No results" item
+                        if (li.textContent.includes('❌')) return;
+                        
+                        const libraryName = li.dataset.name || li.textContent.replace('📚 ', '').trim();
+                        const libraryValue = li.dataset.value;
+                        
+                        console.log("Selected:", libraryName, "Value:", libraryValue);
+                        
+                        searchInput.value = libraryName;
+                        hiddenInput.value = libraryValue;
+                        dropdownOptions.style.display = 'none';
+                        
+                        // Reset dropdown for next search
+                        dropdownOptions.innerHTML = originalHTML;
+                        searchInput.value = libraryName;
                     }
                 });
-
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!dropdown.contains(event.target)) {
+                        dropdownOptions.style.display = 'none';
+                    }
+                });
+                
+                // Close on Escape key
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdownOptions.style.display = 'none';
+                    }
+                });
+                
+                console.log("Dropdown initialized successfully");
+            }
+            
+            // Initialize ALL dropdowns (both English and Marathi)
+            const allDropdowns = document.querySelectorAll('.custom-dropdown');
+            console.log("Found", allDropdowns.length, "dropdown(s) to initialize");
+            
+            allDropdowns.forEach((dropdown, index) => {
+                console.log(`Initializing dropdown ${index + 1}`);
+                initSearchableDropdown(dropdown);
             });
-
-            // ✅ Validate before submitting Login button
-            document.querySelectorAll('form').forEach(form => {
-                const loginBtn = form.querySelector('.secondary-btn');
-                if (loginBtn) {
-                    loginBtn.addEventListener('click', function(e) {
-                        const hiddenInput = form.querySelector('.library-code');
-                        if (!hiddenInput || !hiddenInput.value) {
-                            e.preventDefault();
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Library Required',
-                                text: 'Please select a library first',
-                                confirmButtonText: 'OK'
-                            });
-                        } else {
-                            console.log('Submitting login with library code:', hiddenInput.value);
-                        }
-                    });
-                }
+            
+            // Login button validation
+            document.querySelectorAll('.secondary-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const form = this.closest('form');
+                    const hiddenInput = form.querySelector('.library-code');
+                    
+                    if (!hiddenInput || !hiddenInput.value) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Library Required',
+                            text: 'Please select a library from the dropdown first',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
             });
-
+            
+            console.log("=== ALL DROPDOWNS INITIALIZED ===");
         });
     </script>
 
+    <!-- Grid/List View Toggle -->
+    <script>
+        document.getElementById("grid-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("grid-view");
+            document.querySelector(".card-grid").classList.remove("list-view");
+            this.classList.add("active");
+            document.getElementById("list-view-btn").classList.remove("active");
+        });
+
+        document.getElementById("list-view-btn").addEventListener("click", function () {
+            document.querySelector(".card-grid").classList.add("list-view");
+            document.querySelector(".card-grid").classList.remove("grid-view");
+            this.classList.add("active");
+            document.getElementById("grid-view-btn").classList.remove("active");
+        });
+    </script>
+
+        <!-- PAGINATION JAVASCRIPT (Separate from dropdown) -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -583,6 +616,8 @@
             
             function initializePagination() {
                 const paginationContainer = document.getElementById('js-pagination');
+                if (!paginationContainer) return;
+                
                 paginationContainer.innerHTML = '';
                 
                 // Previous button
@@ -649,31 +684,40 @@
                 paginationContainer.appendChild(nextLi);
                 
                 // Update page info
-                document.getElementById('page-info').textContent = 
-                    `Page ${currentPage} of ${totalPages}`;
+                const pageInfo = document.getElementById('page-info');
+                if (pageInfo) {
+                    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+                }
             }
             
             function loadPage(page) {
-                // Show loading indicator
+                // Get current scroll position to maintain it
+                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // Show loading indicator in a subtle way
                 const librariesContainer = document.getElementById('libraries-container');
-                librariesContainer.innerHTML = `
-                    <div class="text-center py-5">
+                const originalContent = librariesContainer.innerHTML;
+                
+                // Add a subtle loading overlay without changing layout
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'loading-overlay';
+                loadingOverlay.innerHTML = `
+                    <div class="loading-spinner">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <p class="mt-2">Loading libraries...</p>
                     </div>
                 `;
                 
-                // Send AJAX request
-                fetch(window.location.href, {
-                    method: 'POST',
+                librariesContainer.style.position = 'relative';
+                librariesContainer.appendChild(loadingOverlay);
+                
+                // Send AJAX request with GET (not POST)
+                fetch(`?page=${page}`, {
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: `page=${page}`
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -690,25 +734,33 @@
                     totalPages = data.total_pages;
                     currentPage = data.current_page;
                     
-                    // Render libraries
+                    // Remove loading overlay
+                    const overlay = librariesContainer.querySelector('.loading-overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                    
+                    // Render libraries with fade effect
                     renderLibraries(data.libraries);
                     
                     // Update pagination
                     initializePagination();
                     
-                    // Smooth scroll to top of section
-                    document.getElementById('libraries-section').scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    // Restore scroll position (stay in place)
+                    window.scrollTo(0, scrollPosition);
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    librariesContainer.innerHTML = `
-                        <div class="alert alert-danger">
-                            <strong>Error:</strong> Failed to load libraries. Please try again.
-                        </div>
-                    `;
+                    
+                    // Remove loading overlay
+                    const overlay = librariesContainer.querySelector('.loading-overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                    
+                    // Show error message
+                    librariesContainer.innerHTML = originalContent;
+                    showErrorMessage('Failed to load libraries. Please try again.');
                     
                     // Re-initialize pagination
                     initializePagination();
@@ -719,7 +771,7 @@
                 const librariesContainer = document.getElementById('libraries-container');
                 const mediaUrl = '{{ MEDIA_URL }}';
                 
-                if (libraries.length === 0) {
+                if (!libraries || libraries.length === 0) {
                     librariesContainer.innerHTML = `
                         <div class="no-libraries text-center py-5">
                             <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
@@ -729,50 +781,111 @@
                     return;
                 }
                 
-                let html = '';
-                libraries.forEach(library => {
-                    html += `
-                        <div class="library-card">
-                            <img src="${mediaUrl}${library.image_url}" alt="${library.library_name}" class="library-img">
-                            <div class="library-content">
-                                <h3>${library.library_name_mar}${library.location_name ? ' - ' + library.location_name : ''}</h3>
-                                <h4>Established: ${library.est_year || 'N/A'}</h4>
-                                <p>${library.about_library ? library.about_library.substring(0, 200) + '...' : ''}</p>
-                                
-                                <form method="POST" action="{% url 'service_redirect' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="library_code" value="${library.libraries}">
-                                    <button type="submit" class="card-btn">View More</button>
-                                </form>
+                // Add fade-out effect before changing content
+                librariesContainer.style.opacity = '0.7';
+                librariesContainer.style.transition = 'opacity 0.2s ease';
+                
+                setTimeout(() => {
+                    let html = '';
+                    libraries.forEach(library => {
+                        html += `
+                            <div class="library-card">
+                                <img src="${mediaUrl}${library.image_url}" alt="${library.library_name}" class="library-img">
+                                <div class="library-content">
+                                    <h3>${library.library_name_mar}${library.location_name ? ' - ' + library.location_name : ''}</h3>
+                                    <h4>Established: ${library.est_year || 'N/A'}</h4>
+                                    <p>${library.about_library ? library.about_library.substring(0, 200) + '...' : ''}</p>
+                                    
+                                    <form method="POST" action="{% url 'service_redirect' %}">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                        <input type="hidden" name="library_code" value="${library.libraries}">
+                                        <button type="submit" class="card-btn">View More</button>
+                                    </form>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    });
+                    
+                    librariesContainer.innerHTML = html;
+                    librariesContainer.style.opacity = '1';
+                    
+                    // Re-initialize view toggle
+                    initializeViewToggle();
+                    
+                }, 200);
+            }
+            
+            function showErrorMessage(message) {
+                // Create a subtle error toast
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-toast';
+                errorDiv.innerHTML = `
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                // Add to page
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.insertBefore(errorDiv, container.firstChild);
+                }
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 5000);
+            }
+            
+            function initializeViewToggle() {
+                const gridBtn = document.getElementById('grid-view-btn');
+                const listBtn = document.getElementById('list-view-btn');
+                const librariesContainer = document.getElementById('libraries-container');
+                
+                if (!gridBtn || !listBtn || !librariesContainer) return;
+                
+                // Remove existing listeners
+                const newGridBtn = gridBtn.cloneNode(true);
+                const newListBtn = listBtn.cloneNode(true);
+                gridBtn.parentNode.replaceChild(newGridBtn, gridBtn);
+                listBtn.parentNode.replaceChild(newListBtn, listBtn);
+                
+                // Check saved preference or default to grid
+                const isGridView = !librariesContainer.classList.contains('list-view');
+                
+                if (isGridView) {
+                    librariesContainer.classList.add('grid-view');
+                    librariesContainer.classList.remove('list-view');
+                    newGridBtn.classList.add('active');
+                    newListBtn.classList.remove('active');
+                } else {
+                    librariesContainer.classList.add('list-view');
+                    librariesContainer.classList.remove('grid-view');
+                    newListBtn.classList.add('active');
+                    newGridBtn.classList.remove('active');
+                }
+                
+                // Add new event listeners
+                newGridBtn.addEventListener("click", function() {
+                    librariesContainer.classList.add("grid-view");
+                    librariesContainer.classList.remove("list-view");
+                    this.classList.add("active");
+                    newListBtn.classList.remove("active");
                 });
-                
-                librariesContainer.innerHTML = html;
-                
-                // Re-attach event listeners to new forms if needed
-                attachFormListeners();
-            }
-            
-            function attachFormListeners() {
-                // Any additional form event listeners can go here
-            }
-            
-            // Initialize view toggle
-            document.getElementById("grid-view-btn").addEventListener("click", function () {
-                document.getElementById("libraries-container").classList.add("grid-view");
-                document.getElementById("libraries-container").classList.remove("list-view");
-                this.classList.add("active");
-                document.getElementById("list-view-btn").classList.remove("active");
-            });
 
-            document.getElementById("list-view-btn").addEventListener("click", function () {
-                document.getElementById("libraries-container").classList.add("list-view");
-                document.getElementById("libraries-container").classList.remove("grid-view");
-                this.classList.add("active");
-                document.getElementById("grid-view-btn").classList.remove("active");
-            });
+                newListBtn.addEventListener("click", function() {
+                    librariesContainer.classList.add("list-view");
+                    librariesContainer.classList.remove("grid-view");
+                    this.classList.add("active");
+                    newGridBtn.classList.remove("active");
+                });
+            }
+            
+            // Initial view toggle setup
+            initializeViewToggle();
         });
     </script>
 

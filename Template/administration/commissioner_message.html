@@ -1,0 +1,215 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link href="{% static 'css/Administrative/commissioner.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="commissioner-page">
+    <div class="container">
+
+        <nav aria-label="breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <!-- Marathi Home -->
+                    <a href="{% url 'library_list' %}" id="breadcrumb-home-marathi">
+                        होम
+                    </a>
+                    <!-- English Home - hidden by default -->
+                    <a href="{% url 'library_list' %}" id="breadcrumb-home-english" style="display: none;">
+                        Home
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <!-- Marathi Current Page -->
+                    <span id="breadcrumb-current-marathi">आयुक्तांचा संदेश</span>
+                    <!-- English Current Page - hidden by default -->
+                    <span id="breadcrumb-current-english" style="display: none;">Commissioner's Message</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Header - Two versions -->
+        <div class="commissioner-header">
+            <div id="header-marathi">
+                <h1>नवी मुंबई महानगरपालिकेच्या आयुक्तांचे संदेश</h1>
+                <p class="subtitle">काळजी घेणारे शहर - एक विशेष संदेश</p>
+            </div>
+            <div id="header-english" style="display: none;">
+                <h1>Message from Commissioner, NMMC</h1>
+                <p class="subtitle">City That Cares - A Special Message</p>
+            </div>
+        </div>
+
+        <div class="commissioner-content">
+            <div class="commissioner-photo">
+                <div class="photo-container">
+                    <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
+                         alt="Honorable Commissioner Kailas Shinde">
+                    
+                    <div class="photo-overlay" id="photo-overlay-marathi">
+                        <h3>श्री. कैलास शिंदे</h3>
+                        <p>आयुक्त, नवी मुंबई महानगरपालिका</p>
+                    </div>
+                    <div class="photo-overlay" id="photo-overlay-english" style="display: none;">
+                        <h3>Shri Kailas Shinde</h3>
+                        <p>Commissioner, Navi Mumbai Municipal Corporation</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="commissioner-message">
+                <div id="message-marathi">
+                    <div class="message-text">
+                        <p>नवी मुंबई महानगरपालिकेचा आयुक्त म्हणून माझा ठाम विश्वास आहे की, कोणत्याही शहराची खरी प्रगती ही केवळ रस्ते, इमारती किंवा पायाभूत सुविधा यांवर मोजली जात नाही, तर ते शहर आपल्या नागरिकांची किती काळजी घेते यावर ठरते. नवी मुंबई महानगरपालिकेत आम्ही विकासाची संकल्पना नागरिककेंद्रित ठेवली असून, विशेषतः समाजातील दुर्लक्षित व गरजू घटकांपर्यंत पोहोचण्यावर भर देत आहोत.</p>
+
+                        <div class="quote">
+                            "प्रत्येक नागरिकाला समान संधी मिळावी व त्याचे जीवन अधिक सुरक्षित आणि समृद्ध व्हावे"
+                        </div>
+
+                        <p>मूलभूत नागरी सुविधा पुरविण्याबरोबरच सामाजिक बांधिलकीच्या भावनेतून नवी मुंबई महानगरपालिका सर्वसमावेशक विकासासाठी कटिबद्ध आहे. समाजविकास विभागाच्या माध्यमातून विविध कल्याणकारी योजना राबविण्यात येत असून, या योजनांचा उद्देश नागरिकांच्या जीवनमानात सुधारणा करणे, त्यांना सन्मानाने जगण्याची संधी देणे आणि समाजाच्या मुख्य प्रवाहात आणणे हा आहे.</p>
+
+                        <p>या कल्याणकारी योजना महिला व बालकल्याण, मागास व दुर्लक्षित घटक, प्रकल्पग्रस्त कुटुंबे, महापालिका कर्मचारी, कंत्राटी सफाई कामगार, दगडखाण व नाका कामगार, तसेच शहरातील युवकवर्ग यांच्यासाठी राबविण्यात येत आहेत. प्रत्येक योजनेमागे एकच स्पष्ट उद्दिष्ट आहे — प्रत्येक नागरिकाला समान संधी मिळावी व त्याचे जीवन अधिक सुरक्षित आणि समृद्ध व्हावे.</p>
+
+                        <p>योजना प्रभावीपणे राबवायच्या असतील तर नागरिकांपर्यंत त्यांची माहिती पोहोचणे अत्यंत आवश्यक आहे. यासाठी नवी मुंबई महानगरपालिका विभागीय कार्यालये, मुख्यालय, होर्डिंग्ज, हस्तपत्रके, माहिती पुस्तिका तसेच वृत्तपत्रांमधील जाहीर निवेदने यांद्वारे योजनांची प्रसिद्धी करते. याशिवाय, आमचे समर्पित कर्मचारी व समूहसंघटक गावे, गांवठाण, झोपडपट्ट्या, शहरी भाग, पाडे व वस्त्या येथे प्रत्यक्ष भेटी देऊन नागरिकांना योजनांची माहिती देतात व त्यांचा लाभ घेण्यास मदत करतात.</p>
+
+                        <p>सर्व कल्याणकारी योजनांचे अर्ज विभागीय कार्यालये, समाजविकास विभाग व महापालिका मुख्यालय येथे सहज उपलब्ध करून देण्यात येतात तसेच तेथेच स्वीकारले जातात, जेणेकरून लाभार्थ्यांना अनावश्यक ये-जा करावी लागू नये किंवा कोणतीही गैरसोय होऊ नये. याशिवाय, समाजविकास विभागाच्या अनेक योजना नवी मुंबई महानगरपालिकेच्या योजना पोर्टलवर उपलब्ध असून, अर्ज सादर करण्यापासून ते अंतिम छाननी, मंजुरी व लाभाचे वितरण (डिस्बर्समेंट) ही संपूर्ण प्रक्रिया ऑनलाईन पद्धतीने पोर्टलवरूनच पूर्ण करण्यात येते.</p>
+
+                        <p>ज्ञान आणि शिक्षण हे सामाजिक प्रगतीचे भक्कम आधारस्तंभ आहेत, यावर नवी मुंबई महानगरपालिकेचा ठाम विश्वास आहे. शहरातील नागरिकांमध्ये वाचनाची आवड निर्माण व्हावी आणि विद्यार्थ्यांना स्पर्धा परीक्षांच्या तयारीसाठी योग्य वातावरण मिळावे, या उद्देशाने नवी मुंबई महानगरपालिका क्षेत्रात एकूण 36 ग्रंथालये व अभ्यासिका स्थापन करण्यात आलेल्या आहेत. या ग्रंथालयांमधून भावी सनदी अधिकारी, व्यावसायिक घडविण्यास मदत होत असून सर्व वयोगटांतील नागरिकांमध्ये वाचन संस्कृती रुजवली जात आहे.</p>
+
+                        <p>नवी मुंबई महानगरपालिकेचा अभिमान असलेले भारतरत्न डॉ. बाबासाहेब आंबेडकर स्मारक हे ज्ञान, समता आणि सामाजिक न्यायाचे प्रतीक आहे. या स्मारकामध्ये अद्ययावत ग्रंथालय, डॉ. बाबासाहेब आंबेडकर यांचा जीवनपट दर्शविणारी प्रदर्शने, ध्यानकेंद्र, अॅम्पीथिएटर तसेच अन्य सुविधा उपलब्ध आहेत. सर्व नागरिकांनी या स्मारकाचा लाभ घ्यावा, असे मी आवर्जून सांगतो.</p>
+
+                        <div class="decorative-line"></div>
+
+                        <p>या पुस्तिकेच्या माध्यमातून नवी मुंबई महानगरपालिका क्षेत्रातील सर्व नागरिकांना मी आवाहन करतो की, त्यांनी या विविध कल्याणकारी योजनांची माहिती घ्यावी आणि त्यांचा लाभ घ्यावा. प्रत्येक योजना नागरिकांच्या गरजा लक्षात घेऊन राबविण्यात आली आहे. या सर्व उपक्रमांमधून नवी मुंबई महानगरपालिका केवळ विस्तारत नाही, तर संवेदनशीलता, समावेशकता आणि समान संधींसह विकसित होत आहे, हेच आमचे ध्येय आहे.</p>
+                    </div>
+                </div>
+                <div id="message-english" style="display: none;">
+                    <div class="message-text">
+                        <p>As the Commissioner of Navi Mumbai Municipal Corporation, I strongly believe that a city's true progress is measured not only by its roads, buildings, and infrastructure, but by how well it cares for its people. At NMMC, our vision of development places citizens at the centre—especially those who need support, opportunity, and encouragement the most.</p>
+
+                        <div class="quote">
+                            "Every citizen should get equal opportunity and their life should become more secure and prosperous"
+                        </div>
+
+                        <p>While we continue to provide essential civic services, we are equally committed to social welfare and inclusive growth. Through our Social Development Department, NMMC implements a wide range of welfare programmes designed to improve quality of life, uphold dignity, and create opportunities for citizens from all sections of society.</p>
+
+                        <p>These welfare initiatives reach women and children, backward and marginalised communities, project-affected families, municipal employees, contract sanitation workers, stone quarry and naka workers, and the youth of Navi Mumbai. Each programme is thoughtfully designed with one clear purpose—to ensure that every citizen gets a fair chance to live a secure and meaningful life.</p>
+
+                        <p>For any welfare programme to be successful, people must first be aware of it. Keeping this in mind, NMMC takes special efforts to spread information about these schemes. Details are shared through department offices, the municipal headquarters, hoardings, pamphlets, information booklets, and newspaper announcements. In addition, our dedicated field staff and group organisers go directly into villages, gaothans, slum areas, urban neighbourhoods, settlements, and housing clusters, personally interacting with citizens and helping them understand how these schemes can benefit them.</p>
+
+                        <p>Application forms for all welfare schemes are easily available and accepted at department offices, the Social Development Department, and the municipal headquarters, so that beneficiaries do not have to travel unnecessarily or face inconvenience. In addition, many schemes of the Social Welfare Department are available on the NMMC Scheme Portal, where the entire process—from application submission to final scrutiny, approval, and disbursal of benefits—is completed online.</p>
+
+                        <p>Education and knowledge form the foundation of a progressive society. With this belief, NMMC has taken significant steps to promote reading and learning across the city. To encourage reading habits among citizens and to support students preparing for competitive examinations, the Municipal Corporation has established 36 libraries and study centres across Navi Mumbai. These spaces provide students with a peaceful environment to study and help nurture future civil servants and professionals, while also inspiring citizens of all ages to read and learn.</p>
+
+                        <p>One of the proudest initiatives of NMMC is the Bharat Ratna Dr. Babasaheb Ambedkar Memorial, a symbol of knowledge, equality, and social justice. This memorial houses a modern library, an exhibition showcasing Dr. Ambedkar's life and work, a meditation centre, an amphitheatre, and several other facilities. I encourage every citizen to visit this memorial and make full use of its resources.</p>
+
+                        <div class="decorative-line"></div>
+
+                        <p>Through this booklet, I warmly invite all citizens of Navi Mumbai to learn about and benefit from the various welfare schemes of NMMC. Each programme has been carefully planned with the needs of our people in mind. Together, these efforts reflect our commitment to building a city that does not merely expand—but grows with compassion, inclusion, and equal opportunity for all.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <div id="cta-marathi">
+                <h3>तुमचा सहभाग महत्वाचा</h3>
+                <p>नवी मुंबई महानगरपालिकेच्या योजना आणि सेवांबद्दल अधिक माहितीसाठी आमच्याशी संपर्क साधा</p>
+                <a href="https://www.nmmc.gov.in/" target="_blank" class="cta-btn">अधिक माहिती</a>
+            </div>
+            <div id="cta-english" style="display: none;">
+                <h3>Your Participation Matters</h3>
+                <p>Contact us for more information about NMMC schemes and services</p>
+                <a href="https://www.nmmc.gov.in/" target="_blank" class="cta-btn">Learn More</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // This function syncs commissioner page with layout language
+    function syncCommissionerWithLayout() {
+        // Check layout language by looking at head-english
+        const headEnglish = document.getElementById('head-english');
+        const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+        
+        console.log("Syncing commissioner with layout. English:", isEnglish);
+        
+        // Get commissioner elements
+        const marathiIds = [
+            'header-marathi', 
+            'photo-overlay-marathi', 
+            'message-marathi', 
+            'cta-marathi', 
+            'breadcrumb-current-marathi',
+            'breadcrumb-home-marathi'
+        ];
+        const englishIds = [
+            'header-english', 
+            'photo-overlay-english', 
+            'message-english', 
+            'cta-english', 
+            'breadcrumb-current-english',
+            'breadcrumb-home-english'
+        ];
+        
+        if (isEnglish) {
+            // Show English, hide Marathi
+            marathiIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            englishIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'inline';
+            });
+        } else {
+            // Show Marathi, hide English
+            marathiIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'inline';
+            });
+            englishIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Commissioner page loaded - syncing with layout");
+        
+        // Store original function
+        const originalToggle = window.toggleLanguage;
+        
+        // Create enhanced version
+        window.toggleLanguage = function() {
+            console.log("Enhanced toggleLanguage called");
+            // Call original to change layout
+            if (originalToggle) originalToggle();
+            // Sync commissioner content
+            setTimeout(syncCommissionerWithLayout, 100);
+        };
+        
+        // Initial sync
+        syncCommissionerWithLayout();
+        
+        // Also observe changes to layout
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style') {
+                    syncCommissionerWithLayout();
+                }
+            });
+        });
+        
+        // Observe layout header for changes
+        const headEnglish = document.getElementById('head-english');
+        if (headEnglish) {
+            observer.observe(headEnglish, { attributes: true });
+        }
+    });
+</script>
+{% endblock %}
