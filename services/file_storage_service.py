@@ -24,10 +24,19 @@ class FileStorageService:
         # ✅ Get base path from settings
         self.base_path = getattr(settings, 'S3_BASE_PATH', '')
         
+        # ✅ Store S3_AVAILABLE as instance variable
+        try:
+            from storages.backends.s3boto3 import S3Boto3Storage
+            self.S3_AVAILABLE = True
+            self.S3Boto3Storage = S3Boto3Storage
+        except ImportError:
+            self.S3_AVAILABLE = False
+            self.S3Boto3Storage = None
+        
         # Debug info
         print(f"[FileStorageService] Environment: {self.environment}")
+        print(f"[FileStorageService] S3 Available: {self.S3_AVAILABLE}")
         print(f"[FileStorageService] Base Path: '{self.base_path}'")
-        print(f"[FileStorageService] MEDIA_ROOT: {settings.MEDIA_ROOT}")
         
     def _prepare_path(self, path, add_base=True):
         """
@@ -93,9 +102,10 @@ class FileStorageService:
         print(f"Storage path: {storage_path}")
         
         try:
-            if self.is_production and S3_AVAILABLE:
+            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
+            if self.is_production and self.S3_AVAILABLE:
                 # Save to S3
-                s3_storage = S3Boto3Storage()
+                s3_storage = self.S3Boto3Storage()
                 saved_path = s3_storage.save(storage_path, file)
                 print(f"Saved to S3: {saved_path}")
                 
@@ -159,7 +169,8 @@ class FileStorageService:
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
                 region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
                 
-                if bucket_name and S3_AVAILABLE:
+                # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
+                if bucket_name and self.S3_AVAILABLE:
                     # Generate signed URL (expires in 1 hour)
                     import boto3
                     from botocore.exceptions import ClientError
@@ -214,33 +225,6 @@ class FileStorageService:
         print(f"[FileStorageService] Generated local URL: {url}")
         return url
     
-    def delete_file(self, file_path):
-        """
-        Delete file from storage
-        
-        Args:
-            file_path: Relative file path
-        """
-        try:
-            # ✅ Prepare path with base path
-            file_path = self._prepare_path(file_path, add_base=True)
-            
-            if self.is_production and S3_AVAILABLE:
-                # Delete from S3
-                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
-                if bucket_name:
-                    s3_storage = S3Boto3Storage(bucket_name=bucket_name)
-                    s3_storage.delete(file_path)
-                    print(f"[FileStorageService] Deleted from S3: {file_path}")
-                else:
-                    self._delete_local(file_path)
-            else:
-                # Delete from local
-                self._delete_local(file_path)
-                    
-        except Exception as e:
-            print(f"[FileStorageService] ERROR deleting file: {str(e)}")
-    
     def _delete_local(self, file_path):
         """
         Delete local file
@@ -252,72 +236,12 @@ class FileStorageService:
         else:
             print(f"[FileStorageService] File not found: {full_path}")
     
-    def file_exists(self, file_path):
-        """
-        Check if file exists in storage
-        
-        Args:
-            file_path: Relative file path
-        
-        Returns:
-            bool: True if file exists
-        """
-        try:
-            # ✅ Prepare path with base path
-            file_path = self._prepare_path(file_path, add_base=True)
-            
-            if self.is_production and S3_AVAILABLE:
-                # Check in S3
-                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
-                if bucket_name:
-                    s3_storage = S3Boto3Storage(bucket_name=bucket_name)
-                    return s3_storage.exists(file_path)
-                else:
-                    return self._local_exists(file_path)
-            else:
-                # Check locally
-                return self._local_exists(file_path)
-                
-        except Exception as e:
-            print(f"[FileStorageService] ERROR checking file: {str(e)}")
-            return False
-    
     def _local_exists(self, file_path):
         """
         Check if file exists locally
         """
         full_path = os.path.join(settings.MEDIA_ROOT, file_path)
         return os.path.exists(full_path)
-    
-    def get_file_size(self, file_path):
-        """
-        Get file size in bytes
-        
-        Args:
-            file_path: Relative file path
-        
-        Returns:
-            int: File size in bytes, or 0 if not found
-        """
-        try:
-            # ✅ Prepare path with base path
-            file_path = self._prepare_path(file_path, add_base=True)
-            
-            if self.is_production and S3_AVAILABLE:
-                # Get from S3
-                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
-                if bucket_name:
-                    s3_storage = S3Boto3Storage(bucket_name=bucket_name)
-                    return s3_storage.size(file_path)
-                else:
-                    return self._local_size(file_path)
-            else:
-                # Get locally
-                return self._local_size(file_path)
-                
-        except Exception as e:
-            print(f"[FileStorageService] ERROR getting file size: {str(e)}")
-            return 0
     
     def _local_size(self, file_path):
         """
@@ -328,6 +252,80 @@ class FileStorageService:
             return os.path.getsize(full_path)
         return 0
 
+    def delete_file(self, file_path):
+        """
+        Delete file from storage
+        """
+        try:
+            # ✅ Prepare path with base path
+            file_path = self._prepare_path(file_path, add_base=True)
+            
+            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
+            if self.is_production and self.S3_AVAILABLE:
+                # Delete from S3
+                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+                if bucket_name:
+                    s3_storage = self.S3Boto3Storage(bucket_name=bucket_name)
+                    s3_storage.delete(file_path)
+                    print(f"[FileStorageService] Deleted from S3: {file_path}")
+                else:
+                    self._delete_local(file_path)
+            else:
+                # Delete from local
+                self._delete_local(file_path)
+                    
+        except Exception as e:
+            print(f"[FileStorageService] ERROR deleting file: {str(e)}")
 
+    def file_exists(self, file_path):
+        """
+        Check if file exists in storage
+        """
+        try:
+            # ✅ Prepare path with base path
+            file_path = self._prepare_path(file_path, add_base=True)
+            
+            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
+            if self.is_production and self.S3_AVAILABLE:
+                # Check in S3
+                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+                if bucket_name:
+                    s3_storage = self.S3Boto3Storage(bucket_name=bucket_name)
+                    return s3_storage.exists(file_path)
+                else:
+                    return self._local_exists(file_path)
+            else:
+                # Check locally
+                return self._local_exists(file_path)
+                
+        except Exception as e:
+            print(f"[FileStorageService] ERROR checking file: {str(e)}")
+            return False
+
+    def get_file_size(self, file_path):
+        """
+        Get file size in bytes
+        """
+        try:
+            # ✅ Prepare path with base path
+            file_path = self._prepare_path(file_path, add_base=True)
+            
+            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
+            if self.is_production and self.S3_AVAILABLE:
+                # Get from S3
+                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+                if bucket_name:
+                    s3_storage = self.S3Boto3Storage(bucket_name=bucket_name)
+                    return s3_storage.size(file_path)
+                else:
+                    return self._local_size(file_path)
+            else:
+                # Get locally
+                return self._local_size(file_path)
+                
+        except Exception as e:
+            print(f"[FileStorageService] ERROR getting file size: {str(e)}")
+            return 0
+        
 # Global instance for convenience
 file_storage_service = FileStorageService()

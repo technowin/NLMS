@@ -90,7 +90,10 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, Border, Side
 from django.views.decorators.http import require_POST
 from services.file_storage_service import file_storage_service
-
+import boto3
+from botocore.exceptions import ClientError
+from django.http import HttpResponse, Http404, StreamingHttpResponse
+import mimetypes
 # Part First While Filling Membership Form
 
 def index(request):
@@ -988,7 +991,6 @@ def membership_form_edit(request):
                 date_fields = ["dob", "from_date", "to_date"]
 
                 for form_field, model_field in field_map.items():
-                    # new_value = request.POST.get(form_field)
                     if form_field == "education":
                         new_value = education_value
                     else:
@@ -1058,55 +1060,62 @@ def membership_form_edit(request):
                 for field_name, doc_type in file_fields.items():
                     uploaded_file = request.FILES.get(field_name)
                     if uploaded_file:
+                        print(f"\n=== Processing file upload: {field_name} ===")
+                        
                         # Get existing document
                         old_doc = DocumentDetails.objects.filter(
-                            membership=membership, document_id=doc_type
+                            membership=membership, 
+                            document_id=doc_type,
+                            isactive=1
                         ).first()
 
                         # Delete old file if exists
                         if old_doc and old_doc.file_path:
-                            old_path = os.path.join(settings.MEDIA_ROOT, old_doc.file_path)
-                            if os.path.isfile(old_path):
-                                os.remove(old_path)
-                            old_doc.delete()
-
-                        # Construct path: library_code/<user_id>/Document - X/
-                        user_folder = f"{library_code}/{user_id}"
-                        doc_type_folder = f"Document - {doc_type}"
-                        save_dir = os.path.join(settings.MEDIA_ROOT, user_folder, doc_type_folder)
-                        os.makedirs(save_dir, exist_ok=True)
-
-                        timestamp = timezone.now().strftime("%Y%m%dT%H%M%S")
-                        filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_{timestamp}.{uploaded_file.name.rsplit('.', 1)[1]}"
-                        save_path = os.path.join(save_dir, filename)
-
-                        # Save file manually
-                        with open(save_path, 'wb+') as destination:
-                            for chunk in uploaded_file.chunks():
-                                destination.write(chunk)
-
-                        # Store relative path in DB (so MEDIA_ROOT can be prepended later)
-                        relative_path = os.path.relpath(save_path, settings.MEDIA_ROOT)
-
-                        if old_doc:
-                            # Update existing record
-                            old_doc.file_name = filename
-                            old_doc.file_path = relative_path
-                            old_doc.updated_by = user_code
+                            print(f"Deleting old document: {old_doc.file_path}")
+                            try:
+                                file_storage_service.delete_file(old_doc.file_path)
+                            except Exception as e:
+                                print(f"Error deleting old file: {e}")
+                            
+                            # Soft delete the old document record
+                            old_doc.isactive = 0
+                            old_doc.updated_by = user_id
                             old_doc.save()
-                        else:
-                            # Create new record
-                            DocumentDetails.objects.create(
-                                membership=membership,
-                                document_id=doc_type,
-                                file_name=filename,
-                                file_path=relative_path,
-                                created_by=user_code,
-                            )
+                            print(f"Soft deleted old document record")
+
+                        # Generate unique filename
+                        timestamp = timezone.now().strftime("%Y%m%dT%H%M%S")
+                        short_uuid = str(uuid.uuid4())[:8]
+                        filename, ext = os.path.splitext(uploaded_file.name)
+                        unique_filename = f"{filename}_{timestamp}_{short_uuid}{ext}"
+
+                        # Build save path -> library_code/username/Document - {doc_type}/
+                        username = membership.username  # or get username from membership
+                        save_dir = os.path.join(library_code, username, f"Document - {doc_type}")
+                        save_path = os.path.join(save_dir, unique_filename)
+                        
+                        print(f"New file path: {save_path}")
+                        print(f"Environment: {file_storage_service.environment}")
+                        
+                        # ✅ USE FILE STORAGE SERVICE TO SAVE FILE
+                        saved_file_path = file_storage_service.save_file(uploaded_file, save_path)
+                        print(f"Saved file path returned: {saved_file_path}")
+
+                        # ✅ Save document record with normalized path
+                        DocumentDetails.objects.create(
+                            membership=membership,
+                            document_id=doc_type,
+                            file_name=unique_filename,
+                            file_path=saved_file_path,  # Already normalized by service
+                            created_by=user_id,
+                            created_at=timezone.now()
+                        )
+                        
+                        print(f"Created new document record")
                         updated = True
 
                 if updated:
-                    membership.updated_by = user_code
+                    membership.updated_by = user_id
                     membership.save()
                     messages.success(request, "Membership updated successfully!")
                 else:
@@ -1121,29 +1130,6 @@ def membership_form_edit(request):
         print(f"error: {e}")
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_approval")
-
-# def secure_document_view(request, doc_id_enc):
-#     try:
-#         # Decrypt the document ID
-#         doc_id = dec(doc_id_enc)
-#         document = get_object_or_404(DocumentDetails, id=doc_id, isactive=1)
-
-#         # Build full file path safely
-#         file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
-
-#         if not file_path.exists():
-#             raise Http404("Document file not found")
-
-#         return FileResponse(open(file_path, 'rb'), as_attachment=False, filename=document.file_name)
-#     except Exception:
-#         raise Http404("Document not found")
-
-import boto3
-from botocore.exceptions import ClientError
-from django.http import HttpResponse, Http404, StreamingHttpResponse
-from django.shortcuts import get_object_or_404
-from django.conf import settings
-import mimetypes
 
 def secure_document_view(request, doc_id_enc):
     """
