@@ -1140,7 +1140,7 @@ def membership_form_edit(request):
 
 import boto3
 from botocore.exceptions import ClientError
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 import mimetypes
@@ -1168,7 +1168,6 @@ def secure_document_view(request, doc_id_enc):
                 raise Http404("S3 configuration missing")
             
             # Prepare S3 path
-            from .services import file_storage_service
             s3_path = file_storage_service._prepare_path(document.file_path, add_base=True)
             
             print(f"[secure_document_view] Streaming from S3: {s3_path}")
@@ -1193,23 +1192,39 @@ def secure_document_view(request, doc_id_enc):
                     if guessed_type:
                         content_type = guessed_type
                 
-                # Create Django response
-                django_response = HttpResponse(
-                    s3_response['Body'].read(),
+                # ✅ Use StreamingHttpResponse for better performance
+                def file_iterator(file_obj, chunk_size=8192):
+                    while True:
+                        chunk = file_obj.read(chunk_size)
+                        if not chunk:
+                            break
+                        yield chunk
+                
+                # Create streaming response
+                response = StreamingHttpResponse(
+                    file_iterator(s3_response['Body']),
                     content_type=content_type
                 )
                 
                 # Set headers
                 from urllib.parse import quote
-                django_response['Content-Disposition'] = f'inline; filename="{quote(document.file_name)}"'
-                django_response['Content-Length'] = str(s3_response['ContentLength'])
-                django_response['X-Content-Type-Options'] = 'nosniff'
+                response['Content-Disposition'] = f'inline; filename="{quote(document.file_name)}"'
+                response['Content-Length'] = str(s3_response['ContentLength'])
+                response['X-Content-Type-Options'] = 'nosniff'
                 
-                return django_response
+                return response
                 
             except ClientError as e:
                 print(f"[secure_document_view] S3 error: {e}")
-                raise Http404("Document not found on S3")
+                error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+                print(f"Error code: {error_code}")
+                
+                if error_code == 'NoSuchKey':
+                    raise Http404("Document not found on S3")
+                elif error_code == 'AccessDenied':
+                    raise Http404("Access denied to document")
+                else:
+                    raise Http404("Error retrieving document")
                 
         else:
             # ========== LOCAL/TEST: Serve from local filesystem ==========
@@ -1218,7 +1233,7 @@ def secure_document_view(request, doc_id_enc):
             file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
             
             if not file_path.exists():
-                raise Http404("Document file not found")
+                raise Http404(f"Document file not found at: {file_path}")
             
             # Determine content type
             content_type, encoding = mimetypes.guess_type(str(file_path))
@@ -1238,6 +1253,8 @@ def secure_document_view(request, doc_id_enc):
             
             return response
             
+    except Http404:
+        raise  # Re-raise Http404
     except Exception as e:
         print(f"[secure_document_view] Error: {str(e)}")
         import traceback
