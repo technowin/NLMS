@@ -43,6 +43,7 @@ class="authentication-bg position-relative"
 
                         <form method="POST" action="Login" novalidate>
                             <input type="hidden" name="next" value="{{ next }}">
+                            <input type="hidden" name="db_alias" value="{{ db_alias }}">
                             <input type="hidden" name="cat" value="{{ cat }}">
                             <input type="hidden" name="ebook_id" value="{{ request.GET.ebook_id }}">
                             <input type="hidden" name="pdf_url" value="{{ request.GET.pdf_url }}">

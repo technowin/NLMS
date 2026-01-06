@@ -101,6 +101,11 @@ def Login(request):
     if request.method == "GET":
        
         next_url = request.GET.get("next", "")
+        db_alias = request.GET.get("db_alias")
+        if not db_alias:
+            db_alias = None
+        else:
+            db_alias= enc(db_alias)
     
         encrypted_cat_ref_num= request.GET.get("cat_ref_num", "")
         encrypted_ebook_id = request.GET.get("ebook_id")
@@ -124,6 +129,7 @@ def Login(request):
             'cat': encrypted_cat_ref_num,
             'ebook_id': encrypted_ebook_id,
             'pdf_url': encrypted_pdf_url,
+             'db_alias':db_alias
         })
 
     # ============================================================
@@ -140,6 +146,11 @@ def Login(request):
         encrypted_cat_ref_num = request.POST.get("cat")
         encrypted_ebook_id = request.POST.get("ebook_id")
         encrypted_pdf_url = request.POST.get("pdf_url")
+        db_alias = request.POST.get("db_alias")
+        if db_alias == 'None':
+            db_alias = None
+        else:
+            library_code = dec(db_alias)
 
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None

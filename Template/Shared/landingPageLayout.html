@@ -24,6 +24,12 @@
 
         <style>
 
+            @media (max-width: 768px) {
+                .employee_login {
+                    display: none !important;
+                }
+            }
+
             .modal {
                 z-index: 20000 !important;
             }
@@ -53,6 +59,34 @@
 
             .no-hover-underline{
                 float:right;
+            }
+
+        </style>
+          <style>
+
+            .employee-login-btn {
+                background: #015296; /* Primary blue */
+                color: #ffffff;
+                border: none;
+                border-radius: 30px;
+                padding: 10px 22px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(30, 64, 175, 0.35);
+                transition: all 0.3s ease;
+                letter-spacing: 0.3px;
+                outline: none;
+            }
+
+
+            .employee-login-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 22px rgba(37,99,235,0.45);
+            }
+
+            .employee-login-btn:active {
+                transform: translateY(0);
             }
 
         </style>
@@ -118,7 +152,7 @@
                     <div class="govLinkContainer">
                         <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                             aria-label="Welcome to NMMC Library official website">
-                            NMMC, Library Department
+                            NMMC, Library Welfare
                             <span class="underlineHover"></span>
                         </a>
                     </div>
@@ -128,6 +162,14 @@
                         <div class="contact-itemm email">contact@nmmc.gov.in</div>
                         <div class="contact-itemm phone">+91 22 2756 1234</div>
                         <div class="contact-itemm helpline">1800-222-999</div>
+                    </div>
+
+                    <div class="employee_login">
+                        <button type="button"
+                            class="employee-login-btn"
+                            onclick="window.location.href='{% url 'Login' %}?db_alias=default'">
+                            Employee Login
+                        </button>
                     </div>
                     
                     <div class="fontControlContainer">
@@ -142,16 +184,24 @@
                     <div class="govLinkContainer">
                         <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                             aria-label="नवी मुंबई महानगरपालिका ग्रंथालयाच्या अधिकृत वेबसाइटवर आपले स्वागत आहे">
-                            नवी मुंबई महानगरपालिका, ग्रंथालय विभाग 
+                            नवी मुंबई महानगरपालिका, समाज विकास
                             <span class="underlineHover"></span>
                         </a>
                     </div>
                     
                     <!-- Marathi contact info -->
                     <div class="headerContactInfo">
-                        <div class="contact-itemm email">संपर्क@nmmc.gov.in</div>
+                        <div class="contact-itemm email">contact@nmmc.gov.in</div>
                         <div class="contact-itemm phone">+९१ २२ २७५६ १२३४</div>
                         <div class="contact-itemm helpline">१८००-२२२-९९९</div>
+                    </div>
+
+                    <div class="employee_login">
+                        <button type="button"
+                            class="employee-login-btn"
+                            onclick="window.location.href='{% url 'Login' %}?db_alias=default'">
+                           कर्मचारी लॉगिन
+                        </button>
                     </div>
                     
                     <div class="fontControlContainer">
@@ -165,7 +215,7 @@
                 <div class="top-bar">
                     <!-- Left: logo + title -->
                     <div class="brand-left" id="brand-english" style="display: none;">
-                       <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:65px; width:auto; object-fit:contain;">
+                       <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:45px; width:auto; object-fit:contain;">
                             <div class="brand-text">
                                 <h3 class="header-title">Navi Mumbai Muncipal Corporation</h3>
                                 <h4 class="sub-title">Public Library</h4>
@@ -173,14 +223,14 @@
                         </div> 
 
                         <div class="brand-left" id="brand-marathi">
-                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:65px; width:auto; object-fit:contain;">
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:45px; width:auto; object-fit:contain;">
                         <div class="brand-text">
                             <h3 class="header-title">नवी मुंबई महानगरपालिका</h3>
-                            <h4 class="sub-title">सार्वजनिक ग्रंथालय</h4>
+                            <h4 class="sub-title">ग्रंथालय</h4>
                         </div>
                     </div>
 
-                    {% if library_name %}
+                    {% comment %} {% if library_name %}
                         <div id ="english-title" style="display: none;" > 
                             <h3  style="margin: 0;color: var(--primary-color);font-weight: 600;text-align: center;white-space: nowrap;">
                                 {{ library_name }}
@@ -191,12 +241,12 @@
                                 {{ library_name_mar }}
                             </h3>
                         </div>
-                    {% endif %}
+                    {% endif %} {% endcomment %}
 
                     {% comment %} </div> {% endcomment %}
 
                     <!-- Right logo -->
-                   <img src="{% static 'images/administrative/layout_img.png' %}"alt="NMMC Logo"class="logo right-logo"style="height:65px; width:auto; object-fit:contain;">
+                   <img src="{% static 'images/administrative/layout_img.png' %}"alt="NMMC Logo"class="logo right-logo"style="height:45px; width:auto; object-fit:contain;">
                 </div>
 
                 <!-- Navbar -->
@@ -614,8 +664,12 @@
             const englishhero = document.getElementById('hero-english');
             const marathisection = document.getElementById('section-marathi');
             const englishsection = document.getElementById('section-english');
-            const marathititle = document.getElementById('marathi-title');
-            const englishtitle = document.getElementById('english-title');
+             const marathihead = document.getElementById('marathi-head');
+            const englishhead = document.getElementById('english-head');
+            const marathiheader = document.getElementById('marathi-header');
+            const englishheader = document.getElementById('english-header');
+           // const marathititle = document.getElementById('marathi-title');
+           // const englishtitle = document.getElementById('english-title');
             
             // Get the language toggle button
             const langBtn = document.querySelector('.fontControlBtn[onclick="toggleLanguage()"]');
@@ -644,14 +698,22 @@
                 // Hero section
                 if (marathihero) marathihero.style.display = 'none';
                 if (englishhero) englishhero.style.display = 'block';
+
+                //Index Heading
+                if (marathihead) marathihead.style.display = 'none';
+                if (englishhead) englishhead.style.display = 'block';
+
+                //sub Index subHeading
+                if (marathiheader) marathiheader.style.display = 'none';
+                if (englishheader) englishheader.style.display = 'block';
                 
                 // Other sections
                 if (marathisection) marathisection.style.display = 'none';
                 if (englishsection) englishsection.style.display = 'block';
                 
                 // Titles
-                if (marathititle) marathititle.style.display = 'none';
-                if (englishtitle) englishtitle.style.display = 'block';
+                //if (marathititle) marathititle.style.display = 'none';
+                //if (englishtitle) englishtitle.style.display = 'block';
                 
                 // Update button text
                 if (langBtn) langBtn.textContent = 'मराठी';
@@ -679,14 +741,22 @@
                 // Hero section
                 if (marathihero) marathihero.style.display = 'block';
                 if (englishhero) englishhero.style.display = 'none';
+
+                 //Index Heading
+                if (marathihead) marathihead.style.display = 'block';
+                if (englishhead) englishhead.style.display = 'none';
+
+                //Sub Index Heading
+                if (marathiheader) marathiheader.style.display = 'block';
+                if (englishheader) englishheader.style.display = 'none';
                 
                 // Other sections
                 if (marathisection) marathisection.style.display = 'block';
                 if (englishsection) englishsection.style.display = 'none';
                 
                 // Titles
-                if (marathititle) marathititle.style.display = 'block';
-                if (englishtitle) englishtitle.style.display = 'none';
+                //if (marathititle) marathititle.style.display = 'block';
+                //if (englishtitle) englishtitle.style.display = 'none';
                 
                 // Update button text
                 if (langBtn) langBtn.textContent = 'English';

@@ -633,16 +633,20 @@
                     <h4>Since {{ library.est_year }}</h4>
                 {% endif %}
 
-               <p id="libraryDescription"
-                    style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; transition:all 0.3s ease; font-size:15px; line-height:1.6; color:#333;">
-                    {{ library.about_library }}
-                </p>
+              <!-- Replace the description section with this -->
+                <div class="description-container">
+                    <p id="libraryDescription" class="collapsed">
+                        {{ library.about_library }}
+                    </p>
+                    
+                    <button id="readMoreBtn" onclick="toggleDescription(this)">
+                        <span class="text">Read More</span>
+                        <span class="icon">↓</span>
+                    </button>
+                </div>
 
-                <span id="readMoreBtn"
-                    style="color:red; cursor:pointer; font-weight:600; margin-top:6px; display:inline-block; transition:color 0.3s ease;"
-                    onclick="toggleDescription(this)">
-                    Read More
-                </span>
+<!-- Rest of your HTML remains the same, just make sure the modal and button sections use the updated classes -->
+
 
                 {% if library.librarian_name %}
                     <p><strong>Librarian:</strong> {{ library.librarian_name }}</p>
@@ -650,6 +654,10 @@
 
                 {% if library.opening_hours %}
                     <p><strong>Opening Hours:</strong> {{ library.opening_hours }}</p>
+                {% endif %}
+
+                {% if library.capacity %}
+                    <p><strong>Capacity:</strong> {{ library.capacity }}</p>
                 {% endif %}
 
                 <!-- Library & Membership Rules Icons -->
@@ -704,31 +712,37 @@
                     {% endif %}
                 </div>
 
-                <div class="library-contact">
+              <div class="library-contact library-contact-inline">
                     {% if library.contact_email %}
-                        <p><i class="fa fa-envelope"></i> 
+                        <span>
+                            <i class="fa fa-envelope"></i>
                             <a href="mailto:{{ library.contact_email }}">{{ library.contact_email }}</a>
-                        </p>
+                        </span>
                     {% endif %}
+
                     {% if library.contact_phone %}
-                        <p><i class="fa fa-phone"></i> 
+                        <span>
+                            <i class="fa fa-phone"></i>
                             <a href="tel:{{ library.contact_phone }}">{{ library.contact_phone }}</a>
-                        </p>
+                        </span>
                     {% endif %}
+
                     {% if library.location_url %}
-                        <p><i class="fa fa-map-marker-alt"></i> 
+                        <span>
+                            <i class="fa fa-map-marker-alt"></i>
                             <a href="{{ library.location_url }}" target="_blank">View on Map</a>
-                        </p>
+                        </span>
                     {% endif %}
                 </div>
 
+
             
                 {% if library.membership_page_link %}
-                    <div class="library-cta">
+                    <div class="">
                         <div class="cta-inline">
                             <span>Want to be a member of this library?</span>
                             <button type="button" class="join-link"
-                                style="margin-left:10px; background:linear-gradient(135deg, #3b82f6, #1e40af); color:#fff; border:none; border-radius:30px; padding:8px 18px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 10px rgba(30,64,175,0.3); transition:all 0.3s ease; letter-spacing:0.3px; text-decoration:none; outline:none;"
+                                style="margin-left:10px; left:0 !important;background:linear-gradient(135deg, #3b82f6, #1e40af); color:#fff; border:none; border-radius:30px; padding:8px 18px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 10px rgba(30,64,175,0.3); transition:all 0.3s ease; letter-spacing:0.3px; text-decoration:none; outline:none;"
                                 onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.boxShadow='0 6px 14px rgba(30,64,175,0.5)'; this.style.transform='translateY(-2px) scale(1.05)';"
                                 onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #1e40af)'; this.style.boxShadow='0 4px 10px rgba(30,64,175,0.3)'; this.style.transform='translateY(0) scale(1)';"
                                 onclick="window.location.href='{% url 'Login' %}'">
@@ -742,7 +756,8 @@
 
         {% if library.books %}
             <div class="library-books-section">
-                <h4>{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
+                <h4 id="marathi-head">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
+                <h4 id="english-head" style="display:none;">{{ library.library_name }} Books are available here</h4>
                 <div class="book-gallery">
                     {% for book in library.books %}
                         <div class="book-item">
@@ -915,7 +930,8 @@
 
         {% if library.ebooks %}
             <div class="library-books-section">
-                <h4>{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
+                 <h4 id="marathi-header">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
+                <h4 id="english-header" style="display:none;">{{ library.library_name }} Books are available here</h4>
 
                 <div class="book-gallery">
                     {% for ebook in library.ebooks %}
@@ -1415,28 +1431,93 @@
         });
 
     </script>
-    <script>
-        function toggleDescription(btn) {
+  <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            debugger;
             const desc = document.getElementById("libraryDescription");
-            const expanded = desc.getAttribute("data-expanded") === "true";
+            const btn = document.getElementById("readMoreBtn");
 
-            if (expanded) {
-                // Collapse text
-                desc.style.display = "-webkit-box";
-                desc.style.webkitLineClamp = "2";
-                desc.style.overflow = "hidden";
-                btn.textContent = "Read More";
-                desc.setAttribute("data-expanded", "false");
-            } else {
-                // Expand text
-                desc.style.webkitLineClamp = "unset";
-                desc.style.overflow = "visible";
-                desc.style.display = "block";
-                btn.textContent = "Read Less";
-                desc.setAttribute("data-expanded", "true");
+            if (!desc || !btn) return;
+
+            const wordCount = desc.innerText.trim().split(/\s+/).length;
+
+            if (wordCount <= 50) {
+                btn.style.display = "none";
+                desc.classList.remove("collapsed"); // show full text if short
             }
-        }
+        });
     </script>
+   <script>
+    function toggleDescription(btn) {
+        const desc = document.getElementById("libraryDescription");
+        const isExpanded = desc.classList.contains("expanded");
+        const textSpan = btn.querySelector('.text');
+        const iconSpan = btn.querySelector('.icon');
+
+        if (isExpanded) {
+            // Collapse
+            desc.classList.remove("expanded");
+            desc.classList.add("collapsed");
+            textSpan.textContent = "Read More";
+            iconSpan.textContent = "↓";
+            iconSpan.style.transform = "rotate(0deg)";
+            btn.classList.remove("expanded");
+        } else {
+            // Expand
+            desc.classList.remove("collapsed");
+            desc.classList.add("expanded");
+            textSpan.textContent = "Show Less";
+            iconSpan.textContent = "↑";
+            btn.classList.add("expanded");
+            
+            // Smooth scroll to show more content
+            desc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    // Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Open modal when rule buttons are clicked
+        document.querySelectorAll('.rule-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const modalId = this.getAttribute('data-modal');
+                const modal = document.querySelector(modalId);
+                if (modal) {
+                    modal.style.display = 'block';
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+
+        // Close modal when X is clicked
+        document.querySelectorAll('.modal .close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        });
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        });
+
+        // Add keyboard support for modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+            }
+        });
+    });
+</script>
 
     <script>
 

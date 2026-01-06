@@ -89,6 +89,7 @@ import pandas as pd
 import openpyxl
 from openpyxl.styles import Alignment, Font, Border, Side
 from django.views.decorators.http import require_POST
+from services.file_storage_service import file_storage_service
 
 # Part First While Filling Membership Form
 
@@ -287,6 +288,7 @@ def get_pincodes(request):
             pass
     return JsonResponse({"pincodes": pincodes})
 
+# Notepad++ 485
 def get_membership_details(request):
     if request.method == "GET":
         enc_id = request.GET.get("id")
@@ -348,64 +350,6 @@ def get_membership_details(request):
                 "error": str(e)
             })
             
-# def get_membership_details(request):
-#     if request.method == "GET":
-#         enc_id = request.GET.get("id")
-#         membership_detail_id = request.GET.get("membership_detail_id", "")
-#         try:
-#             membership_id = enc_id  # decrypt if needed
-
-#             membership = MembershipMaster.objects.get(
-#                 id=membership_id,
-#                 isactive=1
-#             )
-
-#             data = {
-#                 "deposit": str(membership.deposit),
-#                 "entry_fees": str(membership.entry_fees),
-#                 "subscription_fees": str(membership.subscription_fees),
-#                 "fine_membership": str(membership.fine_membership),
-#             }
-            
-#             data1 = None
-            
-#             if membership_detail_id:
-                
-                
-#                 membershipDetails = MembershipDetails.objects.filter(
-#                     id=membership_detail_id,
-#                     isactive=1
-#                 ).first()
-
-#                 data1 = {
-#                     "from_date": membershipDetails.from_date.strftime("%Y-%m-%d") if membershipDetails.from_date else None,
-#                     "membership_duration": membershipDetails.membership_duration,
-#                     "to_date": membershipDetails.to_date.strftime("%Y-%m-%d") if membershipDetails.to_date else None,
-                    
-#                     "deposit": str(membershipDetails.deposit) if membershipDetails and membershipDetails.deposit else str(membership.deposit),  
-#                     "entry_fees": str(membershipDetails.entry_fees) if membershipDetails and membershipDetails.entry_fees else str(membership.entry_fees),
-#                     "subscription": str(membershipDetails.subscription) if membershipDetails and membershipDetails.subscription else str(membership.subscription),
-#                 }
-
-#             return JsonResponse({
-#                 "success": True,
-#                 "data": data,
-#                 "data1": data1
-#             })
-
-#         except MembershipMaster.DoesNotExist:
-#             return JsonResponse({
-#                 "success": False,
-#                 "error": "Membership not found"
-#             })
-#         except Exception as e: 
-#             return JsonResponse({
-#                 "success": False,
-#                 "error": str(e)
-#             })
-
-# membership form filled by member first time registeration
-
 def registration(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -546,22 +490,16 @@ def registration(request):
                             # Build save path -> library_code/Document - {doc_id}/unique_filename
                             save_dir = os.path.join(library_code, username, f"Document - {doc_id}")
                             save_path = os.path.join(save_dir, unique_filename)
-                            full_path = os.path.join(settings.MEDIA_ROOT, save_path)
-
-                            # ✅ Ensure directory exists
-                            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-                            # ✅ Save file
-                            with open(full_path, "wb+") as destination:
-                                for chunk in file.chunks():
-                                    destination.write(chunk)
+                            
+                            # ✅ USE STORAGE SERVICE TO SAVE FILE
+                            saved_file_path = file_storage_service.save_file(file, save_path)
 
                             # ✅ Save document record
                             DocumentDetails.objects.create(
                                 membership=membership,
                                 document_id=doc_id,
                                 file_name=unique_filename,
-                                file_path=save_path,
+                                file_path=saved_file_path,  # This will be the path
                                 created_by=request.POST.get("user_id"),
                                 created_at=timezone.now()
                             )
@@ -569,17 +507,14 @@ def registration(request):
                             documents_info.append({
                                 "document_id": doc_id,
                                 "file_name": unique_filename,
-                                "file_path": save_path,
+                                "file_path": saved_file_path,
+                                "file_url": file_storage_service.get_file_url(saved_file_path),  # Get URL
                             })
 
                     print("\n===== Documents Uploaded =====")
                     for d in documents_info:
                         print(d)
                         
-                    # === Check for duplicate email or user_id before creating user ===
-                    # if CustomUser.objects.filter(email=data.get("email")).exists():
-                    #     raise ValueError(f"❌ Email '{data.get('email')}' already exists!")
-
                     if CustomUser.objects.filter(username=data.get("user_id")).exists():
                         raise ValueError(f"❌ User ID '{data.get('user_id')}' already exists!")
 
@@ -612,7 +547,6 @@ def registration(request):
 
                     # return redirect('/registration/?formfilledsuccessfully=1')
                     return redirect(f'/{library_code}/registration?formfilledsuccessfully={formfilledsuccessfullyVariable}')
-
 
             except Exception as e:
                 tb = traceback.extract_tb(e.__traceback__)

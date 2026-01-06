@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
-
+import socket
 from decouple import config
 from cryptography.fernet import Fernet
+
+# ✅ ADD THIS - Load .env file
+from dotenv import load_dotenv
+load_dotenv()  # This loads variables from .env file
 
 # ENCRYPTED_PASSWORD = config("DB_ENCRYPTED_PASSWORD")
 # SECRET_KEY = config("DB_SECRET_KEY")
@@ -23,15 +27,58 @@ from cryptography.fernet import Fernet
 # fernet = Fernet(SECRET_KEY)
 # DECRYPTED_PASSWORD = fernet.decrypt(ENCRYPTED_PASSWORD.encode()).decode()
 
-ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251']
+# ========== ENVIRONMENT DETECTION ==========
+def detect_environment():
+    """
+    Detect environment: local, test, or production
+    """
+    # Option 1: Check environment variable (highest priority)
+    env_from_var = os.getenv('DJANGO_ENV', '').lower()
+    if env_from_var in ['local', 'test', 'production']:
+        return env_from_var
+    
+    # Option 2: Detect by IP address
+    try:
+        hostname = socket.gethostname()
+        server_ip = socket.gethostbyname(hostname)
+        
+        # Define server IPs
+        TEST_SERVER_IP = '3.111.76.175'
+        PRODUCTION_SERVER_IP = '43.205.183.251'
+        LOCAL_IPS = ['127.0.0.1', 'localhost', '127.0.1.1']
+        
+        if server_ip == PRODUCTION_SERVER_IP:
+            return 'production'
+        elif server_ip == TEST_SERVER_IP:
+            return 'test'
+        elif server_ip in LOCAL_IPS or '127.0.0' in server_ip:
+            return 'local'
+    except:
+        pass
+    
+    # Option 3: Default based on common patterns
+    # If we can't detect, assume local for development
+    return 'local'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-# DEBUG = True   
+# Set environment
+ENVIRONMENT = detect_environment()
+print(f"=== Environment detected: {ENVIRONMENT} ===")
 
-# SITE_URL = "http://localhost:8000"  # for local development
-# SITE_URL = "http://3.111.76.175"  # for production development
-# SITE_URL = "http://43.205.183.251"  # for production development
+# Set DEBUG based on environment
+if ENVIRONMENT == 'local':
+    DEBUG = True
+else:
+    DEBUG = False
+
+ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1']
+
+# SITE_URL configuration
+if ENVIRONMENT == 'local':
+    SITE_URL = "http://localhost:8000"
+elif ENVIRONMENT == 'test':
+    SITE_URL = "http://3.111.76.175"
+else:  # production
+    SITE_URL = "http://43.205.183.251"
 
 import mimetypes
 mimetypes.add_type("application/javascript", ".mjs")
@@ -44,8 +91,6 @@ DATABASES = {
         'NAME': 'nlms_db',      # Replace with your database name
         'USER': 'root',      # Replace with your database user
         'PASSWORD': 'Mysql_MH-047319',  # Replace with your database password
-        # 'PASSWORD': 'Shrims8@2420',  # Replace with your database password
-        # 'HOST': '3.111.76.175',       # IP FOR TEST
         'HOST': '127.0.0.1',       # IP FOR LOCAL VM
         'PORT': '3306',            
         'OPTIONS': {
@@ -81,8 +126,17 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/')
-MEDIA_ROOT = os.path.join(BASE_DIR, '/home/ubuntu/Documents/')
+# ========== MEDIA & FILE STORAGE SETTINGS ==========
+if ENVIRONMENT == 'local':
+    # For local development (Windows)
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/')
+elif ENVIRONMENT == 'test':
+    # For test server (Ubuntu)
+    MEDIA_ROOT = os.path.join(BASE_DIR, '/home/ubuntu/Documents/')
+else:  # production
+    # For production - use AWS S3, so local path is not critical
+    MEDIA_ROOT = os.path.join(BASE_DIR, '/tmp/documents/')  # Temporary path
+
 MEDIA_URL = '/media/'
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
@@ -175,6 +229,11 @@ LOCAL_APPS = [
     'L02',
   
 ]
+
+# Add 'storages' to THIRD_PARTY_APPS for all environments
+# It won't cause issues if not configured
+THIRD_PARTY_APPS.append('storages')
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -225,8 +284,7 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            # 'filename': os.path.join(BASE_DIR, 'D:/Python Project/TDMS logs', 'django.log'),  
-            'filename': os.path.join(BASE_DIR, '/home/ubuntu/NLMS Logs', 'django.log'),  
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),  # Changed to relative path
         },
     },
     'loggers': {
@@ -306,3 +364,23 @@ TIME_ZONE = 'Asia/Kolkata'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+# ========== AWS S3 CONFIGURATION (For Production) ==========
+if ENVIRONMENT == 'production':
+    # AWS S3 Settings
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')  # Change to your bucket name
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'ap-south-1')
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+    
+    # S3 Settings
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'public-read'  # Files are publicly accessible
+    AWS_QUERYSTRING_AUTH = False  # Don't add signature to URLs
+    
+    # Optional: You can also set this to use S3 as default storage
+    # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    
+    print(f"=== S3 Configuration Loaded ===")
+    print(f"Bucket: {AWS_STORAGE_BUCKET_NAME}")
+    print(f"Region: {AWS_S3_REGION_NAME}")
