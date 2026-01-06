@@ -21,11 +21,36 @@ class FileStorageService:
         self.is_test = (self.environment == 'test')
         self.is_local = (self.environment == 'local')
         
+        # ✅ Get base path from settings
+        self.base_path = getattr(settings, 'S3_BASE_PATH', '')
+        
         # Debug info
         print(f"[FileStorageService] Environment: {self.environment}")
+        print(f"[FileStorageService] Base Path: '{self.base_path}'")
         print(f"[FileStorageService] MEDIA_ROOT: {settings.MEDIA_ROOT}")
-        if self.is_production:
-            print(f"[FileStorageService] S3 Bucket: {getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'Not configured')}")
+        
+    def _prepare_path(self, path, add_base=True):
+        """
+        Prepare path with base path if needed
+        
+        Args:
+            path: The original file path
+            add_base: Whether to add base path (True for save, False for existing paths)
+        
+        Returns:
+            str: Prepared path
+        """
+        if not path:
+            return path
+            
+        # Clean the path
+        path = path.lstrip('/')
+        
+        # Add base path if needed and not already present
+        if add_base and self.base_path and not path.startswith(self.base_path):
+            path = self.base_path + path
+            
+        return path
     
     def save_file(self, file, save_path):
         """
@@ -40,9 +65,12 @@ class FileStorageService:
         """
         print(f"\n=== DEBUG FileStorageService.save_file ===")
         print(f"Environment: {self.environment}")
-        print(f"Is Production: {self.is_production}")
-        print(f"S3 Available: {S3_AVAILABLE}")
-        print(f"Save path: {save_path}")
+        print(f"Base Path: '{self.base_path}'")
+        print(f"Original save path: {save_path}")
+        
+        # ✅ Prepare the path with base path
+        save_path = self._prepare_path(save_path, add_base=True)
+        print(f"Final save path: {save_path}")
         print(f"File name: {file.name}")
         print(f"File size: {file.size}")
         
@@ -59,27 +87,19 @@ class FileStorageService:
                     print("[FileStorageService] ERROR: AWS bucket not configured!")
                     return self._save_local(file, save_path)
                 
-                # Clean the save_path (remove leading slashes)
-                save_path = save_path.lstrip('/')
-                
                 # Create S3 storage instance
-                print("Creating S3Boto3Storage instance...")
                 s3_storage = S3Boto3Storage()
-                print(f"S3 Storage created: {s3_storage}")
-                print(f"S3 bucket name: {getattr(s3_storage, 'bucket_name', 'Not found')}")
                 
                 # Save to S3
-                print("Attempting to save to S3...")
                 saved_path = s3_storage.save(save_path, file)
                 print(f"[FileStorageService] Saved to S3: {saved_path}")
                 
                 # Verify the file was saved
                 if s3_storage.exists(saved_path):
-                    print(f"[FileStorageService] Successfully verified file on S3")
                     file_size = s3_storage.size(saved_path)
-                    print(f"[FileStorageService] File size on S3: {file_size} bytes")
+                    print(f"[FileStorageService] Successfully verified file on S3 ({file_size} bytes)")
                 else:
-                    print(f"[FileStorageService] ERROR: File not found on S3 after upload!")
+                    print(f"[FileStorageService] WARNING: File not found on S3 after upload!")
                 
                 return saved_path
                 
@@ -128,6 +148,11 @@ class FileStorageService:
             return "#"
         
         try:
+            # ✅ For existing database entries, we need to handle them differently
+            # If it's a path from database (already saved), we should add base path
+            # But only if it doesn't already have it
+            file_path = self._prepare_path(file_path, add_base=True)
+            
             if self.is_production:
                 # ========== PRODUCTION: S3 URL ==========
                 # Check if already a full URL
@@ -139,9 +164,7 @@ class FileStorageService:
                 region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
                 
                 if bucket_name and S3_AVAILABLE:
-                    # Clean path (remove leading slash if present)
-                    clean_path = file_path.lstrip('/')
-                    url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{clean_path}"
+                    url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_path}"
                     print(f"[FileStorageService] Generated S3 URL: {url}")
                     return url
                 else:
@@ -179,6 +202,9 @@ class FileStorageService:
             file_path: Relative file path
         """
         try:
+            # ✅ Prepare path with base path
+            file_path = self._prepare_path(file_path, add_base=True)
+            
             if self.is_production and S3_AVAILABLE:
                 # Delete from S3
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
@@ -217,6 +243,9 @@ class FileStorageService:
             bool: True if file exists
         """
         try:
+            # ✅ Prepare path with base path
+            file_path = self._prepare_path(file_path, add_base=True)
+            
             if self.is_production and S3_AVAILABLE:
                 # Check in S3
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
@@ -251,6 +280,9 @@ class FileStorageService:
             int: File size in bytes, or 0 if not found
         """
         try:
+            # ✅ Prepare path with base path
+            file_path = self._prepare_path(file_path, add_base=True)
+            
             if self.is_production and S3_AVAILABLE:
                 # Get from S3
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')

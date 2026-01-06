@@ -366,6 +366,7 @@ TIME_ZONE = 'Asia/Kolkata'
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 # ========== AWS S3 CONFIGURATION (For Production) ==========
+# ========== AWS S3 CONFIGURATION (For Production) ==========
 if ENVIRONMENT == 'production':
     # AWS S3 Settings
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
@@ -386,10 +387,26 @@ if ENVIRONMENT == 'production':
             'CacheControl': 'max-age=86400',
         }
         
-        # ✅ ADD THIS: Set the default storage
+        # ✅ Set the default storage
         DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        
+        # ✅ S3 base path configuration
+        S3_BASE_PATH = 'Documents/'  # This is what we need for production
         
         print(f"=== S3 Configuration Loaded ===")
         print(f"Bucket: {AWS_STORAGE_BUCKET_NAME}")
         print(f"Region: {AWS_S3_REGION_NAME}")
+        print(f"S3 Base Path: '{S3_BASE_PATH}'")
         print(f"ACL Setting: None (bucket has ACLs disabled)")
+
+# ========== FILE STORAGE BASE PATH ==========
+# Set base path for file storage (empty for local/test, 'Documents/' for production)
+if ENVIRONMENT != 'production':
+    # For local and test environments - set empty base path
+    S3_BASE_PATH = ''  # Empty string for local filesystem
+    print(f"File Storage Base Path for {ENVIRONMENT}: '{S3_BASE_PATH}'")
+
+# Make sure S3_BASE_PATH is defined for all environments
+if 'S3_BASE_PATH' not in locals():
+    S3_BASE_PATH = ''
+    print(f"Default File Storage Base Path: '{S3_BASE_PATH}'")
