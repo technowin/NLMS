@@ -62,9 +62,6 @@ def detect_environment():
     
     # 3. Default to local (safest)
     return 'local'
-    
-    # Default to local
-    return 'local'
 
 # Set environment
 ENVIRONMENT = detect_environment()
