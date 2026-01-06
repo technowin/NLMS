@@ -53,7 +53,6 @@ class FileStorageService:
                     location='',  # Store at root of bucket
                     querystring_auth=getattr(settings, 'AWS_QUERYSTRING_AUTH', False),
                     file_overwrite=getattr(settings, 'AWS_S3_FILE_OVERWRITE', False),
-                    default_acl=getattr(settings, 'AWS_DEFAULT_ACL', 'public-read')
                 )
                 
                 # Save to S3

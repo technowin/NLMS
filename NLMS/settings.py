@@ -370,18 +370,23 @@ if ENVIRONMENT == 'production':
     # AWS S3 Settings
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')  # Change to your bucket name
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
     AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'ap-south-1')
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
     
-    # S3 Settings
-    AWS_S3_FILE_OVERWRITE = False
-    AWS_DEFAULT_ACL = 'public-read'  # Files are publicly accessible
-    AWS_QUERYSTRING_AUTH = False  # Don't add signature to URLs
-    
-    # Optional: You can also set this to use S3 as default storage
-    # DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    
-    print(f"=== S3 Configuration Loaded ===")
-    print(f"Bucket: {AWS_STORAGE_BUCKET_NAME}")
-    print(f"Region: {AWS_S3_REGION_NAME}")
+    if AWS_STORAGE_BUCKET_NAME:
+        AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+        
+        # S3 Settings for buckets with ACLs disabled (modern AWS)
+        AWS_S3_FILE_OVERWRITE = False
+        AWS_DEFAULT_ACL = None  # ← CHANGE FROM 'public-read' TO None
+        AWS_QUERYSTRING_AUTH = False
+        
+        # Important: Don't set ACL for buckets with ACLs disabled
+        AWS_S3_OBJECT_PARAMETERS = {
+            'CacheControl': 'max-age=86400',
+        }
+        
+        print(f"=== S3 Configuration Loaded ===")
+        print(f"Bucket: {AWS_STORAGE_BUCKET_NAME}")
+        print(f"Region: {AWS_S3_REGION_NAME}")
+        print(f"ACL Setting: None (bucket has ACLs disabled)")
