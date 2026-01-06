@@ -57,6 +57,14 @@ logger = logging.getLogger(__name__)
 from administration.models import *
 from django.db.models import F
 from django.utils.text import get_valid_filename
+from services.file_storage_service import file_storage_service
+import boto3
+from botocore.exceptions import ClientError
+from django.http import HttpResponse, Http404, StreamingHttpResponse
+import mimetypes
+import uuid
+
+# Part First While Filling Membership Form
 
 @login_required
 def masters(request):
@@ -288,7 +296,6 @@ def book_catalog_index(request):
         return render(request, 'Master/book_catalog_index.html', {"catalogs": []})
 
 # Book Catalog Create
-# Book Catalog Create
 @login_required
 def book_catalog_create(request):
     try:
@@ -484,36 +491,76 @@ def book_catalog_create(request):
                             updated_by=user
                         )
 
-                    # ---------- FIXED IMAGE LOGIC USING MEDIA_ROOT ----------
+                    # ---------- UPDATED IMAGE LOGIC USING FileStorageService ----------
                     front_photo = request.FILES.get('front_page_image')
                     last_photo = request.FILES.get('last_page_image')
-
-                    # Folder inside MEDIA_ROOT/L01/<cat_ref_num>/
-                    book_folder = os.path.join(settings.MEDIA_ROOT, "L01", str(book.cat_ref_num))
-                    os.makedirs(book_folder, exist_ok=True)
-
+                    
+                    # Get library code from session
+                    library_code = request.session.get('library_db', 'default')
+                    
+                    # Use library_code for folder structure
+                    book_folder = f"{library_code}/{book.cat_ref_num}"
+                    
+                    # Generate unique timestamps for filenames
+                    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+                    
                     # --- Front Page Image ---
                     if front_photo:
-                        front_filename = f"{book.cat_ref_num}_front_{front_photo.name}"
-                        front_path = os.path.join(book_folder, front_filename)
-
-                        with open(front_path, 'wb+') as destination:
-                            for chunk in front_photo.chunks():
-                                destination.write(chunk)
-
-                        book.front_page_photo = f"L01/{book.cat_ref_num}/{front_filename}"
-
+                        try:
+                            # Extract original filename and extension
+                            filename, ext = os.path.splitext(front_photo.name)
+                            
+                            # Generate unique filename
+                            short_uuid = str(uuid.uuid4())[:8]
+                            # Remove special characters from filename for safety
+                            safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                            unique_filename = f"{book.cat_ref_num}_front_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                            
+                            # Build save path
+                            save_path = f"{book_folder}/{unique_filename}"
+                            
+                            # ✅ USE STORAGE SERVICE TO SAVE FILE
+                            saved_file_path = file_storage_service.save_file(front_photo, save_path)
+                            
+                            # Update book record with saved path
+                            book.front_page_photo = saved_file_path
+                            
+                            print(f"✅ Front page image saved for library {library_code}: {saved_file_path}")
+                            
+                        except Exception as e:
+                            print(f"❌ Error saving front page image: {str(e)}")
+                            # Continue without image, don't fail the entire transaction
+                            messages.warning(request, f"Front page image could not be saved: {str(e)}")
+                    
                     # --- Last Page Image ---
                     if last_photo:
-                        last_filename = f"{book.cat_ref_num}_back_{last_photo.name}"
-                        last_path = os.path.join(book_folder, last_filename)
-
-                        with open(last_path, 'wb+') as destination:
-                            for chunk in last_photo.chunks():
-                                destination.write(chunk)
-
-                        book.last_page_photo = f"L01/{book.cat_ref_num}/{last_filename}"
-
+                        try:
+                            # Extract original filename and extension
+                            filename, ext = os.path.splitext(last_photo.name)
+                            
+                            # Generate unique filename
+                            short_uuid = str(uuid.uuid4())[:8]
+                            # Remove special characters from filename for safety
+                            safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                            unique_filename = f"{book.cat_ref_num}_back_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                            
+                            # Build save path
+                            save_path = f"{book_folder}/{unique_filename}"
+                            
+                            # ✅ USE STORAGE SERVICE TO SAVE FILE
+                            saved_file_path = file_storage_service.save_file(last_photo, save_path)
+                            
+                            # Update book record with saved path
+                            book.last_page_photo = saved_file_path
+                            
+                            print(f"✅ Last page image saved for library {library_code}: {saved_file_path}")
+                            
+                        except Exception as e:
+                            print(f"❌ Error saving last page image: {str(e)}")
+                            # Continue without image, don't fail the entire transaction
+                            messages.warning(request, f"Last page image could not be saved: {str(e)}")
+                    
+                    # Save book with updated image paths
                     book.save()
 
                 messages.success(request, f"Book '{book.title}' saved successfully!")
