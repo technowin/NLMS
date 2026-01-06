@@ -4,71 +4,300 @@
 {% block title %}ई-बुक तयार करा / Create E-Book{% endblock title %}
 
 {% block extra_css %}
+    <!-- Keeping only SweetAlert and essential layout styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- SweetAlert2 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <!-- Google Fonts -->
+    
+    <!-- Google Font: Merriweather -->
     <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
     <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
     
     <style>
-    /* Back to Top Button */
-    .back-to-top {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background-color: #4e73df;
-        color: white;
-        text-align: center;
-        line-height: 50px;
-        font-size: 20px;
-        cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .back-to-top:hover {
-        background-color: #2e59d9;
-        transform: translateY(-3px);
-    }
-    
-    .back-to-top.active {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .back-to-top i {
-        transition: transform 0.3s ease;
-    }
-    
-    .back-to-top:hover i {
-        transform: translateY(-3px);
-    }
-    
-    /* Dark mode styles */
-    body.dark-mode .back-to-top {
-        background-color: #6c63ff;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-    }
-    
-    body.dark-mode .back-to-top:hover {
-        background-color: #5a52d6;
-    }
-</style>
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-to-top:hover i {
+            transform: translateY(-3px);
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .back-to-top {
+            background-color: #6c63ff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode .back-to-top:hover {
+            background-color: #5a52d6;
+        }
+
+        /* Author dropdown styling */
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
+
+        /* Author Field Styling */
+        #eb_author {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: none;
+        }
+
+        #eb_author:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+        }
+
+        /* File Upload Styling */
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #4e73df;
+            background: #f1f5ff;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #4e73df;
+            background: #e8f4ff;
+        }
+        
+        .file-upload-icon {
+            font-size: 48px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        
+        .file-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+        
+        /* Text Helper */
+        .form-text.text-muted {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        /* Remove field-group styling and match book catalog style */
+        .est-info-wrapper {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+        
+        body.dark-mode .est-info-wrapper {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        body.dark-mode .form-label {
+            color: #e2e8f0;
+        }
+        
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        
+        /* Buttons */
+        .btn-submit {
+            background: linear-gradient(135deg, #6c8eff 0%, #4a6bff 100%);
+            color: white !important;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 142, 255, 0.3);
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #5a7eff 0%, #3a5aff 100%);
+            color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 142, 255, 0.4);
+        }
+        
+        .btn-go-back {
+            background: #6c757d;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-go-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Help text */
+        .help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        body.dark-mode .help-text {
+            color: #cbd5e0;
+        }
+
+        /* ================================
+        SEARCHABLE DROPDOWN UI
+        ================================ */
+
+        .dropdown-panel {
+            position: absolute;
+            width: 100%;
+            max-height: 240px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+            z-index: 1050;
+            margin-top: 4px;
+            padding: 6px 0;
+            animation: dropdownFade 0.15s ease-out;
+        }
+
+        /* Dropdown item */
+        .dropdown-panel .dropdown-item {
+            padding: 10px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Hover */
+        .dropdown-panel .dropdown-item:hover {
+            background-color: #f3f6ff;
+            color: #0d6efd;
+        }
+
+        /* Active (keyboard or click) */
+        .dropdown-panel .dropdown-item.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+        }
+
+        /* Empty state (optional) */
+        .dropdown-empty {
+            padding: 12px;
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+        }
+
+        /* Scrollbar */
+        .dropdown-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        .dropdown-panel::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 6px;
+        }
+        .dropdown-panel::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        /* Animation */
+        @keyframes dropdownFade {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+    </style>
 {% endblock %}
 
 {% block page_title %}
@@ -77,325 +306,511 @@
 
 {% block content %}
 <div class="est-info-wrapper">
-
-        <form method="post" enctype="multipart/form-data" id="ebookForm">
-            {% csrf_token %}
-            
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-
-            <!-- Language Dropdown -->
-            <div class="mb-3 row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">
-                        भाषा / Language <span class="text-danger">*</span>
-                    </label>
-                    <select name="eb_language" id="eb_language" class="form-control" required>
-                        <option value="">Select Language</option>
-                        {% for lang in languages %}
-                            <option value="{{ lang }}" 
-                                {% if lang == selected_language %}selected{% endif %}>
-                                {{ lang }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+    <form method="post" enctype="multipart/form-data" id="ebookForm">
+        {% csrf_token %}
+        
+        <!-- Language and E-Book Type Dropdown (Both mandatory) -->
+        <div class="mb-3 row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    भाषा / Language <span class="text-danger">*</span>
+                </label>
+                <select name="eb_language" id="eb_language" class="form-control" required>
+                    <option value="">Select Language</option>
+                    {% for lang in languages %}
+                        <option value="{{ lang }}">{{ lang }}</option>
+                    {% endfor %}
+                </select>
+                <small id="language-note" class="form-text text-muted"></small>
             </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    ई-बुक प्रकार / E-Book Type <span class="text-danger">*</span>
+                </label>
+                <select name="ebook_type" id="ebook_type" class="form-control" style="padding-top: 0%;" required>
+                    <option value="">Select E-Book Type</option>
+                    {% for etype in ebook_types %}
+                        <option value="{{ etype.encrypted_id }}">
+                            {{ etype.ebookTypeCode|default:"No Code" }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small class="form-text text-muted">Select the type of e-book</small>
+            </div>
+        </div>
 
-            <!-- Book Selection -->
-         {% if selected_language %}
-            <div class="mb-3">
+        <!-- Row 1: Title -->
+        <div class="mb-3 row">
+            <div class="col-md-8 position-relative"  style="padding-top: 0%;">
+                <label class="form-label">
+                    पुस्तकाचे नाव / Title <span class="text-danger">*</span>
+                </label>
 
-                <!-- Search + Select (Same Row) -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">पुस्तक शोधा / Search Book</label>
-                        <input type="text"
-                            id="bookSearch"
-                            class="form-control"
-                            placeholder="पुस्तकाचे नाव टाइप करा / पुस्तक का नाम लिखें / Type book name">
-                    </div>
+                <!-- Unified Title Input -->
+                <input type="text"
+                    id="eb_title"
+                    name="eb_title_text"
+                    class="form-control"
+                    placeholder="Type or search book title"
+                    autocomplete="off"
+                    required>
 
-                    <div class="col-md-6">
-                        <label class="form-label">
-                            पुस्तक निवडा / Select Book <span class="text-danger">*</span>
-                        </label>
-                        <select name="selected_cat_ref_num"
-                                id="selected_cat_ref_num"
-                                class="form-control"
-                                
-                                required>
-                            <option value="">Select Book</option>
-                            {% for book in books %}
-                                <option value="{{ book.cat_ref_num }}"
-                                    {% if selected_book and book.cat_ref_num == selected_book.cat_ref_num %}selected{% endif %}>
-                                    {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <!-- Dropdown -->
+                <div id="titleDropdown"
+                    class="dropdown-panel d-none"
+                    style="position:absolute;
+                            width:80%;
+                            max-height:200px;
+                            overflow-y:auto;
+                            background:#fff;
+                            z-index:1000;">
                 </div>
 
-                <!-- Load Button (Centered Below) -->
-                <div class="row">
-                    <div class="col text-center">
-                        <button type="submit"
-                                name="select_book"
-                                value="1"
-                                class="btn btn-primary px-5"
-                                {% if not books %}disabled{% endif %}>
-                            Load Book Details
+                <!-- Hidden catalog id -->
+                <input type="hidden" name="cat_id" id="cat_id">
+
+                <small class="form-text text-muted">
+                    Type minimum 2 characters to search title from Library
+                </small>
+            </div>
+        </div>
+
+
+        <!-- Row 2: Author & Other Authors -->
+        <div class="mb-3 row">
+            <div class="col-md-6 mb-3 position-relative">
+                <label for="eb_author" class="form-label">
+                    लेखक / Author <span class="text-danger">*</span>
+                </label>
+                <input type="text" id="eb_author" name="eb_author" class="form-control"
+                       placeholder="Type or select author" autocomplete="off" required>
+                
+                <!-- Author dropdown will be populated dynamically -->
+               <div id="authorDropdown"
+                    class="dropdown-panel d-none"
+                    style="position:absolute; width:100%; max-height:150px;
+                            overflow-y:auto; background:#fff; z-index:1000;">
+                </div>
+                <small class="form-text text-muted">Type minimum 2 characters to search author name.</small>
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label">सह-लेखक / Other Authors</label>
+                <input type="text" name="eb_other_authors" id="eb_other_authors" class="form-control" 
+                       placeholder="Co-authors/editors">
+            </div>
+        </div>
+
+        <!-- Row 3: Publisher & Year of Publication -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">प्रकाशक / Publisher</label>
+                <input type="text" name="eb_publisher" id="eb_publisher" class="form-control" 
+                       placeholder="Publisher name">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
+                <input type="number" name="eb_year_of_publication" id="eb_year_of_publication" 
+                       class="form-control" min="1000" max="{% now 'Y' %}" 
+                       placeholder="e.g. 2024">
+            </div>
+        </div>
+
+        <!-- Row 4: Edition & ISBN/ISSN -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">आवृत्ती / Edition</label>
+                <input type="text" name="eb_edition" id="eb_edition" class="form-control" 
+                       placeholder="Edition info">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">ISBN/ISSN</label>
+                <input type="text" name="eb_isbn_issn" id="eb_isbn_issn" class="form-control" 
+                       placeholder="ISBN or ISSN number">
+            </div>
+        </div>
+
+        <!-- Row 5: Subject & Publication Place -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">विषय / Subject <span class="text-danger">*</span></label>
+                <select name="eb_subject" id="eb_subject" class="form-control" style="padding-top: 0%;" required>
+                    <option value="">Select Subject</option>
+                    {% for sub in subjects %}
+                        <option value="{{ sub.encrypted_id }}">
+                            {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                <input type="text" name="eb_publication_place" id="eb_publication_place" 
+                       class="form-control" placeholder="e.g., Mumbai, Delhi, Pune">
+            </div>
+        </div>
+
+        <!-- Row 6: Pages & Keywords -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">पृष्ठे / Page Nos</label>
+                <input type="text" name="eb_pages" id="eb_pages" class="form-control" 
+                       placeholder="Number of pages">
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label">कीवर्ड्स / Keywords</label>
+                <input type="text" name="eb_keywords" id="eb_keywords" class="form-control" 
+                       placeholder="Search tags/keywords">
+            </div>
+        </div>
+
+        <!-- Row 7: File Upload -->
+        <div class="mb-3 row">
+            <div class="col-md-12">
+                <label class="form-label">ई-बुक फाइल / E-Book File <span class="text-danger">*</span></label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <input type="file" name="eb_pdf_url" id="eb_pdf_url"
+                           accept=".pdf,.epub,.mobi,.azw,.azw3" hidden required>
+                    
+                    <div id="filePreview">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h6>फाइल ड्रॅग आणि ड्रॉप करा / Drag & Drop File Here</h6>
+                        <p class="text-muted mb-3">किंवा फाइल निवडण्यासाठी क्लिक करा / Or click to browse</p>
+                        <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                            <i class="fas fa-folder-open me-2"></i>फाइल निवडा / Browse Files
                         </button>
+                        <div class="file-info mt-3">
+                            <strong>Note:</strong> Supported formats: PDF, EPUB, MOBI, AZW, AZW3<br>
+                            Max size: 50 MB
+                        </div>
                     </div>
                 </div>
-
             </div>
-            {% endif %}
+        </div>
 
-            <!-- Book Details (when book is selected) -->
-            {% if selected_book %}
-            <!-- Hidden fields for book data -->
-            <input type="hidden" name="selected_cat_ref_num" value="{{ selected_book.cat_ref_num }}">
-            <input type="hidden" name="eb_language" value="{{ selected_language }}">
+        <!-- Row 8: Front Page Image & Last Page Image -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
+                <input type="file" name="eb_front_page_photo" id="eb_front_page_photo" 
+                       class="form-control" accept="image/*">
+            </div>
             
-            <!-- Display Book Information -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Title / शीर्षक</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.title }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Author / लेखक</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.author|default:'N/A' }}">
-                </div>
+            <div class="col-md-6">
+                <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
+                <input type="file" name="eb_last_page_photo" id="eb_last_page_photo" 
+                       class="form-control" accept="image/*">
             </div>
+        </div>
 
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Publisher / प्रकाशक</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.publisher|default:'N/A' }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Year of Publication / प्रकाशन वर्ष</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.year_of_publication|default:'N/A' }}">
-                </div>
+        <!-- Row 9: Remarks & Registration Date -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">टीप / Remarks</label>
+                <textarea name="remarks" id="remarks" class="form-control" rows="3" 
+                          placeholder="Notes, e.g. Donated by XYZ"></textarea>
             </div>
-
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">ISBN/ISSN</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.isbn_issn|default:'N/A' }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Edition / आवृत्ती</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.edition|default:'N/A' }}">
-                </div>
+            
+            <div class="col-md-6">
+                <label class="form-label">नोंदणी दिनांक / Registration Date</label>
+                <input type="date" name="eb_date_of_registration" id="eb_date_of_registration" 
+                       class="form-control" value="{% now 'Y-m-d' %}">
             </div>
+        </div>
 
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">Subject / विषय</label>
-                    <input type="text"class="form-control"value="{% if selected_language == 'Marathi' %}{{ selected_book.subject.subjectNameMarathi }}
-                  {% else %}
-                    {{ selected_book.subject.subjectNameEnglish }}
-                  {% endif %}"readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Pages / पृष्ठे</label>
-                    <input type="text" class="form-control" readonly value="{{ selected_book.pages|default:'N/A' }}">
-                </div>
-            </div>
-            {% load static %}
-            <div class="mb-3 row">
-                <!-- Front Page Photo -->
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Front Page Photo</label><br>
-                    {% if selected_book.front_page_photo %}
-                        <img src="{{ MEDIA_URL }}{{ selected_book.front_page_photo }}"
-                            class="img-fluid img-thumbnail"
-                            style="max-height:150px; width:auto;"
-                            alt="Front Page Photo">
-                    {% else %}
-                        <div class="border p-3 text-center text-muted">
-                            No Front Page Image Available
-                        </div>
-                    {% endif %}
-                </div>
+        <!-- BUTTONS (Same as book catalog) -->
+        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+            <button type="submit" class="btn btn-submit">
+                <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+            </button>
+            <a href="{% url 'ebook_catalog_index' %}" class="btn-go-back">
+                <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+            </a>
+        </div>
+    </form>
+</div>
 
-                <!-- Last Page Photo -->
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Last Page Photo</label><br>
-                    {% if selected_book.last_page_photo %}
-                        <img src="{{ MEDIA_URL }}{{ selected_book.last_page_photo }}"
-                            class="img-fluid img-thumbnail"
-                            style="max-height:150px; width:auto;"
-                            alt="Last Page Photo">
-                    {% else %}
-                        <div class="border p-3 text-center text-muted">
-                            No Last Page Image Available
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-
-            <!-- E-Book Type -->
-            <div class="mb-3 row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">E-Book Type / ई-बुक प्रकार</label>
-                    <select name="ebook_type" class="form-control">
-                        <option value="">Select E-Book Type</option>
-                        {% for et in ebook_types %}
-                            <option value="{{ et.encrypted_id }}">
-                                {{ et.ebookTypeName|default:et.ebookTypeCode }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- File Upload -->
-            <div class="mb-3 row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">
-                        E-Book File / ई-बुक फाइल <span class="text-danger">*</span>
-                    </label>
-                    <input type="file" 
-                           name="ebook_file" 
-                           id="ebook_file"
-                           class="form-control"
-                           accept=".pdf,.epub,.mobi,.azw,.azw3"
-                           required>
-                    <small class="form-text text-muted">
-                        Allowed formats: PDF, EPUB, MOBI, AZW, AZW3 | Max size: 50MB
-                    </small>
-                </div>
-            </div>
-
-            <!-- Submit Buttons -->
-            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
-                <button type="submit" name="final_submit" class="btn btn-submit">
-                    <i class="fa-solid fa-save"></i> Save E-Book / ई-बुक सेव करा
-                </button>
-                <a href="{% url 'ebook_catalog_index' %}" class="btn-go-back">
-                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
-                </a>
-            </div>
-            {% endif %}
-
-        </form>
-
-    </div>
-
-    <!-- Back to Top Button -->
-    <a href="#" class="back-to-top" id="backToTop">
-        <i class="fas fa-arrow-up"></i>
-    </a>
-
+<!-- Back to Top Button -->
+<a href="#" class="back-to-top" id="backToTop">
+    <i class="fas fa-arrow-up"></i>
+</a>
 {% endblock %}
 
-
-
 {% block extra_javascript %}
-    <!-- jQuery -->
-    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-    <!-- Bootstrap Bundle -->
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    
 
 
-   <script>
-    $(document).ready(function () {
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> {% endcomment %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-        /* ================= Back to Top ================= */
-        $(window).scroll(function () {
-            if ($(this).scrollTop() > 300) {
-                $('#backToTop').addClass('active');
-            } else {
-                $('#backToTop').removeClass('active');
-            }
-        });
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-        $('#backToTop').click(function (e) {
-            e.preventDefault();
-            $('html, body').animate({ scrollTop: 0 }, 500);
-        });
 
-        /* ================= Language Auto Submit ================= */
-        $('#eb_language').on('change', function () {
-            if ($(this).val()) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'select_language',
-                    value: '1'
-                }).appendTo('#ebookForm');
-                $('#ebookForm').submit();
-            }
-        });
+    /* =====================================================
+   SEARCHABLE BookCatalog TITLE DROPDOWN
+===================================================== */
+    const titleInput = document.getElementById("eb_title");
+    const titleDropdown = document.getElementById("titleDropdown");
+    const catIdInput = document.getElementById("cat_id");
+    const languageSelect = document.getElementById("eb_language");
 
-        /* ================= Book Search (Marathi / Hindi / English) ================= */
-        const searchInput = document.getElementById("bookSearch");
-        const select = document.getElementById("selected_cat_ref_num");
+    let titleAbortController = null;
 
-        if (searchInput && select) {
-            const options = Array.from(select.options);
+    if (titleInput && titleDropdown) {
+        titleInput.addEventListener("input", function () {
+            const query = this.value.trim();
+            const language = languageSelect.value;
 
-            function normalizeText(text) {
-                return text
-                    .toLowerCase()
-                    .normalize("NFKD")
-                    .replace(/\s+/g, " ")
-                    .trim();
-            }
+            catIdInput.value = "";
 
-            searchInput.addEventListener("keyup", function () {
-                const searchText = normalizeText(this.value);
-
-                options.forEach(option => {
-                    if (option.value === "") return;
-
-                    const optionText = normalizeText(option.text);
-                    option.style.display = optionText.includes(searchText) ? "" : "none";
-                });
-            });
-        }
-
-        /* ================= File Validation ================= */
-        $('#ebook_file').on('change', function () {
-            const file = this.files[0];
-            if (!file) return;
-
-            const allowedTypes = ['pdf', 'epub', 'mobi', 'azw', 'azw3'];
-            const maxSize = 50 * 1024 * 1024; // 50MB
-            const fileExt = file.name.split('.').pop().toLowerCase();
-
-            if (!allowedTypes.includes(fileExt)) {
-                alert('Please upload only PDF, EPUB, MOBI, AZW, or AZW3 files.');
-                this.value = '';
+            if (query.length < 2 || !language) {
+                titleDropdown.classList.add("d-none");
+                titleDropdown.innerHTML = "";
                 return;
             }
 
-            if (file.size > maxSize) {
-                alert('File size must be less than 50MB.');
-                this.value = '';
+            {% comment %} if (titleAbortController) titleAbortController.abort();
+            titleAbortController = new AbortController(); {% endcomment %}
+
+            fetch(
+                `{% url 'ebook_create' %}?action=get_titles&search=${encodeURIComponent(query)}&language=${encodeURIComponent(language)}`,
+                {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    {% comment %} signal: titleAbortController.signal {% endcomment %}
+                }
+            )
+            .then(res => res.json())
+            .then(data => {
+                titleDropdown.innerHTML = "";
+
+                if (!data.data.length) {
+                    titleDropdown.classList.add("d-none");
+                    return;
+                }
+                data.data.forEach(book => {
+                    const div = document.createElement("div");
+                    div.className = "dropdown-item";
+                    div.textContent = book.title;
+
+                    div.onclick = () => {
+                        titleInput.value = book.title;
+                        catIdInput.value = book.cat_ref_num;
+                        titleDropdown.classList.add("d-none");
+                    };
+
+                    titleDropdown.appendChild(div);
+                });
+
+                titleDropdown.classList.remove("d-none");
+            });
+        });
+
+        document.addEventListener("click", e => {
+            if (!titleDropdown.contains(e.target) && e.target !== titleInput) {
+                titleDropdown.classList.add("d-none");
             }
         });
 
+        languageSelect.addEventListener("change", () => {
+            titleInput.value = "";
+            catIdInput.value = "";
+            titleDropdown.innerHTML = "";
+            titleDropdown.classList.add("d-none");
+        });
+    }
+    /* =====================================================
+       FILE UPLOAD (CLICK + DRAG DROP)
+    ===================================================== */
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const ebookFile = document.getElementById('eb_pdf_url');
+    const browseBtn = document.getElementById('browseBtn');
+
+    if (fileUploadArea && ebookFile) {
+
+        fileUploadArea.addEventListener('click', () => ebookFile.click());
+        browseBtn?.addEventListener('click', e => {
+            e.stopPropagation();
+            ebookFile.click();
+        });
+
+        ebookFile.addEventListener('change', function () {
+            if (!this.files.length) return;
+
+            const file = this.files[0];
+            document.getElementById('filePreview').innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
+                    <div>
+                        <h6 class="mb-1">${file.name}</h6>
+                        <p class="text-muted mb-0">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm mt-3" id="removeFileBtn">
+                    Remove File
+                </button>
+            `;
+
+            document.getElementById('removeFileBtn').onclick = () => location.reload();
+        });
+
+        ['dragenter','dragover','dragleave','drop'].forEach(e =>
+            fileUploadArea.addEventListener(e, ev => {
+                ev.preventDefault();
+                ev.stopPropagation();
+            })
+        );
+
+        fileUploadArea.addEventListener('drop', e => {
+            ebookFile.files = e.dataTransfer.files;
+            ebookFile.dispatchEvent(new Event('change'));
+        });
+    }
+
+    /* =====================================================
+       AUTHOR DROPDOWN
+    ===================================================== */
+    const authorInput = document.getElementById("eb_author");
+    const authorDropdown = document.getElementById("authorDropdown");
+
+    let authorAbortController = null;
+
+    if (authorInput && authorDropdown) {
+        authorInput.addEventListener("input", function () {
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                authorDropdown.classList.add("d-none");
+                authorDropdown.innerHTML = "";
+                return;
+            }
+
+            {% comment %} if (authorAbortController) authorAbortController.abort();
+            authorAbortController = new AbortController(); {% endcomment %}
+
+            fetch(
+                `{% url 'ebook_create' %}?action=search_authors&search=${encodeURIComponent(query)}`,
+                {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    {% comment %} signal: authorAbortController.signal {% endcomment %}
+                }
+            )
+            .then(res => res.json())
+            .then(data => {
+                authorDropdown.innerHTML = "";
+
+                if (!data.data.length) {
+                    titleDropdown.classList.add("d-none");
+                    return;
+                }
+
+                data.data.forEach(name => {
+                    const div = document.createElement("div");
+                    div.className = "dropdown-item";
+                    div.textContent = name;
+
+                    div.onclick = () => {
+                        authorInput.value = name;
+                        authorDropdown.classList.add("d-none");
+                    };
+
+                    authorDropdown.appendChild(div);
+                });
+
+                authorDropdown.classList.remove("d-none");
+            });
+        });
+
+        document.addEventListener("click", e => {
+            if (!authorDropdown.contains(e.target) && e.target !== authorInput) {
+                authorDropdown.classList.add("d-none");
+            }
+        });
+    }
+
+
+    /* =====================================================
+       AUTO-GENERATION (CUTTER / CALL / CLASSIFICATION)
+    ===================================================== */
+    window.updateCutterFromAuthor = function () {
+        const cutter = document.getElementById('cutter_number');
+        if (authorInput.value && !cutter.value) {
+            cutter.value = authorInput.value.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase();
+        }
+    };
+
+    window.updateCallNumber = function () {
+        const subject = document.querySelector('#eb_subject option:checked');
+        const cutter = document.getElementById('cutter_number').value;
+        const year = document.getElementById('eb_year_of_publication').value;
+        document.getElementById('call_number').value =
+            [subject?.dataset.code, cutter, year].filter(Boolean).join('.');
+    };
+
+    window.updateClassificationNumber = function () {
+        const subject = document.querySelector('#eb_subject option:checked');
+        const field = document.getElementById('eb_classification_number');
+        if (subject && !field.value) field.value = subject.dataset.code;
+    };
+
+    /* =====================================================
+       FORM VALIDATION
+    ===================================================== */
+    const ebookForm = document.getElementById('ebookForm');
+    ebookForm?.addEventListener('submit', function (e) {
+        const required = ['eb_author','eb_language','eb_subject'];
+        for (let id of required) {
+            const el = document.getElementById(id);
+            if (!el.value) {
+                e.preventDefault();
+                Swal.fire('Missing Field', 'Please fill all required fields', 'warning');
+                el.focus();
+                return;
+            }
+        }
+    });
+
+});
+</script>
+<script>
+    // Back to Top Button
+    const backToTopButton = document.getElementById('backToTop');
+    
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            backToTopButton.classList.add('active');
+        } else {
+            backToTopButton.classList.remove('active');
+        }
+    });
+    
+    backToTopButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     });
 </script>
 
+{% if messages %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    {% for message in messages %}
+    Swal.fire({
+        title: "{{ message.tags|title }}",
+        text: "{{ message|escapejs }}",
+        icon: "{{ message.tags }}",
+        confirmButtonColor: "#0d6efd"
+    });
+    {% endfor %}
+});
+</script>
+{% endif %}
 
 {% endblock %}
-
-
-
-
-

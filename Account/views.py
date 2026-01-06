@@ -226,17 +226,25 @@ def Login(request):
                 # Clear any previous pending action
                 request.session.pop("pending_action", None)
 
-                # ❌ Practitioner blocked from direct access
                 if next_url:
                     request.session["pending_action"] = {
                         "type": "next_url",
                         "url": next_url,
-                        "message": "ही कारवाई अभ्यासिका शाखेपुरती मर्यादित आहे."
+                        "message": "कृपया आपले पुस्तक उघडण्यासाठी पुढे जा."
                     }
 
                     request.session.set_expiry(0)
 
                     return redirect("L01:membership_dashboard")
+                if ebook_id and pdf_url or encrypted_cat_ref_num:
+                    request.session["sweet_alert"] = {
+                        "title": "Access Restricted",
+                        "text": "हे पुस्तक अभ्यासिका शाखेसाठी उपलब्ध नाही.",
+                        "icon": "warning"
+                    }
+
+                    request.session.set_expiry(0)
+                    return redirect("L01:membership_dashboard") 
 
                 return redirect("L01:membership_dashboard")
                 
@@ -264,7 +272,7 @@ def Login(request):
                 if next_url:
                     request.session["sweet_alert"] = {
                         "title": "Access Restricted",
-                        "text": "तुम्ही अभ्यासिका शाखेचे सदस्य असाल तरच तुम्हाला यात प्रवेश मिळेल.",
+                        "text": "हे पुस्तक उघडण्यासाठी अभ्यासिका शाखेत नोंदणी करा.",
                         "icon": "warning"
                     }
 
@@ -287,7 +295,7 @@ def Login(request):
                     request.session["pending_action"] = {
                         "type": "catalog",
                         "url": f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}",
-                        "message": "You tried to view a book."
+                        "message": "कृपया आपले पुस्तक उघडण्यासाठी पुढे जा."
                     }
 
                 request.session.set_expiry(0)

@@ -328,14 +328,14 @@
                 class="toast shadow-lg"
                 role="alert"
                 data-bs-autohide="true"
-                data-bs-delay="20000">
+                data-bs-delay="10000">
 
                 <div class="toast-header bg-primary text-white">
                     <strong class="me-auto">Action Required</strong>
-                    <button type="button"
+                    {% comment %} <button type="button"
                             class="btn-close btn-close-white"
                             data-bs-dismiss="toast">
-                    </button>
+                    </button> {% endcomment %}
                 </div>
 
                 <div class="toast-body">
@@ -1421,25 +1421,25 @@
         debugger
         const toastEl = document.getElementById("actionToast");
 
-        // Prevent re-show on refresh
-        if (sessionStorage.getItem("actionToastShown") === "true") {
-            return;
-        }
+      
 
         if (toastEl && typeof bootstrap !== "undefined") {
             const toast = new bootstrap.Toast(toastEl, {
-                delay: 20000,
+                delay: 10000,
                 autohide: true
             });
 
             toast.show();
 
-            // ✅ HARD guarantee hide after 20 seconds
-            setTimeout(() => {
-                toast.hide();
-                // ✅ Mark as shown ONLY AFTER hiding
-                sessionStorage.setItem("actionToastShown", "true");
-            }, 20000);
+             // ✅ When toast auto-hides → clear session
+            toastEl.addEventListener('hidden.bs.toast', function () {
+                    fetch("{% url 'L01:clear_pending_action' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        }
+                    });
+                });
 
             // Pause on hover
             toastEl.addEventListener('mouseenter', function () {
@@ -1466,6 +1466,13 @@
     function openBook() {
         window.location.href = "{{ pending_action.url }}";
     }
+    {% comment %} function openBook() {
+        const pdfUrl = "{{ pending_action.url }}";
+
+        if (pdfUrl) {
+            window.open(pdfUrl, "_blank");  // opens in new tab
+        }
+    } {% endcomment %}
 
     function cancelAction() {
         fetch("{% url 'L01:clear_pending_action' %}", {
