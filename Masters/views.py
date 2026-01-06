@@ -63,7 +63,7 @@ from botocore.exceptions import ClientError
 from django.http import HttpResponse, Http404, StreamingHttpResponse
 import mimetypes
 import uuid
-from datetime import datetime, date
+from datetime import datetime as dt, date
 
 # Part First While Filling Membership Form
 
@@ -503,7 +503,7 @@ def book_catalog_create(request):
                     book_folder = f"{library_code}/{book.cat_ref_num}"
                     
                     # Generate unique timestamps for filenames
-                    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+                    timestamp = dt.now().strftime("%Y%m%dT%H%M%S")
                     
                     # --- Front Page Image ---
                     if front_photo:
