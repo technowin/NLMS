@@ -1138,53 +1138,83 @@ def membership_form_edit(request):
 #     except Exception:
 #         raise Http404("Document not found")
 
-from django.http import FileResponse, HttpResponse, Http404
+import boto3
+from botocore.exceptions import ClientError
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from pathlib import Path
+from django.conf import settings
 import mimetypes
-from urllib.parse import quote
-
 
 def secure_document_view(request, doc_id_enc):
     """
-    Secure document view that works with both local filesystem and S3
+    Stream documents through Django (hides S3 URLs from users)
     """
     try:
         # Decrypt the document ID
         doc_id = dec(doc_id_enc)
         document = get_object_or_404(DocumentDetails, id=doc_id, isactive=1)
         
-        print(f"[secure_document_view] Document: {document.file_name}")
-        print(f"[secure_document_view] File path in DB: {document.file_path}")
-        
-        # Check if file exists using our FileStorageService
-        if not file_storage_service.file_exists(document.file_path):
-            print(f"[secure_document_view] File not found: {document.file_path}")
-            raise Http404("Document file not found")
-        
-        # Get environment
         environment = getattr(settings, 'ENVIRONMENT', 'local')
         
         if environment == 'production':
-            # ========== PRODUCTION: Redirect to S3 URL ==========
-            print(f"[secure_document_view] Production environment - redirecting to S3")
+            # ========== PRODUCTION: Stream from S3 through Django ==========
+            # Get AWS credentials from settings
+            aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', '')
+            aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', '')
+            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+            region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
             
-            # Get the S3 URL from our service
-            file_url = file_storage_service.get_file_url(document.file_path)
+            if not all([aws_access_key, aws_secret_key, bucket_name]):
+                raise Http404("S3 configuration missing")
             
-            if file_url and file_url != "#":
-                print(f"[secure_document_view] Redirecting to: {file_url}")
-                # Option 1: Redirect to S3 URL (recommended - uses S3 directly)
-                from django.shortcuts import redirect
-                return redirect(file_url)
-            else:
-                raise Http404("Could not generate document URL")
+            # Prepare S3 path
+            from .services import file_storage_service
+            s3_path = file_storage_service._prepare_path(document.file_path, add_base=True)
+            
+            print(f"[secure_document_view] Streaming from S3: {s3_path}")
+            
+            # Create S3 client
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=aws_access_key,
+                aws_secret_access_key=aws_secret_key,
+                region_name=region
+            )
+            
+            try:
+                # Get file from S3
+                s3_response = s3_client.get_object(Bucket=bucket_name, Key=s3_path)
+                
+                # Get content type
+                content_type = s3_response.get('ContentType', 'application/octet-stream')
+                if content_type == 'application/octet-stream':
+                    # Try to guess from filename
+                    guessed_type, _ = mimetypes.guess_type(document.file_name)
+                    if guessed_type:
+                        content_type = guessed_type
+                
+                # Create Django response
+                django_response = HttpResponse(
+                    s3_response['Body'].read(),
+                    content_type=content_type
+                )
+                
+                # Set headers
+                from urllib.parse import quote
+                django_response['Content-Disposition'] = f'inline; filename="{quote(document.file_name)}"'
+                django_response['Content-Length'] = str(s3_response['ContentLength'])
+                django_response['X-Content-Type-Options'] = 'nosniff'
+                
+                return django_response
+                
+            except ClientError as e:
+                print(f"[secure_document_view] S3 error: {e}")
+                raise Http404("Document not found on S3")
                 
         else:
             # ========== LOCAL/TEST: Serve from local filesystem ==========
-            print(f"[secure_document_view] Local/Test environment - serving locally")
+            from pathlib import Path
             
-            # Build full file path safely
             file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
             
             if not file_path.exists():
@@ -1196,6 +1226,7 @@ def secure_document_view(request, doc_id_enc):
                 content_type = 'application/octet-stream'
             
             # Serve the file
+            from django.http import FileResponse
             response = FileResponse(
                 open(file_path, 'rb'),
                 content_type=content_type,
@@ -1203,14 +1234,14 @@ def secure_document_view(request, doc_id_enc):
                 filename=document.file_name
             )
             
-            # Add security headers
             response['X-Content-Type-Options'] = 'nosniff'
-            response['Content-Disposition'] = f'inline; filename="{quote(document.file_name)}"'
             
             return response
             
     except Exception as e:
         print(f"[secure_document_view] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise Http404("Document not found")
     
 @login_required
