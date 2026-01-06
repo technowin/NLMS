@@ -41,22 +41,18 @@ class FileStorageService:
     def _prepare_path(self, path, add_base=True):
         """
         Prepare path with base path if needed
-        
-        Args:
-            path: The original file path
-            add_base: Whether to add base path (True for new saves, False for existing)
-        
-        Returns:
-            str: Prepared path
         """
         if not path:
             return path
-            
+        
+        # ✅ NORMALIZE PATH SEPARATORS FIRST
+        path = self._normalize_path_separators(path)
+        
         # Clean the path (remove leading slash)
         path = path.lstrip('/')
         
         # Debug
-        print(f"  [_prepare_path] Input: '{path}', add_base: {add_base}")
+        print(f"  [_prepare_path] Input (normalized): '{path}', add_base: {add_base}")
         print(f"  [_prepare_path] Base path: '{self.base_path}'")
         
         # Remove base path if it's already there (for consistency)
@@ -75,11 +71,13 @@ class FileStorageService:
     def _normalize_path_for_db(self, path):
         """
         Normalize path for database storage
-        
         Returns path without environment-specific prefixes
         """
         if not path:
             return path
+        
+        # ✅ NORMALIZE PATH SEPARATORS FIRST
+        path = self._normalize_path_separators(path)
         
         path = path.lstrip('/')
         
@@ -326,6 +324,25 @@ class FileStorageService:
         except Exception as e:
             print(f"[FileStorageService] ERROR getting file size: {str(e)}")
             return 0
+    
+    def _normalize_path_separators(self, path):
+        """
+        Normalize path separators to forward slashes
+        Always use forward slashes for consistency
+        """
+        if not path:
+            return path
         
+        # Replace backslashes with forward slashes
+        path = path.replace('\\', '/')
+        
+        # Remove any duplicate slashes
+        while '//' in path:
+            path = path.replace('//', '/')
+        
+        # Ensure no leading slash (for consistency)
+        path = path.lstrip('/')
+        
+        return path
 # Global instance for convenience
 file_storage_service = FileStorageService()

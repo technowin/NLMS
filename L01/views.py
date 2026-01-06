@@ -1033,7 +1033,7 @@ def membership_form_edit(request):
                         setattr(membership, model_field, new_value)
                         updated = True
                         
-                # --- Handle monetary fields ---
+                # --- Handle monetary fields (FIXED VERSION) ---
                 money_fields = {
                     "deposit": "deposit",
                     "entry_fees": "entry_fees",
@@ -1041,12 +1041,22 @@ def membership_form_edit(request):
                 }
 
                 for field_name, model_field in money_fields.items():
-                    new_value = request.POST.get(field_name)
-                    new_value = float(new_value) if new_value else 0.0
-                    old_value = getattr(membership, model_field, 0.0)
-                    if new_value != old_value:
-                        setattr(membership, model_field, new_value)
-                        updated = True
+                    if field_name in request.POST:
+                        raw_value = request.POST.get(field_name, '').strip()
+                        
+                        # ✅ ADD THIS: Skip if empty
+                        if not raw_value:  # This catches '', None, empty string
+                            continue
+                        
+                        try:
+                            new_value = float(raw_value)
+                            old_value = getattr(membership, model_field, 0.0)
+                            
+                            if abs(new_value - old_value) > 0.001:
+                                setattr(membership, model_field, new_value)
+                                updated = True
+                        except ValueError:
+                            pass  # Skip invalid values
 
                 # Handle file uploads
                 file_fields = {
@@ -1090,8 +1100,8 @@ def membership_form_edit(request):
                         unique_filename = f"{filename}_{timestamp}_{short_uuid}{ext}"
 
                         # Build save path -> library_code/username/Document - {doc_type}/
-                        username = membership.username  # or get username from membership
-                        save_dir = os.path.join(library_code, username, f"Document - {doc_type}")
+                        username = membership.user_id  # or get username from membership
+                        save_dir = f"{library_code}/{username}/Document - {doc_type}"
                         save_path = os.path.join(save_dir, unique_filename)
                         
                         print(f"New file path: {save_path}")
