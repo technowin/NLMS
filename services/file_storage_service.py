@@ -35,7 +35,7 @@ class FileStorageService:
         
         Args:
             path: The original file path
-            add_base: Whether to add base path (True for save, False for existing paths)
+            add_base: Whether to add base path (True for new saves, False for existing)
         
         Returns:
             str: Prepared path
@@ -43,13 +43,24 @@ class FileStorageService:
         if not path:
             return path
             
-        # Clean the path
+        # Clean the path (remove leading slash)
         path = path.lstrip('/')
         
-        # Add base path if needed and not already present
+        # Debug
+        print(f"  [_prepare_path] Input: '{path}', add_base: {add_base}")
+        print(f"  [_prepare_path] Base path: '{self.base_path}'")
+        
+        # Remove base path if it's already there (for consistency)
+        if self.base_path and path.startswith(self.base_path):
+            path = path[len(self.base_path):]
+            print(f"  [_prepare_path] Removed base path: '{path}'")
+        
+        # Add base path if needed
         if add_base and self.base_path and not path.startswith(self.base_path):
             path = self.base_path + path
-            
+            print(f"  [_prepare_path] Added base path: '{path}'")
+        
+        print(f"  [_prepare_path] Final: '{path}'")
         return path
     
     def _normalize_path_for_db(self, path):
@@ -141,36 +152,45 @@ class FileStorageService:
             return "#"
         
         try:
-            # ✅ For existing database entries, we need to handle them differently
-            # If it's a path from database (already saved), we should add base path
-            # But only if it doesn't already have it
-            file_path = self._prepare_path(file_path, add_base=True)
+            print(f"\n[FileStorageService.get_file_url] Debug:")
+            print(f"  Environment: {self.environment}")
+            print(f"  Base Path: '{self.base_path}'")
+            print(f"  Input file_path: {file_path}")
+            
+            # Prepare path for current environment
+            prepared_path = self._prepare_path(file_path, add_base=True)
+            print(f"  Prepared path: {prepared_path}")
             
             if self.is_production:
                 # ========== PRODUCTION: S3 URL ==========
                 # Check if already a full URL
-                if file_path.startswith(('http://', 'https://')):
-                    return file_path
+                if prepared_path.startswith(('http://', 'https://')):
+                    print(f"  Already a full URL, returning as is")
+                    return prepared_path
                 
                 # Get AWS settings
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
                 region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
                 
                 if bucket_name and S3_AVAILABLE:
-                    url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_path}"
-                    print(f"[FileStorageService] Generated S3 URL: {url}")
+                    url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{prepared_path}"
+                    print(f"  Generated S3 URL: {url}")
                     return url
                 else:
                     # Fallback to local URL if S3 not configured
-                    print("[FileStorageService] WARNING: S3 not configured, using local URL")
-                    return self._get_local_url(file_path)
+                    print("  WARNING: S3 not configured, falling back to local URL")
+                    return self._get_local_url(prepared_path)
                     
             else:
                 # ========== LOCAL/TEST: Local URL ==========
-                return self._get_local_url(file_path)
+                url = self._get_local_url(prepared_path)
+                print(f"  Generated local URL: {url}")
+                return url
                 
         except Exception as e:
             print(f"[FileStorageService] ERROR getting URL: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return "#"
     
     def _get_local_url(self, file_path):

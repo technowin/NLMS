@@ -1122,20 +1122,95 @@ def membership_form_edit(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_approval")
 
+# def secure_document_view(request, doc_id_enc):
+#     try:
+#         # Decrypt the document ID
+#         doc_id = dec(doc_id_enc)
+#         document = get_object_or_404(DocumentDetails, id=doc_id, isactive=1)
+
+#         # Build full file path safely
+#         file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
+
+#         if not file_path.exists():
+#             raise Http404("Document file not found")
+
+#         return FileResponse(open(file_path, 'rb'), as_attachment=False, filename=document.file_name)
+#     except Exception:
+#         raise Http404("Document not found")
+
+from django.http import FileResponse, HttpResponse, Http404
+from django.shortcuts import get_object_or_404
+from pathlib import Path
+import mimetypes
+from urllib.parse import quote
+
+
 def secure_document_view(request, doc_id_enc):
+    """
+    Secure document view that works with both local filesystem and S3
+    """
     try:
         # Decrypt the document ID
         doc_id = dec(doc_id_enc)
         document = get_object_or_404(DocumentDetails, id=doc_id, isactive=1)
-
-        # Build full file path safely
-        file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
-
-        if not file_path.exists():
+        
+        print(f"[secure_document_view] Document: {document.file_name}")
+        print(f"[secure_document_view] File path in DB: {document.file_path}")
+        
+        # Check if file exists using our FileStorageService
+        if not file_storage_service.file_exists(document.file_path):
+            print(f"[secure_document_view] File not found: {document.file_path}")
             raise Http404("Document file not found")
-
-        return FileResponse(open(file_path, 'rb'), as_attachment=False, filename=document.file_name)
-    except Exception:
+        
+        # Get environment
+        environment = getattr(settings, 'ENVIRONMENT', 'local')
+        
+        if environment == 'production':
+            # ========== PRODUCTION: Redirect to S3 URL ==========
+            print(f"[secure_document_view] Production environment - redirecting to S3")
+            
+            # Get the S3 URL from our service
+            file_url = file_storage_service.get_file_url(document.file_path)
+            
+            if file_url and file_url != "#":
+                print(f"[secure_document_view] Redirecting to: {file_url}")
+                # Option 1: Redirect to S3 URL (recommended - uses S3 directly)
+                from django.shortcuts import redirect
+                return redirect(file_url)
+            else:
+                raise Http404("Could not generate document URL")
+                
+        else:
+            # ========== LOCAL/TEST: Serve from local filesystem ==========
+            print(f"[secure_document_view] Local/Test environment - serving locally")
+            
+            # Build full file path safely
+            file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
+            
+            if not file_path.exists():
+                raise Http404("Document file not found")
+            
+            # Determine content type
+            content_type, encoding = mimetypes.guess_type(str(file_path))
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            
+            # Serve the file
+            response = FileResponse(
+                open(file_path, 'rb'),
+                content_type=content_type,
+                as_attachment=False,
+                filename=document.file_name
+            )
+            
+            # Add security headers
+            response['X-Content-Type-Options'] = 'nosniff'
+            response['Content-Disposition'] = f'inline; filename="{quote(document.file_name)}"'
+            
+            return response
+            
+    except Exception as e:
+        print(f"[secure_document_view] Error: {str(e)}")
         raise Http404("Document not found")
     
 @login_required
