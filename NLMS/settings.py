@@ -132,7 +132,7 @@ if ENVIRONMENT == 'local':
     MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/')
 elif ENVIRONMENT == 'test':
     # For test server (Ubuntu)
-    MEDIA_ROOT = os.path.join(BASE_DIR, '/home/ubuntu/Documents/')
+    MEDIA_ROOT = '/home/ubuntu/Documents/'
 else:  # production
     # For production - use AWS S3, so local path is not critical
     MEDIA_ROOT = os.path.join(BASE_DIR, '/tmp/documents/')  # Temporary path
