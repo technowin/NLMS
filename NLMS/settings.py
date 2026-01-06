@@ -37,27 +37,40 @@ def detect_environment():
     if env_from_var in ['local', 'test', 'production']:
         return env_from_var
     
-    # Option 2: Detect by IP address
     try:
-        hostname = socket.gethostname()
-        server_ip = socket.gethostbyname(hostname)
+        # Get public IP
+        import urllib.request
+        public_ip = urllib.request.urlopen('https://api.ipify.org').read().decode('utf8')
         
-        # Define server IPs
-        TEST_SERVER_IP = '3.111.76.175'
-        PRODUCTION_SERVER_IP = '43.205.183.251'
-        LOCAL_IPS = ['127.0.0.1', 'localhost', '127.0.1.1']
+        print(f"[DEBUG] Public IP: {public_ip}")
         
-        if server_ip == PRODUCTION_SERVER_IP:
+        # Define server PUBLIC IPs
+        TEST_SERVER_PUBLIC_IP = '3.111.76.175'
+        PRODUCTION_SERVER_PUBLIC_IP = '43.205.183.251'
+        
+        if public_ip == PRODUCTION_SERVER_PUBLIC_IP:
             return 'production'
-        elif server_ip == TEST_SERVER_IP:
+        elif public_ip == TEST_SERVER_PUBLIC_IP:
             return 'test'
-        elif server_ip in LOCAL_IPS or '127.0.0' in server_ip:
-            return 'local'
     except:
         pass
     
-    # Option 3: Default based on common patterns
-    # If we can't detect, assume local for development
+    # Option 3: Check private IP patterns (for AWS)
+    try:
+        hostname = socket.gethostname()
+        private_ip = socket.gethostbyname(hostname)
+        
+        # AWS EC2 private IPs often start with 172.
+        if private_ip.startswith('172.'):
+            # Check if it's your test server by hostname or other method
+            if 'test' in hostname.lower() or 'staging' in hostname.lower():
+                return 'test'
+            else:
+                return 'production'
+    except:
+        pass
+    
+    # Default to local
     return 'local'
 
 # Set environment
