@@ -141,56 +141,63 @@ class FileStorageService:
     def get_file_url(self, file_path):
         """
         Get URL for a file based on environment
-        
-        Args:
-            file_path: Relative file path from database
-        
-        Returns:
-            str: Full URL to access the file
         """
         if not file_path:
             return "#"
         
         try:
-            print(f"\n[FileStorageService.get_file_url] Debug:")
-            print(f"  Environment: {self.environment}")
-            print(f"  Base Path: '{self.base_path}'")
-            print(f"  Input file_path: {file_path}")
-            
             # Prepare path for current environment
-            prepared_path = self._prepare_path(file_path, add_base=True)
-            print(f"  Prepared path: {prepared_path}")
+            file_path = self._prepare_path(file_path, add_base=True)
             
             if self.is_production:
-                # ========== PRODUCTION: S3 URL ==========
+                # ========== PRODUCTION: Generate Signed S3 URL ==========
                 # Check if already a full URL
-                if prepared_path.startswith(('http://', 'https://')):
-                    print(f"  Already a full URL, returning as is")
-                    return prepared_path
+                if file_path.startswith(('http://', 'https://')):
+                    return file_path
                 
                 # Get AWS settings
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
                 region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
                 
                 if bucket_name and S3_AVAILABLE:
-                    url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{prepared_path}"
-                    print(f"  Generated S3 URL: {url}")
-                    return url
+                    # Generate signed URL (expires in 1 hour)
+                    import boto3
+                    from botocore.exceptions import ClientError
+                    
+                    s3_client = boto3.client(
+                        's3',
+                        aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', ''),
+                        aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', ''),
+                        region_name=region
+                    )
+                    
+                    try:
+                        # Generate signed URL that expires in 1 hour (3600 seconds)
+                        signed_url = s3_client.generate_presigned_url(
+                            'get_object',
+                            Params={
+                                'Bucket': bucket_name,
+                                'Key': file_path
+                            },
+                            ExpiresIn=3600  # 1 hour
+                        )
+                        
+                        print(f"[FileStorageService] Generated signed S3 URL: {signed_url}")
+                        return signed_url
+                        
+                    except ClientError as e:
+                        print(f"[FileStorageService] Error generating signed URL: {e}")
+                        # Fallback to regular URL (will fail if bucket is private)
+                        return f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_path}"
                 else:
-                    # Fallback to local URL if S3 not configured
-                    print("  WARNING: S3 not configured, falling back to local URL")
-                    return self._get_local_url(prepared_path)
+                    return self._get_local_url(file_path)
                     
             else:
                 # ========== LOCAL/TEST: Local URL ==========
-                url = self._get_local_url(prepared_path)
-                print(f"  Generated local URL: {url}")
-                return url
+                return self._get_local_url(file_path)
                 
         except Exception as e:
             print(f"[FileStorageService] ERROR getting URL: {str(e)}")
-            import traceback
-            traceback.print_exc()
             return "#"
     
     def _get_local_url(self, file_path):
