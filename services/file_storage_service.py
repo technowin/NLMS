@@ -21,9 +21,11 @@ class FileStorageService:
         self.is_test = (self.environment == 'test')
         self.is_local = (self.environment == 'local')
         
-        # Print debug info
+        # Debug info
         print(f"[FileStorageService] Environment: {self.environment}")
         print(f"[FileStorageService] MEDIA_ROOT: {settings.MEDIA_ROOT}")
+        if self.is_production:
+            print(f"[FileStorageService] S3 Bucket: {getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'Not configured')}")
     
     def save_file(self, file, save_path):
         """
@@ -31,42 +33,65 @@ class FileStorageService:
         
         Args:
             file: Django UploadedFile object
-            save_path: Relative path where to save (e.g., 'L01/user123/Document - 1/file.pdf')
+            save_path: Relative path where to save
         
         Returns:
-            str: The saved file path (same as input save_path)
+            str: The saved file path
         """
+        print(f"\n=== DEBUG FileStorageService.save_file ===")
+        print(f"Environment: {self.environment}")
+        print(f"Is Production: {self.is_production}")
+        print(f"S3 Available: {S3_AVAILABLE}")
+        print(f"Save path: {save_path}")
+        print(f"File name: {file.name}")
+        print(f"File size: {file.size}")
+        
         try:
             if self.is_production and S3_AVAILABLE:
                 # ========== PRODUCTION: Save to AWS S3 ==========
                 print(f"[FileStorageService] Saving to S3: {save_path}")
                 
-                # Get AWS settings
+                # Check if S3 is configured
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+                print(f"Bucket name from settings: {bucket_name}")
+                
                 if not bucket_name:
-                    print("[FileStorageService] WARNING: AWS bucket not configured, falling back to local")
+                    print("[FileStorageService] ERROR: AWS bucket not configured!")
                     return self._save_local(file, save_path)
                 
-                # Get S3 storage
-                s3_storage = S3Boto3Storage(
-                    bucket_name=bucket_name,
-                    location='',  # Store at root of bucket
-                    querystring_auth=getattr(settings, 'AWS_QUERYSTRING_AUTH', False),
-                    file_overwrite=getattr(settings, 'AWS_S3_FILE_OVERWRITE', False),
-                )
+                # Clean the save_path (remove leading slashes)
+                save_path = save_path.lstrip('/')
+                
+                # Create S3 storage instance
+                print("Creating S3Boto3Storage instance...")
+                s3_storage = S3Boto3Storage()
+                print(f"S3 Storage created: {s3_storage}")
+                print(f"S3 bucket name: {getattr(s3_storage, 'bucket_name', 'Not found')}")
                 
                 # Save to S3
+                print("Attempting to save to S3...")
                 saved_path = s3_storage.save(save_path, file)
                 print(f"[FileStorageService] Saved to S3: {saved_path}")
+                
+                # Verify the file was saved
+                if s3_storage.exists(saved_path):
+                    print(f"[FileStorageService] Successfully verified file on S3")
+                    file_size = s3_storage.size(saved_path)
+                    print(f"[FileStorageService] File size on S3: {file_size} bytes")
+                else:
+                    print(f"[FileStorageService] ERROR: File not found on S3 after upload!")
                 
                 return saved_path
                 
             else:
                 # ========== LOCAL/TEST: Save to local filesystem ==========
+                print(f"Not production or S3 not available, saving locally")
                 return self._save_local(file, save_path)
                 
         except Exception as e:
             print(f"[FileStorageService] ERROR saving file: {str(e)}")
+            import traceback
+            traceback.print_exc()
             # Fallback to local saving
             return self._save_local(file, save_path)
     
