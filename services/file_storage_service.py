@@ -52,68 +52,61 @@ class FileStorageService:
             
         return path
     
+    def _normalize_path_for_db(self, path):
+        """
+        Normalize path for database storage
+        
+        Returns path without environment-specific prefixes
+        """
+        if not path:
+            return path
+        
+        path = path.lstrip('/')
+        
+        # Remove base path if present
+        if self.base_path and path.startswith(self.base_path):
+            return path[len(self.base_path):]
+        
+        return path
+    
     def save_file(self, file, save_path):
         """
-        Save file to appropriate storage based on environment
-        
-        Args:
-            file: Django UploadedFile object
-            save_path: Relative path where to save
-        
-        Returns:
-            str: The saved file path
+        Save file and return normalized path for database
         """
         print(f"\n=== DEBUG FileStorageService.save_file ===")
         print(f"Environment: {self.environment}")
-        print(f"Base Path: '{self.base_path}'")
-        print(f"Original save path: {save_path}")
+        print(f"Original path: {save_path}")
         
-        # ✅ Prepare the path with base path
-        save_path = self._prepare_path(save_path, add_base=True)
-        print(f"Final save path: {save_path}")
-        print(f"File name: {file.name}")
-        print(f"File size: {file.size}")
+        # Prepare path for storage
+        storage_path = self._prepare_path(save_path, add_base=True)
+        print(f"Storage path: {storage_path}")
         
         try:
             if self.is_production and S3_AVAILABLE:
-                # ========== PRODUCTION: Save to AWS S3 ==========
-                print(f"[FileStorageService] Saving to S3: {save_path}")
-                
-                # Check if S3 is configured
-                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
-                print(f"Bucket name from settings: {bucket_name}")
-                
-                if not bucket_name:
-                    print("[FileStorageService] ERROR: AWS bucket not configured!")
-                    return self._save_local(file, save_path)
-                
-                # Create S3 storage instance
-                s3_storage = S3Boto3Storage()
-                
                 # Save to S3
-                saved_path = s3_storage.save(save_path, file)
-                print(f"[FileStorageService] Saved to S3: {saved_path}")
+                s3_storage = S3Boto3Storage()
+                saved_path = s3_storage.save(storage_path, file)
+                print(f"Saved to S3: {saved_path}")
                 
-                # Verify the file was saved
-                if s3_storage.exists(saved_path):
-                    file_size = s3_storage.size(saved_path)
-                    print(f"[FileStorageService] Successfully verified file on S3 ({file_size} bytes)")
-                else:
-                    print(f"[FileStorageService] WARNING: File not found on S3 after upload!")
-                
-                return saved_path
+                # Return normalized path for DB
+                normalized = self._normalize_path_for_db(saved_path)
+                print(f"Normalized for DB: {normalized}")
+                return normalized
                 
             else:
-                # ========== LOCAL/TEST: Save to local filesystem ==========
-                print(f"Not production or S3 not available, saving locally")
-                return self._save_local(file, save_path)
+                # Save locally
+                saved_path = self._save_local(file, storage_path)
+                print(f"Saved locally: {saved_path}")
+                
+                # Return normalized path for DB
+                normalized = self._normalize_path_for_db(saved_path)
+                print(f"Normalized for DB: {normalized}")
+                return normalized
                 
         except Exception as e:
-            print(f"[FileStorageService] ERROR saving file: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            # Fallback to local saving
-            return self._save_local(file, save_path)
+            print(f"Error: {e}")
+            saved_path = self._save_local(file, storage_path)
+            return self._normalize_path_for_db(saved_path)
     
     def _save_local(self, file, save_path):
         """
