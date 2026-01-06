@@ -32,43 +32,36 @@ def detect_environment():
     """
     Detect environment: local, test, or production
     """
-    # Option 1: Check environment variable (highest priority)
+    # 1. Environment variable (ALWAYS wins)
     env_from_var = os.getenv('DJANGO_ENV', '').lower()
     if env_from_var in ['local', 'test', 'production']:
         return env_from_var
     
-    try:
-        # Get public IP
-        import urllib.request
-        public_ip = urllib.request.urlopen('https://api.ipify.org').read().decode('utf8')
-        
-        print(f"[DEBUG] Public IP: {public_ip}")
-        
-        # Define server PUBLIC IPs
-        TEST_SERVER_PUBLIC_IP = '3.111.76.175'
-        PRODUCTION_SERVER_PUBLIC_IP = '43.205.183.251'
-        
-        if public_ip == PRODUCTION_SERVER_PUBLIC_IP:
-            return 'production'
-        elif public_ip == TEST_SERVER_PUBLIC_IP:
-            return 'test'
-    except:
-        pass
-    
-    # Option 3: Check private IP patterns (for AWS)
+    # 2. Detect by private IP (for AWS)
     try:
         hostname = socket.gethostname()
         private_ip = socket.gethostbyname(hostname)
         
-        # AWS EC2 private IPs often start with 172.
-        if private_ip.startswith('172.'):
-            # Check if it's your test server by hostname or other method
-            if 'test' in hostname.lower() or 'staging' in hostname.lower():
-                return 'test'
-            else:
-                return 'production'
-    except:
-        pass
+        print(f"[DEBUG] Hostname: {hostname}")
+        print(f"[DEBUG] Private IP: {private_ip}")
+        
+        # Test Server: 172.26.12.47
+        # Production Server: 172.31.44.248
+        
+        if private_ip == '172.26.12.47':
+            return 'test'
+        elif private_ip == '172.31.44.248':
+            return 'production'
+        elif private_ip.startswith('172.26.'):
+            return 'test'
+        elif private_ip.startswith('172.31.'):
+            return 'production'
+            
+    except Exception as e:
+        print(f"[DEBUG] Error detecting IP: {e}")
+    
+    # 3. Default to local (safest)
+    return 'local'
     
     # Default to local
     return 'local'
