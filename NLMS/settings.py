@@ -275,8 +275,6 @@ STATICFILES_DIRS = [
    
 ]
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
