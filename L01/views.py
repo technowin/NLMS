@@ -760,73 +760,74 @@ def membership_form_create(request):
                         print(f"{k}: {v}")
                     print(f"Password (future use): {raw_password}")
                     
-                    # if MembershipDetails.objects.filter(email=data.get("email")).exists():
-                    #     messages.error(request, f"❌ ई-मेल '{data.get('email')}' आधी अस्तित्वात आहे!")
-                    #     return redirect('L01:membership_form_create')
-
                     # === Save Membership ===
                     membership = MembershipDetails.objects.create(**data)
 
-                    # === Handle Document Uploads ===
-                    library_code = request.session.get("library_db", "default")
+                    # === Handle Document Uploads using FileStorageService ===
                     documents_info = []
-
-                    for field_name, doc_id in [
+                    
+                    # Map form fields to document IDs
+                    document_mapping = [
                         ("photo_upload", request.POST.get("document_photo_upload")),
                         ("id_upload", request.POST.get("document_id_upload")),
                         ("agreement_copy", request.POST.get("document_agreement_copy")),
                         ("nagarsevak_letter", request.POST.get("document_nagarsevak_letter")),
                         ("employee_letter", request.POST.get("employee_letter")),
-                    ]:
+                    ]
+                    
+                    for field_name, doc_id in document_mapping:
                         file = request.FILES.get(field_name)
                         if file and doc_id:
-                            # Extract original filename + extension
-                            filename, ext = os.path.splitext(file.name)
-
-                            # Generate unique filename
-                            # timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-                            timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-                            short_uuid = str(uuid.uuid4())[:8]
-                            unique_filename = f"{filename}_{timestamp}_{short_uuid}{ext}"
-
-                            # Build save path -> library_code/Document - {doc_id}/unique_filename
-                            save_dir = os.path.join(library_code, username, f"Document - {doc_id}")
-                            save_path = os.path.join(save_dir, unique_filename)
-                            full_path = os.path.join(settings.MEDIA_ROOT, save_path)
-
-                            # ✅ Ensure directory exists
-                            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-                            # ✅ Save file
-                            with open(full_path, "wb+") as destination:
-                                for chunk in file.chunks():
-                                    destination.write(chunk)
-
-                            # ✅ Save document record
-                            DocumentDetails.objects.create(
-                                membership=membership,
-                                document_id=doc_id,
-                                file_name=unique_filename,
-                                file_path=save_path,
-                                created_by=user_code,
-                                created_at=timezone.now()
-                            )
-
-                            documents_info.append({
-                                "document_id": doc_id,
-                                "file_name": unique_filename,
-                                "file_path": save_path,
-                            })
-
-                    print("\n===== Documents Uploaded =====")
+                            try:
+                                # Extract original filename + extension
+                                filename, ext = os.path.splitext(file.name)
+                                
+                                # Generate unique filename
+                                timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+                                short_uuid = str(uuid.uuid4())[:8]
+                                unique_filename = f"{filename}_{timestamp}_{short_uuid}{ext}"
+                                
+                                # Build save path -> library_code/username/Document - {doc_id}/unique_filename
+                                # ✅ NORMALIZE PATH: Use forward slashes for consistency
+                                save_dir = f"{library_code}/{username}/Document - {doc_id}"
+                                save_path = f"{save_dir}/{unique_filename}"
+                                
+                                # ✅ USE STORAGE SERVICE TO SAVE FILE
+                                saved_file_path = file_storage_service.save_file(file, save_path)
+                                
+                                # ✅ Save document record
+                                document = DocumentDetails.objects.create(
+                                    membership=membership,
+                                    document_id=doc_id,
+                                    file_name=unique_filename,
+                                    file_path=saved_file_path,  # Normalized path from storage service
+                                    created_by=user_code,
+                                    created_at=timezone.now()
+                                )
+                                
+                                documents_info.append({
+                                    "document_id": doc_id,
+                                    "file_name": unique_filename,
+                                    "file_path": saved_file_path,
+                                    "file_url": file_storage_service.get_file_url(saved_file_path),  # Get URL for reference
+                                    "status": "Success"
+                                })
+                                
+                                print(f"✅ Document '{field_name}' saved: {saved_file_path}")
+                                
+                            except Exception as e:
+                                print(f"❌ Error saving document '{field_name}': {str(e)}")
+                                documents_info.append({
+                                    "document_id": doc_id,
+                                    "file_name": file.name,
+                                    "error": str(e),
+                                    "status": "Failed"
+                                })
+                    
+                    print("\n===== Documents Upload Summary =====")
                     for d in documents_info:
                         print(d)
-                        
-                    # === Check for duplicate email or user_id before creating user ===
                     
-                    # if CustomUser.objects.filter(email=data.get("email")).exists():
-                    #     messages.error(request, f"❌ ई-मेल '{data.get('email')}' आधी अस्तित्वात आहे!")
-                    #     return redirect('L01:membership_form_create')  # go back to the form
 
                     if CustomUser.objects.filter(username=data.get("user_id")).exists():
                         messages.error(request, f"❌ User ID '{data.get('user_id')}' आधी अस्तित्वात आहे!")
