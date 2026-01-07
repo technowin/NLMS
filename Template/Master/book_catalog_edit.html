@@ -364,7 +364,7 @@
                     <input type="text" name="keywords" class="form-control transliterate"
                         placeholder="Search tags / keywords" value="{{ obj.keywords }}">
                 </div>
-                <div class="col-md-6">
+                {% comment %} <div class="col-md-6">
                     <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
                     <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'front_page_preview')">
 
@@ -377,6 +377,28 @@
                         <div class="mt-2">
                             <img id="front_page_preview" src="" alt="Front Page Preview"
                                 class="img-thumbnail shadow-sm d-none" style="max-height: 120px;">
+                        </div>
+                    {% endif %}
+                </div> {% endcomment %}
+                <div class="col-md-6">
+                    <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
+                    <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'front_page_preview')">
+
+                    {% if obj.front_page_photo %}
+                        <div class="mt-2">
+                            <img id="front_page_preview" 
+                                src="{{ file_storage_service.get_file_url|default:'#' }}{{ obj.front_page_photo }}" 
+                                alt="Front Page Image"
+                                class="img-thumbnail shadow-sm" 
+                                style="max-height: 120px;">
+                        </div>
+                    {% else %}
+                        <div class="mt-2">
+                            <img id="front_page_preview" 
+                                src="" 
+                                alt="Front Page Preview"
+                                class="img-thumbnail shadow-sm d-none" 
+                                style="max-height: 120px;">
                         </div>
                     {% endif %}
                 </div>
