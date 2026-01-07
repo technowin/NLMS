@@ -5,10 +5,15 @@
                 <div class="card h-100 shadow-sm book-card">
                     <!-- Image -->
                     <div class="book-img-box">
-                        {% if book.front_page_photo %}
-                            <img src="{{ MEDIA_URL }}{{ book.front_page_photo }}" alt="" class="img-fluid">
+                        {% if book.front_page_url %}
+                            <img src="{{ book.front_page_url }}" 
+                                alt="{{ book.title|default:'Book Cover' }}" 
+                                class="img-fluid"
+                                onerror="this.onerror=null; this.src='/static/images/book-placeholder.png';">
                         {% else %}
-                            <span class="text-muted">प्रतिमा उपलब्ध नाही</span>
+                            <div class="text-center py-4">
+                                <span class="text-muted">प्रतिमा उपलब्ध नाही</span>
+                            </div>
                         {% endif %}
                     </div>
 

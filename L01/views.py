@@ -5195,6 +5195,26 @@ def visit_Library_catalogue(request):
                                        .select_related('subject', 'material', 'ebook')
         else:
             books = BookCatalog.objects.none()
+            
+        # --- ADD FILE URLs TO BOOKS ---
+        for book in books:
+            book.bookIdEnc = enc(str(book.cat_ref_num)) if 'enc' in globals() else book.cat_ref_num
+            
+            # ✅ Use FileStorageService for book cover image
+            if book.front_page_photo:
+                book.front_page_url = file_storage_service.get_file_url(book.front_page_photo)
+            else:
+                book.front_page_url = None
+            
+            # Add ebook encrypted ID if available
+            if book.ebook:
+                book.ebookEnc = enc(str(book.ebook.ebook_id))
+                
+                # ✅ Also get ebook front page URL if available
+                if book.ebook.eb_front_page_photo:
+                    book.ebook_front_page_url = file_storage_service.get_file_url(book.ebook.eb_front_page_photo)
+                else:
+                    book.ebook_front_page_url = None
 
         # --- PAGINATION ---
         paginator = Paginator(books, 8)
@@ -5218,6 +5238,12 @@ def visit_Library_catalogue(request):
         new_books = list(recent_books) + list(fallback_books)
         for b in new_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            
+            # ✅ Add file URLs for new books
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
 
         # --- MOST REVIEWED BOOKS (use indexed cat_ref_id in BookReview) ---
         most_reviewed_books = (
@@ -5234,6 +5260,12 @@ def visit_Library_catalogue(request):
             avg = b.avg_rating or 0
             b.avg_rating = round(avg, 1)
             b.stars = [True if i < round(avg) else False for i in range(5)]
+            
+            # ✅ Add file URLs for reviewed books
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
 
         # --- NEW ARRIVALS IN CIRCULATION (use indexed bookcatalog_id in circulation) ---
         new_arrivals_qs = BookCatalog.objects.annotate(
@@ -5244,6 +5276,12 @@ def visit_Library_catalogue(request):
 
         for b in new_arrivals_qs:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            
+            # ✅ Add file URLs for new arrivals
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
 
         # --- CONTEXT ---
         context = {
@@ -5268,14 +5306,13 @@ def visit_Library_catalogue(request):
 def get_books_by_subject(request):
     try:
         subject_id_enc = request.GET.get('subject_id')
-        subject_id = dec(subject_id_enc)
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
 
         search = request.GET.get('search', '').strip()
         searching = request.GET.get('searching', '').strip()
         
         if searching:
-            
-            # Base queryset
+            # Global search mode (across all subjects)
             all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook')
 
             if search:
@@ -5288,30 +5325,38 @@ def get_books_by_subject(request):
                 # Filter by subject only if no search
                 all_books = all_books.filter(subject_id=subject_id)
 
-            # Encode book IDs
+            # ✅ ADD FILE URLS FOR ALL BOOKS
             for b in all_books:
                 b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+                
+                # Get front page URL using FileStorageService
+                if b.front_page_photo:
+                    b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+                else:
+                    b.front_page_url = None
+                
+                # Get ebook info
+                if b.ebook:
+                    b.ebookEnc = enc(str(b.ebook.ebook_id))
+                    
+                    # Also get ebook front page if available
+                    if b.ebook.eb_front_page_photo:
+                        b.ebook_front_page_url = file_storage_service.get_file_url(b.ebook.eb_front_page_photo)
+                    else:
+                        b.ebook_front_page_url = None
 
             # Pagination
             paginator = Paginator(all_books, 8)
             page_number = request.GET.get('page', 1)
             books_page = paginator.get_page(page_number)
-            
-            for b in books_page:
-
-                if b.ebook:
-                    b.ebookEnc = enc(str(b.ebook.ebook_id))  # ✅ NEW
-
-            context = {
-                'books': books_page,
-                'MEDIA_URL': settings.MEDIA_URL,
-                'subject_id_enc': subject_id_enc
-            }
-            return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
 
         else:
-            # Base queryset
-            all_books = BookCatalog.objects.filter(subject_id=subject_id).select_related('subject', 'material')
+            # Filter by specific subject
+            if not subject_id:
+                return JsonResponse({'error': 'Subject ID required'}, status=400)
+                
+            all_books = BookCatalog.objects.filter(subject_id=subject_id)\
+                                           .select_related('subject', 'material', 'ebook')
 
             # Search filter
             if search:
@@ -5320,27 +5365,45 @@ def get_books_by_subject(request):
                     Q(author__icontains=search)
                 )
 
-            # Encode book IDs
+            # ✅ ADD FILE URLS FOR BOOKS
             for b in all_books:
                 b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+                
+                # Get front page URL using FileStorageService
+                if b.front_page_photo:
+                    b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+                else:
+                    b.front_page_url = None
+                
+                # Get ebook info
+                if b.ebook:
+                    b.ebookEnc = enc(str(b.ebook.ebook_id))
+                    
+                    # Also get ebook front page if available
+                    if b.ebook.eb_front_page_photo:
+                        b.ebook_front_page_url = file_storage_service.get_file_url(b.ebook.eb_front_page_photo)
+                    else:
+                        b.ebook_front_page_url = None
 
             # Pagination
             paginator = Paginator(all_books, 8)
             page_number = request.GET.get('page', 1)
             books_page = paginator.get_page(page_number)
 
-            context = {
-                'books': books_page,
-                'MEDIA_URL': settings.MEDIA_URL,
-                'subject_id_enc': subject_id_enc
-            }
-            
-            return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
+        context = {
+            'books': books_page,
+            'MEDIA_URL': settings.MEDIA_URL,  # Keep for backward compatibility
+            'subject_id_enc': subject_id_enc
+        }
+        
+        return render(request, "L01/LibraryCateVisit/book_list_partial.html", context)
 
     except Exception as e:
         print("Error fetching books for subject:", e)
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch books'}, status=500)
-    
+
 def membership_card(request):
     username = request.session.get('username')
     member_id = None

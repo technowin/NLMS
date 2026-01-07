@@ -4497,6 +4497,7 @@ def secure_ebook_file_view(request, file_type_enc):
         import traceback
         traceback.print_exc()
         raise Http404("File not found")
+
 def track_click(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -4513,7 +4514,6 @@ def track_click(request):
                 break
 
         return JsonResponse({'status': 'ok'})
-
     
 def should_show_popup(request):
     try:
