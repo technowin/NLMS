@@ -793,28 +793,80 @@ def book_catalog_edit(request):
             obj.updated_by = request.user.id
             obj.updated_at = timezone.now()
 
-            # Handle file uploads
+             # ---------- UPDATED FILE HANDLING USING FileStorageService ----------
             front_photo = request.FILES.get('front_page_image')
             last_photo = request.FILES.get('last_page_image')
+            
             if front_photo or last_photo:
-                book_folder = os.path.join(settings.MEDIA_ROOT, "L01", str(obj.cat_ref_num))
-                os.makedirs(book_folder, exist_ok=True)
-
+                # Get library code from session (adjust as needed for your app)
+                # If not using session, you might need to get it from the book or other context
+                library_code = request.session.get('library_db', 'default')
+                
+                # Use library_code for folder structure
+                book_folder = f"{library_code}/{obj.cat_ref_num}"
+                
+                # Import datetime and uuid for filename generation
+                from datetime import datetime as dt
+                import uuid
+                
+                # Generate unique timestamps for filenames
+                timestamp = dt.now().strftime("%Y%m%dT%H%M%S")
+                
+                # --- Front Page Image ---
                 if front_photo:
-                    front_filename = f"{obj.cat_ref_num}_front_{front_photo.name}"
-                    front_path = os.path.join(book_folder, front_filename)
-                    with open(front_path, 'wb+') as f:
-                        for chunk in front_photo.chunks():
-                            f.write(chunk)
-                    obj.front_page_photo = f"L01/{obj.cat_ref_num}/{front_filename}"
-
+                    try:
+                        # Extract original filename and extension
+                        filename, ext = os.path.splitext(front_photo.name)
+                        
+                        # Generate unique filename
+                        short_uuid = str(uuid.uuid4())[:8]
+                        # Remove special characters from filename for safety
+                        safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                        unique_filename = f"{obj.cat_ref_num}_front_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                        
+                        # Build save path
+                        save_path = f"{book_folder}/{unique_filename}"
+                        
+                        # ✅ USE STORAGE SERVICE TO SAVE FILE
+                        saved_file_path = file_storage_service.save_file(front_photo, save_path)
+                        
+                        # Update book record with saved path
+                        obj.front_page_photo = saved_file_path
+                        
+                        print(f"✅ Front page image saved for library {library_code}: {saved_file_path}")
+                        
+                    except Exception as e:
+                        print(f"❌ Error saving front page image: {str(e)}")
+                        # Continue without image, don't fail the entire transaction
+                        messages.warning(request, f"Front page image could not be saved: {str(e)}")
+                
+                # --- Last Page Image ---
                 if last_photo:
-                    last_filename = f"{obj.cat_ref_num}_back_{last_photo.name}"
-                    last_path = os.path.join(book_folder, last_filename)
-                    with open(last_path, 'wb+') as f:
-                        for chunk in last_photo.chunks():
-                            f.write(chunk)
-                    obj.last_page_photo = f"L01/{obj.cat_ref_num}/{last_filename}"
+                    try:
+                        # Extract original filename and extension
+                        filename, ext = os.path.splitext(last_photo.name)
+                        
+                        # Generate unique filename
+                        short_uuid = str(uuid.uuid4())[:8]
+                        # Remove special characters from filename for safety
+                        safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                        unique_filename = f"{obj.cat_ref_num}_back_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                        
+                        # Build save path
+                        save_path = f"{book_folder}/{unique_filename}"
+                        
+                        # ✅ USE STORAGE SERVICE TO SAVE FILE
+                        saved_file_path = file_storage_service.save_file(last_photo, save_path)
+                        
+                        # Update book record with saved path
+                        obj.last_page_photo = saved_file_path
+                        
+                        print(f"✅ Last page image saved for library {library_code}: {saved_file_path}")
+                        
+                    except Exception as e:
+                        print(f"❌ Error saving last page image: {str(e)}")
+                        # Continue without image, don't fail the entire transaction
+                        messages.warning(request, f"Last page image could not be saved: {str(e)}")
 
             obj.save()
             messages.success(request, "Book catalog updated successfully!")
