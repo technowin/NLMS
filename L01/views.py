@@ -5543,6 +5543,17 @@ def view_book_detail(request):
         
         for b in [book]:
             b.bookIdEnc = enc(str(b.cat_ref_num))
+            
+        if book.front_page_photo:
+            book.front_page_url = file_storage_service.get_file_url(book.front_page_photo)
+        else:
+            book.front_page_url = None
+            
+        # Get last page URL
+        if book.last_page_photo:
+            book.last_page_url = file_storage_service.get_file_url(book.last_page_photo)
+        else:
+            book.last_page_url = None
 
         # Collect images
         images = []
@@ -5664,6 +5675,8 @@ def view_book_detail(request):
             'reviews_per_page': reviews_per_page,
             'current_params': request.GET.copy(),
             'cat_ref_num_enc': cat_ref_num_enc,
+            'front_page_url': book.front_page_url,
+            'last_page_url': book.last_page_url,
         }
 
         return render(request, "L01/LibraryCateVisit/view_book_detail.html", context)

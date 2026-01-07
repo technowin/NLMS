@@ -92,19 +92,29 @@
             <!-- Main Image -->
             <div class="zoom-wrapper">
                 <img id="mainBookImage" 
-                    src="{{ MEDIA_URL }}{{ images.0 }}" 
-                    alt="{{ book.title }}">
+                    src="{% if front_page_url %}{{ front_page_url }}{% else %}{% static 'images/book-placeholder.png' %}{% endif %}" 
+                    alt="{{ book.title }}"
+                    onerror="this.onerror=null; this.src='{% static 'images/book-placeholder.png' %}';">
             </div>
 
             <!-- Thumbnails -->
-            {% if images|length > 1 %}
+            {% if front_page_url or last_page_url %}
                 <div class="thumbnail-grid">
-                    {% for img in images %}
-                        <img class="thumbnail" 
-                            src="{{ MEDIA_URL }}{{ img }}" 
-                            alt="Thumbnail {{ forloop.counter }}"
-                            onclick="changeMainImage('{{ MEDIA_URL }}{{ img }}', this)">
-                    {% endfor %}
+                    {% if front_page_url %}
+                        <img class="thumbnail {% if image_urls.0 == front_page_url %}active{% endif %}" 
+                            src="{{ front_page_url }}" 
+                            alt="Front Page"
+                            onclick="changeMainImage('{{ front_page_url }}', this)"
+                            onerror="this.onerror=null; this.src='{% static 'images/book-placeholder.png' %}';">
+                    {% endif %}
+                    
+                    {% if last_page_url %}
+                        <img class="thumbnail {% if image_urls.0 == last_page_url %}active{% endif %}" 
+                            src="{{ last_page_url }}" 
+                            alt="Last Page"
+                            onclick="changeMainImage('{{ last_page_url }}', this)"
+                            onerror="this.onerror=null; this.src='{% static 'images/book-placeholder.png' %}';">
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -1022,6 +1032,31 @@
                 top: 0,
                 behavior: 'smooth'
             });
+        });
+    </script>
+
+    <!-- Update JavaScript function -->
+    <script>
+        function changeMainImage(newSrc, clickedElement) {
+            const mainImage = document.getElementById('mainBookImage');
+            
+            // Update main image
+            mainImage.src = newSrc;
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            }
+        }
+
+        // Handle broken main image
+        document.getElementById('mainBookImage').addEventListener('error', function() {
+            this.src = '{% static "images/book-placeholder.png" %}';
+            this.onerror = null; // Prevent infinite loop
         });
     </script>
 
