@@ -108,15 +108,27 @@ def logged_in_user(request):
                 )
 
                 if membershipshow:
-                    # Profile picture
+                    # Profile picture - using FileStorageService
                     try:
                         document = DocumentDetails.objects.get(
                             membership_id=membershipshow.id,
                             document_id=1
                         )
                         file_path = document.file_path
+                        
+                        # ✅ Use FileStorageService to get the URL
+                        if file_path:
+                            # Import FileStorageService here to avoid circular imports
+                            from services.file_storage_service import file_storage_service
+                            profile_picture_url = file_storage_service.get_file_url(file_path)
+                        else:
+                            profile_picture_url = None
+                            
                     except DocumentDetails.DoesNotExist:
-                        file_path = '/static/images/user.png'
+                        profile_picture_url = None
+                    except Exception as e:
+                        print(f"Error getting profile picture URL: {e}")
+                        profile_picture_url = None
 
                     # =========================
                     # ACCESS RULES
@@ -156,6 +168,14 @@ def logged_in_user(request):
                             if item['name'] == "सदस्यत्व देयक"
                         ]
                         membership_active = False
+        
+        # =========================
+        # FALLBACK FOR PROFILE PICTURE
+        # =========================
+        if not profile_picture_url:
+            # Use static default image
+            from django.templatetags.static import static
+            profile_picture_url = static('img/user.png')
 
         # =========================
         # CONTEXT RETURN
@@ -168,7 +188,7 @@ def logged_in_user(request):
             'session_timeout_minutes': session_timeout_minutes,
             'reports': reports,
             'menu_items': menu_items,
-            'profile_picture_url': settings.MEDIA_URL + file_path,
+            'profile_picture_url': profile_picture_url,
             'membershipshow': membershipshow,
             'library_name_show': library_name_show,
             'membership_active': membership_active,
