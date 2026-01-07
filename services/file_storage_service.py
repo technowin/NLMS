@@ -3,12 +3,6 @@ File Storage Service for handling files in different environments
 """
 import os
 from django.conf import settings
-try:
-    from storages.backends.s3boto3 import S3Boto3Storage
-    S3_AVAILABLE = True
-except ImportError:
-    S3_AVAILABLE = False
-
 
 class FileStorageService:
     """
@@ -51,21 +45,14 @@ class FileStorageService:
         # Clean the path (remove leading slash)
         path = path.lstrip('/')
         
-        # Debug
-        print(f"  [_prepare_path] Input (normalized): '{path}', add_base: {add_base}")
-        print(f"  [_prepare_path] Base path: '{self.base_path}'")
-        
         # Remove base path if it's already there (for consistency)
         if self.base_path and path.startswith(self.base_path):
             path = path[len(self.base_path):]
-            print(f"  [_prepare_path] Removed base path: '{path}'")
         
         # Add base path if needed
         if add_base and self.base_path and not path.startswith(self.base_path):
             path = self.base_path + path
-            print(f"  [_prepare_path] Added base path: '{path}'")
         
-        print(f"  [_prepare_path] Final: '{path}'")
         return path
     
     def _normalize_path_for_db(self, path):
@@ -100,7 +87,6 @@ class FileStorageService:
         print(f"Storage path: {storage_path}")
         
         try:
-            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
             if self.is_production and self.S3_AVAILABLE:
                 # Save to S3
                 s3_storage = self.S3Boto3Storage()
@@ -158,56 +144,59 @@ class FileStorageService:
             file_path = self._prepare_path(file_path, add_base=True)
             
             if self.is_production:
-                # ========== PRODUCTION: Generate Signed S3 URL ==========
-                # Check if already a full URL
-                if file_path.startswith(('http://', 'https://')):
-                    return file_path
-                
-                # Get AWS settings
-                bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
-                region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
-                
-                # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
-                if bucket_name and self.S3_AVAILABLE:
-                    # Generate signed URL (expires in 1 hour)
-                    import boto3
-                    from botocore.exceptions import ClientError
-                    
-                    s3_client = boto3.client(
-                        's3',
-                        aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', ''),
-                        aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', ''),
-                        region_name=region
-                    )
-                    
-                    try:
-                        # Generate signed URL that expires in 1 hour (3600 seconds)
-                        signed_url = s3_client.generate_presigned_url(
-                            'get_object',
-                            Params={
-                                'Bucket': bucket_name,
-                                'Key': file_path
-                            },
-                            ExpiresIn=3600  # 1 hour
-                        )
-                        
-                        print(f"[FileStorageService] Generated signed S3 URL: {signed_url}")
-                        return signed_url
-                        
-                    except ClientError as e:
-                        print(f"[FileStorageService] Error generating signed URL: {e}")
-                        # Fallback to regular URL (will fail if bucket is private)
-                        return f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_path}"
-                else:
-                    return self._get_local_url(file_path)
-                    
+                return self._get_s3_url(file_path)
             else:
-                # ========== LOCAL/TEST: Local URL ==========
                 return self._get_local_url(file_path)
                 
         except Exception as e:
             print(f"[FileStorageService] ERROR getting URL: {str(e)}")
             return "#"
+    
+    def _get_s3_url(self, file_path):
+        """
+        Get S3 URL for production environment
+        """
+        # Check if already a full URL
+        if file_path.startswith(('http://', 'https://')):
+            return file_path
+        
+        # Get AWS settings
+        bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+        region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
+        
+        if bucket_name and self.S3_AVAILABLE:
+            try:
+                # Try to generate signed URL
+                import boto3
+                from botocore.exceptions import ClientError
+                
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', ''),
+                    aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', ''),
+                    region_name=region
+                )
+                
+                # Generate signed URL that expires in 1 hour (3600 seconds)
+                signed_url = s3_client.generate_presigned_url(
+                    'get_object',
+                    Params={
+                        'Bucket': bucket_name,
+                        'Key': file_path
+                    },
+                    ExpiresIn=3600  # 1 hour
+                )
+                
+                print(f"[FileStorageService] Generated signed S3 URL")
+                return signed_url
+                
+            except (ImportError, ClientError) as e:
+                print(f"[FileStorageService] Error with signed URL: {e}")
+                # Fallback to regular URL
+                return f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_path}"
+        
+        # If no S3 available, fallback to local
+        return self._get_local_url(file_path)
     
     def _get_local_url(self, file_path):
         """
@@ -220,7 +209,6 @@ class FileStorageService:
         # Create local URL
         base_url = getattr(settings, 'MEDIA_URL', '/media/')
         url = f"{base_url.rstrip('/')}/{file_path.lstrip('/')}"
-        print(f"[FileStorageService] Generated local URL: {url}")
         return url
     
     def _delete_local(self, file_path):
@@ -258,7 +246,6 @@ class FileStorageService:
             # ✅ Prepare path with base path
             file_path = self._prepare_path(file_path, add_base=True)
             
-            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
             if self.is_production and self.S3_AVAILABLE:
                 # Delete from S3
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
@@ -280,10 +267,12 @@ class FileStorageService:
         Check if file exists in storage
         """
         try:
+            if not file_path:
+                return False
+                
             # ✅ Prepare path with base path
             file_path = self._prepare_path(file_path, add_base=True)
             
-            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
             if self.is_production and self.S3_AVAILABLE:
                 # Check in S3
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
@@ -305,10 +294,12 @@ class FileStorageService:
         Get file size in bytes
         """
         try:
+            if not file_path:
+                return 0
+                
             # ✅ Prepare path with base path
             file_path = self._prepare_path(file_path, add_base=True)
             
-            # ✅ Changed: Use self.S3_AVAILABLE instead of S3_AVAILABLE
             if self.is_production and self.S3_AVAILABLE:
                 # Get from S3
                 bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
@@ -344,5 +335,6 @@ class FileStorageService:
         path = path.lstrip('/')
         
         return path
+
 # Global instance for convenience
 file_storage_service = FileStorageService()

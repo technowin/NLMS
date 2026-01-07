@@ -1,6 +1,5 @@
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
-{% load file_tags %} 
 {% block title %}ग्रंथ सूची तयार करा{% endblock title %}
 
 {% block extra_css %}
@@ -244,23 +243,23 @@
             <!-- Publisher & Year -->
             <div class="mb-3 row">
                 <div class="col-md-6">
-    <label class="form-label">प्रकाशक / Publisher <span class="text-danger">*</span></label>
-    <select name="publisher" id="publisher" class="form-control" required>
-        <option value="">Select Publisher</option>
+                    <label class="form-label">प्रकाशक / Publisher <span class="text-danger">*</span></label>
+                    <select name="publisher" id="publisher" class="form-control" required>
+                        <option value="">Select Publisher</option>
 
-        {# ✔ If obj.publisher exists and is NOT in list, show it first #}
-        {% if obj.publisher and obj.publisher not in publishers %}
-            <option value="{{ obj.publisher }}" selected>{{ obj.publisher }}</option>
-        {% endif %}
+                        {# ✔ If obj.publisher exists and is NOT in list, show it first #}
+                        {% if obj.publisher and obj.publisher not in publishers %}
+                            <option value="{{ obj.publisher }}" selected>{{ obj.publisher }}</option>
+                        {% endif %}
 
-        {# ✔ Loop through publishers #}
-        {% for pub in publishers %}
-            <option value="{{ pub }}" {% if obj.publisher == pub %}selected{% endif %}>
-                {{ pub }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
+                        {# ✔ Loop through publishers #}
+                        {% for pub in publishers %}
+                            <option value="{{ pub }}" {% if obj.publisher == pub %}selected{% endif %}>
+                                {{ pub }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
 
                 <div class="col-md-6">
@@ -286,67 +285,65 @@
             <!-- Subject & Place -->
            <div class="mb-3 row">
 
-    <!-- Subject Type -->
-    <div class="col-md-6">
-        <label class="form-label">
-            विषय प्रकार / Subject Type <span class="text-danger">*</span>
-        </label>
+            <!-- Subject Type -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        विषय प्रकार / Subject Type <span class="text-danger">*</span>
+                    </label>
 
-        <select name="subject_id" id="subject_id" class="form-control" required>
-            <option value="">Select Subject</option>
+                    <select name="subject_id" id="subject_id" class="form-control" required>
+                        <option value="">Select Subject</option>
 
-            {# Loop through subjects (already includes selected_subject if needed) #}
-            {% for s in subjects %}
-                <option value="{{ s.encrypted_id }}"
-                    {% if selected_subject and s.id == selected_subject.id %} selected {% endif %}>
-                    {% comment %} {{ s.subjectTypeEnglish }} - {{ s.subjectTypeMarathi }} {% endcomment %}
-                    {{ s.subjectNameEnglish }} - {{ s.subjectNameMarathi }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-
-
+                        {# Loop through subjects (already includes selected_subject if needed) #}
+                        {% for s in subjects %}
+                            <option value="{{ s.encrypted_id }}"
+                                {% if selected_subject and s.id == selected_subject.id %} selected {% endif %}>
+                                {% comment %} {{ s.subjectTypeEnglish }} - {{ s.subjectTypeMarathi }} {% endcomment %}
+                                {{ s.subjectNameEnglish }} - {{ s.subjectNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
                 <div class="col-md-6">
-    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
-    <select name="publication_place" id="publication_place" class="form-control transliterate">
-        <option value="">Select Place</option>
+                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                    <select name="publication_place" id="publication_place" class="form-control transliterate">
+                        <option value="">Select Place</option>
 
-        {# ✔ If obj.publication_place exists but not in list, show it first #}
-        {% if obj.publication_place and obj.publication_place not in places %}
-            <option value="{{ obj.publication_place }}" selected>
-                {{ obj.publication_place }}
-            </option>
-        {% endif %}
+                        {# ✔ If obj.publication_place exists but not in list, show it first #}
+                        {% if obj.publication_place and obj.publication_place not in places %}
+                            <option value="{{ obj.publication_place }}" selected>
+                                {{ obj.publication_place }}
+                            </option>
+                        {% endif %}
 
-        {# ✔ Loop through places list #}
-        {% for place in places %}
-            <option value="{{ place }}" {% if obj.publication_place == place %}selected{% endif %}>
-                {{ place }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
+                        {# ✔ Loop through places list #}
+                        {% for place in places %}
+                            <option value="{{ place }}" {% if obj.publication_place == place %}selected{% endif %}>
+                                {{ place }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
 
             </div>
 
             <!-- Material Type & Page Nos -->
             <div class="mb-3 row">
-        <div class="col-md-6">
-    <label class="form-label">साहित्य प्रकार / Material Type <span class="text-danger">*</span></label>
+                    <div class="col-md-6">
+                <label class="form-label">साहित्य प्रकार / Material Type <span class="text-danger">*</span></label>
 
-  <!-- Material -->
-<select name="material_id" id="material_id" class="form-control" required>
-    <option value="">Select Material Type</option>
-    {% for m in materials %}
-        <option value="{{ m.encrypted_id }}" {% if selected_material and m.id == selected_material.id %} selected {% endif %}>
-            {{ m.materialNameEnglish }} - {{ m.materialNameMarathi }}
-        </option>
-    {% endfor %}
-</select>
-</div>
+                <!-- Material -->
+                <select name="material_id" id="material_id" class="form-control" required>
+                    <option value="">Select Material Type</option>
+                    {% for m in materials %}
+                        <option value="{{ m.encrypted_id }}" {% if selected_material and m.id == selected_material.id %} selected {% endif %}>
+                            {{ m.materialNameEnglish }} - {{ m.materialNameMarathi }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
 
 
                <div class="col-md-6">
@@ -384,15 +381,13 @@
                     <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
                     <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'front_page_preview')">
 
-                    {% if obj.front_page_photo %}
+                    {% if front_page_url %}
                         <div class="mt-2">
-                            <!-- ✅ Use the template filter -->
                             <img id="front_page_preview" 
-                                src="{{ obj.front_page_photo|storage_url }}" 
+                                src="{{ front_page_url }}" 
                                 alt="Front Page Image"
                                 class="img-thumbnail shadow-sm" 
-                                style="max-height: 120px;"
-                                onerror="this.onerror=null; this.style.display='none';">
+                                style="max-height: 120px;">
                         </div>
                     {% else %}
                         <div class="mt-2">
@@ -415,14 +410,13 @@
         <label class="form-label">शेवटचे पृष्ठ प्रतिमा / Last Page Image</label>
         <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'last_page_preview')">
 
-        {% if obj.last_page_photo %}
+        {% if last_page_url %}
             <div class="mt-2">
                 <img id="last_page_preview" 
-                    src="{{ obj.last_page_photo|storage_url }}" 
+                    src="{{ last_page_url }}" 
                     alt="Last Page Image"
                     class="img-thumbnail shadow-sm" 
-                    style="max-height: 120px;"
-                    onerror="this.onerror=null; this.style.display='none';">
+                    style="max-height: 120px;">
             </div>
         {% else %}
             <div class="mt-2">

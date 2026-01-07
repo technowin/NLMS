@@ -673,6 +673,15 @@ def book_catalog_edit(request):
             places_list = list(places)
             if selected_place and selected_place not in places:
                 places_list = [selected_place] + places_list
+                
+            front_page_url = None
+            last_page_url = None
+            
+            if obj and obj.front_page_photo:
+                front_page_url = file_storage_service.get_file_url(obj.front_page_photo)
+            
+            if obj and obj.last_page_photo:
+                last_page_url = file_storage_service.get_file_url(obj.last_page_photo)
 
             # -------------------- Render Context --------------------------
             context = {
@@ -689,6 +698,8 @@ def book_catalog_edit(request):
                 'selected_place': selected_place,
                 'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
                 'MEDIA_URL': settings.MEDIA_URL,
+                'front_page_url': front_page_url,  # ✅ Pre-calculated
+                'last_page_url': last_page_url, 
             }
             
             return render(request, 'Master/book_catalog_edit.html', context)
