@@ -1697,15 +1697,47 @@ footer .footer-container {
 
 /* Image Section */
 .oz-libraryInd-img-wrapper {
-    flex: 1 1 35%;
+    width: 580px;          /* ⬅ wider */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Big image */
+.main-library-image {
+    width: 100%;
+    height: 380px;         /* ⬅ reduced height */
+    object-fit: contain;
+    border-radius: 14px;
+    background: #f1f5f9;
+}
+
+/* Thumbnails container */
+.library-thumbnails {
     display: flex;
     justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    position: relative;
-    min-height: auto;
-    max-height: auto;
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    gap: 12px;
+    margin-top: 14px;
+    width: 100%;
+}
+
+/* Thumbnails */
+.library-thumb {
+    width: 75px;           /* ⬅ slightly bigger */
+    height: 100px;
+    object-fit: cover;
+    cursor: pointer;
+    opacity: 0.6;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.library-thumb.active {
+    opacity: 1;
+    border-color: #3b82f6;
 }
 
 /* Content Section */

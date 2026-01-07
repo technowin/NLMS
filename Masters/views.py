@@ -3223,7 +3223,6 @@ def library_create(request):
                 is_active = 1
 
             # 🔹 Uploaded file
-            library_image = request.FILES.get("library_image")
 
             # 🔹 Validation
             if not library_name:
@@ -3233,28 +3232,63 @@ def library_create(request):
             # ========================================================
             # 📂 Save in Documents: MEDIA_ROOT/<library_code>/library_images/
             # ========================================================
-            image_url = ""
-            if library_image:
-                # Full path for saving the file
-                image_path = os.path.join(
-                    settings.MEDIA_ROOT,
-                    library_code,
-                    "library_images",
-                    library_image.name
-                )
+            # image_url = ""
+            # if library_image:
+            #     # Full path for saving the file
+            #     image_path = os.path.join(
+            #         settings.MEDIA_ROOT,
+            #         library_code,
+            #         "library_images",
+            #         library_image.name
+            #     )
 
-                # Ensure directory exists
-                os.makedirs(os.path.dirname(image_path), exist_ok=True)
+            #     # Ensure directory exists
+            #     os.makedirs(os.path.dirname(image_path), exist_ok=True)
 
-                # Save uploaded file
-                with open(image_path, "wb+") as f:
-                    for chunk in library_image.chunks():
-                        f.write(chunk)
+            #     # Save uploaded file
+            #     with open(image_path, "wb+") as f:
+            #         for chunk in library_image.chunks():
+            #             f.write(chunk)
 
-                # ✅ Relative path for DB (no leading slash, works with MEDIA_URL)
-                image_url = f"/{library_code}/library_images/{library_image.name}"
+            #     # ✅ Relative path for DB (no leading slash, works with MEDIA_URL)
+            #     image_url = f"/{library_code}/library_images/{library_image.name}"
 
             # 🔹 Update existing library
+            
+            image_urls = []
+
+            library_images = request.FILES.getlist("library_image")  # ✅ THIS IS THE FIX
+
+            if library_images:
+                from django.utils.timezone import now
+                import os, uuid
+
+                for library_image in library_images[:3]:  # max 3
+                    filename, ext = os.path.splitext(library_image.name)
+
+                    short_uuid = str(uuid.uuid4())[:8]
+                    timestamp = now().strftime("%Y%m%d%H%M%S")
+
+                    safe_filename = ''.join(
+                        c for c in filename if c.isalnum() or c in (' ', '-', '_')
+                    ).rstrip()
+
+                    unique_filename = (
+                        f"{library_code}_library_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                    )
+
+                    save_path = f"{library_code}/library_images/{unique_filename}"
+
+                    saved_path = file_storage_service.save_file(
+                        library_image,
+                        save_path
+                    )
+
+                    image_urls.append(saved_path)
+
+            image_url = ",".join(image_urls)
+            
+            
             if enc_id:
                 library_id = int(dec(enc_id))
                 library = LibraryMaster.objects.get(id=library_id)

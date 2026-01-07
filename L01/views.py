@@ -110,6 +110,19 @@ def index(request):
 
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
+            
+            image_urls = []
+
+            if lilo.image_url:
+                image_paths = [p.strip() for p in lilo.image_url.split(",") if p.strip()]
+                for path in image_paths:
+                    image_urls.append(file_storage_service.get_file_url(path))
+
+            # ✅ attach list to object
+            lilo.image_urls = image_urls
+
+            # ✅ first image (for big preview)
+            lilo.main_image = image_urls[0] if image_urls else ""
 
             # -------------------------------------------
             # FETCH RECENT 5 BOOKS

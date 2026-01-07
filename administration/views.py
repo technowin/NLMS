@@ -7,6 +7,7 @@ from NLMS.encryption import *
 from django.http import JsonResponse
 from django.http import HttpResponse
 from django.contrib.sessions.models import Session
+from services.file_storage_service import file_storage_service
 from .thread_local import set_current_service
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -24,6 +25,22 @@ def library_list(request):
         for lilo in all_libraries:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
+            
+            relative_image_path = ""
+
+            if lilo.image_url:
+                # Take first image only
+                relative_image_path = lilo.image_url.split(",")[0].strip()
+
+                # 🔥 IMPORTANT: remove leading MEDIA_URL or slash if present
+                if relative_image_path.startswith(settings.MEDIA_URL):
+                    relative_image_path = relative_image_path.replace(settings.MEDIA_URL, "", 1)
+
+                if relative_image_path.startswith("/"):
+                    relative_image_path = relative_image_path.lstrip("/")
+
+            # ✅ Assign BACK relative path (template will prepend MEDIA_URL)
+            lilo.image_url = relative_image_path
             
             # Check if membership_page_link exists and is not empty/blank
             has_membership_link = bool(
@@ -46,6 +63,13 @@ def library_list(request):
             # Prepare data for JSON response
             libraries_data = []
             for library in libraries_page:
+                
+                first_image_path = ""
+                if library.image_url:
+                    first_image_path = library.image_url.split(",")[0].strip()
+
+                # ✅ Convert to FULL URL using storage service
+                first_image_url = file_storage_service.get_file_url(first_image_path)
                 has_membership_link = bool(
                     library.membership_page_link and 
                     str(library.membership_page_link).strip() != '' and
@@ -59,7 +83,8 @@ def library_list(request):
                     'location_name': library.location.location_name if library.location else '',
                     'est_year': library.est_year,
                     'about_library': library.about_library,
-                    'image_url': library.image_url,
+                    # 'image_url': library.image_url,
+                    'image_url': first_image_url,
                     'libraries': library.libraries,  # encrypted code
                     'has_membership_link': has_membership_link
                 })
@@ -178,6 +203,23 @@ def library_list_index(request):
                 is_active=1, 
                 library_code=library_code
             )
+            image_urls = []
+
+            for lilo in library_details:
+
+
+                image_urls = []
+
+                if lilo.image_url:
+                    image_paths = [p.strip() for p in lilo.image_url.split(",") if p.strip()]
+                    for path in image_paths:
+                        image_urls.append(file_storage_service.get_file_url(path))
+
+                # ✅ attach list to object
+                lilo.image_urls = image_urls
+
+                # ✅ first image (for big preview)
+                lilo.main_image = image_urls[0] if image_urls else ""
 
             library = library_details.first()
             library_name = library_details.first().library_name if library_details.exists() else ""

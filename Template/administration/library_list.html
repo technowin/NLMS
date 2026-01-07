@@ -1056,7 +1056,7 @@
                     libraries.forEach(library => {
                         html += `
                             <div class="library-card">
-                                <img src="${mediaUrl}${library.image_url}" alt="${library.library_name}" class="library-img">
+                                 <img src="${library.image_url}" alt="${library.library_name}" class="library-img">
                                 <div class="library-content">
                                     <h3>${library.library_name_mar}${library.location_name ? ' - ' + library.location_name : ''}</h3>
                                     <h4>Established: ${library.est_year || 'N/A'}</h4>

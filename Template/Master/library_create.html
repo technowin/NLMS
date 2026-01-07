@@ -275,10 +275,19 @@
         <div class="col-md-6">
             <label class="form-label">लायब्ररी इमेज / Library Image</label>
             <div class="mb-2">
-                <img id="previewImage" src="{% if library and library.image_url %}{{ library.image_url }}{% endif %}"
-                     style="{% if not library or not library.image_url %}display:none;{% endif %} height:180px; border:1px solid #ddd; padding:5px; border-radius:6px;">
+               <div id="previewImage" style="display:none;"></div>
+
+                <div id="fileError" class="text-danger mb-2" style="display:none;"></div>
+
+                <input type="file"
+                    name="library_image"
+                    id="library_image"
+                    class="form-control"
+                    accept="image/*"
+                    multiple>
+
             </div>
-            <input type="file" name="library_image" id="library_image" class="form-control" accept="image/*">
+            {% comment %} <input type="file" name="library_image" id="library_image" class="form-control" accept="image/*"> {% endcomment %}
         </div>
         <div class="col-md-6">
             <label class="form-label">क्षमता / Capacity</label>
@@ -569,35 +578,60 @@
     </script>
 
     <script>
-        document.getElementById("library_image").addEventListener("change", function(event) {
-            let file = event.target.files[0];
-            let errorDiv = document.getElementById("fileError");
-            let preview = document.getElementById("previewImage");
+document.getElementById("library_image").addEventListener("change", function (event) {
+    const files = event.target.files;
+    const previewContainer = document.getElementById("previewImage");
+    const errorDiv = document.getElementById("fileError");
 
-            if (file) {
-                let validTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
-                
-                if (!validTypes.includes(file.type)) {
-                    // ❌ Invalid file type
-                    errorDiv.innerText = "❌ Only image files (JPG, PNG, GIF, WEBP) are allowed!";
-                    errorDiv.style.display = "block";
-                    event.target.value = "";  // Reset file input
-                    preview.style.display = "none";
-                    return;
-                } else {
-                    // ✅ Valid image
-                    errorDiv.style.display = "none";
+    const validTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/gif",
+        "image/webp"
+    ];
 
-                    // Show preview
-                    let reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.src = e.target.result;
-                        preview.style.display = "block";
-                    }
-                    reader.readAsDataURL(file);
-                }
-            }
-        });
+    // Reset
+    previewContainer.innerHTML = "";
+    previewContainer.style.display = "none";
+    errorDiv.style.display = "none";
+
+    // ❌ Max 3 images
+    if (files.length > 3) {
+        errorDiv.innerText = "❌ You can upload a maximum of 3 images only.";
+        errorDiv.style.display = "block";
+        event.target.value = "";
+        return;
+    }
+
+    for (let file of files) {
+
+        // ❌ Invalid type
+        if (!validTypes.includes(file.type)) {
+            errorDiv.innerText = "❌ Only image files (JPG, PNG, GIF, WEBP) are allowed!";
+            errorDiv.style.display = "block";
+            event.target.value = "";
+            previewContainer.innerHTML = "";
+            return;
+        }
+
+        // ✅ Create preview image
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            img.style.height = "120px";
+            img.style.marginRight = "10px";
+            img.style.border = "1px solid #ddd";
+            img.style.padding = "4px";
+            img.style.borderRadius = "6px";
+            previewContainer.appendChild(img);
+            previewContainer.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
     </script>
 
     <script>

@@ -3,14 +3,54 @@
 
 {% block content %}
 
+
+<style>
+    .library-thumbnails {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .library-thumb {
+        height: 70px;
+        width: auto;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 3px;
+        transition: all 0.2s ease;
+    }
+
+    .library-thumb:hover {
+        border-color: #2563eb;
+    }
+
+    .library-thumb.active {
+        border-color: #1e40af;
+    }
+</style>
+
     <div class="oz-card-grid">
         {% for library in libraries %}
             <div class="oz-library-card">
                 <!-- Image -->
-                <div class="oz-libraryInd-img-wrapper">
-                        {% comment %} <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" alt="{{ library.library_name }}" class="oz-library-img"> {% endcomment %}
-                        <img src="{{ MEDIA_URL }}{{ library.image_url }}" alt="{{ library.library_name }}" class="libraryInd-img">
+                   <div class="oz-libraryInd-img-wrapper">
+                <img
+                    src="{{ library.main_image }}"
+                    alt="{{ library.library_name }}"
+                    class="libraryInd-img main-library-image">
+           
+
+                {% if library.image_urls|length > 1 %}
+                <div class="library-thumbnails">
+                    {% for img in library.image_urls %}
+                        <img src="{{ img }}"
+                            class="library-thumb {% if forloop.first %}active{% endif %}"
+                            onclick="changeMainImage(this)">
+                    {% endfor %}
                 </div>
+                {% endif %}
+            </div>
 
                 <!-- Content -->
                 <div class="oz-library-content">
@@ -108,6 +148,21 @@
                 if (e.target == modal) modal.style.display = 'none';
             });
         });
+    </script>
+
+    <script>
+    function changeMainImage(thumb) {
+        const wrapper = thumb.closest('.oz-libraryInd-img-wrapper');
+        const mainImage = wrapper.querySelector('.main-library-image');
+
+        mainImage.src = thumb.src;
+
+        wrapper.querySelectorAll('.library-thumb').forEach(img => {
+            img.classList.remove('active');
+        });
+
+        thumb.classList.add('active');
+    }
     </script>
 
 
