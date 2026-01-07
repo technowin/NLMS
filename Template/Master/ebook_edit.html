@@ -532,22 +532,88 @@ body.dark-mode .form-select:disabled {
         <!-- =========================
              CURRENT FILE
         ========================== -->
-        {% if ebook.eb_pdf_url %}
         <div class="mb-3 row">
             <div class="col-md-6">
-                <label class="form-label">Current E-Book File</label>
-                <div class="alert alert-info">
-                    <a href="/media/{{ ebook.eb_pdf_url }}" target="_blank">View PDF</a>
-                </div>
+                <label class="form-label">ई-बुक फाईल /E-Book File</label>
+
+                {% if ebook.eb_pdf_url %}
+                    <div class="alert alert-info">
+                        <a href="/media/{{ ebook.eb_pdf_url }}" target="_blank">
+                            <i class="fa-solid fa-file-pdf me-2"></i> ई-बुक फाईल पहा/ View E-Book File
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        ई-बुक फाईल अद्याप अपलोड केलेली नाही/No E-Book file uploaded yet
+                    </div>
+                {% endif %}
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">New E-Book File</label>
-                <input type="file" name="ebook_file" class="form-control"
-                       accept=".pdf,.epub,.mobi,.azw,.azw3">
+                <label class="form-label">ई-बुक फाईल अपलोड करा / बदला/ Upload / Replace E-Book File / </label>
+                <input type="file"
+                    name="ebook_file"
+                    id="ebook_file"
+                    class="form-control"
+                    accept=".pdf,.epub,.mobi,.azw,.azw3">
             </div>
         </div>
-        {% endif %}
+        <!-- =========================
+            FRONT PAGE IMAGE
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">मुखपृष्ठ प्रतिमा/ Front Page Image</label>
+
+                {% if ebook.eb_front_page_photo %}
+                    <div class="alert alert-info">
+                        <a href="/media/{{ ebook.eb_front_page_photo }}" target="_blank">
+                            मुखपृष्ठ प्रतिमा पहा / View Front Page Image
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        मुखपृष्ठ प्रतिमा अपलोड केलेली नाही/ Front page image not uploaded 
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">मुखपृष्ठ प्रतिमा अपलोड करा / बदला/Upload / Replace Front Page Image /</label>
+                <input type="file"
+                    name="eb_front_page_photo"
+                    class="form-control"
+                    accept="image/*">
+            </div>
+        </div>
+        <!-- =========================
+            LAST PAGE IMAGE
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">अंतिम पृष्ठ प्रतिमा/Last Page Image</label>
+
+                {% if ebook.eb_last_page_photo %}
+                    <div class="alert alert-info">
+                        <a href="/media/{{ ebook.eb_last_page_photo }}" target="_blank">
+                            अंतिम पृष्ठ प्रतिमा पहा / View Last Page Image 
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        अंतिम पृष्ठ प्रतिमा अपलोड केलेली नाही / Last page image not uploaded
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">अंतिम पृष्ठ प्रतिमा अपलोड करा / बदला / Upload / Replace Last Page Image </label>
+                <input type="file"
+                    name="eb_last_page_photo"
+                    class="form-control"
+                    accept="image/*">
+            </div>
+        </div>
 
         <!-- =========================
              REMARKS

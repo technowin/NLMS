@@ -675,7 +675,7 @@
                 </div>
 
                 <!-- Library Rules Modal -->
-                {% if library.library_rules %}
+                {% comment %} {% if library.library_rules %}
                     <div id="libraryRulesModal{{ library.id }}" class="modal">
                         <div class="modal-content">
                             <span class="close">&times;</span>
@@ -694,7 +694,7 @@
                             <div class="rules-content">{{ library.membership_rules|safe }}</div>
                         </div>
                     </div>
-                {% endif %}
+                {% endif %} {% endcomment %}
 
                 <!-- Social Icons -->
                 <div class="library-social-icons">
@@ -842,14 +842,28 @@
                                             data-description="{{ book.description }}"
                                             data-ebook_available="{{ book.ebook_available }}"
                                             data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
-                                            <div style="font-size: 48px; margin-bottom: 10px;">
-                                                📚
-                                            </div>
-                                            <div style="font-size: 12px; margin-bottom: 5px; opacity: 0.9;">
-                                                {{ book.title|truncatechars:40 }}
-                                            </div>
-                                            <div style="font-size: 11px; opacity: 0.8;">
-                                                {% if book.author %}{{ book.author|truncatechars:30 }}{% endif %}
+                                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                        <!-- Tablet/Device Outline -->
+                                                <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
+                                                    <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
+                                                    <div style="font-size: 30px; color: #4a90e2;">
+                                                        📱
+                                                    </div>
+                                                    <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
+                                                        BOOK
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style="margin-top: 10px;">
+                                                    <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
+                                                        {{ book.title|truncatechars:25 }}
+                                                    </div>
+                                                    {% if book.author %}
+                                                    <div style="font-size: 11px; color: #666;">
+                                                        {{ book.author|truncatechars:20 }}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
                                     {% endif %}
@@ -890,16 +904,7 @@
                                     ">
                                         📘 Ebook Available
                                     </span>
-                                {% else %}
-                                    <span style="
-                                        background: #fbeaea;
-                                        color: #d10a0a;
-                                        padding: 2px 8px;
-                                        border-radius: 12px;
-                                        font-weight: 600;
-                                    ">
-                                        ❌ No Ebook
-                                    </span>
+                               
                                 {% endif %}
                             </p>
                         </div>
@@ -1185,6 +1190,36 @@
     {% endfor %}
                 
 </div>
+
+{% for library in libraries %}
+
+    {% if library.library_rules %}
+        <div id="libraryRulesModal{{ library.id }}" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal(this)">&times;</span>
+                <h3>Library Rules</h3>
+                <div class="rules-content">
+                    {{ library.library_rules|safe }}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if library.membership_rules %}
+        <div id="membershipRulesModal{{ library.id }}" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal(this)">&times;</span>
+                <h3>Membership Rules</h3>
+                <div class="rules-content">
+                    {{ library.membership_rules|safe }}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+{% endfor %}
+
+    
 
     
 
@@ -1537,6 +1572,29 @@
         }
     
     </script>
+
+    
+    <script>
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+            document.body.style.overflow = 'hidden'; // stop background scroll
+        }
+
+        function closeModal(modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on X click or background click
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target);
+            }
+            if (e.target.classList.contains('close')) {
+                closeModal(e.target.closest('.modal'));
+            }
+        });
+</script>
 
 
 {% endblock %}
