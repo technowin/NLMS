@@ -5817,7 +5817,7 @@ import os
 
 @login_required
 def read_ebook_secure(request):
-    """Simple redirect to ebook using FileStorageService"""
+    """Secure ebook access using FileStorageService"""
     try:
         token = request.GET.get('token')
         if not token:
@@ -5829,16 +5829,17 @@ def read_ebook_secure(request):
         if not ebook.eb_pdf_url:
             raise Http404("E-Book file not found")
 
-        # ✅ Use FileStorageService to get the appropriate URL
-        # This handles all environments automatically
-        ebook_url = file_storage_service.get_file_url(ebook.eb_pdf_url)
-        
-        # For external URLs, get_file_url will return the URL as-is
-        # For local files, it returns MEDIA_URL + file_path
-        # For S3 files, it returns signed URL
-        
-        return redirect(ebook_url)
+        # ✅ Use FileStorageService for secure file response
+        filename = f"{ebook.eb_title or 'ebook'}.pdf"
+        return file_storage_service.get_secure_pdf_response(
+            ebook.eb_pdf_url,
+            filename=filename
+        )
             
+    except FileNotFoundError:
+        raise Http404("E-Book file not found")
+    except ValueError as e:
+        raise Http404(str(e))
     except Exception as e:
         print(f"[read_ebook_secure] Error: {str(e)}")
         raise Http404("Invalid access or file not found")

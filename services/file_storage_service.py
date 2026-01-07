@@ -336,5 +336,95 @@ class FileStorageService:
         
         return path
 
+    def get_secure_file_response(self, file_path, filename=None, content_type=None, inline=True):
+        """
+        Get a secure Django HttpResponse for a file
+        Uses existing _get_s3_url (already signed) for S3, streams locally
+        """
+        if not file_path:
+            raise ValueError("File path is required")
+        
+        # Handle external URLs - redirect directly
+        if file_path.startswith(('http://', 'https://')):
+            from django.shortcuts import redirect
+            return redirect(file_path)
+        
+        # Prepare path
+        storage_path = self._prepare_path(file_path, add_base=True)
+        
+        if self.is_production and self.S3_AVAILABLE:
+            # For S3, use existing _get_s3_url which already generates signed URLs
+            # The existing _get_s3_url creates 1-hour signed URLs which is secure
+            s3_url = self._get_s3_url(storage_path)
+            from django.shortcuts import redirect
+            return redirect(s3_url)
+        
+        else:
+            # For local, create FileResponse that streams through Django
+            return self._get_local_file_response(storage_path, filename, content_type, inline)
+
+    def _get_local_file_response(self, file_path, filename=None, content_type=None, inline=True):
+        """
+        Create FileResponse for local files (streams through Django)
+        """
+        from django.http import FileResponse
+        from pathlib import Path
+        import mimetypes
+        import urllib.parse
+        
+        # Build full local path
+        full_path = Path(settings.MEDIA_ROOT) / file_path
+        
+        if not full_path.exists():
+            raise FileNotFoundError(f"File not found: {full_path}")
+        
+        # Determine content type
+        if not content_type:
+            content_type, _ = mimetypes.guess_type(str(full_path))
+            if not content_type:
+                content_type = 'application/octet-stream'
+        
+        # Determine filename
+        if not filename:
+            filename = Path(file_path).name
+        
+        # URL encode filename for safety
+        safe_filename = urllib.parse.quote(filename)
+        
+        # Determine content disposition
+        disposition = 'inline' if inline else 'attachment'
+        
+        # Get file size
+        file_size = full_path.stat().st_size
+        
+        # Create response
+        response = FileResponse(
+            open(full_path, 'rb'),
+            content_type=content_type
+        )
+        
+        response['Content-Disposition'] = f'{disposition}; filename="{safe_filename}"'
+        response['Content-Length'] = str(file_size)
+        response['X-Content-Type-Options'] = 'nosniff'
+        response['Cache-Control'] = 'private, max-age=3600'
+        
+        return response
+
+    def get_secure_download_response(self, file_path, filename=None):
+        """
+        Get secure response for file download (attachment)
+        """
+        return self.get_secure_file_response(file_path, filename, inline=False)
+
+    def get_secure_pdf_response(self, file_path, filename="document.pdf"):
+        """
+        Get secure response specifically for PDF files
+        """
+        return self.get_secure_file_response(
+            file_path, 
+            filename, 
+            content_type='application/pdf', 
+            inline=True
+        )
 # Global instance for convenience
 file_storage_service = FileStorageService()
