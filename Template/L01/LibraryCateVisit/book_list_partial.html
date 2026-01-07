@@ -35,15 +35,6 @@
                             <p class="info-line"><b>वर्ष:</b> {{ book.year_of_publication }}</p>
                         {% endif %}
 
-                        {% comment %} {% if book.ebook_available == "Yes" and book.ebook and book.ebook.eb_pdf_url %}
-                            <div class="mt-2 text-center">
-                                <a href="{% url 'L01:read_ebook_secure' %}?token={{ book.ebookEnc }}"
-                                    target="_blank"
-                                    class="ebook-link">
-                                    📘 ई-पुस्तक उपलब्ध (वाचा)
-                                </a>
-                            </div>
-                        {% endif %} {% endcomment %}
                         {% if book.ebook_available == "Yes" and book.ebook and book.ebook.eb_pdf_url %}
                             <div class="mt-2 text-center">
                                 <a href="{% url 'L01:read_ebook_secure' %}?token={{ book.ebookEnc }}"

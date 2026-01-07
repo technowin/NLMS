@@ -5817,28 +5817,31 @@ import os
 
 @login_required
 def read_ebook_secure(request):
+    """Simple redirect to ebook using FileStorageService"""
     try:
-        ebook_id = dec(str(request.GET.get('token')))
-
-        ebook = LibraryEbook.objects.get(pk=ebook_id)
+        token = request.GET.get('token')
+        if not token:
+            raise Http404("Invalid access token")
+        
+        ebook_id = dec(str(token))
+        ebook = get_object_or_404(LibraryEbook, pk=ebook_id)
 
         if not ebook.eb_pdf_url:
-            raise Http404("File not found")
+            raise Http404("E-Book file not found")
 
-        file_path = os.path.join(settings.MEDIA_ROOT, ebook.eb_pdf_url)
-
-        if not os.path.exists(file_path):
-            raise Http404("File not found")
-
-        response = FileResponse(
-            open(file_path, 'rb'),
-            content_type='application/pdf'
-        )
-        response['Content-Disposition'] = 'inline; filename="ebook.pdf"'
-        return response
-
-    except Exception:
-        raise Http404("Invalid access")
+        # ✅ Use FileStorageService to get the appropriate URL
+        # This handles all environments automatically
+        ebook_url = file_storage_service.get_file_url(ebook.eb_pdf_url)
+        
+        # For external URLs, get_file_url will return the URL as-is
+        # For local files, it returns MEDIA_URL + file_path
+        # For S3 files, it returns signed URL
+        
+        return redirect(ebook_url)
+            
+    except Exception as e:
+        print(f"[read_ebook_secure] Error: {str(e)}")
+        raise Http404("Invalid access or file not found")
 
 # for tv display view and api
 
