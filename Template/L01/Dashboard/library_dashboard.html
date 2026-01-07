@@ -363,6 +363,8 @@
                 <div class="book__pg book__pg--5"></div>
             </div>
         </div>
+
+        <input type="hidden" id="breadcrumb" value="{{ breadcrumb}}">
         
         <div class="">
             <!-- Header -->
@@ -644,4 +646,74 @@ function showLoading(show) {
     }
 }
 </script>
+
+<div class="modal fade" id="logoutModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Logout</h5>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to logout?
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="stayBtn" class="btn btn-secondary">No</button>
+        <button type="button" id="logoutBtn" class="btn btn-danger">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function () {
+    debugger;
+
+    var breadcrumbEl = document.getElementById("breadcrumb");
+    var breadcrumb = breadcrumbEl ? breadcrumbEl.value : "0";
+
+    // 🚫 If breadcrumb == 1 → do NOTHING
+    if (breadcrumb === "1") {
+        return;
+    }
+
+    let modalOpen = false;
+    const modal = new bootstrap.Modal(
+        document.getElementById('logoutModal')
+    );
+
+    function lockHistory() {
+        history.pushState({ lock: true }, "", location.href);
+    }
+
+    // Lock initial state
+    lockHistory();
+
+    window.addEventListener("popstate", function () {
+
+        if (!modalOpen) {
+            modalOpen = true;
+            modal.show();
+
+            // Re-lock history
+            lockHistory();
+        } else {
+            lockHistory();
+        }
+    });
+
+    document.getElementById("stayBtn").addEventListener("click", function () {
+        modal.hide();
+        modalOpen = false;
+        lockHistory();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+        window.location.href = "/logout";
+    });
+
+})();
+</script>
+
+
 {% endblock %}

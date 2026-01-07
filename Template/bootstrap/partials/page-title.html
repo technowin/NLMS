@@ -1,4 +1,32 @@
 <!-- start page title -->
+
+<style>
+    .link-form {
+        display: inline;
+    }
+
+    .link-button {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        color: #727cf5 !important;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+
+        text-decoration: none;   /* normal link */
+    }
+
+    .link-button:hover {
+        text-decoration: underline;
+    }
+
+    .link-button:focus {
+        outline: none;
+    }
+
+</style>
 <div class="row">
     <div class="col-12">
         <div class="page-title-box">
@@ -6,13 +34,25 @@
                 <ol class="breadcrumb m-0">
                     {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">HOME</a></li> {% endcomment %}
                       <li class="breadcrumb-item">
-                        {% if role_id == '3' %}
+                        {% comment %} {% if role_id == '3' %}
                             <a href="{% url 'L01:membership_dashboard' %}">HOME</a>
                         {% else %}
-                            {% comment %} <a href="{% url 'LMS_Dashboard' %}">HOME</a> {% endcomment %}
                              <a href="{% url 'L01:dashboard' %}">HOME</a>
-                            
+                        {% endif %} {% endcomment %}
+                         {% if role_id == '3' %}
+                            <form action="{% url 'L01:membership_dashboard' %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="breadcrumb" value="1">
+                                <button type="submit" class="link-button">HOME</button>
+                            </form>
+                            {% else %}
+                            <form action="{% url 'L01:dashboard' %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="breadcrumb" value="1">
+                                <button type="submit" class="link-button">HOME</button>
+                            </form>
                         {% endif %}
+
                     </li>
                     {% comment %} <li class="breadcrumb-item"><a href="javascript: void(0);">{{ page_title }}</a></li> {% endcomment %}
                     <li class="breadcrumb-item"><a href="javascript:history.back()">{{ page_title }}</a></li>

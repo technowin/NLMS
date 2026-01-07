@@ -8067,9 +8067,13 @@ def dashboard_view(request):
     Main dashboard view with 4 tabs
     """
     try:
+        breadcrumb = request.POST.get("breadcrumb")
+        if not breadcrumb:
+            breadcrumb = 0
         context = {
             'dashboard_title': 'Library Dashboard',
-            'active_tab': 'dashboard1'
+            'active_tab': 'dashboard1',
+            'breadcrumb':breadcrumb
         }
         return render(request, 'L01/Dashboard/library_dashboard.html', context)
     except Exception as e:

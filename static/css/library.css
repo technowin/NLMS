@@ -1261,16 +1261,14 @@ footer .footer-container {
 }
 
 /* ========================= Hero Section ========================= */
-
 .hero-section {
     background-size: cover;
     background-position: center;
     height: 750px;
-    min-height: 500px; /* Adjust as needed */
+    min-height: 500px;
     position: relative;
     width: 100%;
     overflow: hidden;
-
 }
 
 /* Overlay */
@@ -1280,24 +1278,71 @@ footer .footer-container {
     background-color: rgba(0,0,0,0.5);
     display: flex;
     justify-content: center;
-    align-items: flex-end;   /* text lower on large screens */
+    align-items: flex-end;
     text-align: center;
-    padding: 60px 20px;      /* safe spacing */
+    padding: 60px 20px;
 }
 
+/* Tablet */
 @media screen and (max-width: 1000px) {
+    .hero-section {
+        height: 600px;
+        min-height: 450px;
+    }
+
     .hero-overlay {
-        align-items: center; /* move text up */
+        align-items: center;
+        padding: 40px 20px;
     }
 }
 
+/* Mobile */
 @media screen and (max-width: 600px) {
+    .hero-section {
+        height: 420px;
+        min-height: 380px;
+    }
+
     .hero-overlay {
-        align-items: flex-start; /* text near top */
-        padding-top: 40px;
+        align-items: flex-start;   /* move text up */
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .hero-text {
+        padding: 1rem;
+    }
+
+    .hero-text h1 {
+        font-size: 1.6rem;
+        line-height: 1.2;
+    }
+
+    .hero-text p {
+        font-size: 0.95rem;
+        letter-spacing: 1px;
     }
 }
 
+/* Extra small devices */
+@media screen and (max-width: 400px) {
+    .hero-section {
+        height: 360px;
+        min-height: 320px;
+    }
+
+    .hero-overlay {
+        padding-top: 10px;
+    }
+
+    .hero-text h1 {
+        font-size: 1.4rem;
+    }
+
+    .hero-text p {
+        font-size: 0.85rem;
+    }
+}
 
 
 .hero-text {
@@ -1358,6 +1403,7 @@ footer .footer-container {
         font-size: 0.9rem;
     }
 }
+
 
 /* =====================
    Library Section
