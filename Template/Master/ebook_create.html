@@ -552,78 +552,136 @@
 document.addEventListener("DOMContentLoaded", function () {
 
 
-    /* =====================================================
-   SEARCHABLE BookCatalog TITLE DROPDOWN
-===================================================== */
-    const titleInput = document.getElementById("eb_title");
-    const titleDropdown = document.getElementById("titleDropdown");
-    const catIdInput = document.getElementById("cat_id");
-    const languageSelect = document.getElementById("eb_language");
+const ebookTypeSelect = document.getElementById("ebook_type");
+const titleInput = document.getElementById("eb_title");
+const titleDropdown = document.getElementById("titleDropdown");
+const catIdInput = document.getElementById("cat_id");
+const languageSelect = document.getElementById("eb_language");
 
-    let titleAbortController = null;
+function isLibrarySelected() {
+    if (!ebookTypeSelect.value) return false;
 
-    if (titleInput && titleDropdown) {
-        titleInput.addEventListener("input", function () {
-            const query = this.value.trim();
-            const language = languageSelect.value;
+    const selectedText =
+        ebookTypeSelect.options[ebookTypeSelect.selectedIndex].text.toLowerCase();
 
-            catIdInput.value = "";
+    return selectedText.includes("library");
+}
 
-            if (query.length < 2 || !language) {
-                titleDropdown.classList.add("d-none");
-                titleDropdown.innerHTML = "";
-                return;
-            }
+function resetDropdown() {
+    titleDropdown.classList.add("d-none");
+    titleDropdown.innerHTML = "";
+    catIdInput.value = "";
+}
 
-            {% comment %} if (titleAbortController) titleAbortController.abort();
-            titleAbortController = new AbortController(); {% endcomment %}
+function containsNonEnglish(text) {
+    // Detect if the text contains Marathi/Hindi characters
+    const regex = /[\u0900-\u097F]/;
+    return regex.test(text);
+}
 
-            fetch(
-                `{% url 'ebook_create' %}?action=get_titles&search=${encodeURIComponent(query)}&language=${encodeURIComponent(language)}`,
-                {
-                    headers: { "X-Requested-With": "XMLHttpRequest" },
-                    {% comment %} signal: titleAbortController.signal {% endcomment %}
-                }
-            )
-            .then(res => res.json())
-            .then(data => {
-                titleDropdown.innerHTML = "";
-
-                if (!data.data.length) {
-                    titleDropdown.classList.add("d-none");
-                    return;
-                }
-                data.data.forEach(book => {
-                    const div = document.createElement("div");
-                    div.className = "dropdown-item";
-                    div.textContent = book.title;
-
-                    div.onclick = () => {
-                        titleInput.value = book.title;
-                        catIdInput.value = book.cat_ref_num;
-                        titleDropdown.classList.add("d-none");
-                    };
-
-                    titleDropdown.appendChild(div);
-                });
-
-                titleDropdown.classList.remove("d-none");
-            });
+function translateTitle(title, targetLanguage) {
+    // Make an AJAX request to translate the title using the backend function
+    return fetch(`{% url 'translate_word' %}?q=${encodeURIComponent(title)}&lang=${targetLanguage}`)
+        .then(res => res.json())
+        .then(data => {
+            return data.translated || title;
         });
+}
 
-        document.addEventListener("click", e => {
-            if (!titleDropdown.contains(e.target) && e.target !== titleInput) {
-                titleDropdown.classList.add("d-none");
-            }
-        });
+/* =========================================
+   EBOOK TYPE CHANGE
+========================================= */
+ebookTypeSelect.addEventListener("change", function () {
+    resetDropdown();
+    titleInput.value = "";
 
-        languageSelect.addEventListener("change", () => {
-            titleInput.value = "";
-            catIdInput.value = "";
-            titleDropdown.innerHTML = "";
-            titleDropdown.classList.add("d-none");
-        });
+    if (!isLibrarySelected()) {
+        // Optional: allow manual typing
+        titleInput.removeAttribute("readonly");
     }
+});
+
+/* =========================================
+   TITLE SEARCH (LIBRARY ONLY)
+========================================= */
+titleInput.addEventListener("input", function () {
+    if (!isLibrarySelected()) {
+        resetDropdown();
+        return;
+    }
+
+    const query = this.value.trim();
+    const language = languageSelect.value;
+
+    catIdInput.value = "";
+
+    if (query.length < 2 || !language) {
+        resetDropdown();
+        return;
+    }
+
+    // If language is Marathi or Hindi, translate the title
+    if (language === "मराठी" || language === "हिंदी") {
+        if (!containsNonEnglish(query)) {
+            // Translate the title if it's in English
+            translateTitle(query, language)
+                .then(translatedTitle => {
+                    titleInput.value = translatedTitle;
+                    fetchTitles(translatedTitle, language);  // Search titles with translated title
+                });
+        } else {
+            fetchTitles(query, language);
+        }
+    } else {
+        fetchTitles(query, language);
+    }
+});
+
+function fetchTitles(query, language) {
+    fetch(
+        `{% url 'ebook_create' %}?action=get_titles&search=${encodeURIComponent(query)}&language=${encodeURIComponent(language)}`,
+        { headers: { "X-Requested-With": "XMLHttpRequest" } }
+    )
+    .then(res => res.json())
+    .then(data => {
+        titleDropdown.innerHTML = "";
+
+        if (!data.data.length) {
+            resetDropdown();
+            return;
+        }
+
+        data.data.forEach(book => {
+            const div = document.createElement("div");
+            div.className = "dropdown-item";
+            div.textContent = book.title;
+
+            div.onclick = () => {
+                titleInput.value = book.title;
+                catIdInput.value = book.cat_ref_num;
+                titleDropdown.classList.add("d-none");
+            };
+
+            titleDropdown.appendChild(div);
+        });
+
+        titleDropdown.classList.remove("d-none");
+    });
+}
+
+/* =========================================
+   CLICK OUTSIDE
+========================================= */
+document.addEventListener("click", function (e) {
+    if (!titleDropdown.contains(e.target) && e.target !== titleInput) {
+        titleDropdown.classList.add("d-none");
+    }
+});
+
+/* =========================================
+   LANGUAGE CHANGE
+========================================= */
+languageSelect.addEventListener("change", resetDropdown);
     /* =====================================================
        FILE UPLOAD (CLICK + DRAG DROP)
     ===================================================== */
@@ -675,14 +733,30 @@ document.addEventListener("DOMContentLoaded", function () {
     /* =====================================================
        AUTHOR DROPDOWN
     ===================================================== */
-    const authorInput = document.getElementById("eb_author");
+   const authorInput = document.getElementById("eb_author");
     const authorDropdown = document.getElementById("authorDropdown");
 
     let authorAbortController = null;
 
+    function containsNonEnglish(text) {
+        // Detect if the text contains Marathi/Hindi characters
+        const regex = /[\u0900-\u097F]/;
+        return regex.test(text);
+    }
+
+    function translateTitle(title, targetLanguage) {
+        // Make an AJAX request to translate the title using the backend function
+        return fetch(`{% url 'translate_word' %}?q=${encodeURIComponent(title)}&lang=${targetLanguage}`)
+            .then(res => res.json())
+            .then(data => {
+                return data.translated || title;
+            });
+    }
+
     if (authorInput && authorDropdown) {
         authorInput.addEventListener("input", function () {
             const query = this.value.trim();
+            const language = document.getElementById("eb_language").value;
 
             if (query.length < 2) {
                 authorDropdown.classList.add("d-none");
@@ -690,14 +764,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            {% comment %} if (authorAbortController) authorAbortController.abort();
-            authorAbortController = new AbortController(); {% endcomment %}
+            // If language is Marathi or Hindi, translate the author's name
+            if (language === "मराठी" || language === "हिंदी") {
+                if (!containsNonEnglish(query)) {
+                    // Translate the author's name if it's in English
+                    translateTitle(query, language)
+                        .then(translatedName => {
+                            authorInput.value = translatedName;
+                            fetchAuthors(translatedName);  // Fetch authors with translated name
+                        });
+                } else {
+                    fetchAuthors(query);
+                }
+            } else {
+                fetchAuthors(query);
+            }
+        });
 
+        function fetchAuthors(query) {
+            // Make the fetch request to get authors based on the query
             fetch(
                 `{% url 'ebook_create' %}?action=search_authors&search=${encodeURIComponent(query)}`,
                 {
                     headers: { "X-Requested-With": "XMLHttpRequest" },
-                    {% comment %} signal: authorAbortController.signal {% endcomment %}
+                    // signal: authorAbortController.signal  // Uncomment if using abort
                 }
             )
             .then(res => res.json())
@@ -705,7 +795,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 authorDropdown.innerHTML = "";
 
                 if (!data.data.length) {
-                    titleDropdown.classList.add("d-none");
+                    authorDropdown.classList.add("d-none");
                     return;
                 }
 
@@ -724,7 +814,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 authorDropdown.classList.remove("d-none");
             });
-        });
+        }
 
         document.addEventListener("click", e => {
             if (!authorDropdown.contains(e.target) && e.target !== authorInput) {

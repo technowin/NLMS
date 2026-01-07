@@ -313,316 +313,405 @@ body.dark-mode .form-select:disabled {
 {% block content %}
 <div class="est-info-wrapper">
 
-        <form method="post" enctype="multipart/form-data" id="ebookForm">
-            {% csrf_token %}
-            
-            <!-- Hidden field for encrypted ID -->
-            <input type="hidden" name="encrypted_id" value="{{ encrypted_id }}">
-            
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+    <form method="post" enctype="multipart/form-data" id="ebookForm">
+        {% csrf_token %}
 
-            <!-- Row 1: Title & Subtitle -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">पुस्तकाचे नाव / Title <span class="text-danger">*</span></label>
-                    <input type="text" name="eb_title" id="eb_title" class="form-control" 
-                           placeholder="e.g. Data Structures" value="{{ ebook.eb_title|default:'' }}" required>
+        <!-- Hidden field for encrypted ID -->
+        <input type="hidden" name="encrypted_id" value="{{ encrypted_id }}">
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">उपशिर्षक / Subtitle</label>
-                    <input type="text" name="eb_subtitle" id="eb_subtitle" class="form-control" 
-                           placeholder="Optional subtitle" value="{{ ebook.eb_subtitle|default:'' }}">
+            {% endfor %}
+        {% endif %}
+
+        <!-- =========================
+             LANGUAGE & EBOOK TYPE (READONLY)
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    भाषा / Language <span class="text-danger">*</span>
+                </label>
+                <select class="form-control" disabled>
+                    <option>{{ ebook.eb_language }}</option>
+                </select>
+                <input type="hidden" name="eb_language" value="{{ ebook.eb_language }}">
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    ई-बुक प्रकार / E-Book Type <span class="text-danger">*</span>
+                </label>
+                <select class="form-control" disabled>
+                    {% if ebook.ebook_type %}
+                        <option>{{ ebook.ebook_type.ebookTypeName|default:ebook.ebook_type.ebookTypeCode }}</option>
+                    {% endif %}
+                </select>
+                <input type="hidden" name="ebook_type" value="{{ ebook.ebook_type.encrypted_id }}">
+            </div>
+        </div>
+
+        <!-- =========================
+             TITLE & SUBTITLE
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">
+                    पुस्तकाचे नाव / Title <span class="text-danger">*</span>
+                </label>
+                <input type="text"
+                       name="eb_title"
+                       id="eb_title"
+                       class="form-control"
+                       value="{{ ebook.eb_title }}"
+                       readonly
+                       style="background-color:#f8f9fa; cursor:not-allowed;">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">उपशिर्षक / Subtitle</label>
+                <input type="text"
+                       name="eb_subtitle"
+                       id="eb_subtitle"
+                       class="form-control"
+                       value="{{ ebook.eb_subtitle|default:'' }}">
+            </div>
+        </div>
+
+        <!-- =========================
+             AUTHOR & OTHER AUTHORS
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6 mb-3 position-relative">
+                <label for="eb_author" class="form-label">
+                    लेखक / Author <span class="text-danger">*</span>
+                </label>
+
+                <input type="text"
+                    id="eb_author"
+                    name="eb_author"
+                    class="form-control"
+                    placeholder="Type or select author"
+                    autocomplete="off"
+                    value="{{ ebook.eb_author }}"
+                    required>
+
+                <!-- Author Dropdown (SAME AS CREATE) -->
+                <div id="authorDropdown"
+                    class="dropdown-panel d-none"
+                    style="
+                        position:absolute;
+                        width:100%;
+                        max-height:150px;
+                        overflow-y:auto;
+                        background:#fff;
+                        z-index:1000;
+                        border:1px solid #ddd;
+                        border-radius:4px;
+                    ">
+                </div>
+
+                <small class="form-text text-muted">
+                    Type minimum 2 characters to search author name.
+                </small>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">सह-लेखक / Other Authors</label>
+                <input type="text"
+                    name="eb_other_authors"
+                    id="eb_other_authors"
+                    class="form-control"
+                    value="{{ ebook.eb_other_authors|default:'' }}">
+            </div>
+        </div>
+
+        <!-- =========================
+             PUBLISHER & YEAR
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">प्रकाशक / Publisher</label>
+                <input type="text"
+                       name="eb_publisher"
+                       id="eb_publisher"
+                       class="form-control"
+                       value="{{ ebook.eb_publisher|default:'' }}">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
+                <input type="number"
+                       name="eb_year_of_publication"
+                       id="eb_year_of_publication"
+                       class="form-control"
+                       value="{{ ebook.eb_year_of_publication|default:'' }}"
+                       min="1000" max="{% now 'Y' %}">
+            </div>
+        </div>
+
+        <!-- =========================
+             EDITION & ISBN
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">आवृत्ती / Edition</label>
+                <input type="text"
+                       name="eb_edition"
+                       id="eb_edition"
+                       class="form-control"
+                       value="{{ ebook.eb_edition|default:'' }}">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">ISBN/ISSN</label>
+                <input type="text"
+                       name="eb_isbn_issn"
+                       id="eb_isbn_issn"
+                       class="form-control"
+                       value="{{ ebook.eb_isbn_issn|default:'' }}">
+            </div>
+        </div>
+
+        <!-- =========================
+             SUBJECT & PUBLICATION PLACE
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">
+                    विषय / Subject <span class="text-danger">*</span>
+                </label>
+                <select name="eb_subject" id="eb_subject" class="form-control" required>
+                    <option value="">Select Subject</option>
+                    {% for sub in subjects %}
+                        <option value="{{ sub.encrypted_id }}"
+                            {% if ebook.eb_subject and sub.id == ebook.eb_subject.id %}selected{% endif %}>
+                            {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                <input type="text"
+                       name="eb_publication_place"
+                       id="eb_publication_place"
+                       class="form-control"
+                       value="{{ ebook.eb_publication_place|default:'' }}">
+            </div>
+        </div>
+
+        <!-- =========================
+             PAGES & KEYWORDS
+        ========================== -->
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">पृष्ठे / Page Nos</label>
+                <input type="text"
+                       name="eb_pages"
+                       id="eb_pages"
+                       class="form-control"
+                       value="{{ ebook.eb_pages|default:'' }}">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">कीवर्ड्स / Keywords</label>
+                <input type="text"
+                       name="eb_keywords"
+                       id="eb_keywords"
+                       class="form-control"
+                       value="{{ ebook.eb_keywords|default:'' }}">
+            </div>
+        </div>
+
+        <!-- =========================
+             CURRENT FILE
+        ========================== -->
+        {% if ebook.eb_pdf_url %}
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label class="form-label">Current E-Book File</label>
+                <div class="alert alert-info">
+                    <a href="/media/{{ ebook.eb_pdf_url }}" target="_blank">View PDF</a>
                 </div>
             </div>
 
-            <!-- Row 2: Author & Other Authors -->
-            <div class="mb-3 row">
-                <div class="col-md-6 mb-3 position-relative">
-                    <label for="eb_author" class="form-label fw-semibold">
-                        Author <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" id="eb_author" name="eb_author" class="form-control"
-                           placeholder="Type or select author" autocomplete="off" 
-                           value="{{ ebook.eb_author|default:'' }}" required>
-
-                    <div class="border rounded mt-1 d-none" id="authorDropdown"
-                         style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
-                        {% for author in authors %}
-                            <div class="dropdown-item author-item" onclick="selectAuthor('{{ author }}')">{{ author }}</div>
-                        {% endfor %}
-                    </div>
-                    <small class="form-text text-muted">Select an author from the list or type a new one.</small>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">सह-लेखक / Other Authors</label>
-                    <input type="text" name="eb_other_authors" id="eb_other_authors" class="form-control" 
-                           placeholder="Co-authors/editors" value="{{ ebook.eb_other_authors|default:'' }}">
-                </div>
+            <div class="col-md-6">
+                <label class="form-label">New E-Book File</label>
+                <input type="file" name="ebook_file" class="form-control"
+                       accept=".pdf,.epub,.mobi,.azw,.azw3">
             </div>
+        </div>
+        {% endif %}
 
-            <!-- Row 3: Language & Publisher -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">भाषा / Language <span class="text-danger">*</span></label>
-                    <select name="eb_language" id="eb_language" class="form-control" required>
-                        <option value="">Select Language</option>
-                        {% for lang in languages %}
-                            <option value="{{ lang.language_name }}"
-                                {% if ebook.eb_language == lang.language_name %}selected{% endif %}>
-                                {{ lang.language_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="col-md-6">
-                    <label class="form-label">प्रकाशक / Publisher</label>
-                    <input type="text" name="eb_publisher" id="eb_publisher" class="form-control" 
-                           placeholder="Publisher name" value="{{ ebook.eb_publisher|default:'' }}">
-                </div>
-            </div>
+        <!-- =========================
+             REMARKS
+        ========================== -->
+        <div class="mb-3">
+            <label class="form-label">टीप / Remarks</label>
+            <textarea name="remarks" class="form-control" rows="3">{{ ebook.remarks|default:'' }}</textarea>
+        </div>
 
-            <!-- Row 4: Year of Publication & Publication Place -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
-                    <input type="number" name="eb_year_of_publication" id="eb_year_of_publication" 
-                           class="form-control" placeholder="e.g. 2024" 
-                           value="{{ ebook.eb_year_of_publication|default:'' }}" min="1000" max="{% now 'Y' %}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
-                    <input type="text" name="eb_publication_place" id="eb_publication_place" class="form-control"
-                           placeholder="e.g., Mumbai, Delhi, Pune" 
-                           value="{{ ebook.eb_publication_place|default:'' }}">
-                </div>
-            </div>
+        <!-- =========================
+             BUTTONS
+        ========================== -->
+        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
+            <button type="submit" class="btn btn-submit">
+                <i class="fa-solid fa-save"></i> Update / अपडेट करा
+            </button>
+            <a href="{% url 'ebook_catalog_index' %}" class="btn-go-back">
+                <i class="fa-solid fa-arrow-left me-2"></i> Go Back
+            </a>
+            {% comment %} <a href="{% url 'ebook_create' %}" class="btn-go-back">
+                <i class="fa-solid fa-plus me-2"></i> Create New
+            </a> {% endcomment %}
+        </div>
 
-            <!-- Row 5: Edition & ISBN -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">आवृत्ती / Edition</label>
-                    <input type="text" name="eb_edition" id="eb_edition" class="form-control" 
-                           placeholder="Edition info" value="{{ ebook.eb_edition|default:'' }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ISBN/ISSN</label>
-                    <input type="text" name="eb_isbn_issn" id="eb_isbn_issn" class="form-control" 
-                           placeholder="ISBN or ISSN number" value="{{ ebook.eb_isbn_issn|default:'' }}">
-                </div>
-            </div>
+    </form>
+</div>
 
-            <!-- Row 6: Subject & E-Book Type -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">विषय / Subject <span class="text-danger">*</span></label>
-                    <select name="eb_subject" id="eb_subject" class="form-control" required>
-                        <option value="">Select Subject</option>
-                        {% for sub in subjects %}
-                            <option value="{{ sub.encrypted_id }}" 
-                                    {% if ebook.eb_subject and sub.id == ebook.eb_subject.id %}selected{% endif %}>
-                                {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">ई-बुक प्रकार / E-Book Type</label>
-                    <select name="ebook_type" id="ebook_type" class="form-control">
-                        <option value="">Select E-Book Type</option>
-                        {% for et in ebook_types %}
-                            <option value="{{ et.encrypted_id }}"
-                                    {% if ebook.ebook_type and et.type_id == ebook.ebook_type.type_id %}selected{% endif %}>
-                                {{ et.ebookTypeName|default:et.ebookTypeCode }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- Row 7: Pages & Keywords -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">पृष्ठे / Page Nos</label>
-                    <input type="text" name="eb_pages" id="eb_pages" class="form-control" 
-                           placeholder="Number of pages" value="{{ ebook.eb_pages|default:'' }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">कीवर्ड्स / Keywords</label>
-                    <input type="text" name="eb_keywords" id="eb_keywords" class="form-control" 
-                           placeholder="Search tags/keywords" value="{{ ebook.eb_keywords|default:'' }}">
-                </div>
-            </div>
-
-            <!-- Row 8: Current PDF Display -->
-            {% if ebook.eb_pdf_url %}
-            <div class="mb-3 row">
-                <div class="col-md-12">
-                    <label class="form-label">Current E-Book File</label>
-                    <div class="alert alert-info">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-file-pdf me-2"></i>
-                                {% if ebook.eb_pdf_url|slice:":4" == 'http' %}
-                                    External URL: <a href="{{ ebook.eb_pdf_url }}" target="_blank" class="text-decoration-none">{{ ebook.eb_pdf_url|truncatechars:50 }}</a>
-                                {% else %}
-                                    Uploaded File: <a href="/media/{{ ebook.eb_pdf_url }}" target="_blank" class="text-decoration-none">View PDF</a>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <small class="text-muted">To replace, upload a new file below</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Row 9: New File Upload -->
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">नवीन ई-बुक फाइल / New E-Book File</label>
-                    <input type="file" name="ebook_file" id="ebook_file" class="form-control" 
-                           accept=".pdf,.epub,.mobi,.azw,.azw3">
-                    <small class="form-text text-muted">
-                        Allowed formats: PDF, EPUB, MOBI, AZW, AZW3 | Max size: 50MB
-                        {% if ebook.eb_pdf_url %} (Leave empty to keep current file){% endif %}
-                    </small>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">किंवा बाह्य URL / OR External URL</label>
-                    <input type="url" name="eb_pdf_url" id="eb_pdf_url" class="form-control" 
-                           placeholder="https://example.com/ebook.pdf" 
-                           value="{% if ebook.eb_pdf_url and ebook.eb_pdf_url|slice:':4' == 'http' %}{{ ebook.eb_pdf_url }}{% endif %}">
-                    <small class="form-text text-muted text-warning">
-                        <i class="fas fa-exclamation-triangle"></i> Only if not uploading a file. URL will be ignored if file is uploaded.
-                    </small>
-                </div>
-            </div>
-
-            <!-- Row 10: Remarks -->
-            <div class="mb-3 row">
-                <div class="col-md-12">
-                    <label class="form-label">टीप / Remarks</label>
-                    <textarea name="remarks" id="remarks" class="form-control" rows="3" 
-                              placeholder="Notes, e.g. Updated version, corrections, etc.">{{ ebook.remarks|default:'' }}</textarea>
-                </div>
-            </div>
-
-            <!-- BUTTONS -->
-            <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
-                <button type="submit" class="btn btn-submit">
-                    <i class="fa-solid fa-save"></i> Update / अपडेट करा
-                </button>
-                <a href="{% url 'ebook_catalog_index' %}" class="btn-go-back">
-                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
-                </a>
-                <a href="{% url 'ebook_create' %}" class="btn-go-back">
-                    <i class="fa-solid fa-plus me-2"></i> Create New / नवीन तयार करा
-                </a>
-            </div>
-        </form>
-
-    </div>
-
-    <!-- Back to Top Button -->
-    <a href="#" class="back-to-top" id="backToTop">
-        <i class="fas fa-arrow-up"></i>
-    </a>
-
+<!-- Back to Top Button -->
+<a href="#" class="back-to-top" id="backToTop">
+    <i class="fas fa-arrow-up"></i>
+</a>
 {% endblock %}
 
 {% block extra_javascript %}
-    <!-- jQuery -->
-    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-    <!-- Bootstrap Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- jQuery -->
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
 
-    <script>
-    $(document).ready(function() {
-        // Back to Top Button
-        $(window).scroll(function() {
-            if ($(this).scrollTop() > 300) {
-                $('#backToTop').addClass('active');
-            } else {
-                $('#backToTop').removeClass('active');
-            }
-        });
-        
-        $('#backToTop').click(function(e) {
-            e.preventDefault();
-            $('html, body').animate({scrollTop: 0}, 500);
-            return false;
-        });
-        
-        // File validation
-        $('#ebook_file').on('change', function() {
-            const file = this.files[0];
-            if (!file) return;
-            
-            const allowedTypes = ['pdf', 'epub', 'mobi', 'azw', 'azw3'];
-            const maxSize = 50 * 1024 * 1024; // 50MB
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            
-            // Check file extension
-            if (!allowedTypes.includes(fileExt)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Invalid File Type',
-                    text: 'Please upload only PDF, EPUB, MOBI, AZW, or AZW3 files.',
-                });
-                this.value = '';
-                return;
-            }
-            
-            // Check file size
-            if (file.size > maxSize) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Too Large',
-                    text: 'File size must be less than 50MB.',
-                });
-                this.value = '';
-                return;
-            }
-            
-            // Show success message
+
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+$(document).ready(function () {
+
+    /* =====================================================
+       BACK TO TOP BUTTON
+    ===================================================== */
+    $(window).on("scroll", function () {
+        if ($(this).scrollTop() > 300) {
+            $("#backToTop").addClass("active");
+        } else {
+            $("#backToTop").removeClass("active");
+        }
+    });
+
+    $("#backToTop").on("click", function (e) {
+        e.preventDefault();
+        $("html, body").animate({ scrollTop: 0 }, 500);
+        return false;
+    });
+
+
+    /* =====================================================
+       FILE VALIDATION
+    ===================================================== */
+    $("#ebook_file").on("change", function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const allowedTypes = ["pdf", "epub", "mobi", "azw", "azw3"];
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        const fileExt = file.name.split(".").pop().toLowerCase();
+
+        if (!allowedTypes.includes(fileExt)) {
             Swal.fire({
-                icon: 'success',
-                title: 'File Selected',
-                text: `${file.name} (${(file.size / (1024*1024)).toFixed(2)} MB)`,
-                timer: 2000,
-                showConfirmButton: false
+                icon: "error",
+                title: "Invalid File Type",
+                text: "Please upload only PDF, EPUB, MOBI, AZW, or AZW3 files."
             });
-        });
-        
-        // Author dropdown functionality
-        $('#eb_author').on('focus click', function() {
-            if ($('#authorDropdown .author-item').length > 0) {
-                $('#authorDropdown').removeClass('d-none');
-            }
-        });
-        
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#eb_author, #authorDropdown').length) {
-                $('#authorDropdown').addClass('d-none');
-            }
+            this.value = "";
+            return;
+        }
+
+        if (file.size > maxSize) {
+            Swal.fire({
+                icon: "error",
+                title: "File Too Large",
+                text: "File size must be less than 50MB."
+            });
+            this.value = "";
+            return;
+        }
+
+        Swal.fire({
+            icon: "success",
+            title: "File Selected",
+            text: `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`,
+            timer: 2000,
+            showConfirmButton: false
         });
     });
-    
-    function selectAuthor(authorName) {
-        $('#eb_author').val(authorName);
-        $('#authorDropdown').addClass('d-none');
+
+
+    /* =====================================================
+       AUTHOR AUTOCOMPLETE DROPDOWN
+    ===================================================== */
+    const authorInput = document.getElementById("eb_author");
+    const authorDropdown = document.getElementById("authorDropdown");
+
+    if (authorInput && authorDropdown) {
+
+        authorInput.addEventListener("input", function () {
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                authorDropdown.classList.add("d-none");
+                authorDropdown.innerHTML = "";
+                return;
+            }
+
+            fetch(
+                `{% url 'ebook_edit' %}?action=search_authors&search=${encodeURIComponent(query)}`,
+                {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                }
+            )
+            .then(response => response.json())
+            .then(data => {
+                authorDropdown.innerHTML = "";
+
+                if (!data.data || !data.data.length) {
+                    authorDropdown.classList.add("d-none");
+                    return;
+                }
+
+                data.data.forEach(name => {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    item.textContent = name;
+
+                    item.addEventListener("click", function () {
+                        authorInput.value = name;
+                        authorDropdown.classList.add("d-none");
+                    });
+
+                    authorDropdown.appendChild(item);
+                });
+
+                authorDropdown.classList.remove("d-none");
+            })
+            .catch(err => {
+                console.error("Author search error:", err);
+                authorDropdown.classList.add("d-none");
+            });
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!authorDropdown.contains(e.target) && e.target !== authorInput) {
+                authorDropdown.classList.add("d-none");
+            }
+        });
     }
+
+});
 </script>
 {% endblock %}

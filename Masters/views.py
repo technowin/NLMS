@@ -3774,7 +3774,7 @@ def ebook_catalog_index(request):
         # Always return HttpResponse, even on error
         return render(request, 'Master/ebook_catalog_index.html', {"catalogs": []})
 
-@login_required
+
 @login_required
 
 def ebook_create(request):
@@ -3866,19 +3866,22 @@ def ebook_create(request):
         if request.method == "POST":
 
             # ---------- TITLE HANDLING ----------
-            manual_title = request.POST.get("eb_title_text", "").strip()
-            catalog_title = request.POST.get("eb_title_catalog", "").strip()
+            # manual_title = request.POST.get("eb_title_text", "").strip()
+            # catalog_title = request.POST.get("eb_title_catalog", "").strip()
+            eb_title = request.POST.get("eb_title_text", "").strip()
             cat_id = request.POST.get("cat_id", "").strip()
 
             ebook_type_value = request.POST.get("ebook_type", "").strip()
             ebook_type_id = dec(ebook_type_value) if ebook_type_value else None
             ebook_type = EbookTypeMaster.objects.filter(type_id=ebook_type_id).first()
 
-            if ebook_type and "library" in ebook_type.ebookTypeCode.lower() and cat_id:
-                eb_title = catalog_title
-            else:
-                eb_title = manual_title
-                cat_id = None
+            # if ebook_type and "library" in ebook_type.ebookTypeCode.lower() and cat_id:
+            #     eb_title = catalog_title
+            # else:
+            #     eb_title = manual_title
+            #     cat_id = None
+            if not (ebook_type and "library" in ebook_type.ebookTypeCode.lower()):cat_id = None
+
 
             # ---------- FILE INPUTS ----------
             pdf_file = request.FILES.get("eb_pdf_url")
@@ -4000,7 +4003,7 @@ def ebook_create(request):
                     if cat_id:
                         book = BookCatalog.objects.filter(cat_ref_num=cat_id).first()
                         if book:
-                            book.ebook = ebook
+                            book.ebook_id = ebook
                             book.ebook_available = "Yes"
                             book.updated_by = user
                             book.save()
@@ -4024,16 +4027,35 @@ def ebook_create(request):
 def ebook_edit(request):
     try:
         user = request.user.id
-        
-        # -------- GET REQUEST (Load Form with Existing Values) --------
+
+        # =========================================================
+        # GET REQUEST
+        # =========================================================
         if request.method == "GET":
+
+            # ---------- AJAX AUTHOR SEARCH (FOR DROPDOWN) ----------
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                action = request.GET.get("action")
+
+                if action == "search_authors":
+                    search = request.GET.get("search", "").strip()
+
+                    authors = (
+                        BookCatalog.objects
+                        .filter(author__icontains=search)
+                        .values_list("author", flat=True)
+                        .distinct()[:10]
+                    )
+
+                    return JsonResponse({"data": list(authors)})
+
+            # ---------- NORMAL EDIT PAGE LOAD ----------
             encrypted_id = request.GET.get('ebook_id')
-            
+
             if not encrypted_id:
                 messages.error(request, "Invalid e-book.")
                 return redirect('ebook_catalog_index')
-            
-            # -------- Decrypt ID --------
+
             try:
                 ebook_id = dec(encrypted_id)
             except:
@@ -4045,9 +4067,14 @@ def ebook_edit(request):
                 messages.error(request, "E-Book not found.")
                 return redirect('ebook_catalog_index')
 
-            languages = LanguageMaster.objects.filter(is_active=1)
-            for lang in languages:
-                lang.encrypted_id = enc(str(lang.id))
+            languages = (
+                BookCatalog.objects
+                .exclude(language__isnull=True)
+                .exclude(language__exact="")
+                .values_list("language", flat=True)
+                .distinct()
+                .order_by("language")
+            )
 
             subjects = SubjectTypeMaster.objects.filter(is_active=True)
             for sub in subjects:
@@ -4070,18 +4097,19 @@ def ebook_edit(request):
                 "years": years,
                 "encrypted_id": encrypted_id
             }
+
             return render(request, "Master/ebook_edit.html", context)
 
-        # -------- POST REQUEST (Update Record) --------
+        # =========================================================
+        # POST REQUEST (UPDATE)
+        # =========================================================
         elif request.method == "POST":
-            # Get encrypted_id from hidden field or query parameter
-            encrypted_id = request.POST.get('encrypted_id') or request.GET.get('ebook_id')
-            
+
+            encrypted_id = request.POST.get('encrypted_id')
             if not encrypted_id:
                 messages.error(request, "Invalid e-book.")
                 return redirect('ebook_catalog_index')
-            
-            # -------- Decrypt ID --------
+
             try:
                 ebook_id = dec(encrypted_id)
             except:
@@ -4095,8 +4123,8 @@ def ebook_edit(request):
 
             form = request.POST
 
-            # ---------- MAP FIELDS ----------
-            ebook.eb_title = form.get('eb_title', '').strip()
+            # ---------- ALLOWED FIELD UPDATES ----------
+            # ❗ Title & Ebook Type intentionally NOT updated (readonly)
             ebook.eb_subtitle = form.get('eb_subtitle', '').strip()
             ebook.eb_author = form.get('eb_author', '').strip()
             ebook.eb_other_authors = form.get('eb_other_authors', '').strip()
@@ -4104,62 +4132,58 @@ def ebook_edit(request):
             ebook.eb_isbn_issn = form.get('eb_isbn_issn', '').strip()
             ebook.eb_edition = form.get('eb_edition', '').strip()
             ebook.eb_keywords = form.get('eb_keywords', '').strip()
-            ebook.eb_language = form.get('eb_language', '').strip()
             ebook.eb_publication_place = form.get('eb_publication_place', '').strip()
-            ebook.eb_year_of_publication = form.get('eb_year_of_publication', '').strip() or None
+            ebook.eb_year_of_publication = form.get('eb_year_of_publication') or None
             ebook.eb_pages = form.get('eb_pages', '').strip()
             ebook.remarks = form.get('remarks', '').strip()
+            ebook.eb_language = form.get('eb_language', '').strip()
             external_url = form.get('eb_pdf_url', '').strip()
-            ebook.call_number = form.get('call_number', '').strip()
-            ebook.cutter_number = form.get('cutter_number', '').strip()
-            ebook.eb_classification_number = form.get('eb_classification_number', '').strip()
-            ebook.eb_date_of_registration = form.get('eb_date_of_registration') or ebook.eb_date_of_registration
 
-            # ------ SUBJECT ------
+            ebook.eb_date_of_registration = (
+                form.get('eb_date_of_registration')
+                or ebook.eb_date_of_registration
+            )
+
+            # ---------- SUBJECT ----------
             subject_enc = form.get("eb_subject")
-            ebook.eb_subject = SubjectTypeMaster.objects.filter(
-                id=dec(subject_enc)
-            ).first() if subject_enc else None
+            ebook.eb_subject = (
+                SubjectTypeMaster.objects.filter(id=dec(subject_enc)).first()
+                if subject_enc else None
+            )
 
-            # ------ Ebook Type ------
-            ebook_type_enc = form.get("ebook_type")
-            ebook.ebook_type = EbookTypeMaster.objects.filter(
-                type_id=dec(ebook_type_enc)
-            ).first() if ebook_type_enc else None
-
-            # ------ Required fields ------
-            if not ebook.eb_title or not ebook.eb_author or not ebook.eb_language or not ebook.eb_subject:
+            # ---------- REQUIRED FIELDS ----------
+            if not ebook.eb_author or not ebook.eb_language or not ebook.eb_subject:
                 messages.error(request, "Please fill all required fields.")
-                # Redirect back to edit page with query parameter
-                return redirect('ebook_edit') + f'?ebook_id={encrypted_id}'
+                return redirect(f"{request.path}?ebook_id={encrypted_id}")
 
-            # -------- UPDATE FILES (if new uploaded) --------
-            ebook_main_folder = os.path.join(settings.MEDIA_ROOT, "L01", "EBooks", str(ebook.ebook_id))
+            # =========================================================
+            # FILE HANDLING
+            # =========================================================
+            ebook_main_folder = os.path.join(
+                settings.MEDIA_ROOT, "L01", "EBooks", str(ebook.ebook_id)
+            )
             pdf_folder = os.path.join(ebook_main_folder, "book_pdf")
             img_folder = os.path.join(ebook_main_folder, "book_images")
 
             os.makedirs(pdf_folder, exist_ok=True)
             os.makedirs(img_folder, exist_ok=True)
 
-            # -------- PDF Upload --------
+            # ---------- PDF UPLOAD ----------
             pdf_file = request.FILES.get("ebook_file")
             if pdf_file:
                 filename = f"ebook_{ebook.ebook_id}_{pdf_file.name}".replace(' ', '_')
-                file_path = os.path.join(pdf_folder, filename)
+                path = os.path.join(pdf_folder, filename)
 
-                with open(file_path, "wb+") as f:
+                with open(path, "wb+") as f:
                     for chunk in pdf_file.chunks():
                         f.write(chunk)
 
                 ebook.eb_pdf_url = f"L01/EBooks/{ebook.ebook_id}/book_pdf/{filename}"
 
-            elif external_url:
-                if external_url.startswith(("http://", "https://")):
-                    ebook.eb_pdf_url = external_url
-                else:
-                    messages.warning(request, "Invalid URL format.")
+            elif external_url and external_url.startswith(("http://", "https://")):
+                ebook.eb_pdf_url = external_url
 
-            # -------- Front Image Update --------
+            # ---------- FRONT IMAGE ----------
             front = request.FILES.get("eb_front_page_photo")
             if front:
                 ext = os.path.splitext(front.name)[1].lower()
@@ -4172,7 +4196,7 @@ def ebook_edit(request):
 
                 ebook.eb_front_page_photo = f"L01/EBooks/{ebook.ebook_id}/book_images/{filename}"
 
-            # -------- Last Page Image Update --------
+            # ---------- LAST IMAGE ----------
             last = request.FILES.get("eb_last_page_photo")
             if last:
                 ext = os.path.splitext(last.name)[1].lower()
@@ -4185,7 +4209,7 @@ def ebook_edit(request):
 
                 ebook.eb_last_page_photo = f"L01/EBooks/{ebook.ebook_id}/book_images/{filename}"
 
-            # -------- Save --------
+            # ---------- SAVE ----------
             ebook.updated_by = user
             ebook.save()
 
