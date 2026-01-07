@@ -336,10 +336,9 @@ class FileStorageService:
         
         return path
 
-    def get_secure_file_response(self, file_path, filename=None, content_type=None, inline=True):
+    def get_secure_stream_response(self, file_path, filename=None, content_type=None):
         """
-        Get a secure Django HttpResponse for a file
-        Uses existing _get_s3_url (already signed) for S3, streams locally
+        Get a streaming response for a file (doesn't redirect to direct URLs)
         """
         if not file_path:
             raise ValueError("File path is required")
@@ -353,19 +352,79 @@ class FileStorageService:
         storage_path = self._prepare_path(file_path, add_base=True)
         
         if self.is_production and self.S3_AVAILABLE:
-            # For S3, use existing _get_s3_url which already generates signed URLs
-            # The existing _get_s3_url creates 1-hour signed URLs which is secure
-            s3_url = self._get_s3_url(storage_path)
-            from django.shortcuts import redirect
-            return redirect(s3_url)
-        
+            # Stream from S3 through Django
+            return self._get_s3_stream_response(storage_path, filename, content_type)
         else:
-            # For local, create FileResponse that streams through Django
-            return self._get_local_file_response(storage_path, filename, content_type, inline)
+            # Stream from local through Django
+            return self._get_local_stream_response(storage_path, filename, content_type)
 
-    def _get_local_file_response(self, file_path, filename=None, content_type=None, inline=True):
+    def _get_s3_stream_response(self, file_path, filename=None, content_type=None):
         """
-        Create FileResponse for local files (streams through Django)
+        Stream file from S3 through Django
+        """
+        import boto3
+        from botocore.exceptions import ClientError
+        from django.http import StreamingHttpResponse
+        import urllib.parse
+        
+        # Get AWS credentials
+        aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', '')
+        aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', '')
+        bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+        region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
+        
+        if not all([aws_access_key, aws_secret_key, bucket_name]):
+            raise ValueError("S3 configuration missing")
+        
+        # Create S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=aws_access_key,
+            aws_secret_access_key=aws_secret_key,
+            region_name=region
+        )
+        
+        try:
+            # Get file from S3
+            s3_response = s3_client.get_object(Bucket=bucket_name, Key=file_path)
+            
+            # Determine filename
+            if not filename:
+                filename = file_path.split('/')[-1]
+            
+            # URL encode filename
+            safe_filename = urllib.parse.quote(filename)
+            
+            # Determine content type
+            if not content_type:
+                content_type = s3_response.get('ContentType', 'application/octet-stream')
+            
+            # Stream the file
+            def file_iterator(file_obj, chunk_size=8192):
+                while True:
+                    chunk = file_obj.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+            
+            response = StreamingHttpResponse(
+                file_iterator(s3_response['Body']),
+                content_type=content_type
+            )
+            
+            response['Content-Disposition'] = f'inline; filename="{safe_filename}"'
+            response['Content-Length'] = str(s3_response.get('ContentLength', 0))
+            response['X-Content-Type-Options'] = 'nosniff'
+            
+            return response
+            
+        except ClientError as e:
+            print(f"[FileStorageService] S3 error: {e}")
+            raise FileNotFoundError(f"File not found on S3: {file_path}")
+
+    def _get_local_stream_response(self, file_path, filename=None, content_type=None):
+        """
+        Stream file from local filesystem through Django
         """
         from django.http import FileResponse
         from pathlib import Path
@@ -388,11 +447,8 @@ class FileStorageService:
         if not filename:
             filename = Path(file_path).name
         
-        # URL encode filename for safety
+        # URL encode filename
         safe_filename = urllib.parse.quote(filename)
-        
-        # Determine content disposition
-        disposition = 'inline' if inline else 'attachment'
         
         # Get file size
         file_size = full_path.stat().st_size
@@ -403,28 +459,10 @@ class FileStorageService:
             content_type=content_type
         )
         
-        response['Content-Disposition'] = f'{disposition}; filename="{safe_filename}"'
+        response['Content-Disposition'] = f'inline; filename="{safe_filename}"'
         response['Content-Length'] = str(file_size)
         response['X-Content-Type-Options'] = 'nosniff'
-        response['Cache-Control'] = 'private, max-age=3600'
         
         return response
-
-    def get_secure_download_response(self, file_path, filename=None):
-        """
-        Get secure response for file download (attachment)
-        """
-        return self.get_secure_file_response(file_path, filename, inline=False)
-
-    def get_secure_pdf_response(self, file_path, filename="document.pdf"):
-        """
-        Get secure response specifically for PDF files
-        """
-        return self.get_secure_file_response(
-            file_path, 
-            filename, 
-            content_type='application/pdf', 
-            inline=True
-        )
 # Global instance for convenience
 file_storage_service = FileStorageService()

@@ -5817,7 +5817,7 @@ import os
 
 @login_required
 def read_ebook_secure(request):
-    """Secure ebook access using FileStorageService"""
+    """Stream ebook through Django using FileStorageService"""
     try:
         token = request.GET.get('token')
         if not token:
@@ -5829,11 +5829,12 @@ def read_ebook_secure(request):
         if not ebook.eb_pdf_url:
             raise Http404("E-Book file not found")
 
-        # ✅ Use FileStorageService for secure file response
+        # ✅ Stream through Django (no redirect to direct URLs)
         filename = f"{ebook.eb_title or 'ebook'}.pdf"
-        return file_storage_service.get_secure_pdf_response(
+        return file_storage_service.get_secure_stream_response(
             ebook.eb_pdf_url,
-            filename=filename
+            filename=filename,
+            content_type='application/pdf'
         )
             
     except FileNotFoundError:
