@@ -62,3 +62,23 @@ def file_size_human(file_path):
         size_bytes /= 1024.0
     
     return f"{size_bytes:.1f} TB"
+
+@register.filter(name='storage_url')
+def storage_url_filter(file_path):
+    """
+    Template filter to get file URL for any environment
+    Usage: {{ obj.front_page_photo|storage_url }}
+    """
+    if not file_path:
+        return '#'
+    return FileStorageService.get_file_url(file_path)
+
+@register.filter(name='file_exists')
+def file_exists_filter(file_path):
+    """
+    Check if file exists in storage
+    Usage: {% if obj.front_page_photo|file_exists %}
+    """
+    if not file_path:
+        return False
+    return FileStorageService.file_exists(file_path)

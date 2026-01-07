@@ -689,7 +689,6 @@ def book_catalog_edit(request):
                 'selected_place': selected_place,
                 'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
                 'MEDIA_URL': settings.MEDIA_URL,
-                'file_storage_service': file_storage_service,
             }
             
             return render(request, 'Master/book_catalog_edit.html', context)

@@ -1,6 +1,6 @@
 {% extends "bootstrap/horizontal_base.html" %}
 {% load static %}
-
+{% load file_tags %} 
 {% block title %}ग्रंथ सूची तयार करा{% endblock title %}
 
 {% block extra_css %}
@@ -386,11 +386,13 @@
 
                     {% if obj.front_page_photo %}
                         <div class="mt-2">
+                            <!-- ✅ Use the template filter -->
                             <img id="front_page_preview" 
-                                src="{{ file_storage_service.get_file_url|default:'#' }}{{ obj.front_page_photo }}" 
+                                src="{{ obj.front_page_photo|storage_url }}" 
                                 alt="Front Page Image"
                                 class="img-thumbnail shadow-sm" 
-                                style="max-height: 120px;">
+                                style="max-height: 120px;"
+                                onerror="this.onerror=null; this.style.display='none';">
                         </div>
                     {% else %}
                         <div class="mt-2">
@@ -402,6 +404,7 @@
                         </div>
                     {% endif %}
                 </div>
+
             </div>
 
             <!-- Last Page & Remarks -->
@@ -409,29 +412,24 @@
 
     <!-- Last Page Image -->
     <div class="col-md-6">
-        <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
-
-        <input type="file" 
-            name="last_page_image" 
-            id="last_page_image" 
-            class="form-control" 
-            accept="image/*" 
-            onchange="previewImage(this, 'last_page_preview')">
+        <label class="form-label">शेवटचे पृष्ठ प्रतिमा / Last Page Image</label>
+        <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'last_page_preview')">
 
         {% if obj.last_page_photo %}
             <div class="mt-2">
-                <img id="last_page_preview"
-                    src="{{ MEDIA_URL }}{{ obj.last_page_photo }}"
+                <img id="last_page_preview" 
+                    src="{{ obj.last_page_photo|storage_url }}" 
                     alt="Last Page Image"
-                    class="img-thumbnail shadow-sm"
-                    style="max-height: 120px;">
+                    class="img-thumbnail shadow-sm" 
+                    style="max-height: 120px;"
+                    onerror="this.onerror=null; this.style.display='none';">
             </div>
         {% else %}
             <div class="mt-2">
-                <img id="last_page_preview"
-                    src=""
+                <img id="last_page_preview" 
+                    src="" 
                     alt="Last Page Preview"
-                    class="img-thumbnail shadow-sm d-none"
+                    class="img-thumbnail shadow-sm d-none" 
                     style="max-height: 120px;">
             </div>
         {% endif %}
