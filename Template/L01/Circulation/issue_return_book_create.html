@@ -919,7 +919,7 @@
                                 container.append(`
                                     <div class="${cardClass}">
                                         <div class="member-photo">
-                                            <img src="${member.file_path ? data.MEDIA_URL + member.file_path : '/static/images/default-user.png'}" alt="Member Photo">
+                                            <img src="${member.file_url || '/static/images/default-user.png'}" alt="Member Photo">
                                         </div>
                                         <div class="member-info">
                                             <h4 class="member-name">${member.full_name}</h4>
@@ -1172,7 +1172,7 @@
                                 container.append(`
                                     <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
                                         <div class="book-photo">
-                                            <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
+                                            <img src="${book.front_page_photo || '/static/images/book-placeholder.png'}" 
                                                 alt="Book Photo">
                                         </div>
                                         <div class="book-info">
@@ -1427,9 +1427,9 @@
                             // --- Book card ---
                             container.append(`
                                 <div class="book-card mb-3" style="border: 1px solid ${borderColor}; background-color: ${cardBg}; border-radius: 10px; padding: 10px; display: flex; align-items: center;">
-                                    <div class="book-photo me-3">
-                                        <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
-                                            alt="Book Photo" style="width:100px;height:130px;object-fit:cover;border-radius:8px;">
+                                    <div class="book-photo">
+                                        <img src="${book.front_page_photo || '/static/images/book-placeholder.png'}" 
+                                            alt="Book Photo">
                                     </div>
                                     <div class="book-info flex-grow-1">
                                         <h5 style="color:${textColor}; margin-bottom:5px;">${book.title || 'Untitled Book'}</h5>
@@ -1452,9 +1452,8 @@
 
                             container.append(`
                                 <div class="member-card" style="border: 1px solid #0d6efd; background-color: #e9f3ff; border-radius: 10px; padding: 10px; display: flex; align-items: center;">
-                                    <div class="member-photo me-3">
-                                        <img src="${member.profile_photo ? data.MEDIA_URL + member.profile_photo : '/static/images/default-user.png'}" 
-                                            alt="Member Photo" style="width:100px;height:100px;object-fit:cover;border-radius:50%;">
+                                    <div class="member-photo">
+                                            <img src="${member.profile_photo || '/static/images/default-user.png'}" alt="Member Photo">
                                     </div>
                                     <div class="member-info flex-grow-1">
                                         <h4 class="member-name mb-1" style="color:#0d6efd;">${member.member_name}</h4>
@@ -2252,7 +2251,7 @@
                             container.append(`
                                 <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
                                     <div class="book-photo">
-                                        <img src="${book.front_page_photo ? data.MEDIA_URL + book.front_page_photo : '/static/images/book-placeholder.png'}" 
+                                        <img src="${book.front_page_photo || '/static/images/book-placeholder.png'}" 
                                             alt="Book Photo">
                                     </div>
                                     <div class="book-info">

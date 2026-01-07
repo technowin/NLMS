@@ -3085,6 +3085,11 @@ def get_member_details(request):
             # Format dates
             from_date = membership.from_date.strftime("%d %b %Y") if membership.from_date else '-'
             to_date = membership.to_date.strftime("%d %b %Y") if membership.to_date else '-'
+            
+            # Get file URL using FileStorageService
+            file_url = "#"
+            if doc.file_path:
+                file_url = file_storage_service.get_file_url(doc.file_path)
 
             document_list.append({
                 "membership_id": membership.id,
@@ -3103,6 +3108,7 @@ def get_member_details(request):
                 "document_name": doc.document.document_name if doc.document else '',
                 "file_name": doc.file_name,
                 "file_path": doc.file_path,
+                "file_url": file_url,  # Add this
             })
             
         issued_books_count = CirculationTransaction.objects.filter(
@@ -3157,6 +3163,11 @@ def get_book_details(request):
                     .select_related("bookcatalog", "shelf_location", "current_status")
                     .get(barcode=barcode_id)  # <--- match by barcode
                 )
+                
+                # Get front page URL using FileStorageService
+                front_page_url = "#"
+                if circ.bookcatalog and circ.bookcatalog.front_page_photo:
+                    front_page_url = file_storage_service.get_file_url(circ.bookcatalog.front_page_photo)
 
                 data = {
                     "success": True,
@@ -3167,7 +3178,7 @@ def get_book_details(request):
                         "isbn_issn": circ.bookcatalog.isbn_issn if circ.bookcatalog else "-",
                         "pages": circ.bookcatalog.pages if circ.bookcatalog else "-",
                         "language": circ.bookcatalog.language if circ.bookcatalog else "-",
-                        "front_page_photo": circ.bookcatalog.front_page_photo if circ.bookcatalog else "",
+                        "front_page_photo": front_page_url,  # Only this line
                         "location_name": circ.shelf_location.location_name if circ.shelf_location else "-",
                         "status_name": circ.current_status.status_name if circ.current_status else "Unknown",
                         "status_color": circ.current_status.status_color if circ.current_status else "#999",
@@ -3218,7 +3229,15 @@ def get_book_details(request):
                         .order_by("-created_at")
                         .first()
                     )
-                    profile_photo = profile_doc.file_path if profile_doc else ""
+                    # Get URLs using FileStorageService
+                    front_page_url = "#"
+                    profile_photo_url = "#"
+                    
+                    if book and book.front_page_photo:
+                        front_page_url = file_storage_service.get_file_url(book.front_page_photo)
+                    
+                    if profile_doc and profile_doc.file_path:
+                        profile_photo_url = file_storage_service.get_file_url(profile_doc.file_path)
 
                     # Member full name
                     member_name = " ".join(
@@ -3233,7 +3252,7 @@ def get_book_details(request):
                             "title": book.title if book else "-",
                             "author": book.author if book else "-",
                             "isbn_issn": book.isbn_issn if book else "-",
-                            "front_page_photo": book.front_page_photo if book else "",
+                            "front_page_photo": front_page_url,  # Only this line
                             "status_name": status_name,
                             "due_date": due_date_str,
                             "issue_date": (
@@ -3242,13 +3261,13 @@ def get_book_details(request):
                                 else "-"
                             ),
                             "days_overdue": days_overdue,
-                            "fine_amount": total_fine,  # ✅ calculated fine
+                            "fine_amount": total_fine,
                             "price": price,
                         },
                         "member": {
                             "member_name": member_name,
                             "member_code": member.membership_code or "-",
-                            "profile_photo": profile_photo,
+                            "profile_photo": profile_photo_url,  # Only this line
                             "mobile_no": member.mobile_no or "-",
                         },
                     }
