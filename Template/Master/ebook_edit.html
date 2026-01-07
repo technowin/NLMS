@@ -530,7 +530,7 @@ body.dark-mode .form-select:disabled {
         </div>
 
         <!-- =========================
-             CURRENT FILE
+            CURRENT FILE
         ========================== -->
         <div class="mb-3 row">
             <div class="col-md-6">
@@ -538,9 +538,16 @@ body.dark-mode .form-select:disabled {
 
                 {% if ebook.eb_pdf_url %}
                     <div class="alert alert-info">
-                        <a href="/media/{{ ebook.eb_pdf_url }}" target="_blank">
-                            <i class="fa-solid fa-file-pdf me-2"></i> ई-बुक फाईल पहा/ View E-Book File
-                        </a>
+                        {% if pdf_enc %}
+                            <a href="{% url 'secure_ebook_file_view' pdf_enc %}" target="_blank">
+                                <i class="fa-solid fa-file-pdf me-2"></i> ई-बुक फाईल पहा/ View E-Book File
+                            </a>
+                        {% else %}
+                            {# External URL - direct link #}
+                            <a href="{{ ebook.eb_pdf_url }}" target="_blank">
+                                <i class="fa-solid fa-external-link me-2"></i> External E-Book Link
+                            </a>
+                        {% endif %}
                     </div>
                 {% else %}
                     <div class="alert alert-warning">
@@ -558,6 +565,7 @@ body.dark-mode .form-select:disabled {
                     accept=".pdf,.epub,.mobi,.azw,.azw3">
             </div>
         </div>
+
         <!-- =========================
             FRONT PAGE IMAGE
         ========================== -->
@@ -565,11 +573,15 @@ body.dark-mode .form-select:disabled {
             <div class="col-md-6">
                 <label class="form-label">मुखपृष्ठ प्रतिमा/ Front Page Image</label>
 
-                {% if ebook.eb_front_page_photo %}
+                {% if ebook.eb_front_page_photo and front_page_enc %}
                     <div class="alert alert-info">
-                        <a href="/media/{{ ebook.eb_front_page_photo }}" target="_blank">
+                        <a href="{% url 'secure_ebook_file_view' front_page_enc %}" target="_blank">
                             मुखपृष्ठ प्रतिमा पहा / View Front Page Image
                         </a>
+                    </div>
+                {% elif ebook.eb_front_page_photo %}
+                    <div class="alert alert-warning">
+                        Invalid image configuration
                     </div>
                 {% else %}
                     <div class="alert alert-warning">
@@ -586,6 +598,7 @@ body.dark-mode .form-select:disabled {
                     accept="image/*">
             </div>
         </div>
+
         <!-- =========================
             LAST PAGE IMAGE
         ========================== -->
@@ -593,11 +606,15 @@ body.dark-mode .form-select:disabled {
             <div class="col-md-6">
                 <label class="form-label">अंतिम पृष्ठ प्रतिमा/Last Page Image</label>
 
-                {% if ebook.eb_last_page_photo %}
+                {% if ebook.eb_last_page_photo and last_page_enc %}
                     <div class="alert alert-info">
-                        <a href="/media/{{ ebook.eb_last_page_photo }}" target="_blank">
+                        <a href="{% url 'secure_ebook_file_view' last_page_enc %}" target="_blank">
                             अंतिम पृष्ठ प्रतिमा पहा / View Last Page Image 
                         </a>
+                    </div>
+                {% elif ebook.eb_last_page_photo %}
+                    <div class="alert alert-warning">
+                        Invalid image configuration
                     </div>
                 {% else %}
                     <div class="alert alert-warning">

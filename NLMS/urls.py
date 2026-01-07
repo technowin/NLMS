@@ -54,7 +54,7 @@ urlpatterns = [
 
     # translate in marathi
     path('translate/word/', translate_word, name='translate_word'),
-
+    path('secure-ebook-file/<str:file_type_enc>/', secure_ebook_file_view, name='secure_ebook_file_view'),
 
     # Account
     path("", library_list,name='library_list'),

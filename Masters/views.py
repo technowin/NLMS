@@ -3863,9 +3863,7 @@ def ebook_catalog_index(request):
         # Always return HttpResponse, even on error
         return render(request, 'Master/ebook_catalog_index.html', {"catalogs": []})
 
-
 @login_required
-
 def ebook_create(request):
     try:
         user = request.user.id
@@ -3952,160 +3950,170 @@ def ebook_create(request):
             })
 
         # ---------- POST ----------
-        if request.method == "POST":
+        elif request.method == "POST":
 
-            # ---------- TITLE HANDLING ----------
-            # manual_title = request.POST.get("eb_title_text", "").strip()
-            # catalog_title = request.POST.get("eb_title_catalog", "").strip()
-            eb_title = request.POST.get("eb_title_text", "").strip()
-            cat_id = request.POST.get("cat_id", "").strip()
-
-            ebook_type_value = request.POST.get("ebook_type", "").strip()
-            ebook_type_id = dec(ebook_type_value) if ebook_type_value else None
-            ebook_type = EbookTypeMaster.objects.filter(type_id=ebook_type_id).first()
-
-            # if ebook_type and "library" in ebook_type.ebookTypeCode.lower() and cat_id:
-            #     eb_title = catalog_title
-            # else:
-            #     eb_title = manual_title
-            #     cat_id = None
-            if not (ebook_type and "library" in ebook_type.ebookTypeCode.lower()):cat_id = None
-
-
-            # ---------- FILE INPUTS ----------
-            pdf_file = request.FILES.get("eb_pdf_url")
-            front_photo = request.FILES.get("eb_front_page_photo")
-            last_photo = request.FILES.get("eb_last_page_photo")
-
-            # ---------- FORM DATA ----------
-            form_data = {
-                "eb_title": eb_title,
-                "eb_subtitle": request.POST.get("eb_subtitle", "").strip(),
-                "eb_author": request.POST.get("eb_author", "").strip(),
-                "eb_other_authors": request.POST.get("eb_other_authors", "").strip(),
-                "eb_publisher": request.POST.get("eb_publisher", "").strip(),
-                "eb_isbn_issn": request.POST.get("eb_isbn_issn", "").strip(),
-                "eb_edition": request.POST.get("eb_edition", "").strip(),
-                "eb_subject": dec(request.POST.get("eb_subject")) if request.POST.get("eb_subject") else None,
-                "remarks": request.POST.get("remarks", "").strip(),
-                "eb_keywords": request.POST.get("eb_keywords", "").strip(),
-                "eb_language": request.POST.get("eb_language", "").strip(),
-                "eb_publication_place": request.POST.get("eb_publication_place", "").strip(),
-                "eb_year_of_publication": request.POST.get("eb_year_of_publication", "").strip(),
-                "eb_pages": request.POST.get("eb_pages", "").strip(),
-                "call_number": request.POST.get("call_number", "").strip(),
-                "cutter_number": request.POST.get("cutter_number", "").strip(),
-                "eb_classification_number": request.POST.get("eb_classification_number", "").strip(),
-                "eb_date_of_registration": request.POST.get("eb_date_of_registration") or date.today(),
-            }
-
-            required = ["eb_title", "eb_author", "eb_language", "eb_subject"]
-            subject = SubjectTypeMaster.objects.filter(id=form_data["eb_subject"]).first()
-            if any(not form_data[k] for k in required):
-                messages.error(request, "Please fill all mandatory fields")
-                return redirect("ebook_create")
-             # ---------- AUTO-GENERATE CUTTER NUMBER ----------
-            if not form_data["cutter_number"] and form_data["eb_author"]:
-                author_clean = ''.join(c for c in form_data["eb_author"] if c.isalpha())
-                form_data["cutter_number"] = author_clean[:3].upper() if author_clean else "XXX"
-
-            # ---------- AUTO-GENERATE CLASSIFICATION NUMBER ----------
-            if not form_data["eb_classification_number"] and subject and subject.subjectCode:
-                form_data["eb_classification_number"] = f"{subject.subjectCode:03}"
-
-            # ---------- AUTO-GENERATE CALL NUMBER ----------
-            if not form_data["call_number"] and form_data["eb_classification_number"] and form_data["cutter_number"]:
-                year = form_data["eb_year_of_publication"] if form_data["eb_year_of_publication"].isdigit() else "XXXX"
-                form_data["call_number"] = f"{form_data['eb_classification_number']}.{form_data['cutter_number']}.{year}"
-            
+            encrypted_id = request.POST.get('encrypted_id')
+            if not encrypted_id:
+                messages.error(request, "Invalid e-book.")
+                return redirect('ebook_catalog_index')
 
             try:
-                with transaction.atomic():
+                ebook_id = dec(encrypted_id)
+            except:
+                messages.error(request, "Invalid e-book.")
+                return redirect('ebook_catalog_index')
 
+            ebook = LibraryEbook.objects.filter(ebook_id=ebook_id).first()
+            if not ebook:
+                messages.error(request, "E-Book not found.")
+                return redirect('ebook_catalog_index')
+
+            form = request.POST
+
+            # ---------- ALLOWED FIELD UPDATES ----------
+            # ❗ Title & Ebook Type intentionally NOT updated (readonly)
+            ebook.eb_subtitle = form.get('eb_subtitle', '').strip()
+            ebook.eb_author = form.get('eb_author', '').strip()
+            ebook.eb_other_authors = form.get('eb_other_authors', '').strip()
+            ebook.eb_publisher = form.get('eb_publisher', '').strip()
+            ebook.eb_isbn_issn = form.get('eb_isbn_issn', '').strip()
+            ebook.eb_edition = form.get('eb_edition', '').strip()
+            ebook.eb_keywords = form.get('eb_keywords', '').strip()
+            ebook.eb_publication_place = form.get('eb_publication_place', '').strip()
+            ebook.eb_year_of_publication = form.get('eb_year_of_publication') or None
+            ebook.eb_pages = form.get('eb_pages', '').strip()
+            ebook.remarks = form.get('remarks', '').strip()
+            ebook.eb_language = form.get('eb_language', '').strip()
+            external_url = form.get('eb_pdf_url', '').strip()
+
+            ebook.eb_date_of_registration = (
+                form.get('eb_date_of_registration')
+                or ebook.eb_date_of_registration
+            )
+
+            # ---------- SUBJECT ----------
+            subject_enc = form.get("eb_subject")
+            ebook.eb_subject = (
+                SubjectTypeMaster.objects.filter(id=dec(subject_enc)).first()
+                if subject_enc else None
+            )
+
+            # ---------- REQUIRED FIELDS ----------
+            if not ebook.eb_author or not ebook.eb_language or not ebook.eb_subject:
+                messages.error(request, "Please fill all required fields.")
+                return redirect(f"{request.path}?ebook_id={encrypted_id}")
+
+            # =========================================================
+            # FILE HANDLING WITH FILE STORAGE SERVICE
+            # =========================================================
+            library_code = request.session.get("library_db", "default")
+            base_dir = f"{library_code}/EBooks/{ebook.ebook_id}"
+
+            try:
+                # ---------- PDF UPLOAD ----------
+                pdf_file = request.FILES.get("ebook_file")
+                if pdf_file:
+                    # Validate file type
+                    if not pdf_file.name.lower().endswith('.pdf'):
+                        messages.error(request, "Only PDF files are allowed for ebooks.")
+                        return redirect(f"{request.path}?ebook_id={encrypted_id}")
                     
+                    # Generate unique filename
+                    original_name = os.path.splitext(pdf_file.name)[0]
+                    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+                    unique_filename = f"ebook_{original_name}_{timestamp}.pdf"
+                    
+                    # Build save path
+                    pdf_save_path = f"{base_dir}/book_pdf/{unique_filename}"
+                    
+                    # ✅ Delete old PDF file if exists
+                    if ebook.eb_pdf_url and not ebook.eb_pdf_url.startswith(('http://', 'https://')):
+                        file_storage_service.delete_file(ebook.eb_pdf_url)
+                    
+                    # ✅ Save new PDF using FileStorageService
+                    saved_pdf_path = file_storage_service.save_file(pdf_file, pdf_save_path)
+                    ebook.eb_pdf_url = saved_pdf_path
+                
+                elif external_url and external_url.startswith(("http://", "https://")):
+                    # If updating with external URL and had a local PDF, delete the local file
+                    if ebook.eb_pdf_url and not ebook.eb_pdf_url.startswith(('http://', 'https://')):
+                        file_storage_service.delete_file(ebook.eb_pdf_url)
+                    ebook.eb_pdf_url = external_url
 
-                    ebook = LibraryEbook.objects.create(
-                        eb_title=form_data["eb_title"],
-                        eb_subtitle=form_data["eb_subtitle"],
-                        eb_author=form_data["eb_author"],
-                        eb_other_authors=form_data["eb_other_authors"],
-                        eb_publisher=form_data["eb_publisher"],
-                        eb_isbn_issn=form_data["eb_isbn_issn"],
-                        eb_edition=form_data["eb_edition"],
-                        eb_subject=subject,
-                        ebook_type=ebook_type,
-                        remarks=form_data["remarks"],
-                        eb_keywords=form_data["eb_keywords"],
-                        eb_language=form_data["eb_language"],
-                        eb_publication_place=form_data["eb_publication_place"],
-                        eb_year_of_publication=int(form_data["eb_year_of_publication"]) if form_data["eb_year_of_publication"].isdigit() else None,
-                        eb_pages=form_data["eb_pages"],
-                        eb_pdf_url=None,
-                        eb_front_page_photo=None,
-                        eb_last_page_photo=None,
-                        call_number=form_data["call_number"],
-                        cutter_number=form_data["cutter_number"],
-                        eb_classification_number=form_data["eb_classification_number"],
-                        eb_date_of_registration=form_data["eb_date_of_registration"],
-                        eb_status_id=1,
-                        created_by=user,
-                        updated_by=user
-                    )
+                # ---------- FRONT IMAGE ----------
+                front = request.FILES.get("eb_front_page_photo")
+                if front:
+                    # Validate image file
+                    allowed_image_ext = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    ext = os.path.splitext(front.name)[1].lower()
+                    if ext not in allowed_image_ext:
+                        messages.error(request, "Only JPG, PNG, GIF, or WebP images are allowed.")
+                        return redirect(f"{request.path}?ebook_id={encrypted_id}")
+                    
+                    # Generate unique filename
+                    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+                    unique_filename = f"front_{ebook.ebook_id}_{timestamp}{ext}"
+                    
+                    # Build save path
+                    front_save_path = f"{base_dir}/book_images/{unique_filename}"
+                    
+                    # ✅ Delete old front image if exists
+                    if ebook.eb_front_page_photo:
+                        file_storage_service.delete_file(ebook.eb_front_page_photo)
+                    
+                    # ✅ Save new front image using FileStorageService
+                    saved_front_path = file_storage_service.save_file(front, front_save_path)
+                    ebook.eb_front_page_photo = saved_front_path
 
-                    # ---------- CREATE FOLDERS ----------
-                    base_path = os.path.join(settings.MEDIA_ROOT, "L01", "EBooks", str(ebook.ebook_id))
-                    pdf_path = os.path.join(base_path, "book_pdf")
-                    img_path = os.path.join(base_path, "book_images")
-                    os.makedirs(pdf_path, exist_ok=True)
-                    os.makedirs(img_path, exist_ok=True)
+                # ---------- LAST IMAGE ----------
+                last = request.FILES.get("eb_last_page_photo")
+                if last:
+                    # Validate image file
+                    allowed_image_ext = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    ext = os.path.splitext(last.name)[1].lower()
+                    if ext not in allowed_image_ext:
+                        messages.error(request, "Only JPG, PNG, GIF, or WebP images are allowed.")
+                        return redirect(f"{request.path}?ebook_id={encrypted_id}")
+                    
+                    # Generate unique filename
+                    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+                    unique_filename = f"back_{ebook.ebook_id}_{timestamp}{ext}"
+                    
+                    # Build save path
+                    last_save_path = f"{base_dir}/book_images/{unique_filename}"
+                    
+                    # ✅ Delete old last image if exists
+                    if ebook.eb_last_page_photo:
+                        file_storage_service.delete_file(ebook.eb_last_page_photo)
+                    
+                    # ✅ Save new last image using FileStorageService
+                    saved_last_path = file_storage_service.save_file(last, last_save_path)
+                    ebook.eb_last_page_photo = saved_last_path
 
-                    # ---------- SAVE PDF ----------
-                    if pdf_file:
-                        filename = f"ebook_{pdf_file.name}".replace(" ", "_")
-                        full_path = os.path.join(pdf_path, filename)
-                        with open(full_path, "wb+") as f:
-                            for chunk in pdf_file.chunks():
-                                f.write(chunk)
-                        ebook.eb_pdf_url = f"L01/EBooks/{ebook.ebook_id}/book_pdf/{filename}"
+                # ---------- AUTO-GENERATE CUTTER NUMBER ----------
+                if not ebook.cutter_number and ebook.eb_author:
+                    author_clean = ''.join(c for c in ebook.eb_author if c.isalpha())
+                    ebook.cutter_number = author_clean[:3].upper() if author_clean else "XXX"
 
-                    # ---------- SAVE FRONT IMAGE ----------
-                    if front_photo:
-                        ext = os.path.splitext(front_photo.name)[1].lower()
-                        filename = f"front_{ebook.ebook_id}{ext}"
-                        full_path = os.path.join(img_path, filename)
-                        with open(full_path, "wb+") as f:
-                            for chunk in front_photo.chunks():
-                                f.write(chunk)
-                        ebook.eb_front_page_photo = f"L01/EBooks/{ebook.ebook_id}/book_images/{filename}"
+                # ---------- AUTO-GENERATE CLASSIFICATION NUMBER ----------
+                if not ebook.eb_classification_number and ebook.eb_subject and ebook.eb_subject.subjectCode:
+                    ebook.eb_classification_number = f"{ebook.eb_subject.subjectCode:03}"
 
-                    # ---------- SAVE LAST IMAGE ----------
-                    if last_photo:
-                        ext = os.path.splitext(last_photo.name)[1].lower()
-                        filename = f"back_{ebook.ebook_id}{ext}"
-                        full_path = os.path.join(img_path, filename)
-                        with open(full_path, "wb+") as f:
-                            for chunk in last_photo.chunks():
-                                f.write(chunk)
-                        ebook.eb_last_page_photo = f"L01/EBooks/{ebook.ebook_id}/book_images/{filename}"
+                # ---------- AUTO-GENERATE CALL NUMBER ----------
+                if not ebook.call_number and ebook.eb_classification_number and ebook.cutter_number:
+                    year = str(ebook.eb_year_of_publication) if ebook.eb_year_of_publication else "XXXX"
+                    ebook.call_number = f"{ebook.eb_classification_number}.{ebook.cutter_number}.{year}"
 
-                    # ---------- UPDATE BookCatalog ----------
-                    if cat_id:
-                        book = BookCatalog.objects.filter(cat_ref_num=cat_id).first()
-                        if book:
-                            book.ebook_id = ebook
-                            book.ebook_available = "Yes"
-                            book.updated_by = user
-                            book.save()
+                # ---------- SAVE ----------
+                ebook.updated_by = user
+                ebook.save()
 
-                    ebook.save()
-
-                messages.success(request, f"E-Book '{ebook.eb_title}' saved successfully!")
-                return redirect("ebook_catalog_index")
+                messages.success(request, f"E-Book '{ebook.eb_title}' updated successfully!")
+                return redirect('ebook_catalog_index')
 
             except Exception as e:
-                messages.error(request, str(e))
-                return redirect("ebook_create")
-
+                messages.error(request, f"Error updating files: {str(e)}")
+                return redirect(f"{request.path}?ebook_id={encrypted_id}")
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         callproc("stp_error_log", [tb[0].name, str(e), user])
@@ -4184,7 +4192,10 @@ def ebook_edit(request):
                 "subjects": subjects,
                 "ebook_types": ebook_types,
                 "years": years,
-                "encrypted_id": encrypted_id
+                "encrypted_id": encrypted_id,
+                "front_page_enc": enc(str(ebook.ebook_id) + "_front") if ebook.eb_front_page_photo else None,
+                "last_page_enc": enc(str(ebook.ebook_id) + "_back") if ebook.eb_last_page_photo else None,
+                "pdf_enc": enc(str(ebook.ebook_id) + "_pdf") if ebook.eb_pdf_url and not ebook.eb_pdf_url.startswith(('http://', 'https://')) else None,
             }
 
             return render(request, "Master/ebook_edit.html", context)
@@ -4246,64 +4257,101 @@ def ebook_edit(request):
                 return redirect(f"{request.path}?ebook_id={encrypted_id}")
 
             # =========================================================
-            # FILE HANDLING
+            # FILE HANDLING WITH FILE STORAGE SERVICE
             # =========================================================
-            ebook_main_folder = os.path.join(
-                settings.MEDIA_ROOT, "L01", "EBooks", str(ebook.ebook_id)
-            )
-            pdf_folder = os.path.join(ebook_main_folder, "book_pdf")
-            img_folder = os.path.join(ebook_main_folder, "book_images")
+            library_code = request.session.get("library_db", "default")
+            base_dir = f"{library_code}/EBooks/{ebook.ebook_id}"
 
-            os.makedirs(pdf_folder, exist_ok=True)
-            os.makedirs(img_folder, exist_ok=True)
+            try:
+                # ---------- PDF UPLOAD ----------
+                pdf_file = request.FILES.get("ebook_file")
+                if pdf_file:
+                    # Validate file type
+                    if not pdf_file.name.lower().endswith('.pdf'):
+                        messages.error(request, "Only PDF files are allowed for ebooks.")
+                        return redirect(f"{request.path}?ebook_id={encrypted_id}")
+                    
+                    # Generate unique filename
+                    original_name = os.path.splitext(pdf_file.name)[0]
+                    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+                    unique_filename = f"ebook_{original_name}_{timestamp}.pdf"
+                    
+                    # Build save path
+                    pdf_save_path = f"{base_dir}/book_pdf/{unique_filename}"
+                    
+                    # ✅ Delete old PDF file if exists
+                    if ebook.eb_pdf_url and not ebook.eb_pdf_url.startswith(('http://', 'https://')):
+                        file_storage_service.delete_file(ebook.eb_pdf_url)
+                    
+                    # ✅ Save new PDF using FileStorageService
+                    saved_pdf_path = file_storage_service.save_file(pdf_file, pdf_save_path)
+                    ebook.eb_pdf_url = saved_pdf_path
+                
+                elif external_url and external_url.startswith(("http://", "https://")):
+                    # If updating with external URL and had a local PDF, delete the local file
+                    if ebook.eb_pdf_url and not ebook.eb_pdf_url.startswith(('http://', 'https://')):
+                        file_storage_service.delete_file(ebook.eb_pdf_url)
+                    ebook.eb_pdf_url = external_url
 
-            # ---------- PDF UPLOAD ----------
-            pdf_file = request.FILES.get("ebook_file")
-            if pdf_file:
-                filename = f"ebook_{ebook.ebook_id}_{pdf_file.name}".replace(' ', '_')
-                path = os.path.join(pdf_folder, filename)
+                # ---------- FRONT IMAGE ----------
+                front = request.FILES.get("eb_front_page_photo")
+                if front:
+                    # Validate image file
+                    allowed_image_ext = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    ext = os.path.splitext(front.name)[1].lower()
+                    if ext not in allowed_image_ext:
+                        messages.error(request, "Only JPG, PNG, GIF, or WebP images are allowed.")
+                        return redirect(f"{request.path}?ebook_id={encrypted_id}")
+                    
+                    # Generate unique filename
+                    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+                    unique_filename = f"front_{ebook.ebook_id}_{timestamp}{ext}"
+                    
+                    # Build save path
+                    front_save_path = f"{base_dir}/book_images/{unique_filename}"
+                    
+                    # ✅ Delete old front image if exists
+                    if ebook.eb_front_page_photo:
+                        file_storage_service.delete_file(ebook.eb_front_page_photo)
+                    
+                    # ✅ Save new front image using FileStorageService
+                    saved_front_path = file_storage_service.save_file(front, front_save_path)
+                    ebook.eb_front_page_photo = saved_front_path
 
-                with open(path, "wb+") as f:
-                    for chunk in pdf_file.chunks():
-                        f.write(chunk)
+                # ---------- LAST IMAGE ----------
+                last = request.FILES.get("eb_last_page_photo")
+                if last:
+                    # Validate image file
+                    allowed_image_ext = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    ext = os.path.splitext(last.name)[1].lower()
+                    if ext not in allowed_image_ext:
+                        messages.error(request, "Only JPG, PNG, GIF, or WebP images are allowed.")
+                        return redirect(f"{request.path}?ebook_id={encrypted_id}")
+                    
+                    # Generate unique filename
+                    timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+                    unique_filename = f"back_{ebook.ebook_id}_{timestamp}{ext}"
+                    
+                    # Build save path
+                    last_save_path = f"{base_dir}/book_images/{unique_filename}"
+                    
+                    # ✅ Delete old last image if exists
+                    if ebook.eb_last_page_photo:
+                        file_storage_service.delete_file(ebook.eb_last_page_photo)
+                    
+                    # ✅ Save new last image using FileStorageService
+                    saved_last_path = file_storage_service.save_file(last, last_save_path)
+                    ebook.eb_last_page_photo = saved_last_path
 
-                ebook.eb_pdf_url = f"L01/EBooks/{ebook.ebook_id}/book_pdf/{filename}"
+                # ---------- SAVE ----------
+                ebook.updated_by = user
+                ebook.save()
 
-            elif external_url and external_url.startswith(("http://", "https://")):
-                ebook.eb_pdf_url = external_url
-
-            # ---------- FRONT IMAGE ----------
-            front = request.FILES.get("eb_front_page_photo")
-            if front:
-                ext = os.path.splitext(front.name)[1].lower()
-                filename = f"front_{ebook.ebook_id}{ext}"
-                path = os.path.join(img_folder, filename)
-
-                with open(path, "wb+") as f:
-                    for chunk in front.chunks():
-                        f.write(chunk)
-
-                ebook.eb_front_page_photo = f"L01/EBooks/{ebook.ebook_id}/book_images/{filename}"
-
-            # ---------- LAST IMAGE ----------
-            last = request.FILES.get("eb_last_page_photo")
-            if last:
-                ext = os.path.splitext(last.name)[1].lower()
-                filename = f"back_{ebook.ebook_id}{ext}"
-                path = os.path.join(img_folder, filename)
-
-                with open(path, "wb+") as f:
-                    for chunk in last.chunks():
-                        f.write(chunk)
-
-                ebook.eb_last_page_photo = f"L01/EBooks/{ebook.ebook_id}/book_images/{filename}"
-
-            # ---------- SAVE ----------
-            ebook.updated_by = user
-            ebook.save()
-
-            messages.success(request, f"E-Book '{ebook.eb_title}' updated successfully!")
-            return redirect('ebook_catalog_index')
+                messages.success(request, f"E-Book '{ebook.eb_title}' updated successfully!")
+                return redirect('ebook_catalog_index')
+            except Exception as e:
+                messages.error(request, f"Error updating files: {str(e)}")
+                return redirect(f"{request.path}?ebook_id={encrypted_id}")
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -4312,7 +4360,139 @@ def ebook_edit(request):
         messages.error(request, "Oops... Something went wrong!")
         return redirect('ebook_catalog_index')
     
-
+def secure_ebook_file_view(request, file_type_enc):
+    """
+    Secure view for ebook files (front page, last page, PDF)
+    """
+    try:
+        # Decrypt the file type
+        decrypted = dec(file_type_enc)
+        ebook_id, file_type = decrypted.rsplit('_', 1)
+        
+        # Get the ebook
+        ebook = get_object_or_404(LibraryEbook, ebook_id=int(ebook_id))
+        
+        # Determine which file to serve
+        if file_type == 'front':
+            file_path = ebook.eb_front_page_photo
+            file_name = f"front_page_{ebook.ebook_id}.jpg"
+        elif file_type == 'back':
+            file_path = ebook.eb_last_page_photo
+            file_name = f"last_page_{ebook.ebook_id}.jpg"
+        elif file_type == 'pdf':
+            file_path = ebook.eb_pdf_url
+            file_name = f"{ebook.eb_title.replace(' ', '_')}.pdf"
+        else:
+            raise Http404("Invalid file type")
+        
+        if not file_path:
+            raise Http404("File not found")
+        
+        # If it's an external URL, redirect to it
+        if file_path.startswith(('http://', 'https://')):
+            return redirect(file_path)
+        
+        # Get environment
+        environment = getattr(settings, 'ENVIRONMENT', 'local')
+        
+        if environment == 'production':
+            # ========== PRODUCTION: Stream from S3 ==========
+            # Prepare S3 path
+            s3_path = file_storage_service._prepare_path(file_path, add_base=True)
+            
+            # Get AWS credentials
+            aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', '')
+            aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', '')
+            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', '')
+            region = getattr(settings, 'AWS_S3_REGION_NAME', 'ap-south-1')
+            
+            if not all([aws_access_key, aws_secret_key, bucket_name]):
+                raise Http404("S3 configuration missing")
+            
+            # Create S3 client
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=aws_access_key,
+                aws_secret_access_key=aws_secret_key,
+                region_name=region
+            )
+            
+            try:
+                # Get file from S3
+                s3_response = s3_client.get_object(Bucket=bucket_name, Key=s3_path)
+                
+                # Get content type
+                content_type = s3_response.get('ContentType', 'application/octet-stream')
+                if content_type == 'application/octet-stream':
+                    # Guess from filename
+                    import mimetypes
+                    guessed_type, _ = mimetypes.guess_type(file_name)
+                    if guessed_type:
+                        content_type = guessed_type
+                
+                # Stream the file
+                from django.http import StreamingHttpResponse
+                
+                def file_iterator(file_obj, chunk_size=8192):
+                    while True:
+                        chunk = file_obj.read(chunk_size)
+                        if not chunk:
+                            break
+                        yield chunk
+                
+                response = StreamingHttpResponse(
+                    file_iterator(s3_response['Body']),
+                    content_type=content_type
+                )
+                
+                # Set headers
+                from urllib.parse import quote
+                response['Content-Disposition'] = f'inline; filename="{quote(file_name)}"'
+                response['Content-Length'] = str(s3_response['ContentLength'])
+                response['X-Content-Type-Options'] = 'nosniff'
+                
+                return response
+                
+            except ClientError as e:
+                print(f"[secure_ebook_file_view] S3 error: {e}")
+                raise Http404("File not found on S3")
+                
+        else:
+            # ========== LOCAL/TEST: Serve from local filesystem ==========
+            from django.http import FileResponse
+            from pathlib import Path
+            
+            # Get file path
+            file_path = Path(settings.MEDIA_ROOT) / Path(file_path.replace("\\", "/"))
+            
+            if not file_path.exists():
+                raise Http404(f"File not found at: {file_path}")
+            
+            # Determine content type
+            import mimetypes
+            content_type, encoding = mimetypes.guess_type(str(file_path))
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            
+            # Serve the file
+            response = FileResponse(
+                open(file_path, 'rb'),
+                content_type=content_type,
+                as_attachment=False,
+                filename=file_name
+            )
+            
+            response['X-Content-Type-Options'] = 'nosniff'
+            
+            return response
+            
+    except Http404:
+        raise
+    except Exception as e:
+        print(f"[secure_ebook_file_view] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise Http404("File not found")
 def track_click(request):
     if request.method == "POST":
         data = json.loads(request.body)
