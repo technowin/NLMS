@@ -30,10 +30,11 @@ def logged_in_user(request):
         library_code = request.session.get('library_db', None)
 
         role_name = ''
-        file_path = '/static/images/user.png'
+        file_path = None  # Changed from static path to None
         library_name_show = None
         library_details = None
         membershipshow = None
+        profile_picture_url = None  # Initialize as None
 
         if request.user.is_authenticated:
             user = str(request.user.id or '')
@@ -168,7 +169,7 @@ def logged_in_user(request):
                             if item['name'] == "सदस्यत्व देयक"
                         ]
                         membership_active = False
-        
+
         # =========================
         # FALLBACK FOR PROFILE PICTURE
         # =========================
@@ -188,7 +189,7 @@ def logged_in_user(request):
             'session_timeout_minutes': session_timeout_minutes,
             'reports': reports,
             'menu_items': menu_items,
-            'profile_picture_url': profile_picture_url,
+            'profile_picture_url': profile_picture_url,  # ✅ Now uses FileStorageService
             'membershipshow': membershipshow,
             'library_name_show': library_name_show,
             'membership_active': membership_active,
@@ -196,7 +197,23 @@ def logged_in_user(request):
 
     except Exception as e:
         print(f"Error in context processor: {e}")
-        return {}
+        import traceback
+        traceback.print_exc()
+        # Return safe defaults on error
+        from django.templatetags.static import static
+        return {
+            'role_id': '',
+            'username': '',
+            'full_name': '',
+            'role_name': '',
+            'session_timeout_minutes': 30,
+            'reports': '',
+            'menu_items': [],
+            'profile_picture_url': static('img/user.png'),
+            'membershipshow': None,
+            'library_name_show': None,
+            'membership_active': False,
+        }
 
 # def logged_in_user(request):
 #     user = ''
