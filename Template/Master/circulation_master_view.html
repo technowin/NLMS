@@ -66,10 +66,10 @@
                         <div class="zoom-wrapper">
                             {% if circulation.bookcatalog.front_page_photo %}
                                 <img id="mainImage" 
-                                    src="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}" 
-                                    data-zoom="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}"
-                                    class="img-fluid rounded shadow-sm  main-image"
-                                    style="max-height: 450px; object-fit: contain; ">
+                                    src="{{ front_page_url }}" 
+                                    data-zoom="{{ front_page_url }}"
+                                    class="img-fluid rounded shadow-sm main-image"
+                                    style="max-height: 450px; object-fit: contain;">
                             {% else %}
                                 <p class="text-secondary">No Image Available</p>
                             {% endif %}
@@ -77,14 +77,14 @@
 
                         <div class="thumbnail-wrapper d-flex justify-content-center gap-2 mt-3">
                             {% if circulation.bookcatalog.front_page_photo %}
-                                <img src="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}" 
+                                <img src="{{ front_page_url }}" 
                                     class="img-thumbnail thumb-img active"
-                                    data-large="{{ MEDIA_URL }}{{ circulation.bookcatalog.front_page_photo }}">
+                                    data-large="{{ front_page_url }}">
                             {% endif %}
                             {% if circulation.bookcatalog.last_page_photo %}
-                                <img src="{{ MEDIA_URL }}{{ circulation.bookcatalog.last_page_photo }}" 
+                                <img src="{{ last_page_url }}" 
                                     class="img-thumbnail thumb-img"
-                                    data-large="{{ MEDIA_URL }}{{ circulation.bookcatalog.last_page_photo }}">
+                                    data-large="{{ last_page_url }}">
                             {% endif %}
                         </div>
                     </div>

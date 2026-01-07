@@ -3694,10 +3694,23 @@ def circulation_master_view(request):
             )
             .get(id=circulation_id)
         )
+        
+        # Get image URLs using FileStorageService
+        front_page_url = "#"
+        last_page_url = "#"
+        
+        if circulation.bookcatalog.front_page_photo:
+            front_page_url = file_storage_service.get_file_url(circulation.bookcatalog.front_page_photo)
+        
+        if circulation.bookcatalog.last_page_photo:
+            last_page_url = file_storage_service.get_file_url(circulation.bookcatalog.last_page_photo)
 
         return render(request, "Master/circulation_master_view.html", {
             "circulation": circulation,
-            'MEDIA_URL': settings.MEDIA_URL,
+            'front_page_url': front_page_url,
+            'last_page_url': last_page_url,
+            'MEDIA_URL': settings.MEDIA_URL,  # Still useful for other media
+            'file_storage_service': file_storage_service,  # Pass service instance
         })
 
     except Exception as e:
@@ -3738,6 +3751,16 @@ def circulation_master_edit(request):
             
             for circulation in [circulation]:
                 circulation.circulation_id_enc = enc(str(circulation.id))
+                
+            # Get image URLs using FileStorageService
+            front_page_url = "#"
+            last_page_url = "#"
+            
+            if circulation.bookcatalog.front_page_photo:
+                front_page_url = file_storage_service.get_file_url(circulation.bookcatalog.front_page_photo)
+            
+            if circulation.bookcatalog.last_page_photo:
+                last_page_url = file_storage_service.get_file_url(circulation.bookcatalog.last_page_photo)
 
             # Dropdown options
             circulation_statuses = status_master.objects.filter(status_type="Circulation Status", is_active=1)
@@ -3749,7 +3772,10 @@ def circulation_master_edit(request):
                 "circulation_statuses": circulation_statuses,
                 "processing_statuses": processing_statuses,
                 "locations": locations,
-                'MEDIA_URL': settings.MEDIA_URL
+                'MEDIA_URL': settings.MEDIA_URL,
+                'front_page_url': front_page_url,
+                'last_page_url': last_page_url,
+                'file_storage_service': file_storage_service,  # Pass service instance if needed
             })
 
         if request.method == "POST":
