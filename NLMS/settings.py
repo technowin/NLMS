@@ -73,7 +73,7 @@ if ENVIRONMENT == 'local':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', 'www.nmmclibrary.in']
 
 # SITE_URL configuration
 if ENVIRONMENT == 'local':
@@ -81,7 +81,7 @@ if ENVIRONMENT == 'local':
 elif ENVIRONMENT == 'test':
     SITE_URL = "http://3.111.76.175"
 else:  # production
-    SITE_URL = "http://43.205.183.251"
+    SITE_URL = "http://www.nmmclibrary.in"
 
 import mimetypes
 mimetypes.add_type("application/javascript", ".mjs")
@@ -93,7 +93,7 @@ DATABASES = {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'nlms_db',      # Replace with your database name
         'USER': 'root',      # Replace with your database user
-        'PASSWORD': 'Mysql_MH-047319',  # Replace with your database password
+        'PASSWORD': '8888888888888',  # Replace with your database password
         'HOST': '127.0.0.1',       # IP FOR LOCAL VM
         'PORT': '3306',            
         'OPTIONS': {
@@ -104,7 +104,7 @@ DATABASES = {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'L01_db',
         'USER': 'root',
-        'PASSWORD': 'Mysql_MH-047319',
+        'PASSWORD': '8888888888888',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
@@ -112,7 +112,7 @@ DATABASES = {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'L02_db',
         'USER': 'root',
-        'PASSWORD': 'Mysql_MH-047319',
+        'PASSWORD': '8888888888888',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
@@ -261,11 +261,15 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-    'https://push3.aclgateway.com'
+    'http://push3.aclgateway.com',
+    'http://www.nmmclibrary.in',    # ← Add your domain
+    'http://nmmclibrary.in',        # ← Add non-www version
 ]
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
-    'https://push3.aclgateway.com'
+    'http://push3.aclgateway.com',
+    'http://www.nmmclibrary.in',    # ← Add your domain
+    'http://nmmclibrary.in',        # ← Add non-www version
 ]
 AUTO_LOGOUT = {
     'IDLE_TIME': 3600,
@@ -410,3 +414,17 @@ if ENVIRONMENT != 'production':
 if 'S3_BASE_PATH' not in locals():
     S3_BASE_PATH = ''
     print(f"Default File Storage Base Path: '{S3_BASE_PATH}'")
+    
+# For production with domain (should be True when you have SSL certificate)
+if ENVIRONMENT == 'production':
+    SESSION_COOKIE_SECURE = True    # Only send session cookie over HTTPS
+    CSRF_COOKIE_SECURE = True       # Only send CSRF cookie over HTTPS
+    SECURE_SSL_REDIRECT = True      # Redirect HTTP to HTTPS
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # Update SITE_URL to HTTPS
+    SITE_URL = "http://www.nmmclibrary.in"
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
