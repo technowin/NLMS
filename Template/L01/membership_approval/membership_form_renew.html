@@ -1278,6 +1278,11 @@
                                 <span class="fine-label">Gap Period:</span>
                                 <span id="gapMonthsDisplay">0 month(s)</span>
                             </div>
+                            <!-- ADD THIS LINE -->
+                            <div class="fine-item">
+                                <span class="fine-label">Gap Dates:</span>
+                                <span id="gapPeriodDates" style="color: #6c757d; font-style: italic;"></span>
+                            </div>
                             <div class="fine-item">
                                 <span class="fine-label">Monthly Fine (Subscription + Fine):</span>
                                 <span id="monthlyFineRate">₹0</span>
@@ -1338,9 +1343,12 @@
             // Calculate gap months
             let gapMonths = calculateRenewalGapMonths(prevEndDate, newStartDate);
             
-            // Calculate fine for gap months
-            let finePerGapMonth = monthlySubscriptionFee + monthlyFineFee;
-            let totalGapFine = gapMonths * finePerGapMonth;
+            // Calculate fine for gap months - SEPARATE NOW!
+            let subscriptionPerMonth = monthlySubscriptionFee;  // ₹20
+            let finePerMonth = monthlyFineFee;                  // ₹5
+            let subscriptionDelayTotal = gapMonths * subscriptionPerMonth;  // gap months * ₹20
+            let gapFineTotal = gapMonths * finePerMonth;                    // gap months * ₹5
+            let totalGapFine = subscriptionDelayTotal + gapFineTotal;       // ₹25
             
             // ========== FIXED LATE FEE LOGIC ==========
             let lateFee = 0;
@@ -1366,6 +1374,71 @@
             } else {
                 $("#gapInfo").hide();
             }
+
+            // Calculate gap period dates (EXCLUDING late fee month)
+            let gapPeriodFrom = null;
+            let gapPeriodTo = null;
+            let gapPeriodDisplay = "";
+            
+            if (gapMonths > 0) {
+                // Gap start: day after previous membership ends
+                gapPeriodFrom = new Date(prevEndDate);
+                gapPeriodFrom.setDate(gapPeriodFrom.getDate() + 1);
+                
+                // Gap end: calculate based on gap months ONLY (not including late fee month)
+                gapPeriodTo = new Date(gapPeriodFrom);
+                
+                // Move forward by (gapMonths) months, then back 1 day
+                gapPeriodTo.setMonth(gapPeriodTo.getMonth() + gapMonths);
+                gapPeriodTo.setDate(gapPeriodTo.getDate() - 1);
+                
+                // Format dates for display
+                function formatDateForDisplay(date) {
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    return `${day}-${month}-${year}`;
+                }
+                
+                let gapFromDisplay = formatDateForDisplay(gapPeriodFrom);
+                let gapToDisplay = formatDateForDisplay(gapPeriodTo);
+                gapPeriodDisplay = `${gapFromDisplay} to ${gapToDisplay}`;
+                
+                // Add to UI display
+                $("#gapPeriodDates").text(gapPeriodDisplay).show();
+                
+                // Create hidden fields for form submission
+                $("#gapPeriodFromHidden, #gapPeriodToHidden, #gapPeriodDisplayHidden").remove();
+                
+                // Format for database (YYYY-MM-DD)
+                function formatDateForDB(date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'gapPeriodFromHidden',
+                    name: 'gap_period_from_date',
+                    value: formatDateForDB(gapPeriodFrom)
+                }).appendTo('#membershipForm');
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'gapPeriodToHidden',
+                    name: 'gap_period_to_date',
+                    value: formatDateForDB(gapPeriodTo)
+                }).appendTo('#membershipForm');
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'gapPeriodDisplayHidden',
+                    name: 'gap_period_display',
+                    value: gapPeriodDisplay
+                }).appendTo('#membershipForm');
+            }
             
             if (lateFee > 0) {
                 $("#lateFeeInfo").show();
@@ -1379,8 +1452,8 @@
             // Show the section
             $("#renewalFineSection").show();
             
-            // Store in hidden fields for submission
-            $("#gapMonthsHidden, #gapFineHidden, #lateFeeHidden").remove();
+            // Store in hidden fields for submission - ADD NEW FIELD!
+            $("#gapMonthsHidden, #subscriptionDelayHidden, #gapFineHidden, #lateFeeHidden").remove();
             
             $('<input>').attr({
                 type: 'hidden',
@@ -1391,9 +1464,16 @@
             
             $('<input>').attr({
                 type: 'hidden',
+                id: 'subscriptionDelayHidden',  // NEW
+                name: 'subscription_delay',
+                value: subscriptionDelayTotal   // ₹20 * gap months
+            }).appendTo('#membershipForm');
+            
+            $('<input>').attr({
+                type: 'hidden',
                 id: 'gapFineHidden',
                 name: 'gap_fine',
-                value: totalGapFine
+                value: gapFineTotal             // ₹5 * gap months
             }).appendTo('#membershipForm');
             
             $('<input>').attr({

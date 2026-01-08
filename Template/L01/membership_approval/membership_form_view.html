@@ -557,10 +557,27 @@
                                                 </thead>
                                                 <tbody>
                                                     {% if membership.gap_months %}
+                                                    <!-- Gap Subscription Delay (New) -->
+                                                    <tr class="table-warning">
+                                                        <td>
+                                                            Gap Subscription / मागील वर्गणी<br>
+                                                            <small class="text-muted">
+                                                                {{ membership.gap_months }} month(s) subscription delay / {{ membership.gap_months }} महिने वर्गणी विलंब
+                                                                {% if membership.gap_period_from and membership.gap_period_to %}
+                                                                    <br>({{ membership.gap_period_from }} to {{ membership.gap_period_to }})
+                                                                {% endif %}
+                                                            </small>
+                                                        </td>
+                                                        <td class="text-end">{{ membership.gap_subscription_delay|default:0|floatformat:2 }}</td>
+                                                    </tr>
+                                                    
+                                                    <!-- Gap Fine (Now only the penalty part) -->
                                                     <tr class="table-warning">
                                                         <td>
                                                             Gap Fine / मागील दंड<br>
-                                                            <small class="text-muted">{{ membership.gap_months }} month(s) gap / {{ membership.gap_months }} महिने मागे</small>
+                                                            <small class="text-muted">
+                                                                {{ membership.gap_months }} month(s) penalty / {{ membership.gap_months }} महिने दंड
+                                                            </small>
                                                         </td>
                                                         <td class="text-end">{{ membership.gap_fine|default:0|floatformat:2 }}</td>
                                                     </tr>
@@ -613,12 +630,39 @@
                                                             <td width="70%">Subscription / वर्गणी:</td>
                                                             <td width="30%" class="text-end">₹{{ membership.subscription|default:0|floatformat:2 }}</td>
                                                         </tr>
+                                                        
+                                                        <!-- Show detailed fine breakdown if exists -->
                                                         {% if membership.total_fine_membership %}
-                                                        <tr>
-                                                            <td>Total Fine / एकूण दंड:</td>
-                                                            <td class="text-end" id="displayFineAmount">+ ₹{{ membership.total_fine_membership|default:0|floatformat:2 }}</td>
-                                                        </tr>
+                                                            {% if membership.gap_subscription_delay %}
+                                                            <tr>
+                                                                <td>
+                                                                    Gap Subscription / मागील वर्गणी:
+                                                                    <br><small class="text-muted">{{ membership.gap_months }} month(s) / {{ membership.gap_months }} महिने</small>
+                                                                </td>
+                                                                <td class="text-end">+ ₹{{ membership.gap_subscription_delay|default:0|floatformat:2 }}</td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            
+                                                            {% if membership.gap_fine %}
+                                                            <tr>
+                                                                <td>Gap Fine / मागील दंड:</td>
+                                                                <td class="text-end">+ ₹{{ membership.gap_fine|default:0|floatformat:2 }}</td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            
+                                                            {% if membership.late_fee %}
+                                                            <tr>
+                                                                <td>Late Fee / विलंब शुल्क:</td>
+                                                                <td class="text-end">+ ₹{{ membership.late_fee|default:0|floatformat:2 }}</td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            
+                                                            <tr>
+                                                                <td><strong>Total Fine / एकूण दंड:</strong></td>
+                                                                <td class="text-end">+ ₹{{ membership.total_fine_membership|default:0|floatformat:2 }}</td>
+                                                            </tr>
                                                         {% endif %}
+                                                        
                                                         <tr class="border-top">
                                                             <td><strong>Total Payable Now / एकूण देय रक्कम:</strong></td>
                                                             <td class="text-end"><strong id="displayTotalAmount">₹{{ membership.subscription|add:membership.total_fine_membership|default:0|floatformat:2 }}</strong></td>
@@ -633,8 +677,19 @@
                                 <!-- Information Note -->
                                 <div class="alert alert-info small mt-3">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>Note:</strong> Deposit (₹{{ membership.deposit|default:0|floatformat:2 }}) and Entry Fees (₹{{ membership.entry_fees|default:0|floatformat:2 }}) were already paid during initial membership and are not payable now.
-                                    <br><strong>टीप:</strong> जमा रक्कम (₹{{ membership.deposit|default:0|floatformat:2 }}) आणि प्रवेश शुल्क (₹{{ membership.entry_fees|default:0|floatformat:2 }}) प्रारंभिक सदस्यतेत आधीच दिले गेले आहेत आणि आता देय नाहीत.
+                                    <strong>Note:</strong> 
+                                    Deposit (₹{{ membership.deposit|default:0|floatformat:2 }}) and Entry Fees (₹{{ membership.entry_fees|default:0|floatformat:2 }}) were already paid during initial membership and are not payable now.
+                                    <br>
+                                    {% if membership.gap_months %}
+                                        <strong>Fine Breakdown:</strong> 
+                                        Gap Subscription (₹{{ membership.gap_subscription_delay|default:0|floatformat:2 }}) + Gap Fine (₹{{ membership.gap_fine|default:0|floatformat:2 }}){% if membership.late_fee %} + Late Fee (₹{{ membership.late_fee|default:0|floatformat:2 }}){% endif %}
+                                    {% endif %}
+                                    <br><strong>टीप:</strong> 
+                                    जमा रक्कम (₹{{ membership.deposit|default:0|floatformat:2 }}) आणि प्रवेश शुल्क (₹{{ membership.entry_fees|default:0|floatformat:2 }}) प्रारंभिक सदस्यतेत आधीच दिले गेले आहेत आणि आता देय नाहीत.
+                                    {% if membership.gap_months %}
+                                        <br><strong>दंड विभाजन:</strong> 
+                                        मागील वर्गणी (₹{{ membership.gap_subscription_delay|default:0|floatformat:2 }}) + मागील दंड (₹{{ membership.gap_fine|default:0|floatformat:2 }}){% if membership.late_fee %} + विलंब शुल्क (₹{{ membership.late_fee|default:0|floatformat:2 }}){% endif %}
+                                    {% endif %}
                                 </div>
 
                                 <!-- Calculation Timestamp -->
@@ -711,7 +766,11 @@
                             <script>
                                 function confirmApproval() {
                                     const subscriptionAmount = parseFloat('{{ membership.subscription|default:0 }}');
-                                    const totalFineAmount = parseFloat('{{ membership.total_fine_membership|default:0 }}') || 0;
+                                    const gapSubscriptionDelay = parseFloat('{{ membership.gap_subscription_delay|default:0 }}') || 0;
+                                    const gapFine = parseFloat('{{ membership.gap_fine|default:0 }}') || 0;
+                                    const lateFee = parseFloat('{{ membership.late_fee|default:0 }}') || 0;
+                                    const totalFineAmount = gapSubscriptionDelay + gapFine + lateFee;
+                                    
                                     const adjustedAmountInput = document.getElementById('adjusted_amount');
                                     
                                     let finalFineAmount = totalFineAmount;
@@ -727,9 +786,22 @@
                                     
                                     const totalPayable = subscriptionAmount + finalFineAmount;
                                     
+                                    // Create detailed message
+                                    let message = `Total Amount: ₹${totalPayable.toFixed(2)}`;
+                                    
+                                    if (adjustedAmount !== null) {
+                                        message += `\n(Adjusted fine: ₹${adjustedAmount.toFixed(2)} instead of ₹${totalFineAmount.toFixed(2)})`;
+                                    } else if (totalFineAmount > 0) {
+                                        message += `\n\nBreakdown:`;
+                                        if (gapSubscriptionDelay > 0) message += `\n• Gap Subscription: ₹${gapSubscriptionDelay.toFixed(2)}`;
+                                        if (gapFine > 0) message += `\n• Gap Fine: ₹${gapFine.toFixed(2)}`;
+                                        if (lateFee > 0) message += `\n• Late Fee: ₹${lateFee.toFixed(2)}`;
+                                        message += `\n• Current Subscription: ₹${subscriptionAmount.toFixed(2)}`;
+                                    }
+                                    
                                     Swal.fire({
                                         title: 'देयक मान्य करायचे आहे का?',
-                                        text: `तुम्हाला ₹${totalPayable.toFixed(2)} रक्कम प्राप्त झाली आहे का?`,
+                                        text: `तुम्हाला ₹${totalPayable.toFixed(2)} रक्कम प्राप्त झाली आहे का?\n\n${message}`,
                                         icon: 'question',
                                         showCancelButton: true,
                                         confirmButtonText: 'होय, मान्य करा',
@@ -1704,10 +1776,14 @@
 <script>
     function updatePayableAmounts() {
         const subscriptionAmount = parseFloat('{{ membership.subscription|default:0 }}');
-        const originalFineAmount = parseFloat('{{ membership.total_fine_membership|default:0 }}') || 0;
+        const gapSubscriptionDelay = parseFloat('{{ membership.gap_subscription_delay|default:0 }}') || 0;
+        const gapFine = parseFloat('{{ membership.gap_fine|default:0 }}') || 0;
+        const lateFee = parseFloat('{{ membership.late_fee|default:0 }}') || 0;
+        const originalTotalFine = gapSubscriptionDelay + gapFine + lateFee;
+        
         const adjustedAmountInput = document.getElementById('adjusted_amount');
         
-        let finalFineAmount = originalFineAmount;
+        let finalFineAmount = originalTotalFine;
         let adjustedAmount = null;
         
         // If adjusted amount is entered, use it
@@ -1729,8 +1805,8 @@
         if (displayFineElement) {
             if (finalFineAmount > 0) {
                 // Show adjusted text if amount is adjusted
-                if (adjustedAmount !== null && adjustedAmount !== originalFineAmount) {
-                    displayFineElement.innerHTML = `+ ₹${finalFineAmount.toFixed(2)} <small class="text-muted">(Original: ₹${originalFineAmount.toFixed(2)})</small>`;
+                if (adjustedAmount !== null && adjustedAmount !== originalTotalFine) {
+                    displayFineElement.innerHTML = `+ ₹${finalFineAmount.toFixed(2)} <small class="text-muted">(Original: ₹${originalTotalFine.toFixed(2)})</small>`;
                 } else {
                     displayFineElement.textContent = `+ ₹${finalFineAmount.toFixed(2)}`;
                 }
@@ -1761,7 +1837,7 @@
         updatePayableAmounts();
     });
 
-    function confirmApproval() {
+    {% comment %} function confirmApproval() {
         const subscriptionAmount = parseFloat('{{ membership.subscription|default:0 }}');
         const originalFineAmount = parseFloat('{{ membership.total_fine_membership|default:0 }}') || 0;
         const adjustedAmountInput = document.getElementById('adjusted_amount');
@@ -1810,7 +1886,7 @@
                 document.getElementById('membershipForm').submit();
             }
         });
-    }
+    } {% endcomment %}
 
     function confirmRejection() {
         Swal.fire({

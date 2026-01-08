@@ -1500,8 +1500,11 @@ def membership_form_view(request):
                         entry_fees = float(membership.entry_fees or 0)
                         total_subscription = float(membership.subscription or 0)
                         
-                        # ORIGINAL FINE (from calculation)
-                        original_fine = float(membership.total_fine_membership or 0)
+                        # ORIGINAL FINE COMPONENTS (from calculation)
+                        gap_subscription_delay = float(membership.gap_subscription_delay or 0)
+                        gap_fine = float(membership.gap_fine or 0)
+                        late_fee = float(membership.late_fee or 0)
+                        original_total_fine = float(membership.total_fine_membership or 0)
                         
                         # Get monthly rate (already float)
                         monthly_subscription = float(membership.membership.subscription_fees or 0)
@@ -1516,12 +1519,20 @@ def membership_form_view(request):
                                 pass
                         
                         # Determine which fine amount to use for calculation
-                        fine_to_use = original_fine
+                        fine_to_use = original_total_fine
                         if adjusted_amount_float is not None:
                             fine_to_use = adjusted_amount_float
                         
                         # Calculate total amount
                         total_amount = deposit + entry_fees + total_subscription + fine_to_use
+                        
+                        # ✅ STEP 3: MODIFY ACTION if gap fine exists
+                        # Check if any fine components exist
+                        has_gap_fine = gap_fine > 0 or gap_subscription_delay > 0 or late_fee > 0
+                        
+                        # Modify the action variable
+                        if has_gap_fine and action == "renewal_approved":
+                            action = "renewal_gap_approved"
                         
                         # Create payment record
                         payment = PaymentDetails.objects.create(
@@ -1538,8 +1549,8 @@ def membership_form_view(request):
                             monthly_subscription_amount=monthly_subscription,
                             total_subscription_amount=total_subscription,
                             
-                            # FINE AMOUNT: Always store ORIGINAL calculated fine
-                            fine_amount=original_fine,
+                            # Total fine amount
+                            fine_amount=original_total_fine,
                             book_fine_amount=0,
                             
                             # ADJUSTED AMOUNT: Store adjusted amount if provided
@@ -1557,33 +1568,40 @@ def membership_form_view(request):
                             updated_by=user_code,
                             payment_date=timezone.now().date(),
                             
-                            # Payment breakdown
+                            # Payment breakdown with detailed fine components
                             remarks=(
                                 f"Renewal approved by {user_code}\n"
+                                f"Action: {action}\n"
                                 f"Subscription: ₹{monthly_subscription}/month × {membership.membership_duration or 1} months = ₹{total_subscription}\n"
                                 f"Deposit: ₹{deposit} | Entry Fees: ₹{entry_fees}\n"
-                                f"Original Fine: ₹{original_fine}\n"
+                                f"\n--- FINE BREAKDOWN ---\n"
+                                f"Gap Subscription Delay: ₹{gap_subscription_delay:.2f}\n"
+                                f"Gap Fine (Penalty): ₹{gap_fine:.2f}\n"
+                                f"Late Fee: ₹{late_fee:.2f}\n"
+                                f"Original Total Fine: ₹{original_total_fine:.2f}\n"
                                 f"{'Adjusted Fine: ₹' + str(adjusted_amount_float) if adjusted_amount_float is not None else ''}\n"
-                                f"Fine Charged: ₹{fine_to_use}\n"
-                                f"Total: ₹{total_amount}"
+                                f"Fine Charged: ₹{fine_to_use:.2f}\n"
+                                f"\n--- TOTAL ---\n"
+                                f"Total Amount: ₹{total_amount:.2f}"
                             )
                         )
                         
-                        # ✅ STEP 3: Update membership status
-                        membership.status_id = 5 # RENEWED status
-                        membership.actionperformed = action
+                        # ✅ STEP 4: Update membership status
+                        membership.status_id = 5  # RENEWED status
+                        membership.actionperformed = action  # Use the (possibly modified) action
                         membership.reviewed = user_code
                         membership.reviewed_at = timezone.now()
                         membership.updated_by = user_code
                         
-                        # ✅ STEP 4: Add approval note
+                        # ✅ STEP 5: Add approval note with detailed breakdown
                         adjustment_note = ""
-                        if adjusted_amount_float is not None and adjusted_amount_float != original_fine:
-                            adjustment_note = f" | Fine adjusted: ₹{original_fine} → ₹{adjusted_amount_float}"
+                        if adjusted_amount_float is not None and adjusted_amount_float != original_total_fine:
+                            adjustment_note = f" | Fine adjusted: ₹{original_total_fine:.2f} → ₹{adjusted_amount_float:.2f}"
                         
                         approval_note = (
                             f"[Renewal Approved: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] "
-                            f"Approved by: {user_code} | Payment ID: {payment.id}{adjustment_note}"
+                            f"Approved by: {user_code} | Payment ID: {payment.id} | Action: {action}{adjustment_note}\n"
+                            f"Fine Components: Gap Sub: ₹{gap_subscription_delay:.2f} + Gap Fine: ₹{gap_fine:.2f} + Late Fee: ₹{late_fee:.2f}"
                         )
                         
                         if membership.remarks:
@@ -1593,12 +1611,40 @@ def membership_form_view(request):
                         
                         membership.save()
                         
-                        # Show appropriate success message
-                        if adjusted_amount_float is not None and adjusted_amount_float != original_fine:
-                            messages.success(request, f"Renewal approved with adjusted fine! Original: ₹{original_fine}, Adjusted: ₹{adjusted_amount_float}. Payment record #{payment.id} created.")
+                        # ✅ STEP 6: Show appropriate success message with breakdown
+                        if adjusted_amount_float is not None and adjusted_amount_float != original_total_fine:
+                            if has_gap_fine:
+                                messages.success(request, 
+                                    f"Renewal with gap fine approved with adjustment!\n"
+                                    f"Action: {action}\n"
+                                    f"Original Fine: ₹{original_total_fine:.2f} (Gap Sub: ₹{gap_subscription_delay:.2f} + Gap Fine: ₹{gap_fine:.2f} + Late: ₹{late_fee:.2f})\n"
+                                    f"Adjusted Fine: ₹{adjusted_amount_float:.2f}\n"
+                                    f"Payment record #{payment.id} created."
+                                )
+                            else:
+                                messages.success(request, 
+                                    f"Renewal approved with adjustment!\n"
+                                    f"Action: {action}\n"
+                                    f"Original Fine: ₹{original_total_fine:.2f}\n"
+                                    f"Adjusted Fine: ₹{adjusted_amount_float:.2f}\n"
+                                    f"Payment record #{payment.id} created."
+                                )
                         else:
-                            messages.success(request, f"Renewal approved! Payment record #{payment.id} created.")
-                            
+                            if has_gap_fine:
+                                messages.success(request, 
+                                    f"Renewal with gap fine approved!\n"
+                                    f"Action: {action}\n"
+                                    f"Fine Details: Gap Subscription Delay: ₹{gap_subscription_delay:.2f} + Gap Fine: ₹{gap_fine:.2f} + Late Fee: ₹{late_fee:.2f}\n"
+                                    f"Payment record #{payment.id} created."
+                                )
+                            else:
+                                messages.success(request, 
+                                    f"Renewal approved!\n"
+                                    f"Action: {action}\n"
+                                    f"No gap fine applied.\n"
+                                    f"Payment record #{payment.id} created."
+                                )
+                          
                 except Exception as e:
                     messages.error(request, f"Error: {str(e)}")
             
@@ -1633,9 +1679,14 @@ def membership_form_view(request):
                             # ✅ STEP 3: Reset fine calculation fields if they were changed
                             # (Optional: You might want to revert these too if they were part of renewal)
                             membership.gap_months = 0
+                            membership.gap_subscription_delay = 0.00  # NEW: Reset subscription delay
                             membership.gap_fine = 0.00
                             membership.late_fee = 0.00
                             membership.total_fine_membership = 0.00
+                            
+                            # NEW: Reset gap period fields
+                            membership.gap_period_from = None
+                            membership.gap_period_to = None
                             
                             # ✅ STEP 5: DELETE the staging record
                             staging_record.delete()
@@ -1653,6 +1704,9 @@ def membership_form_view(request):
                         if request.POST.get('rejection_reason'):
                             rejection_note += f", Reason: {request.POST.get('rejection_reason')}"
                         
+                        # NEW: Add note about reverting fine calculations
+                        rejection_note += f"\n[Fine Calculation Reverted: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}] All fine calculations reset to zero."
+                        
                         if membership.remarks:
                             membership.remarks = f"{membership.remarks}\n{rejection_note}"
                         else:
@@ -1665,7 +1719,7 @@ def membership_form_view(request):
                         
                 except Exception as e:
                     messages.error(request, f"Error: {str(e)}")
-            
+                    
             else:
                 # Step 3: Map actions to status IDs
                 status_map = {
@@ -2294,33 +2348,78 @@ def membership_form_renew(request):
                         updated = True
 
                 # 4️⃣ Store fine calculation details in NEW SEPARATE COLUMNS
+                # 4️⃣ Store fine calculation details in NEW SEPARATE COLUMNS
                 gap_months = request.POST.get("gap_months")
+                subscription_delay = request.POST.get("subscription_delay")  # NEW
                 gap_fine = request.POST.get("gap_fine")
                 late_fee = request.POST.get("late_fee")
-                
+                gap_period_from_date_str = request.POST.get("gap_period_from_date")  # "2026-01-01" (from frontend)
+                gap_period_to_date_str = request.POST.get("gap_period_to_date")      # "2026-02-28" (from frontend)
+                gap_period_display = request.POST.get("gap_period_display")          # "01-01-2026 to 28-02-2026"
+
                 # Convert to appropriate types
                 gap_months_int = int(gap_months) if gap_months and gap_months.strip() else 0
+                subscription_delay_float = float(subscription_delay) if subscription_delay and subscription_delay.strip() else 0.00  # NEW
                 gap_fine_float = float(gap_fine) if gap_fine and gap_fine.strip() else 0.00
                 late_fee_float = float(late_fee) if late_fee and late_fee.strip() else 0.00
-                total_fine_calculated = gap_fine_float + late_fee_float
-                
+                total_fine_calculated = subscription_delay_float + gap_fine_float + late_fee_float  # Updated
+
+                # Convert YYYY-MM-DD to DD-MM-YYYY format
+                gap_period_from_formatted = None
+                gap_period_to_formatted = None
+
+                if gap_period_from_date_str and gap_period_from_date_str.strip():
+                    # Convert from "2026-01-01" to "01-01-2026"
+                    date_obj = datetime.strptime(gap_period_from_date_str, "%Y-%m-%d").date()
+                    gap_period_from_formatted = date_obj.strftime("%d-%m-%Y")
+
+                if gap_period_to_date_str and gap_period_to_date_str.strip():
+                    # Convert from "2026-02-28" to "28-02-2026"
+                    date_obj = datetime.strptime(gap_period_to_date_str, "%Y-%m-%d").date()
+                    gap_period_to_formatted = date_obj.strftime("%d-%m-%Y")
+
                 # Check if fine values have changed
                 if (gap_months_int != (membership.gap_months or 0) or
+                    subscription_delay_float != (membership.gap_subscription_delay or 0.00) or  # NEW
                     gap_fine_float != (membership.gap_fine or 0.00) or
-                    late_fee_float != (membership.late_fee or 0.00)):
+                    late_fee_float != (membership.late_fee or 0.00) or
+                    gap_period_from_formatted != (membership.gap_period_from or "") or  # Compare DD-MM-YYYY strings
+                    gap_period_to_formatted != (membership.gap_period_to or "")):       # Compare DD-MM-YYYY strings
                     
-                    # Update fine columns (using your exact field names)
+                    # Update fine columns
                     membership.gap_months = gap_months_int
-                    membership.gap_fine = gap_fine_float
+                    membership.gap_subscription_delay = subscription_delay_float  # NEW: Store subscription part
+                    membership.gap_fine = gap_fine_float                          # Store only fine part (₹5 per month)
                     membership.late_fee = late_fee_float
-                    membership.total_fine_membership = total_fine_calculated  # Your field name
+                    membership.total_fine_membership = total_fine_calculated
                     membership.fine_calculated_at = datetime.now()
+                    
+                    # Update display strings as DD-MM-YYYY format
+                    membership.gap_period_from = gap_period_from_formatted   # "01-01-2026"
+                    membership.gap_period_to = gap_period_to_formatted       # "28-02-2026"
+                    
                     updated = True
                     
                     # Add note to remarks about fine calculation
-                    fine_note = f"[Fine Calculated: {datetime.now().strftime('%Y-%m-%d %H:%M')}] Gap: {gap_months_int} months, Total Fine: ₹{total_fine_calculated:.2f}"
+                    fine_note = f"[Fine Calculated: {datetime.now().strftime('%Y-%m-%d %H:%M')}] "
+                    if gap_months_int > 0:
+                        if gap_period_display:
+                            fine_note += f"Gap: {gap_months_int} month(s) ({gap_period_display})"
+                        elif gap_period_from_formatted and gap_period_to_formatted:
+                            fine_note += f"Gap: {gap_months_int} month(s) ({gap_period_from_formatted} to {gap_period_to_formatted})"
+                        else:
+                            fine_note += f"Gap: {gap_months_int} month(s)"
+                        
+                        # Show breakdown in remarks
+                        fine_note += f", Subscription Delay: ₹{subscription_delay_float:.2f}"
+                        fine_note += f", Gap Fine: ₹{gap_fine_float:.2f}"
+                        if late_fee_float > 0:
+                            fine_note += f", Late Fee: ₹{late_fee_float:.2f}"
+                        fine_note += f", Total: ₹{total_fine_calculated:.2f}"
+                    else:
+                        fine_note += "No gap period"
+                    
                     if membership.remarks:
-                        # Check if there's already a fine note and update it
                         import re
                         remarks = re.sub(r'\[Fine Calculated:.*?\].*?(?=\n|$)', '', membership.remarks, flags=re.DOTALL)
                         remarks = remarks.strip()
@@ -2330,6 +2429,12 @@ def membership_form_renew(request):
                             membership.remarks = fine_note
                     else:
                         membership.remarks = fine_note
+                elif gap_months_int == 0:
+                    # Clear gap period if no gap
+                    membership.gap_period_from = None
+                    membership.gap_period_to = None
+                    membership.gap_subscription_delay = 0.00  # Reset to 0
+                    updated = True
 
                 # 5️⃣ Save if updated
                 if updated:

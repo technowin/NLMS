@@ -169,7 +169,9 @@ class MembershipDetails(models.Model):
     late_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     fine_calculated_at = models.DateTimeField(null=True, blank=True)
     total_fine_membership = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
-
+    gap_period_from = models.CharField(max_length=50, null=True, blank=True)  
+    gap_period_to = models.CharField(max_length=50, null=True, blank=True)   
+    gap_subscription_delay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     class Meta: db_table = "tbl_membershipdetails"
 
     def __str__(self):
