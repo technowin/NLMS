@@ -93,7 +93,7 @@ DATABASES = {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'nlms_db',      # Replace with your database name
         'USER': 'root',      # Replace with your database user
-        'PASSWORD': '8888888888888',  # Replace with your database password
+        'PASSWORD': 'Mysql_MH-047319',  # Replace with your database password
         'HOST': '127.0.0.1',       # IP FOR LOCAL VM
         'PORT': '3306',            
         'OPTIONS': {
@@ -104,7 +104,7 @@ DATABASES = {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'L01_db',
         'USER': 'root',
-        'PASSWORD': '8888888888888',
+        'PASSWORD': 'Mysql_MH-047319',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
@@ -112,7 +112,7 @@ DATABASES = {
         'ENGINE': 'mysql.connector.django',
         'NAME': 'L02_db',
         'USER': 'root',
-        'PASSWORD': '8888888888888',
+        'PASSWORD': 'Mysql_MH-047319',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
