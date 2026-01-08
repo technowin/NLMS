@@ -401,6 +401,8 @@ class LibraryLocationMaster(models.Model):
 class VisitorActivity(models.Model):
     session_key = models.CharField(max_length=100, unique=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    visitor = models.TextField(null=True,blank=True)
+    remark = models.TextField(null=True,blank=True)
     click_1 = models.CharField(max_length=255, null=True, blank=True)
     click_2 = models.CharField(max_length=255, null=True, blank=True)
     click_3 = models.CharField(max_length=255, null=True, blank=True)
