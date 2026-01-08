@@ -417,12 +417,12 @@ if 'S3_BASE_PATH' not in locals():
     
 # For production with domain (should be True when you have SSL certificate)
 if ENVIRONMENT == 'production':
-    SESSION_COOKIE_SECURE = True    # Only send session cookie over HTTPS
-    CSRF_COOKIE_SECURE = True       # Only send CSRF cookie over HTTPS
-    SECURE_SSL_REDIRECT = True      # Redirect HTTP to HTTPS
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = False    # ← Set to False without SSL
+    CSRF_COOKIE_SECURE = False       # ← Set to False without SSL
+    SECURE_SSL_REDIRECT = False      # ← Set to False without SSL
+    SECURE_PROXY_SSL_HEADER = None   # ← Set to None
     
-    # Update SITE_URL to HTTPS
+    # Keep SITE_URL as HTTP for now
     SITE_URL = "http://www.nmmclibrary.in"
 else:
     SESSION_COOKIE_SECURE = False
