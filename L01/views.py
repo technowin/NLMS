@@ -1334,19 +1334,41 @@ def membership_form_view(request):
             membership_id = request.POST.get("membership_id")
             action = request.POST.get("action")  # approve / reject
             user_id = request.POST.get("user_id")
-
+            
+            # Get the parameter record
+            offline_flag_record = parameter_master_L01.objects.filter(
+                parameter_name="MembershipPaymentOfflineFlag",
+                isactive=1
+            ).first()
+            
+            # Check if record exists and get its value
+            if offline_flag_record and offline_flag_record.parameter_value:
+                offline_flag = offline_flag_record.parameter_value
+            else:
+                offline_flag = "0"  # Default value if not found
+            
             # Step 2: Get the membership object
             membership = get_object_or_404(MembershipDetails, id=membership_id, isactive=1)
 
             if action == "payment_received":
                 try:
                     with transaction.atomic():
-                        payment_type = "Membership Renewed" if membership.membership_renew == 1 else "Membership"
+
+                        # ----------------------------------
+                        # 1. Decide payment type
+                        # ----------------------------------
+                        payment_type = (
+                            "Membership Renewed"
+                            if membership.membership_renew == 1
+                            else "Membership"
+                        )
 
                         status_received = StatusMaster.objects.get(id=5)
                         membership_master = membership.membership
 
-                        # Step 1: Create PaymentDetails
+                        # ----------------------------------
+                        # 2. Create PaymentDetails (SOURCE OF TRUTH)
+                        # ----------------------------------
                         PaymentDetails.objects.create(
                             membership=membership,
                             payment_mode="Offline",
@@ -1366,17 +1388,93 @@ def membership_form_view(request):
                             payment_date=timezone.now().date(),
                         )
 
-                        # Step 2: Update MembershipDetails
+                        # ----------------------------------
+                        # 3. Generate NEW membership code
+                        # ----------------------------------
+                        increment_master = get_object_or_404(
+                            IncrementMaster,
+                            id=1,
+                            isactive=1
+                        )
+
+                        current_number = int(increment_master.incrementFieldNumber)
+                        new_number = current_number + 1
+                        new_number_str = str(new_number).zfill(3)
+
+                        new_membership_code = f"{increment_master.incrementFieldName}{new_number_str}"
+
+                        increment_master.incrementFieldNumber = new_number_str
+                        increment_master.save()
+
+                        # ----------------------------------
+                        # 4. Update MembershipDetails
+                        # ----------------------------------
                         membership.status = status_received
                         membership.membership_renew = 0
+                        membership.membership_code = new_membership_code
+                        membership.membership_start_date = timezone.now().date()  # ✅ Set payment date
                         membership.updated_by = user_code
                         membership.save()
 
-                    messages.success(request, "Payment marked as received successfully!")
+                        # ----------------------------------
+                        # 5. Activate User
+                        # ----------------------------------
+                        user = CustomUser.objects.get(username=user_id)
+                        user_was_inactive = not user.is_active  # Check if user was inactive before
+
+                        if not user.is_active:
+                            user.is_active = True
+                            user.save()
+                            user_activated = True
+                        else:
+                            user_activated = False
+
+                        # ----------------------------------
+                        # 6. Fetch password from password_storage
+                        # ----------------------------------
+                        password_entry = get_object_or_404(password_storage, user=user)
+                        user_password = password_entry.passwordText
+
+                        # ----------------------------------
+                        # 7. Prepare SMS message
+                        # ----------------------------------
+                        otp_template = get_object_or_404(
+                            OTPMessage,
+                            OTPIDNumber=1
+                        )
+
+                        message = otp_template.OTPText.replace(
+                            '@UserId',
+                            f"{user.username} and {user_password}"
+                        )
+
+                        # ----------------------------------
+                        # 8. Send SMS (LAST STEP)
+                        # ----------------------------------
+                        # send_sms(user.phone, message)
+                        # log_sms(...)
+
+                        # ----------------------------------
+                        # 9. Success Message
+                        # ----------------------------------
+                        if user_activated:
+                            messages.success(
+                                request,
+                                f"User {user.username} has been activated successfully. Payment has been recorded and SMS sent."
+                            )
+                        else:
+                            messages.success(
+                                request,
+                                f"User {user.username} is already active. Payment has been recorded successfully."
+                            )
+
                     return redirect("L01:membership_approval")
 
                 except Exception as e:
-                    messages.error(request, f"Error processing payment: {str(e)}")
+                    messages.error(
+                        request,
+                        f"An error occurred while processing the payment: {str(e)}"
+                    )
                     return redirect("L01:membership_approval")
             
             elif action == "renewal_approved":
@@ -1579,55 +1677,76 @@ def membership_form_view(request):
                 if new_status_id:
                     # --- Only generate code if approved ---
                     if new_status_id == 2:  # APPROVED
+                        
                         if membership.membership_code:
                             messages.warning(request, "Membership code already exists. No new code generated.")
+
+                        if offline_flag == "1":
+                            
+                            try:
+                                pay_offline_status = StatusMaster.objects.get(
+                                    status_code="PAY_OFFLINE",
+                                    isactive=1
+                                )
+                                new_status_id = pay_offline_status.id
+                                
+                                messages.success(request, f"User {membership.first_name} is requested to kindly visit the library to complete the payment process.")
+                                
+                                # --- Update membership fields ---
+                                membership.actionperformed = action
+                                membership.reviewed = user_code
+                                membership.reviewed_at = timezone.now()
+                                membership.status_id = new_status_id
+                                membership.save()
+                                
+                                print(f"Membership updated with PAY_OFFLINE status (ID: {new_status_id})")
+                                
+                            except StatusMaster.DoesNotExist:
+                                messages.error(request, "PAY_OFFLINE status not found in StatusMaster")
+                                # Handle error - you might want to set a default status or return
+                                return
+                            except Exception as e:
+                                messages.error(request, f"Error fetching status: {str(e)}")
+                                return
+                            
                         else:
-                            increment_master = get_object_or_404(
-                                IncrementMaster,
-                                id=1,
-                                isactive=1
-                            )
+                            
+                            # --- Update user status to active ---
+                            user = CustomUser.objects.get(username=user_id)
+                            user.is_active = True
+                            # user.save()
+                            
+                            # --- Get password from password_storage ---
+                            password_entry = get_object_or_404(password_storage, user=user)
+                            user_password = password_entry.passwordText  # Password fetched from password_storage
 
-                            current_number = int(increment_master.incrementFieldNumber)
-                            new_number = current_number + 1
-                            new_number_str = str(new_number).zfill(3)
+                            # --- Retrieve OTP message template ---
+                            otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)  # Assuming OTPIDNumber=1 for registration
+                            message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
 
-                            membership_code = f"{increment_master.incrementFieldName}{new_number_str}"
+                            # --- Send SMS ---
+                            # send_sms(user.phone, message)  
 
-                            increment_master.incrementFieldNumber = new_number_str
-                            increment_master.save()
+                            # --- Log the SMS ---
+                            # log_sms(user, user.phone, message, 'Success', 'unique_id_here')  
 
-                            membership.membership_code = membership_code
+                            messages.success(request, f"User {user.username} activated successfully and SMS sent.")
 
-                        # --- Update user status to active ---
-                        user = CustomUser.objects.get(username=user_id)
-                        user.is_active = True
-                        user.save()
+                            # --- Update membership fields ---
+                            membership.actionperformed = action
+                            membership.reviewed = user_code
+                            membership.reviewed_at = timezone.now()
+                            membership.status_id = new_status_id
+                            membership.save()
                         
-                        # --- Get password from password_storage ---
-                        password_entry = get_object_or_404(password_storage, user=user)
-                        user_password = password_entry.passwordText  # Password fetched from password_storage
+                    else:
+                        membership.actionperformed = action
+                        membership.reviewed = user_code
+                        membership.reviewed_at = timezone.now()
+                        membership.status_id = new_status_id
+                        membership.save()
 
-                        # --- Retrieve OTP message template ---
-                        otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)  # Assuming OTPIDNumber=1 for registration
-                        message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
-
-                        # --- Send SMS ---
-                        send_sms(user.phone, message)  # Send SMS to the user's mobile
-
-                        # --- Log the SMS ---
-                        log_sms(user, user.phone, message, 'Success', 'unique_id_here')  # You can generate a unique ID as needed
-
-                        messages.success(request, f"User {user.username} activated successfully and SMS sent.")
-
-                    # --- Update membership fields ---
-                    membership.actionperformed = action
-                    membership.reviewed = user_code
-                    membership.reviewed_at = timezone.now()
-                    membership.status_id = new_status_id
-                    membership.save()
-
-                    messages.success(request, f"Membership {action.capitalize()}d successfully.")
+                        messages.success(request, f"Membership {action.capitalize()}d successfully.")
                 else:
                     messages.error(request, "Invalid action!")
 
@@ -4737,9 +4856,10 @@ def membership_dashboard(request):
     
     try:
         # Get membership details
-        membership = MembershipDetails.objects.get(user_id=username)
-        membership_code = membership.membership_code
-        member_id = get_object_or_404(MembershipDetails, membership_code =  membership_code)
+        # membership = MembershipDetails.objects.get(user_id=username)
+        member_id = get_object_or_404(MembershipDetails, user_id =  username)
+        # membership_code = membership.membership_code
+        # member_id = get_object_or_404(MembershipDetails, membership_code =  membership_code)
         
         # Current date for calculations
         today = timezone.now().date()
@@ -4789,7 +4909,7 @@ def membership_dashboard(request):
         request.session.pop("sweet_alert", None)
         context = {
             'username': username,
-            'membership_code': membership_code,
+            # 'membership_code': membership_code,
             'currently_borrowed': currently_borrowed,
             'due_soon': due_soon,
             'overdue': overdue,
