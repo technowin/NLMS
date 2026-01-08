@@ -32,15 +32,16 @@ def library_list(request):
                 # Take first image only
                 relative_image_path = lilo.image_url.split(",")[0].strip()
 
-                # 🔥 IMPORTANT: remove leading MEDIA_URL or slash if present
-                if relative_image_path.startswith(settings.MEDIA_URL):
-                    relative_image_path = relative_image_path.replace(settings.MEDIA_URL, "", 1)
+                # Remove leading slash only (if present)
+                relative_image_path = relative_image_path.lstrip("/")
 
-                if relative_image_path.startswith("/"):
-                    relative_image_path = relative_image_path.lstrip("/")
+                # ✅ Get URL ONLY via get_file_url()
+                image_url = file_storage_service.get_file_url(relative_image_path)
 
             # ✅ Assign BACK relative path (template will prepend MEDIA_URL)
-            lilo.image_url = relative_image_path
+                lilo.image_url = relative_image_path
+
+            # ✅ Assign BACK relative path (template will prepend MEDIA_URL)
             
             # Check if membership_page_link exists and is not empty/blank
             has_membership_link = bool(

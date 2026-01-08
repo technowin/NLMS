@@ -74,6 +74,44 @@
         }
     </style>
 
+       <style>
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .preview-img {
+            height: 120px;
+            border: 1px solid #ddd;
+            padding: 4px;
+            border-radius: 6px;
+            display: block;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 22px;
+            height: 22px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .remove-image:hover {
+            background: darkred;
+        }
+
+    </style>
+
 {% endblock %}
 
 {% block page_title %}
@@ -230,7 +268,7 @@
         </div>
         <div class="col-md-6">
             <label class="form-label">मेंबरशिप पेज लिंक / Membership Page Link</label>
-            <input type="url" name="membership_page_link" class="form-control"
+            <input type="text" name="membership_page_link" class="form-control"
                    value="{% if library %}{{ library.membership_page_link }}{% endif %}">
         </div>
     </div>
@@ -286,16 +324,24 @@
 
     <!-- Row 10: Image & Capacity -->
     <div class="mb-3 row">
-  <div class="col-md-6">
-    <label class="form-label">लायब्ररी इमेज / Library Image</label>
-    <div class="mb-2">
-        <!-- Show previous image if exists -->
-        <img id="previewImage" src="{{ library.display_image_url }}" 
-             style="{% if not library.display_image_url %}display:none;{% endif %} height:180px; border:1px solid #ddd;">
-    </div>
-    <input type="file" name="library_photo" id="library_photo" class="form-control" accept="image/*">
-</div>
+     <div class="col-md-6">
+            <label class="form-label">लायब्ररी इमेज / Library Image</label>
+            <input type="hidden" name="removed_images" id="removed_images">
 
+            <div id="imagePreviewContainer"
+                style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px; position:relative;">
+                {% for img in library.display_image_urls %}
+                <div class="image-wrapper" data-existing="true" style="position:relative;">
+                    <img src="{{ img }}" class="preview-img" style="height:120px; border:1px solid #ddd; padding:4px; border-radius:6px;">
+                    <span class="remove-image"
+                        style="position:absolute; top:6px; right:6px; background:red; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; cursor:pointer;">×</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="fileError" class="text-danger mt-2" style="display:none;"></div>
+
+            <input type="file"name="library_photo"id="library_photo"class="form-control mt-2"accept="image/*"multiple></div>
 
         <div class="col-md-6">
             <label class="form-label">क्षमता / Capacity</label>
@@ -605,7 +651,7 @@ document.getElementById("library_image").addEventListener("change", function(eve
     }
 });
 </script>
-  
+{% comment %}   
 <script>
 document.getElementById('library_photo').addEventListener('change', function(event) {
     const preview = document.getElementById('previewImage');
@@ -620,7 +666,136 @@ document.getElementById('library_photo').addEventListener('change', function(eve
         reader.readAsDataURL(file);
     }
 });
+</script> {% endcomment %}
+<script>
+
+const fileInput = document.getElementById("library_photo");
+const previewContainer = document.getElementById("imagePreviewContainer");
+const errorDiv = document.getElementById("fileError");
+const removedInput = document.getElementById("removed_images");
+
+const validTypes = ["image/jpeg","image/png","image/jpg","image/gif","image/webp"];
+
+let removedExistingImages = [];
+let newFiles = [];
+
+// Event delegation for remove button
+previewContainer.addEventListener("click", function(e){
+    if(e.target.classList.contains("remove-image")){
+        const wrapper = e.target.closest(".image-wrapper");
+        if(!wrapper) return;
+
+        if(wrapper.dataset.existing === "true"){
+            // Existing image removed
+            removedExistingImages.push(wrapper.querySelector("img").src);
+            removedInput.value = JSON.stringify(removedExistingImages);
+        } else {
+            // New image removed
+            const imgSrc = wrapper.querySelector("img").src;
+            newFiles = newFiles.filter(f => f.preview !== imgSrc);
+        }
+
+        wrapper.remove();
+        errorDiv.style.display = "none";
+    }
+});
+
+// Function to create preview for new file
+function createPreview(fileObj){
+    const wrapper = document.createElement("div");
+    wrapper.className = "image-wrapper";
+    wrapper.dataset.existing = "false";
+    wrapper.style.position = "relative";
+
+    const img = document.createElement("img");
+    img.src = fileObj.preview;
+    img.style.height = "120px";
+    img.style.border = "1px solid #ddd";
+    img.style.padding = "4px";
+    img.style.borderRadius = "6px";
+
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-image";
+    removeBtn.innerText = "×";
+    removeBtn.style.cssText = `
+        position:absolute;
+        top:6px;
+        right:6px;
+        background:red;
+        color:white;
+        border-radius:50%;
+        width:22px;
+        height:22px;
+        text-align:center;
+        line-height:22px;
+        font-weight:bold;
+        cursor:pointer;
+    `;
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeBtn);
+    previewContainer.appendChild(wrapper);
+}
+
+// Handle new file selection
+fileInput.addEventListener("change", function(e){
+    const files = Array.from(e.target.files);
+
+    if(previewContainer.querySelectorAll(".image-wrapper").length + files.length > 3){
+        errorDiv.innerText = "❌ Maximum 3 images allowed.";
+        errorDiv.style.display = "block";
+        fileInput.value = "";
+        return;
+    }
+
+    files.forEach(file => {
+        if(!validTypes.includes(file.type)){
+            errorDiv.innerText = "❌ Only JPG, PNG, GIF, WEBP are allowed!";
+            errorDiv.style.display = "block";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event){
+            const fileObj = {file: file, preview: event.target.result};
+            newFiles.push(fileObj);
+            createPreview(fileObj);
+        }
+        reader.readAsDataURL(file);
+    });
+
+});
+
+
 </script>
+
+<script>
+    document.querySelector("form").addEventListener("submit", function(e){
+    e.preventDefault(); // prevent normal submit
+
+    const formData = new FormData(this); // start with form data
+
+    // Append all new files
+    newFiles.forEach(obj => {
+        formData.append("library_photo", obj.file);
+    });
+
+    // Append removed images list
+    formData.append("removed_images", removedInput.value);
+
+    fetch(this.action, {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Uploaded:", data);
+        // optionally reload page or show success
+    })
+    .catch(err => console.error(err));
+});
+
+</script> 
 
 
 <script>

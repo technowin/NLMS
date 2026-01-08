@@ -203,17 +203,25 @@
 <div class="mb-3 row">
     <div class="col-md-6">
         <strong>लायब्ररी इमेज / Library Image:</strong><br>
-        {% if library.display_image_url %}
-            <img src="{{ library.display_image_url }}" style="max-height:200px; border:1px solid #ddd;">
+        
+        {% if library.display_image_urls %}
+            <div style="display:flex; gap:10px; overflow-x:auto;">
+                {% for img_url in library.display_image_urls %}
+                    <img src="{{ img_url }}" 
+                         style="height:120px; width:auto; border:1px solid #ddd; border-radius:6px; padding:2px;">
+                {% endfor %}
+            </div>
         {% else %}
             <p>-</p>
         {% endif %}
     </div>
+
     <div class="col-md-6">
         <strong>क्षमता / Capacity:</strong><br>
         <input type="text" class="form-control" value="{{ library.capacity }}" readonly>
     </div>
 </div>
+
 
 <!-- Row 10: Opening Hours & Map -->
 <div class="mb-3 row">

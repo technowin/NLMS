@@ -8260,6 +8260,9 @@ def get_dashboard1_data(request):
         
         footfall_qs = (
             MemberScreenActivity.objects.using("L01")
+            .filter(
+                visited_at__range=(start_dt, end_dt)
+            )
             .values('screen_name')  # X-axis: menu/screen name
             .annotate(count=Count('session__member', distinct=True))  # Y-axis: distinct members
             .order_by('screen_name')

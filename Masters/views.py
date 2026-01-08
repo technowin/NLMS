@@ -3451,19 +3451,58 @@ def library_master_edit(request):
             # ------------------------
             # Uploaded image
             # ------------------------
-            library_image = request.FILES.get("library_photo")
-            image_url = library.image_url  # keep old if no new image
+            # library_image = request.FILES.get("library_photo")
+            # image_url = library.image_url  # keep old if no new image
 
-            if library_image:
-                library_folder = os.path.join(settings.MEDIA_ROOT, library_code, "library_images")
-                os.makedirs(library_folder, exist_ok=True)
+            # if library_image:
+            #     library_folder = os.path.join(settings.MEDIA_ROOT, library_code, "library_images")
+            #     os.makedirs(library_folder, exist_ok=True)
 
-                image_path = os.path.join(library_folder, library_image.name)
-                with open(image_path, "wb+") as f:
-                    for chunk in library_image.chunks():
-                        f.write(chunk)
+            #     image_path = os.path.join(library_folder, library_image.name)
+            #     with open(image_path, "wb+") as f:
+            #         for chunk in library_image.chunks():
+            #             f.write(chunk)
 
-                image_url = os.path.join(library_code, "library_images", library_image.name).replace("\\", "/")
+            #     image_url = os.path.join(library_code, "library_images", library_image.name).replace("\\", "/")
+            
+            library_images = request.FILES.getlist("library_photo")
+            removed_images = request.POST.get("removed_images")
+
+            # 1️⃣ Existing images
+            existing_paths = []
+            if library.image_url:
+                existing_paths = [p.strip() for p in library.image_url.split(",") if p.strip()]
+
+            # 2️⃣ Removed images (convert URL → relative path)
+            removed_paths = []
+            if removed_images:
+                import json
+                removed_urls = json.loads(removed_images)
+
+                for url in removed_urls:
+                    # take last 3 parts → LIB001/library_images/img.jpg
+                    parts = url.split("/")[-3:]
+                    removed_paths.append("/".join(parts))
+
+            # 3️⃣ Keep remaining existing images
+            remaining_existing = [p for p in existing_paths if p not in removed_paths]
+
+            # 4️⃣ Save new images
+            new_paths = []
+            for image in library_images:
+                save_path = f"{library_code}/library_images/{image.name}"
+
+                normalized_path = file_storage_service.save_file(
+                    file=image,
+                    save_path=save_path
+                )
+                new_paths.append(normalized_path)
+
+            # 5️⃣ Merge remaining + new
+            final_paths = remaining_existing + new_paths
+
+            # 6️⃣ Save to DB
+            image_url = ",".join(final_paths) if final_paths else ""
 
             # ------------------------
             # Validation
@@ -3543,9 +3582,13 @@ def library_master_edit(request):
         # Prepare display image
         # ------------------------
         if library.image_url:
-            library.display_image_url = settings.MEDIA_URL + library.image_url
+            library.display_image_urls = [
+                file_storage_service.get_file_url(img.strip().lstrip("/"))
+                for img in library.image_url.split(",")
+                if img.strip()
+            ]
         else:
-            library.display_image_url = None
+            library.display_image_urls = []
 
     except Exception as e:
         import traceback
@@ -3583,9 +3626,17 @@ def library_master_view(request):
         library.encrypted_id = enc(str(library.id))
 
         # 🔹 Set display image URL
-        library.display_image_url = None
+        # library.display_image_url = None
+        # if library.image_url:
+        #     library.display_image_url = settings.MEDIA_URL + str(library.image_url)
+        
         if library.image_url:
-            library.display_image_url = settings.MEDIA_URL + str(library.image_url)
+            # If multiple images stored as comma-separated
+            paths = [p.strip() for p in library.image_url.split(",") if p.strip()]
+            # Convert each path to full URL using your storage service
+            library.display_image_urls = [file_storage_service.get_file_url(p) for p in paths]
+        else:
+            library.display_image_urls = []
 
         # 🔹 Fetch location details if location_id exists (if stored in LibraryMaster)
         location = None
@@ -4537,10 +4588,15 @@ def track_click(request):
         data = json.loads(request.body)
         page = data.get('page')
 
+        # ✅ Only store clicks if page has a URL
+        if not page:  
+            return JsonResponse({'status': 'ignored', 'reason': 'no URL'})
+
         visitor, _ = VisitorActivity.objects.using('default').get_or_create(
             session_key=request.session.session_key
         )
 
+        # Save click in the first available slot
         for i in range(1, 6):
             if getattr(visitor, f'click_{i}') is None:
                 setattr(visitor, f'click_{i}', page)
