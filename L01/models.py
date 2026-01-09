@@ -155,6 +155,7 @@ class MembershipDetails(models.Model):
     actionperformed = models.TextField(null=True, blank=True)  # admin username/id
     reviewed = models.CharField(max_length=50, null=True, blank=True)  # admin username/id
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    membership_start_date = models.DateField(null=True, blank=True) 
     isactive = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = models.CharField(max_length=50, null=True, blank=True)
@@ -168,7 +169,9 @@ class MembershipDetails(models.Model):
     late_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     fine_calculated_at = models.DateTimeField(null=True, blank=True)
     total_fine_membership = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
-
+    gap_period_from = models.CharField(max_length=50, null=True, blank=True)  
+    gap_period_to = models.CharField(max_length=50, null=True, blank=True)   
+    gap_subscription_delay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0.00)
     class Meta: db_table = "tbl_membershipdetails"
 
     def __str__(self):
@@ -283,6 +286,7 @@ class MembershipDetailsHistory(models.Model):
     actionperformed = models.TextField(null=True, blank=True)
     reviewed = models.CharField(max_length=50, null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    membership_start_date = models.DateField(null=True, blank=True) 
     isactive = models.IntegerField(default=1)
     membership_code = models.TextField(null=True, blank=True)
     membership_renew = models.IntegerField(default=0)
