@@ -280,13 +280,13 @@ def Login(request):
                     return redirect("L01:membership_dashboard")
 
                 # Ebook + PDF intent
-                elif ebook_id and pdf_url:
-                    file_url = settings.MEDIA_URL + pdf_url
-                    final_pdf_url = request.build_absolute_uri(file_url)
+                elif ebook_id and encrypted_pdf_url:
+                    # file_url = settings.MEDIA_URL + pdf_url
+                    # final_pdf_url = request.build_absolute_uri(file_url)
 
                     request.session["pending_action"] = {
                         "type": "pdf",
-                        "url": final_pdf_url,
+                        "url": encrypted_pdf_url,
                         "message": "कृपया आपले ई-बुक उघडण्यासाठी पुढे जा."
                     }
 
@@ -300,7 +300,6 @@ def Login(request):
 
                 request.session.set_expiry(0)
                 return redirect("L01:membership_dashboard")
-            
 
             # ============================================================
             # NO MEMBERSHIP FOUND

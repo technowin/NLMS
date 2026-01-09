@@ -99,6 +99,7 @@ urlpatterns = [
     path('upsc_topics_logged/<str:section_no>/', upsc_topics_logged, name='upsc_topics_logged'),
     path('mpsc_index_logged/', mpsc_index_logged, name='mpsc_index_logged'),
     path('mpsc_topics_logged/<str:section_no>/', mpsc_topics_logged, name='mpsc_topics_logged'),
+    path("open_pdf/", open_pdf, name="open_pdf"),
     # ... your other URLs
     
     # urls.py

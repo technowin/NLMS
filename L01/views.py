@@ -4265,9 +4265,9 @@ def bookcatalog_search(request):
 
         # Filter by selected search type
         if search_type in ["title", "books"]:
-            results = results.filter(title__icontains=query)
+            results = results.filter(title__istartswith=query)
         elif search_type == "author":
-            results = results.filter(author__icontains=query)
+            results = results.filter(author__istartswith=query)
         elif search_type == "publisher":
             results = results.filter(publisher__icontains=query)
         elif search_type == "language":
@@ -4323,19 +4323,25 @@ def bookcatalog_search(request):
 def index_book_search(request):
     try:
         if request.method != "POST":
-            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+            return JsonResponse(
+                {"error": "Invalid request method. Use POST."},
+                status=405
+            )
 
         query = request.POST.get("query", "").strip()
-        search_type = request.POST.get("searchType", "").strip().lower()  # Optional filter type
+        search_type = request.POST.get("searchType", "").strip().lower()
 
         if not query:
-            return JsonResponse({"error": "Please enter a search term."}, status=400)
+            return JsonResponse(
+                {"error": "Please enter a search term."},
+                status=400
+            )
 
         # Base queryset
         results = BookCatalog.objects.using('L01').all()
 
-        # Search only from FIRST letter (using istartswith)
-        if search_type in ["title", "books", ""]:
+        # 🔤 INDEX SEARCH → ALWAYS STARTS WITH
+        if search_type in ["", "title", "books"]:
             results = results.filter(title__istartswith=query)
 
         elif search_type == "author":
@@ -4351,14 +4357,19 @@ def index_book_search(request):
             results = results.filter(keywords__istartswith=query)
 
         elif search_type == "year":
-            # Publication year should also start with the query
-            year_filters = Q(publication_year__istartswith=query) | Q(year_of_publication__istartswith=query)
+            year_filters = Q()
+            if query.isdigit():
+                year_filters |= Q(year_of_publication=int(query))
+            year_filters |= Q(publication_year__istartswith=query)
             results = results.filter(year_filters)
 
         else:
-            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+            return JsonResponse(
+                {"error": f"Invalid search type: {search_type}"},
+                status=400
+            )
 
-        # Limit results
+        # 🔢 Limit + required fields
         results = results.values(
             "title",
             "author",
@@ -4370,16 +4381,20 @@ def index_book_search(request):
             "cutter_number",
             "front_page_photo",
             "ebook_available",
+            "cat_ref_num",   # ✅ REQUIRED
         )[:50]
 
-        # Convert image path to absolute URL
+        # 📷 Image URL + encryption
         updated_results = []
         for r in results:
             image_path = r.get("front_page_photo")
             r["front_page_photo"] = (
-                request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
+                request.build_absolute_uri(f"/media/{image_path}")
+                if image_path else ""
             )
-            r["encrypted_cat_ref_num"] = enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
+            r["encrypted_cat_ref_num"] = (
+                enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
+            )
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
@@ -4407,11 +4422,11 @@ def libraryebook_search(request):
 
         # ---- FILTER BASED ON SEARCH TYPE ----
         if search_type in ["title", "ebook", "book"]:
-            results = results.filter(eb_title__icontains=query)
+            results = results.filter(eb_title__istartswith=query)
 
         elif search_type == "author":
             results = results.filter(
-                Q(eb_author__icontains=query) |
+                Q(eb_author__istartswith=query) |
                 Q(eb_other_authors__icontains=query)
             )
 
@@ -4555,7 +4570,27 @@ def index_ebook_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+    
+@csrf_exempt
+def open_pdf(request):
+    encrypted_pdf = request.GET.get("pdf")
 
+    if not encrypted_pdf:
+        return redirect("L01:membership_dashboard")
+
+    try:
+        pdf_path = dec(encrypted_pdf)
+    except Exception:
+        return redirect("L01:membership_dashboard")
+
+    if ".." in pdf_path or not pdf_path.endswith(".pdf"):
+        return redirect("L01:membership_dashboard")
+
+    file_url = request.build_absolute_uri(
+        settings.MEDIA_URL + pdf_path
+    )
+
+    return redirect(file_url)
 
 def upsc_ebook_index(request):
     try:
@@ -11045,7 +11080,8 @@ def export_pdf(data, detail_type):
 @require_POST
 def clear_pending_action(request):
     request.session.pop("pending_action", None)
-    return JsonResponse({"success": True})
+    request.session.modified = True 
+    return JsonResponse({"status": "cleared"})
 
 @login_required
 def competitive_exams_landing_page(request, competitive_id=None):

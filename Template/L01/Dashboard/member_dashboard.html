@@ -1425,7 +1425,7 @@
 
         if (toastEl && typeof bootstrap !== "undefined") {
             const toast = new bootstrap.Toast(toastEl, {
-                delay: 10000,
+                delay: 30000,
                 autohide: true
             });
 
@@ -1464,29 +1464,46 @@
     });
 
     function openBook() {
-        window.location.href = "{{ pending_action.url }}";
-    }
-    {% comment %} function openBook() {
-        const pdfUrl = "{{ pending_action.url }}";
+        const actionType = "{{ pending_action.type }}";
+        const actionUrl  = "{{ pending_action.url }}";
 
-        if (pdfUrl) {
-            window.open(pdfUrl, "_blank");  // opens in new tab
-        }
-    } {% endcomment %}
+        if (!actionUrl) return;
 
-    function cancelAction() {
         fetch("{% url 'L01:clear_pending_action' %}", {
             method: "POST",
             headers: {
                 "X-CSRFToken": "{{ csrf_token }}"
             }
-        }).then(() => {
-            const toastEl = document.getElementById('actionToast');
-            const toast = bootstrap.Toast.getInstance(toastEl);
-            toast.hide();
+        }).finally(() => {
+            if (actionType === "pdf") {
+                window.open("{% url 'L01:open_pdf' %}?pdf=" + actionUrl, "_blank");
+            } else {
+                window.location.href = actionUrl;
+            }
+        });
+    }
 
-            // ✅ Ensure it never shows again
-            {% comment %} sessionStorage.setItem("actionToastShown", "true"); {% endcomment %}
+
+    function cancelAction() {
+        fetch("{% url 'L01:clear_pending_action' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Session not cleared");
+            }
+
+            const toastEl = document.getElementById('actionToast');
+            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+            toast.hide();
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Unable to cancel action. Please try again.");
         });
     }
 </script>
