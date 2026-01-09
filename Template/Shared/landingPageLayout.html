@@ -108,33 +108,41 @@
                 <form id="leadForm">
                     <div class="modal-body">
 
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" name="name" class="form-control"
-                            placeholder="Enter your name"
-                            pattern="[A-Za-z\s]+"
-                            title="Only letters and spaces allowed"
-                            required>
+                            <div class="mb-3">
+                                <label class="form-label">Name</label>
+                                <input type="text" name="name" class="form-control"
+                                    placeholder="Enter your name"
+                                    pattern="[A-Za-z\s]+"
+                                    title="Only letters and spaces allowed"
+                                    required>
 
-                    </div>
+                            </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                    <input type="text" name="phone" class="form-control"
-                                placeholder="Enter your phone"
-                                maxlength="10"
-                                oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                            <input type="text" name="phone" class="form-control"
+                                        placeholder="Enter your phone"
+                                        maxlength="10"
+                                        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
 
-                    </div>
+                            </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control"
-                        placeholder="Enter your email">
 
-                    </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control"
+                                placeholder="Enter your email">
 
-                    </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Remark</label>
+                            <input type="text" name="remark" class="form-control"
+                                        placeholder="Any Suggestion">
+
+                            </div>
+
+                        </div>
 
                     <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -229,21 +237,6 @@
                             <h4 class="sub-title">ग्रंथालय</h4>
                         </div>
                     </div>
-
-                    {% comment %} {% if library_name %}
-                        <div id ="english-title" style="display: none;" > 
-                            <h3  style="margin: 0;color: var(--primary-color);font-weight: 600;text-align: center;white-space: nowrap;">
-                                {{ library_name }}
-                            </h3>
-                        </div>
-                        <div id ="marathi-title"> 
-                            <h3 style="margin: 0;color: var(--primary-color);font-weight: 600;text-align: center;white-space: nowrap;">
-                                {{ library_name_mar }}
-                            </h3>
-                        </div>
-                    {% endif %} {% endcomment %}
-
-                    {% comment %} </div> {% endcomment %}
 
                     <!-- Right logo -->
                    <img src="{% static 'images/administrative/layout_img.png' %}"alt="NMMC Logo"class="logo right-logo"style="height:45px; width:auto; object-fit:contain;">
@@ -794,7 +787,7 @@
             setTimeout(function () {
                 const modal = new bootstrap.Modal(document.getElementById('leadModal'));
                 modal.show();
-            }, 300000);
+            }, 30000);
 
             // Submit lead form
             // Submit lead form

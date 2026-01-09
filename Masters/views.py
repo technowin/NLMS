@@ -4613,7 +4613,7 @@ def should_show_popup(request):
 
         seconds = int((timezone.now() - visitor.session_start).total_seconds())
 
-        if seconds >= 300000 and not visitor.popup_shown:
+        if seconds >= 30000:
             visitor.popup_shown = True
             visitor.total_time_seconds = seconds
             visitor.save()
@@ -4637,8 +4637,10 @@ def save_lead(request):
             )
 
             visitor.name = request.POST.get('name')
+            visitor.popup_shown = True
             visitor.phone = request.POST.get('phone')
             visitor.email = request.POST.get('email')
+            visitor.remark = request.POST.get('remark')
 
             visitor.save(using='default')  # 🔥 IMPORTANT
 

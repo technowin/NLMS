@@ -168,8 +168,8 @@ def index(request):
                     "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
                     "eb_pages": ebook.eb_pages or "",
                     "eb_language": ebook.eb_language or "Unknown",
-                    "eb_front_page_photo": ebook.eb_front_page_photo if ebook.eb_front_page_photo else "",
-                    "eb_last_page_photo": ebook.eb_last_page_photo if ebook.eb_last_page_photo else "",
+                    "eb_front_page_photo": file_storage_service.get_file_url(ebook.eb_front_page_photo) if ebook.eb_front_page_photo else "",
+                    "eb_last_page_photo": file_storage_service.get_file_url(ebook.eb_last_page_photo) if ebook.eb_last_page_photo else "",
                     "remarks": ebook.remarks or "",
                     "description": ebook.eb_keywords or "No description available.",
                     "eb_pdf_url": ebook.eb_pdf_url or "",
@@ -232,8 +232,8 @@ def index(request):
                     "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
                     "eb_pages": ebook.eb_pages or "",
                     "eb_language": ebook.eb_language or "Unknown",
-                    "eb_front_page_photo": ebook.eb_front_page_photo if ebook.eb_front_page_photo else "",
-                    "eb_last_page_photo": ebook.eb_last_page_photo if ebook.eb_last_page_photo else "",
+                    "eb_front_page_photo":  file_storage_service.get_file_url(ebook.eb_front_page_photo) if ebook.eb_front_page_photo else "",
+                    "eb_last_page_photo":  file_storage_service.get_file_url(ebook.eb_last_page_photo) if ebook.eb_last_page_photo else "",
                     "remarks": ebook.remarks or "",
                     "description": ebook.eb_keywords or "No description available.",
                     "eb_pdf_url": ebook.eb_pdf_url or "",
@@ -4655,18 +4655,21 @@ def get_member_detail(request, membership_code):
         is_valid = (member.from_date <= current_date <= member.to_date if (member.from_date and member.to_date) else False)
 
         
-        # Get profile picture from DocumentDetails in L01 database
-        # profile_pic = '/static/images/default-profile.png'
+        profile_pic = '/static/images/user.png'
+
         try:
+            # Fetch the document
             document = DocumentDetails.objects.using('L01').get(membership=member.id, document_id=1)
+            
+            # Check if the document has a file path
             if document.file_path:
-                file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
-                if file_path.exists():
-                    profile_pic = f"{settings.MEDIA_URL}{document.file_path.replace('\\', '/')}"
+                # file_path = Path(settings.MEDIA_ROOT) / Path(document.file_path.replace("\\", "/"))
+                
+                # # Only update profile_pic if the file exists
+                # if file_path.exists():
+                    profile_pic = file_storage_service.get_file_url(document.file_path)
         except DocumentDetails.DoesNotExist:
-            pass  # Use default profile picture
-        
-        # Prepare response data
+            pass  # Keep default profile_pic
         member_data = {
             'membership_code': member.membership_code,
             'full_name': f"{member.first_name} {member.middle_name} {member.last_name}".strip(),
@@ -4676,7 +4679,6 @@ def get_member_detail(request, membership_code):
             'status': 'valid' if is_valid else 'invalid',
             'profile_pic': profile_pic,
             'to_date': member.to_date.strftime('%Y-%m-%d') if member.to_date else 'N/A',
-            'membership_expired': not is_valid  # Add this flag
         }
         
         # AUTO CREATE ENTRY ONLY IF MEMBERSHIP IS VALID (to_date not passed)
@@ -8252,6 +8254,7 @@ def get_dashboard1_data(request):
         )
 
         eod = {k: v or 0 for k, v in eod.items()}
+        from django.db.models.functions import Trim, Lower
 
         
         start_dt = timezone.make_aware(datetime.combine(start_date, time.min))
@@ -8260,43 +8263,92 @@ def get_dashboard1_data(request):
         
         footfall_qs = (
             MemberScreenActivity.objects.using("L01")
-            .filter(
-                visited_at__range=(start_dt, end_dt)
-            )
-            .values('screen_name')  # X-axis: menu/screen name
-            .annotate(count=Count('session__member', distinct=True))  # Y-axis: distinct members
-            .order_by('screen_name')
+            .filter(visited_at__range=(start_dt, end_dt))
+            .annotate(menu=Lower(Trim('screen_name')))  # ✅ normalize
+            .values('menu')
+            .annotate(count=Count('session__member', distinct=True))
+            .order_by('menu')
         )
 
         footfall = {
-            "labels": [f['screen_name'] for f in footfall_qs],  # menu names
-            "counts": [f['count'] for f in footfall_qs]         # number of members
+            "labels": [f['menu'] for f in footfall_qs],
+            "counts": [f['count'] for f in footfall_qs]
         }
 
-
-        physical_footfall_qs = (
+        physical_qs = (
             MemberEntryExit.objects.using("L01")
-            .filter(
-                entry_time__range=(start_dt, end_dt)
-            )
+            .filter(entry_time__range=(start_dt, end_dt))
             .annotate(day=RawSQL("DATE(entry_time)", []))
+            .values('day')
+            .annotate(count=Count('id'))
+        )
+
+        circulation_qs = (
+            CirculationTransaction.objects.using("L01")
+            .filter(created_at__range=(start_dt, end_dt))
+            .annotate(day=RawSQL("DATE(created_at)", []))
+            .values('day')
+            .annotate(count=Count('id'))
+        )
+
+
+        merged_data = defaultdict(lambda: {
+            "physical": 0,
+            "circulation": 0,
+            "total": 0
+        })
+
+        # Physical counts
+        for row in physical_qs:
+            if row['day']:
+                merged_data[row['day']]["physical"] += row['count']
+                merged_data[row['day']]["total"] += row['count']
+
+        # Circulation counts
+        for row in circulation_qs:
+            if row['day']:
+                merged_data[row['day']]["circulation"] += row['count']
+                merged_data[row['day']]["total"] += row['count']
+
+        physical_footfall = {
+            "labels": [
+                day.strftime('%d-%b')
+                for day in sorted(merged_data.keys())
+            ],
+            "counts": [
+                merged_data[day]["total"]
+                for day in sorted(merged_data.keys())
+            ],
+            "physical_counts": [
+                merged_data[day]["physical"]
+                for day in sorted(merged_data.keys())
+            ],
+            "circulation_counts": [
+                merged_data[day]["circulation"]
+                for day in sorted(merged_data.keys())
+            ]
+        }
+
+        visitor_qs = (
+            VisitorActivity.objects.using('default')   # ✅ DEFAULT DB
+            .filter(created_at__range=(start_dt, end_dt))
+            .annotate(day=RawSQL("DATE(created_at)", []))
             .values('day')
             .annotate(count=Count('id'))
             .order_by('day')
         )
 
-        physical_footfall = {
+        visitor_footfall = {
             "labels": [
-                f['day'].strftime('%d-%b')
-                for f in physical_footfall_qs
-                if f['day']
+                row['day'].strftime('%d-%b')
+                for row in visitor_qs if row['day']
             ],
             "counts": [
-                f['count']
-                for f in physical_footfall_qs
-                if f['day']
+                row['count']
+                for row in visitor_qs if row['day']
             ]
         }
+
         # ---------- PARTIAL HTML ----------
         html = render_to_string(
             "L01/Dashboard/dashboard1_content.html",
@@ -8306,6 +8358,7 @@ def get_dashboard1_data(request):
         return JsonResponse({
             "html": html,
             "daily": daily,
+            "visitor_footfall": visitor_footfall,
             "eod": eod,
             "footfall": footfall,
             "physical_footfall": physical_footfall,
@@ -8570,15 +8623,62 @@ def get_transaction_details(request):
                     "visited_at": obj.visited_at.isoformat() if obj.visited_at else "",
                 })
 
+        elif detail_type == "visitor_log":
+            from datetime import datetime, time ,date
+            try:
+                if isinstance(start_date, date):
+                    from_date_obj = start_date
+                else:
+                    from_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+
+                if isinstance(end_date, date):
+                    to_date_obj = end_date
+                else:
+                    to_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                label_date = datetime.strptime(label, "%d-%b")
+
+                # Use year from from_date
+                entry_date = label_date.replace(year=from_date_obj.year).date()
+
+                entry_start = datetime.combine(entry_date, time.min)
+                entry_end = datetime.combine(entry_date, time.max)
+                qs = VisitorActivity.objects.using('default').filter(created_at__range=[entry_start, entry_end])
+                
+                if search_value:
+                    # Optional search filter
+                    qs = qs.filter(
+                        Q(visitor__icontains=search_value) |
+                        Q(ip_address__icontains=search_value) |
+                        Q(phone__icontains=search_value) |
+                        Q(email__icontains=search_value) |
+                        Q(remark__icontains=search_value)
+                    )
+
+                total_records = qs.count()
+
+                # Pagination
+                qs = qs.order_by('-created_at')[start:start + length]
+
+                # Append each row to `data`
+                for obj in qs:
+                    data.append({
+                        "visitor": obj.visitor or "-",
+                        "ip": obj.ip_address or "-",
+                        "phone": obj.phone or "-",
+                        "email": obj.email or "-",
+                        "remark": obj.remark or "-",
+                        "time": obj.created_at.strftime("%d-%b %I:%M %p") if obj.created_at else "-"
+                    })
+
+            except Exception as e:
+                print(f"Error in visitor_log section: {str(e)}")
+                traceback.print_exc()
 
 
         elif detail_type == "footfall_offline":
             from datetime import datetime, date, time
             from django.db.models import Q
 
-            # -----------------------------
-            # 1️⃣ Ensure start_date is date
-            # -----------------------------
             if isinstance(start_date, date):
                 from_date_obj = start_date
             else:
@@ -8588,11 +8688,6 @@ def get_transaction_details(request):
                 to_date_obj = end_date
             else:
                 to_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
-
-            # -----------------------------
-            # 2️⃣ Parse label (day + month)
-            # -----------------------------
-            # label example: "2 Nov"
             label_date = datetime.strptime(label, "%d-%b")
 
             # Use year from from_date
@@ -8600,27 +8695,15 @@ def get_transaction_details(request):
 
             entry_start = datetime.combine(entry_date, time.min)
             entry_end = datetime.combine(entry_date, time.max)
-
-            # -----------------------------
-            # 3️⃣ Fetch offline entries
-            # -----------------------------
             qs = (
                 MemberEntryExit.objects.using("L01")
                 .filter(entry_time__range=[entry_start, entry_end])
                 .order_by('-entry_time')
             )
-
-            # -----------------------------
-            # 4️⃣ Search filter
-            # -----------------------------
             if search_value:
                 qs = qs.filter(
                     Q(membership_code__icontains=search_value)
                 )
-
-            # -----------------------------
-            # 5️⃣ DISTINCT membership_code (MySQL-safe)
-            # -----------------------------
             qs = list(qs)
 
             seen = set()

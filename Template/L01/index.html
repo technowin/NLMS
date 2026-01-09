@@ -986,7 +986,7 @@
                             <div class="book-flip-inner">
                                 {% if ebook.eb_front_page_photo %}
                                     <div class="book-flip-front">
-                                        <img src="{{ MEDIA_URL }}{{ ebook.eb_front_page_photo|urlencode }}"
+                                        <img src="{{ ebook.eb_front_page_photo|urlencode }}"
                                             alt="{{ ebook.eb_title }} Front Cover"
                                             class="book-image"
                                             onclick="zoomImage(this)"
@@ -1011,7 +1011,7 @@
                                     </div>
                                 {% elif ebook.eb_last_page_photo %}
                                     <div class="book-flip-back">
-                                        <img src="{{ MEDIA_URL }}{{ ebook.eb_last_page_photo|urlencode }}"
+                                        <img src="{{ ebook.eb_last_page_photo|urlencode }}"
                                             alt="{{ ebook.eb_title }} Back Cover"
                                             class="book-image"
                                             onclick="zoomImage(this)"
@@ -1100,8 +1100,8 @@
                     <p class="book-title"
                         style="margin-bottom: 4px; cursor:pointer;"
                         onclick="zoomFromTitle(this)"
-                        data-image="{% if ebook.eb_front_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_front_page_photo|urlencode }}{% endif %}"
-                        data-last-image="{% if ebook.eb_last_page_photo %}{{ MEDIA_URL }}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                        data-image="{% if ebook.eb_front_page_photo %}{{ ebook.eb_front_page_photo|urlencode }}{% endif %}"
+                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
                         data-author="{{ ebook.eb_author }}"
                         data-title="{{ ebook.eb_title }}"
                         data-subtitle="{{ ebook.eb_subtitle }}"

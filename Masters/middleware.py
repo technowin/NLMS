@@ -11,11 +11,15 @@ class VisitorTrackingMiddleware:
         session_key = request.session.session_key
         ip = self.get_client_ip(request)
 
-        VisitorActivity.objects.using('default').get_or_create(
+        visitor, created = VisitorActivity.objects.using('default').get_or_create(
             session_key=session_key,
             defaults={'ip_address': ip}
         )
 
+        # ✅ Set visitor name after insert using ID
+        if created and not visitor.visitor:
+            visitor.visitor = f"Visitor {visitor.id}"
+            visitor.save(using='default')
 
         return self.get_response(request)
 

@@ -149,7 +149,7 @@ body {
         justify-content: space-between;
         padding: 10px 20px;
         /* height: 75px; */
-        height: 90px;
+        height: 65px;
         background-color: var(--header-bg);
     }
 
@@ -176,6 +176,7 @@ body {
         left: 5%;
     }
 }
+
 
 /* ========================= Mobile styles ========================= */
 @media screen and (max-width: 1000px) {

@@ -26,23 +26,18 @@ def library_list(request):
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
             
-            relative_image_path = ""
+
+            # Default empty image
+            lilo.main_image = ""
 
             if lilo.image_url:
-                # Take first image only
-                relative_image_path = lilo.image_url.split(",")[0].strip()
+                # ✅ Take first image only
+                first_image_path = lilo.image_url.split(",")[0].strip()
 
-                # Remove leading slash only (if present)
-                relative_image_path = relative_image_path.lstrip("/")
+                if first_image_path:
+                    lilo.main_image = file_storage_service.get_file_url(first_image_path)
 
-                # ✅ Get URL ONLY via get_file_url()
-                image_url = file_storage_service.get_file_url(relative_image_path)
 
-            # ✅ Assign BACK relative path (template will prepend MEDIA_URL)
-                lilo.image_url = relative_image_path
-
-            # ✅ Assign BACK relative path (template will prepend MEDIA_URL)
-            
             # Check if membership_page_link exists and is not empty/blank
             has_membership_link = bool(
                 lilo.membership_page_link and 
@@ -84,7 +79,6 @@ def library_list(request):
                     'location_name': library.location.location_name if library.location else '',
                     'est_year': library.est_year,
                     'about_library': library.about_library,
-                    # 'image_url': library.image_url,
                     'image_url': first_image_url,
                     'libraries': library.libraries,  # encrypted code
                     'has_membership_link': has_membership_link
