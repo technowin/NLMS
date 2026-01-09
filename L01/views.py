@@ -4992,11 +4992,10 @@ def membership_dashboard(request):
     # Get username from session
     username = request.session.get('username')
     
-    if not username:
-        # Handle case where user is not logged in
-        return render(request, 'error.html', {'error': 'User not logged in'})
-    
     try:
+        breadcrumb = request.POST.get("breadcrumb")
+        if not breadcrumb:
+            breadcrumb = 0
         # Get membership details
         # membership = MembershipDetails.objects.get(user_id=username)
         member_id = get_object_or_404(MembershipDetails, user_id =  username)
@@ -5059,6 +5058,7 @@ def membership_dashboard(request):
             'today': today,
             'pending_action': pending_action,    # send to template
             'sweet_alert': sweet_alert,
+            'breadcrumb':breadcrumb
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)

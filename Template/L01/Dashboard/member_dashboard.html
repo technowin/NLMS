@@ -19,6 +19,8 @@
 {% block content %}
 
     <div class="py-3">
+
+        <input type="hidden" id="breadcrumb" value="{{ breadcrumb}}">
         <!-- Welcome Section -->
         {% comment %} <div class="row mb-4">
             <div class="col-12">
@@ -353,6 +355,24 @@
             </div>
         </div>
     {% endif %}
+
+    <div class="modal fade" id="memberlogoutModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Logout</h5>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to logout?
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="stayBtn" class="btn btn-secondary">No</button>
+                <button type="button" id="logoutBtn" class="btn btn-danger">Yes</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
 
 <style>
 
@@ -1520,6 +1540,50 @@
   });
 </script>
 {% endif %}
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const breadcrumbEl = document.getElementById("breadcrumb");
+    const breadcrumb = breadcrumbEl ? breadcrumbEl.value : "0";
+
+    // 🚫 If breadcrumb == 1 → DO NOTHING
+    if (breadcrumb === "1") {
+        return;
+    }
+
+    const modalEl = document.getElementById("memberlogoutModal");
+    const modal = new bootstrap.Modal(modalEl);
+    let modalOpen = false;
+
+    // Push fake history state
+    history.pushState(null, null, location.href);
+
+    window.addEventListener("popstate", function () {
+
+        if (!modalOpen) {
+            modalOpen = true;
+            modal.show();
+
+            // Keep user on same page
+            history.pushState(null, null, location.href);
+        }
+    });
+
+    document.getElementById("stayBtn").addEventListener("click", function () {
+        modalOpen = false;
+        modal.hide();
+        history.pushState(null, null, location.href);
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+        window.location.href = "/logout";
+    });
+
+});
+</script>
+
 
 {% endblock %}
 
