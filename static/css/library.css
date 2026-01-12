@@ -1662,7 +1662,7 @@ footer .footer-container {
 /* Library Card */
 .oz-library-card {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: stretch;
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 16px;
@@ -2130,6 +2130,36 @@ footer .footer-container {
         justify-content: flex-start;
     }
 }
+
+@media screen and (max-width: 768px) {
+
+    .oz-library-card {
+        flex-direction: column;   /* ⬅ Stack vertically */
+    }
+
+    .oz-libraryInd-img-wrapper {
+        width: 100%;              /* ⬅ Full width */
+        padding: 15px;
+    }
+
+    .main-library-image {
+        height: 260px;            /* ⬅ Smaller image */
+        width: 100%;
+        object-fit: contain;
+    }
+
+    .library-thumbnails {
+        justify-content: center;
+        flex-wrap: wrap;
+        overflow-x: auto;      
+    }
+
+    .oz-library-content {
+        width: 100%;
+        padding: 16px;
+    }
+}
+
 
 /* Animation */
 @keyframes gradient-shift {

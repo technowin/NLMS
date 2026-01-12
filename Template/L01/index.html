@@ -648,24 +648,23 @@
     {% for library in libraries %}
         <div class="oz-library-card">
             <!-- Image -->
-             <div class="oz-libraryInd-img-wrapper">
-                <img
-                    src="{{ library.main_image }}"
-                    alt="{{ library.library_name }}"
-                    class="libraryInd-img main-library-image">
-           
+            <div class="oz-libraryInd-img-wrapper">
+                    <img
+                        src="{{ library.main_image }}"
+                        alt="{{ library.library_name }}"
+                        class="libraryInd-img main-library-image">
+            
 
-            {% if library.image_urls|length > 1 %}
-            <div class="library-thumbnails">
-                {% for img in library.image_urls %}
-                    <img src="{{ img }}"
-                        class="library-thumb {% if forloop.first %}active{% endif %}"
-                        onclick="changeMainImage(this)">
-                {% endfor %}
+                {% if library.image_urls|length > 1 %}
+                <div class="library-thumbnails">
+                    {% for img in library.image_urls %}
+                        <img src="{{ img }}"
+                            class="library-thumb {% if forloop.first %}active{% endif %}"
+                            onclick="changeMainImage(this)">
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
-
 
             <!-- Content -->
             <div class="oz-library-content">
@@ -715,29 +714,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Library Rules Modal -->
-                {% comment %} {% if library.library_rules %}
-                    <div id="libraryRulesModal{{ library.id }}" class="modal">
-                        <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <h3>Library Rules</h3>
-                            <div class="rules-content">{{ library.library_rules|safe }}</div>
-                        </div>
-                    </div>
-                {% endif %}
-
-                <!-- Membership Rules Modal -->
-                {% if library.membership_rules %}
-                    <div id="membershipRulesModal{{ library.id }}" class="modal">
-                        <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <h3>Membership Rules</h3>
-                            <div class="rules-content">{{ library.membership_rules|safe }}</div>
-                        </div>
-                    </div>
-                {% endif %} {% endcomment %}
-
-                <!-- Social Icons -->
                 <div class="library-social-icons">
                     {% if library.facebook_url %}
                         <a href="{{ library.facebook_url }}" target="_blank"><i class="fab fa-facebook-f"></i></a>
@@ -794,6 +770,7 @@
                 {% endif %}
             </div>
         </div>
+    </div>
 
         {% if library.books %}
             <div class="library-books-section">
