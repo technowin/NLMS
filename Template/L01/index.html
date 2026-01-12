@@ -649,20 +649,16 @@
         <div class="oz-library-card">
             <!-- Image -->
             <div class="oz-libraryInd-img-wrapper">
-                    <img
-                        src="{{ library.main_image }}"
-                        alt="{{ library.library_name }}"
-                        class="libraryInd-img main-library-image">
+                    <img src="{{ library.main_image }}"alt="{{ library.library_name }}"class="libraryInd-img main-library-image">
             
-
                 {% if library.image_urls|length > 1 %}
-                <div class="library-thumbnails">
-                    {% for img in library.image_urls %}
-                        <img src="{{ img }}"
-                            class="library-thumb {% if forloop.first %}active{% endif %}"
-                            onclick="changeMainImage(this)">
-                    {% endfor %}
-                </div>
+                    <div class="library-thumbnails">
+                        {% for img in library.image_urls %}
+                            <img src="{{ img }}"
+                                class="library-thumb {% if forloop.first %}active{% endif %}"
+                                onclick="changeMainImage(this)">
+                        {% endfor %}
+                    </div>
                 {% endif %}
             </div>
 

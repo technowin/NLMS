@@ -273,7 +273,7 @@ body {
 .govLinkContainer {
     display: flex;
     align-items: center;
-    padding-left: 28px;
+    /* padding-left: 28px; */
     position: relative;
 }
 
@@ -1285,17 +1285,6 @@ footer .footer-container {
 }
 
 /* Tablet */
-@media screen and (max-width: 1000px) {
-    .hero-section {
-        height: 600px;
-        min-height: 450px;
-    }
-
-    .hero-overlay {
-        align-items: center;
-        padding: 40px 20px;
-    }
-}
 
 /* Mobile */
 @media screen and (max-width: 600px) {
@@ -1369,23 +1358,124 @@ footer .footer-container {
 }
 
 /* Tablet and Mobile adjustments */
-@media screen and (max-width: 1000px) {
+/* Small Laptop Screens (1001px – 1200px) */
+/* Small Laptop Screens (1001px – 1200px) */
+@media screen and (max-width: 1200px) and (min-width: 1001px) {
+
     .hero-section {
-        height: 400px;
+        min-height: 100vh;            /* Ensure it covers the entire screen */
+        height: 100vh;                /* Full height of the screen */
+        background-size: cover;
+        background-position: center; /* Center the background */
+        position: relative;           /* Important for overlay position */
     }
 
     .hero-overlay {
-        padding-top: 200px; /* reduce push on smaller screens */
+        position: absolute;          /* Position the overlay absolutely */
+        inset: 0;                     /* Ensure it covers the whole hero section */
+        display: flex;
+        justify-content: center;     /* Horizontally center the content */
+        align-items: center;         /* Vertically center the content */
+        padding: 0 20px;              /* Add small horizontal padding */
+        background: rgba(0, 0, 0, 0.5); /* Optional: semi-transparent background for overlay */
+    }
+
+    .hero-text {
+        text-align: center;          /* Center the text */
+        width: 100%;
+        max-width: 800px;             /* Maximum width for the text */
+        padding: 1.5rem;
+        margin: 0;
     }
 
     .hero-text h1 {
-        font-size: 1.8rem;
+        font-size: 2rem;              /* Adjust font size */
+        letter-spacing: 1px;
     }
 
     .hero-text p {
-        font-size: 1rem;
+        font-size: 1rem;              /* Adjust subtitle font size */
+        margin-top: 10px;
+    }
+
+    .hero-buttons {
+        display: flex;
+        justify-content: center;     /* Center the buttons */
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .hero-btn {
+        width: auto;                 /* Buttons take their natural width */
     }
 }
+
+
+
+/* Mobile & Tablet Fix (≤ 768px) */
+@media screen and (max-width: 768px) {
+
+    .hero-section {
+        height: auto;                 /* allow content to grow */
+        min-height: 80vh;             /* full screen */
+        background-size: cover;
+        background-position: center top;
+    }
+
+    .hero-overlay {
+        position: absolute;     /* IMPORTANT */
+        inset: 0;               /* full coverage */
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;  /* content stays lower */
+        padding-bottom: 50px;   /* controls vertical placement */
+        padding-top: 20px;
+    }
+
+    .hero-text {
+        padding: 1rem;
+        margin-bottom: 40px;
+        max-width: 100%;
+    }
+
+    .hero-text h1 {
+        font-size: 1.5rem;
+        line-height: 1.3;
+    }
+
+    .hero-text p {
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+    }
+
+    /* Dropdown & Search */
+    .hero-dropdown {
+        width: 100%;
+    }
+
+    .custom-dropdown {
+        width: 100%;
+    }
+
+    .dropdown-input {
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    /* Buttons visible */
+    .hero-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .hero-btn {
+        width: 100%;
+    }
+}
+
+
 
 @media screen and (max-width: 600px) {
     .hero-section {
