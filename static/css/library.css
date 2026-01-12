@@ -1360,7 +1360,45 @@ footer .footer-container {
 /* Tablet and Mobile adjustments */
 /* Small Laptop Screens (1001px – 1200px) */
 /* Small Laptop Screens (1001px – 1200px) */
-@media screen and (max-width: 1368px) and (min-width: 1001px) {
+@media screen and (max-width: 1400px) and (min-width: 1001px) {
+
+    .hero-section {
+        min-height: 60vh;            /* Reduce the minimum height of the section */
+        height: 60vh;                /* Adjust overall height for the section */
+        background-size: cover;     /* Keep the background image covering the full section */
+        background-position: center; /* Center the background image */
+    }
+
+    .headerUtilityRow {
+        padding: 0 5px;  /* Reduce padding to shrink header height */
+    }
+
+    .govLinkContainer {
+        font-size: 0.9rem;   /* Reduce font size of the government link */
+    }
+
+    .headerContactInfo .contact-itemm {
+        font-size: 0.8rem;   /* Smaller font size for contact details */
+    }
+
+    .employee_login .employee-login-btn {
+        font-size: 0.8rem;   /* Reduce button text size */
+        padding: 8px 12px;   /* Smaller button size */
+    }
+
+    .fontControlContainer {
+        font-size: 0.8rem;   /* Smaller font size for font control buttons */
+    }
+
+    .fontControlBtn, .fontControlBtnn {
+        font-size: 0.8rem;   /* Adjust font size for buttons */
+        padding: 6px 12px;   /* Adjust button padding */
+    }
+
+    /* Specific adjustments for language toggle buttons */
+    .fontControlBtnn {
+        padding: 6px 12px;   /* Adjust button size */
+    }
 
     .hero-section {
         min-height: 100vh;            /* Ensure it covers the entire screen */
