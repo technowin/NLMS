@@ -1360,7 +1360,7 @@ footer .footer-container {
 /* Tablet and Mobile adjustments */
 /* Small Laptop Screens (1001px – 1200px) */
 /* Small Laptop Screens (1001px – 1200px) */
-@media screen and (max-width: 1200px) and (min-width: 1001px) {
+@media screen and (max-width: 1368px) and (min-width: 1001px) {
 
     .hero-section {
         min-height: 100vh;            /* Ensure it covers the entire screen */
@@ -1409,6 +1409,7 @@ footer .footer-container {
         width: auto;                 /* Buttons take their natural width */
     }
 }
+
 
 
 
