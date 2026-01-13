@@ -3477,24 +3477,18 @@ def library_master_edit(request):
                     for p in library.image_url.split(",")
                     if p.strip()
                 ]
-
-            # 2️⃣ Removed images
             removed_paths = []
 
             if removed_images:
                 removed_urls = json.loads(removed_images)
 
                 for full_url in removed_urls:
-                    # decode %20
                     decoded_url = unquote(full_url)
-
-                    # 🔥 extract path only → /media/L26/...
                     parsed_path = urlparse(decoded_url).path
 
                     for db_path in existing_paths:
-                        base_url = file_storage_service.get_file_url(db_path)  # /media/L26/...
-
-                        if parsed_path == base_url:
+                        # 🔥 KEY FIX: match by suffix
+                        if parsed_path.endswith(db_path):
                             removed_paths.append(db_path)
                             break
 
@@ -3505,7 +3499,6 @@ def library_master_edit(request):
             remaining_existing = [
                 p for p in existing_paths if p not in removed_paths
             ]
-
 
             # 4️⃣ Save new images
             new_paths = []
@@ -3518,10 +3511,8 @@ def library_master_edit(request):
                 )
                 new_paths.append(normalized_path)
 
-            # 5️⃣ Merge remaining + new
+            # 5️⃣ Merge & save
             final_paths = remaining_existing + new_paths
-
-            # 6️⃣ Save to DB
             image_url = ",".join(final_paths) if final_paths else ""
 
             # ------------------------
