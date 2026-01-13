@@ -200,7 +200,6 @@ def library_list_index(request):
 
             for lilo in library_details:
 
-
                 image_urls = []
 
                 if lilo.image_url:
@@ -216,7 +215,6 @@ def library_list_index(request):
 
             library = library_details.first()
             library_name = library_details.first().library_name if library_details.exists() else ""
-            # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
             library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
 
         return render(request, "administration/library_list_index.html", {

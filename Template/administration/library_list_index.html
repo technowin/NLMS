@@ -5,6 +5,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 <style>
+    /* Your existing CSS styles remain the same */
     /* ================= Book Gallery Container ================= */
     .library-books-section {
         margin-top: 30px;
@@ -16,8 +17,8 @@
         font-size: 1.8rem;
         font-weight: 700;
         text-align: center;
-        color: #2c3e50;  /* Darker shade for readability */
-        text-transform: capitalize;  /* Capitalizes the first letter of each word */
+        color: #2c3e50;
+        text-transform: capitalize;
         position: relative;
         padding-bottom: 10px;
         margin-bottom: 30px;
@@ -28,9 +29,9 @@
         position: absolute;
         bottom: 0;
         left: 50%;
-        width: 60px;  /* Shorter line than the width of the text */
+        width: 60px;
         height: 3px;
-        background-color: #f39c12;  /* Golden accent line */
+        background-color: #f39c12;
         transform: translateX(-50%);
         border-radius: 2px;
     }
@@ -38,15 +39,14 @@
     .library-books-section h4 span {
         font-size: 1.2rem;
         font-weight: 400;
-        color: #00eeffff;  /* Slightly lighter shade for the subtitle or secondary text */
+        color: #00eeffff;
     }
 
     .library-books-section h4:hover {
-        color: #ff0000ff;  /* Golden text on hover */
+        color: #ff0000ff;
         cursor: pointer;
         transition: color 0.3s ease;
     }
-
 
     /* Book Gallery */
     .book-gallery {
@@ -98,7 +98,6 @@
     .book-flip-front img, .book-flip-back img {
         width: 100%;
         height: 100%;
-        {% comment %} object-fit: cover; {% endcomment %}
     }
 
     /* Back Side */
@@ -112,7 +111,6 @@
         padding: 6px 12px;
         font-size: 0.9rem;
         font-weight: 500;
-        {% comment %} background: #015296; {% endcomment %}
         background: #F700F7;
         color: #fff;
         border: none;
@@ -139,22 +137,18 @@
         font-size: 1.1rem;
         font-weight: 700;
         letter-spacing: 0.4px;
-
-        /* Dark brown gradient text (high contrast) */
         background: linear-gradient(
             135deg,
-            #3e2723,   /* deep brown */
-            #5d4037,   /* warm brown */
-            #6d4c41    /* soft highlight */
+            #3e2723,
+            #5d4037,
+            #6d4c41
         );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-
         cursor: pointer;
         position: relative;
         display: inline-block;
         padding: 8px 16px;
-
         transition:
             transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
             text-shadow 0.35s ease;
@@ -168,27 +162,20 @@
         bottom: 0;
         width: 32%;
         height: 3px;
-
         background: linear-gradient(
             90deg,
             #5d4037,
             #8d6e63
         );
-
         border-radius: 10px;
         transform: translateX(-50%);
         opacity: 0.8;
-
         transition: width 0.4s ease, opacity 0.4s ease;
     }
 
     /* Hover effect */
     .book-title:hover {
         transform: translateY(-3px) scale(1.02);
-
-        {% comment %} /* Soft brown glow for visibility */
-        text-shadow:
-            0 4px 12px rgba(93, 64, 55, 0.35); {% endcomment %}
     }
 
     .book-title:hover::after {
@@ -201,81 +188,69 @@
         transform: translateY(-1px) scale(0.98);
     }
 
-    
-
     /* For tablets and mobile devices with smaller screens */
     @media (max-width: 768px) {
         .book-gallery {
             flex-wrap: wrap;
-            gap: 15px; /* Reduced gap between cards */
-            justify-content: center; /* Center the items */
-            padding: 0 10px; /* Add some padding for better layout */
+            gap: 15px;
+            justify-content: center;
+            padding: 0 10px;
         }
 
-        /* Book item settings */
         .book-item {
-            width: 48%; /* 2 items per row with some gap */
-            height: 48%; /* 2 items per row with some gap */
+            width: 48%;
+            height: 48%;
             font-size: 0.9rem;
-            margin-bottom: 20px; /* Add space between rows */
+            margin-bottom: 20px;
             position: relative;
         }
 
-        /* Adjust flip card container */
         .book-flip {
-            width: 100%; /* Full width of the .book-item */
-            height: 250px; /* Adjust the height to fit mobile screens */
+            width: 100%;
+            height: 250px;
         }
 
-        /* Book item title */
         .book-title {
-            font-size: 0.9rem; /* Adjust font size for mobile */
+            font-size: 0.9rem;
             margin-top: 5px;
         }
 
         .book-item img {
             width: 100%;
             height: 100%;
-            {% comment %} object-fit: cover; {% endcomment %}
         }
 
-        /* Ensure hover effects still work well on smaller screens */
         .book-flip-inner {
             transition: transform 0.8s ease;
             transform-style: preserve-3d;
         }
 
-        /* Flip button */
         .flip-btn {
             font-size: 0.8rem;
             padding: 5px 10px;
         }
     }
 
-    /* For very small mobile screens (portrait mode, around 480px or below) */
+    /* For very small mobile screens */
     @media (max-width: 480px) {
         .book-gallery {
-            flex-direction: column; /* Stack items vertically for very small screens */
-            gap: 10px; /* Very small gap between items */
+            flex-direction: column;
+            gap: 10px;
         }
 
-        /* Book item settings */
         .book-item {
-            width: 100%; /* Full width for each book */
-            font-size: 0.85rem; /* Slightly smaller font size */
+            width: 100%;
+            font-size: 0.85rem;
         }
 
-        /* Flip card container */
         .book-flip {
-            height: 200px; /* Adjust card height */
+            height: 200px;
         }
 
-        /* Title adjustments */
         .book-title {
-            font-size: 0.85rem; /* Smaller font size for mobile */
+            font-size: 0.85rem;
         }
 
-        /* Flip button */
         .flip-btn {
             padding: 4px 8px;
             font-size: 0.7rem;
@@ -285,33 +260,34 @@
     /* View More Button */
     .view-more-btn-container {
         text-align: center;
-        margin-top: 20px;  /* Adds space above the button */
+        margin-top: 20px;
     }
 
     .view-more-btn {
-        background-color: #015296;  /* Blue background color */
+        background-color: #015296;
         color: #fff;
         padding: 12px 25px;
         font-size: 1.1rem;
         font-weight: bold;
         border-radius: 25px;
-        text-decoration: none;  /* Remove underline from link */
+        text-decoration: none;
         display: inline-flex;
-        align-items: center;  /* Align text and icon vertically */
+        align-items: center;
         justify-content: center;
-        gap: 8px;  /* Space between the icon and text */
+        gap: 8px;
         transition: all 0.3s ease;
     }
 
     .view-more-btn i {
-        font-size: 1.2rem;  /* Icon size */
+        font-size: 1.2rem;
     }
 
     .view-more-btn:hover {
-        background-color: #007bff;  /* Lighter blue on hover */
-        transform: scale(1.05);  /* Slightly enlarge the button */
+        background-color: #007bff;
+        transform: scale(1.05);
     }
 </style>
+
 <style>
     /* Modal Base Styles */
     .zoom-modal {
@@ -338,7 +314,7 @@
         display: flex;
         width: 90%;
         max-width: 1200px;
-        height: 85vh; /* Increased height */
+        height: 85vh;
         max-height: 800px;
         background: white;
         border-radius: 12px;
@@ -360,7 +336,7 @@
     .zoom-modal-right {
         width: 55%;
         padding: 30px;
-        overflow-y: auto; /* Scroll only if content overflows */
+        overflow-y: auto;
     }
     
     .book-info-content {
@@ -618,7 +594,6 @@
     }
 </style>
 
-
 <style>
     .library-thumbnails {
         display: flex;
@@ -649,137 +624,123 @@
     {% for library in libraries %}
          <div class="oz-library-card">
             <!-- Image -->
-             <div class="oz-libraryInd-img-wrapper">
-                <img
-                    src="{{ library.main_image }}"
-                    alt="{{ library.library_name }}"
-                    class="libraryInd-img main-library-image">
-           
+            <div class="oz-libraryInd-img-wrapper">
+                {% if library.main_image and library.main_image != "None" %}
+                    <img
+                        src="{{ library.main_image }}"
+                        alt="{{ library.library_name|default:'Library Image' }}"
+                        class="libraryInd-img main-library-image">
+                {% endif %}
 
-            {% if library.image_urls|length > 1 %}
-            <div class="library-thumbnails">
-                {% for img in library.image_urls %}
-                    <img src="{{ img }}"
-                        class="library-thumb {% if forloop.first %}active{% endif %}"
-                        onclick="changeMainImage(this)">
-                {% endfor %}
+                {% if library.image_urls|length > 1 %}
+                <div class="library-thumbnails">
+                    {% for img in library.image_urls %}
+                        {% if img and img != "None" %}
+                            <img src="{{ img }}"
+                                class="library-thumb {% if forloop.first %}active{% endif %}"
+                                onclick="changeMainImage(this)">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
-
 
             <!-- Content -->
             <div class="oz-library-content">
-                <h1>{{ library.library_name_mar }}</h1>
-                {% if library.establishedYear %}
+                {% if library.library_name_mar and library.library_name_mar != "None" %}
+                    <h1>{{ library.library_name_mar }}</h1>
+                {% elif library.library_name and library.library_name != "None" %}
+                    <h1>{{ library.library_name }}</h1>
+                {% endif %}
+                
+                {% if library.est_year and library.est_year != "None" %}
                     <h4>Since {{ library.est_year }}</h4>
                 {% endif %}
 
-              <!-- Replace the description section with this -->
+                <!-- Description section -->
                 <div class="description-container">
-                    <p id="libraryDescription" class="collapsed">
-                        {{ library.about_library }}
-                    </p>
-                    
-                    <button id="readMoreBtn" onclick="toggleDescription(this)">
-                        <span class="text">Read More</span>
-                        <span class="icon">↓</span>
-                    </button>
+                    {% if library.about_library and library.about_library != "None" %}
+                        <p id="libraryDescription" class="collapsed">
+                            {{ library.about_library }}
+                        </p>
+                        
+                        <button id="readMoreBtn" onclick="toggleDescription(this)">
+                            <span class="text">Read More</span>
+                            <span class="icon">↓</span>
+                        </button>
+                    {% endif %}
                 </div>
 
-<!-- Rest of your HTML remains the same, just make sure the modal and button sections use the updated classes -->
-
-
-                {% if library.librarian_name %}
+                <!-- Librarian Name -->
+                {% if library.librarian_name and library.librarian_name != "None" %}
                     <p><strong>Librarian:</strong> {{ library.librarian_name }}</p>
                 {% endif %}
 
-                {% if library.opening_hours %}
+                <!-- Opening Hours -->
+                {% if library.opening_hours and library.opening_hours != "None" %}
                     <p><strong>Opening Hours:</strong> {{ library.opening_hours }}</p>
                 {% endif %}
 
-                {% if library.capacity %}
+                <!-- Capacity -->
+                {% if library.capacity and library.capacity != "None" %}
                     <p><strong>Capacity:</strong> {{ library.capacity }}</p>
                 {% endif %}
 
                 <!-- Library & Membership Rules Icons -->
                 <div class="library-rules-icons">
-                    {% if library.library_rules %}
+                    {% if library.library_rules and library.library_rules != "None" %}
                         <button class="rule-btn" data-modal="#libraryRulesModal{{ library.id }}">
                             <i class="fa fa-book"></i> Library Rules
                         </button>
                     {% endif %}
-                    {% if library.membership_rules %}
+                    {% if library.membership_rules and library.membership_rules != "None" %}
                         <button class="rule-btn" data-modal="#membershipRulesModal{{ library.id }}">
                             <i class="fa fa-id-card"></i> Membership Rules
                         </button>
                     {% endif %}
                 </div>
 
-                <!-- Library Rules Modal -->
-                {% comment %} {% if library.library_rules %}
-                    <div id="libraryRulesModal{{ library.id }}" class="modal">
-                        <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <h3>Library Rules</h3>
-                            <div class="rules-content">{{ library.library_rules|safe }}</div>
-                        </div>
-                    </div>
-                {% endif %}
-
-                <!-- Membership Rules Modal -->
-                {% if library.membership_rules %}
-                    <div id="membershipRulesModal{{ library.id }}" class="modal">
-                        <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <h3>Membership Rules</h3>
-                            <div class="rules-content">{{ library.membership_rules|safe }}</div>
-                        </div>
-                    </div>
-                {% endif %} {% endcomment %}
-
                 <!-- Social Icons -->
                 <div class="library-social-icons">
-                    {% if library.facebook_url %}
+                    {% if library.facebook_url and library.facebook_url != "None" %}
                         <a href="{{ library.facebook_url }}" target="_blank"><i class="fab fa-facebook-f"></i></a>
                     {% endif %}
-                    {% if library.instagram_url %}
+                    {% if library.instagram_url and library.instagram_url != "None" %}
                         <a href="{{ library.instagram_url }}" target="_blank"><i class="fab fa-instagram"></i></a>
                     {% endif %}
-                    {% if library.twitter_url %}
+                    {% if library.twitter_url and library.twitter_url != "None" %}
                         <a href="{{ library.twitter_url }}" target="_blank"><i class="fab fa-twitter"></i></a>
                     {% endif %}
-                    {% if library.youtube_url %}
+                    {% if library.youtube_url and library.youtube_url != "None" %}
                         <a href="{{ library.youtube_url }}" target="_blank"><i class="fab fa-youtube"></i></a>
                     {% endif %}
                 </div>
 
-              <div class="library-contact library-contact-inline">
-                    {% if library.contact_email %}
+                <!-- Contact Information -->
+                <div class="library-contact library-contact-inline">
+                    {% if library.contact_email and library.contact_email != "None" %}
                         <span>
                             <i class="fa fa-envelope"></i>
                             <a href="mailto:{{ library.contact_email }}">{{ library.contact_email }}</a>
                         </span>
                     {% endif %}
 
-                    {% if library.contact_phone %}
+                    {% if library.contact_phone and library.contact_phone != "None" %}
                         <span>
                             <i class="fa fa-phone"></i>
                             <a href="tel:{{ library.contact_phone }}">{{ library.contact_phone }}</a>
                         </span>
                     {% endif %}
 
-                    {% if library.location_url %}
+                    {% if library.location_url and library.location_url != "None" %}
                         <span>
                             <i class="fa fa-map-marker-alt"></i>
                             <a href="{{ library.location_url }}" target="_blank">View on Map</a>
                         </span>
                     {% endif %}
                 </div>
-
-
             
-                {% if library.membership_page_link %}
+                {% if library.membership_page_link and library.membership_page_link != "None" %}
                     <div class="">
                         <div class="cta-inline">
                             <span>Want to be a member of this library?</span>
@@ -798,50 +759,48 @@
     {% endfor %}
 
     {% for library in libraries %}
-
-    {% if library.library_rules %}
-        <div id="libraryRulesModal{{ library.id }}" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="closeModal(this)">&times;</span>
-                <h3>Library Rules</h3>
-                <div class="rules-content">
-                    {{ library.library_rules|safe }}
+        {% if library.library_rules and library.library_rules != "None" %}
+            <div id="libraryRulesModal{{ library.id }}" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal(this)">&times;</span>
+                    <h3>Library Rules</h3>
+                    <div class="rules-content">
+                        {{ library.library_rules|safe }}
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
 
-    {% if library.membership_rules %}
-        <div id="membershipRulesModal{{ library.id }}" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="closeModal(this)">&times;</span>
-                <h3>Membership Rules</h3>
-                <div class="rules-content">
-                    {{ library.membership_rules|safe }}
+        {% if library.membership_rules and library.membership_rules != "None" %}
+            <div id="membershipRulesModal{{ library.id }}" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal(this)">&times;</span>
+                    <h3>Membership Rules</h3>
+                    <div class="rules-content">
+                        {{ library.membership_rules|safe }}
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
+    {% endfor %}
+</div>
 
-{% endfor %}
-  <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            debugger;
-            const desc = document.getElementById("libraryDescription");
-            const btn = document.getElementById("readMoreBtn");
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const desc = document.getElementById("libraryDescription");
+        const btn = document.getElementById("readMoreBtn");
 
-            if (!desc || !btn) return;
+        if (!desc || !btn) return;
 
-            const wordCount = desc.innerText.trim().split(/\s+/).length;
+        const wordCount = desc.innerText.trim().split(/\s+/).length;
 
-            if (wordCount <= 25) {
-                btn.style.display = "none";
-                desc.classList.remove("collapsed"); // show full text if short
-            }
-        });
-        
+        if (wordCount <= 25) {
+            btn.style.display = "none";
+            desc.classList.remove("collapsed");
+        }
+    });
+    
     function toggleDescription(btn) {
-        debugger;
         const desc = document.getElementById("libraryDescription");
         const isExpanded = desc.classList.contains("expanded");
         const textSpan = btn.querySelector('.text');
@@ -912,12 +871,14 @@
     });
 </script>
 
-       <script>
+<script>
     function changeMainImage(thumb) {
         const wrapper = thumb.closest('.oz-libraryInd-img-wrapper');
         const mainImage = wrapper.querySelector('.main-library-image');
 
-        mainImage.src = thumb.src;
+        if (mainImage) {
+            mainImage.src = thumb.src;
+        }
 
         wrapper.querySelectorAll('.library-thumb').forEach(img => {
             img.classList.remove('active');
@@ -925,8 +886,14 @@
 
         thumb.classList.add('active');
     }
-    </script>
+    
+    function closeModal(element) {
+        const modal = element.closest('.modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+</script>
                 
-</div>
-
 {% endblock %}
