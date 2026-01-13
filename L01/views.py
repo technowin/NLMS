@@ -141,8 +141,8 @@ def index(request):
                     "year_of_publication": book.year_of_publication or "N/A",
                     "pages": book.pages or "",
                     "language": book.language or "Unknown",
-                    "front_page_photo": book.front_page_photo if book.front_page_photo else "",
-                    "last_page_photo": book.last_page_photo if book.last_page_photo else "",
+                    "front_page_photo": file_storage_service.get_file_url(book.front_page_photo) if book.front_page_photo else "",
+                    "last_page_photo": file_storage_service.get_file_url(book.last_page_photo) if book.last_page_photo else "",
                     "remarks": book.remarks or "",
                     "description": book.remarks or "No description available.",
                     "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
@@ -424,6 +424,8 @@ def registration(request):
                 with transaction.atomic():
                     
                     membertype = request.POST.get("membertype")
+                    
+                    user_id = request.POST.get("user_id") or None
 
                     # Default education field
                     education_value = request.POST.get("education") or None
@@ -465,10 +467,13 @@ def registration(request):
                         "email": request.POST.get("email") or None,
                         "dob": request.POST.get("dob") or None,
                         "membership_id": request.POST.get("membershiptype") or None,
-                        "created_by": request.POST.get("user_id"),
+                        "created_by": user_id,
                         "created_at": timezone.now(),
                         "status_id": 1,   # pending
                         "isactive": 1,
+                        "actionperformed": f"Applied for membership",
+                        "reviewed": None,
+                        "reviewed_at": None,
                     }
                     
                     raw_password = request.POST.get("repeat_password")
@@ -2441,7 +2446,7 @@ def membership_form_renew(request):
                     membership.updated_by = user_code
                     membership.status_id = 9  # Renewed status
                     membership.membership_renew = 1
-                    membership.actionperformed = None
+                    membership.actionperformed = f"Renewal request submitted"
                     membership.reviewed = None
                     membership.reviewed_at = None
                     

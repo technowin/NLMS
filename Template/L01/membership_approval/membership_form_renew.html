@@ -833,9 +833,29 @@
         }
 
         let initialMembershipType = $("#membershiptype").val();
-        if (initialMembershipType) {
+         if (initialMembershipType) {
             $("#membershiptype").trigger("change");
+            
+            // ========== ADD THIS LINE ==========
+            // Calculate toDate immediately after triggering change
+            setTimeout(function() {
+                updateToDate();
+            }, 300);
         }
+
+        // ========== ALSO ADD THIS ==========
+        // Force calculate toDate on page load if fromDate exists
+        $(window).on('load', function() {
+            const fromDate = $("#fromDate").val();
+            const months = $("#months").val();
+            
+            if (fromDate && months) {
+                // Small delay to ensure all calculations are ready
+                setTimeout(function() {
+                    updateToDate();
+                }, 400);
+            }
+        });
 
         // Set min date for From Date to today
         const fromDateInput = $("#fromDate");

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.shortcuts import render
-
+from services.file_storage_service import file_storage_service
 # Create your views here.
 import string
 from django.http import Http404, JsonResponse
@@ -1033,36 +1033,55 @@ def edit_payment_report(request):
                 report.deposit_date = datetime.strptime(deposit_date, "%Y-%m-%d")
 
             # --- Handle File Upload (Receipt PDF/Image/Excel) ---
+            # receipt_file = request.FILES.get("receipt_upload")
+            # if receipt_file:
+            #     from django.core.files.storage import default_storage
+            #     import os
+            #     base_folder = os.path.join(settings.MEDIA_ROOT, library_code, "Receipts", "PaymentReceipts")
+            #     receipt_folder = os.path.join(base_folder, str(receipt_no))
+            #     os.makedirs(receipt_folder, exist_ok=True)
+            #     original_name, ext = os.path.splitext(receipt_file.name)
+            #     date_suffix = deposit_date.replace("-", "") if deposit_date else datetime.now().strftime("%Y%m%d")
+            #     file_name = f"{original_name}_{receipt_no}{ext}"
+            #     file_path = os.path.join(receipt_folder, file_name)
+            #     with default_storage.open(file_path, "wb+") as destination:
+            #         for chunk in receipt_file.chunks():
+            #             destination.write(chunk)
+            #     relative_path = os.path.relpath(file_path, settings.MEDIA_ROOT)
+            #     report.receipt_upload = relative_path
             receipt_file = request.FILES.get("receipt_upload")
             if receipt_file:
-                from django.core.files.storage import default_storage
                 import os
-
-                # Base path for receipts
-                base_folder = os.path.join(settings.MEDIA_ROOT, library_code, "Receipts", "PaymentReceipts")
-
-                # Create subfolder for this receipt_no
-                receipt_folder = os.path.join(base_folder, str(receipt_no))
-                os.makedirs(receipt_folder, exist_ok=True)
+                from datetime import datetime
 
                 # Extract filename + extension
                 original_name, ext = os.path.splitext(receipt_file.name)
 
-                # Use deposit_date or fallback to today’s date
-                date_suffix = deposit_date.replace("-", "") if deposit_date else datetime.now().strftime("%Y%m%d")
+                # Optional: sanitize filename (recommended)
+                safe_name = original_name.replace(" ", "_")
 
-                # Construct full file name (include receipt_no + date)
-                file_name = f"{original_name}_{receipt_no}{ext}"
-                file_path = os.path.join(receipt_folder, file_name)
+                # Use deposit_date or fallback
+                date_suffix = (
+                    deposit_date.replace("-", "")
+                    if deposit_date
+                    else datetime.now().strftime("%Y%m%d")
+                )
 
-                # Save file
-                with default_storage.open(file_path, "wb+") as destination:
-                    for chunk in receipt_file.chunks():
-                        destination.write(chunk)
+                # Final file name
+                file_name = f"{safe_name}_{receipt_no}{ext}"
 
-                # Store relative path for DB
-                relative_path = os.path.relpath(file_path, settings.MEDIA_ROOT)
-                report.receipt_upload = relative_path
+                # Relative save path (IMPORTANT)
+                save_path = f"{library_code}/Receipts/PaymentReceipts/{receipt_no}/{file_name}"
+
+                # 🔥 Save using your storage service
+                normalized_path = file_storage_service.save_file(
+                    file=receipt_file,
+                    save_path=save_path
+                )
+
+                # ✅ Store ONLY normalized path in DB
+                report.receipt_upload = normalized_path
+            
 
             report.updated_by = user_id
             report.save()
