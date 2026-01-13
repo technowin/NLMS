@@ -18,9 +18,9 @@
 }
 
 /* Add Marathi font to all elements */
-* {
+{% comment %} * {
     font-family: 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', 'Arial Unicode MS', sans-serif !important;
-}
+} {% endcomment %}
 
 /* ================= COMPACT LAYOUT ================= */
 .main-container {
@@ -45,7 +45,7 @@
     padding: 15px;
     box-shadow: var(--card-shadow);
     border: 1px solid #e2e8f0;
-    height: fit-content;
+    
 }
 
 /* ================= MODE SELECTION ================= */
@@ -116,10 +116,11 @@
 }
 
 .search-tab.active {
-    background: white;
-    color: var(--primary-blue);
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: #ffffff;
     box-shadow: var(--card-shadow);
 }
+
 
 .view-details-btn {
     margin-top: auto;
@@ -236,6 +237,8 @@
     padding: 15px;
     margin-bottom: 15px;
     border: 1px solid #e2e8f0;
+    flex: 1 0 auto;
+    overflow-y: auto;
 }
 
 .section-title {
@@ -324,6 +327,14 @@
 .keyboard-container {
     margin-bottom: 10px;
     width: 100%;
+    height: 280px;               /* fixed keyboard area */
+    min-height: 280px;
+    max-height: 280px;
+
+    position: relative;        
+    pointer-events: none;
+
+    transition: opacity 0.2s ease;
 }
 
 .english-keyboard {
@@ -414,6 +425,34 @@
     margin-top: 8px;
     width: 100%;
 }
+
+
+.keyboard-hint {
+    position: absolute;
+    inset: 0;
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    background: #f0fff0;
+    border-radius: 6px;
+
+    font-size: 12px;
+    color: #388E3C;
+    padding: 10px;
+    z-index: 2;
+}
+
+.keyboard-hint.active {
+    display: flex;
+}
+
+.keyboard-body {
+    height: 100%;
+}
+
 
 /* ================= BUTTONS ================= */
 .btn {
@@ -619,7 +658,31 @@
 }
 
 /* ================= RESPONSIVE ================= */
-@media (max-width: 1024px) {
+
+@media (max-width: 480px) {
+    .main-container {
+        padding: 10px;
+    }
+    
+    .flip-card {
+        width: 90vw;          /* 🔥 responsive width */
+        max-width: 340px;
+        height: auto;         /* allow content-based height */
+        margin: 0 auto;       /* center card */
+    }
+
+    .flip-card-inner {
+        height: auto;
+        min-height: 380px;
+    }
+
+    .flip-card img,
+    .no-image {
+        height: 220px;        /* smaller image */
+    }
+}
+
+@media (min-width: 1280px) and (max-width: 1440px) {
     .search-layout {
         flex-direction: column;
     }
@@ -630,18 +693,23 @@
         min-width: 100%;
         max-width: 100%;
     }
+
+   .flip-card {
+        max-width: 320px;
+        height: 420px;
+    }
+
+    .flip-card-inner {
+        height: auto;
+        min-height: 380px;
+    }
+
+    .flip-card img,
+    .no-image {
+        height: 220px;        /* smaller image */
+    }
 }
 
-@media (max-width: 768px) {
-    .main-container {
-        padding: 10px;
-    }
-    
-    .flip-card {
-        width: 100%;
-        max-width: 300px;
-    }
-}
 /* ================= TRANSLITERATION STYLES ================= */
 .transliteration-hint {
     font-size: 11px;
@@ -681,7 +749,7 @@
     position: relative;
     display: inline-block;
     width: 50px;
-    height: 24px;
+    height: 18px;
 }
 
 .toggle-switch input {
@@ -705,7 +773,7 @@
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 16px;
+    height: 11px;
     width: 16px;
     left: 4px;
     bottom: 4px;
@@ -755,11 +823,11 @@ input:checked + .toggle-slider:before {
                 <div class="search-tabs">
                     <button class="search-tab active" onclick="showTab('advanced')">
                         <i class="bi bi-cogs"></i>
-                        Advanced
+                        प्रगत शोध/Advanced
                     </button>
                     <button class="search-tab" onclick="showTab('index')">
                         <i class="bi bi-list-ol"></i>
-                        Index
+                        अनुक्रमणिका शोध/Index
                     </button>
                 </div>
             </div>
@@ -767,17 +835,16 @@ input:checked + .toggle-slider:before {
             <!-- 3. Language Selection -->
             <div class="language-selection">
                 <div class="language-buttons">
-                    <button class="lang-btn active" onclick="setLanguage('english')">
-                        <i class="bi bi-globe"></i>
-                        English
+                    <button class="lang-btn active" data-lang="english" onclick="setLanguage('english')">
+                         English
                     </button>
-                    <button class="lang-btn" onclick="setLanguage('hindi')">
-                        <i class="bi bi-language"></i>
-                        Hindi
+
+                    <button class="lang-btn" data-lang="hindi" onclick="setLanguage('hindi')">
+                        हिंदी
                     </button>
-                    <button class="lang-btn" onclick="setLanguage('marathi')">
-                        <i class="bi bi-language"></i>
-                        Marathi
+
+                    <button class="lang-btn" data-lang="marathi" onclick="setLanguage('marathi')">
+                         मराठी
                     </button>
                 </div>
             </div>
@@ -806,20 +873,23 @@ input:checked + .toggle-slider:before {
                     
                     <div class="form-group">
                         <div class="type-buttons">
-                            <button class="type-btn active"  data-type="title" onclick="selectType('title')">Title</button>
-                            <button class="type-btn"  data-type="author" onclick="selectType('author')">Author</button>
+                            <button class="type-btn active"  data-type="title" onclick="selectType('title')">शीर्षक/Title</button>
+                            <button class="type-btn"  data-type="author" onclick="selectType('author')">लेखक/Author</button>
                             {% comment %} <button class="type-btn"  data-type="language" onclick="selectType('language')">Language</button> {% endcomment %}
                         </div>
                     </div>
                     
                     <!-- Transliteration Hint -->
-                    <div class="transliteration-hint" id="advancedTransliterationHint" style="display: none;">
+                    {% comment %} <div class="transliteration-hint" id="advancedTransliterationHint" style="display: none;">
                         <i class="bi bi-info-circle"></i>
                         <span>Type in English (e.g., "namaskar") and it will convert to Devanagari</span>
-                    </div>
+                    </div> {% endcomment %}
                     
                     <!-- Keyboard Container -->
-                    <div class="keyboard-container" id="advancedKeyboard"></div>
+                    <div class="keyboard-container" id="advancedKeyboard">
+                        <div class="keyboard-hint"></div>
+                        <div class="keyboard-body"></div>
+                    </div>
                     
                     <div class="form-group">
                         <div class="search-input-group">
@@ -843,8 +913,8 @@ input:checked + .toggle-slider:before {
                 <div class="search-section">
                     <div class="form-group">
                         <div class="type-buttons">
-                            <button class="type-btn active"  data-type="title" onclick="selectIndexType('title')">Title</button>
-                            <button class="type-btn"  data-type="author" onclick="selectIndexType('author')">Author</button>
+                            <button class="type-btn active"  data-type="title" onclick="selectIndexType('title')">शीर्षक/Title</button>
+                            <button class="type-btn"  data-type="author" onclick="selectIndexType('author')">लेखक/Author</button>
                         </div>
                     </div>
                     
@@ -855,7 +925,10 @@ input:checked + .toggle-slider:before {
                     </div>
                     
                     <!-- Keyboard Container -->
-                    <div class="keyboard-container" id="indexKeyboard"></div>
+                    <div class="keyboard-container" id="indexKeyboard">
+                        <div class="keyboard-hint"></div>
+                        <div class="keyboard-body"></div>
+                    </div>
                     
                     <div class="form-group">
                         <div class="search-input-group">
@@ -915,12 +988,16 @@ input:checked + .toggle-slider:before {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/indic-transliteration@2/dist/indic-transliteration.min.js"></script>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/indic-transliteration@2/dist/indic-transliteration.min.js"></script>
+
 <script>
 // ================= GLOBAL VARIABLES =================
 let currentMode = 'catalog';
 let currentData = [];
 let currentPage = 1;
-const itemsPerPage = 5;
+const itemsPerPage = 4;
 let currentSearchType = '';
 let currentAdvancedType = 'title';
 let currentIndexType = 'title';
@@ -936,7 +1013,7 @@ function initializeTransliteration() {
     setupTransliterationFields();
     
     console.log("Transliteration ready");
-    showStatus("Transliteration service ready", "success");
+    {% comment %} showStatus("Transliteration service ready", "success"); {% endcomment %}
 }
 
 function setupTransliterationFields() {
@@ -1101,65 +1178,92 @@ async function fetchTransliteration(word) {
 
 // ================= FALLBACK TRANSLITERATION =================
 function fallbackTransliteration(word) {
-    // Simple client-side fallback mapping for Marathi/Hindi
-    const transliterationMap = {
-        // Basic vowels
-        'a': 'अ', 'aa': 'आ', 'i': 'इ', 'ee': 'ई', 'u': 'उ', 'oo': 'ऊ',
-        'e': 'ए', 'ai': 'ऐ', 'o': 'ओ', 'au': 'औ', 
-        
-        // Consonants
-        'k': 'क', 'kh': 'ख', 'g': 'ग', 'gh': 'घ', 
-        'ch': 'च', 'chh': 'छ', 'j': 'ज', 'jh': 'झ', 
-        't': 'त', 'th': 'थ', 'd': 'द', 'dh': 'ध', 'n': 'न',
-        'p': 'प', 'ph': 'फ', 'b': 'ब', 'bh': 'भ', 'm': 'म',
-        'y': 'य', 'r': 'र', 'l': 'ल', 'v': 'व', 'w': 'व',
-        'sh': 'श', 's': 'स', 'h': 'ह',
-        
-        // Common words (Marathi/Hindi)
-        'namaste': 'नमस्ते', 'namaskar': 'नमस्कार',
-        'dhanyavad': 'धन्यवाद', 'abhari': 'आभारी',
-        'pustak': 'पुस्तक', 'granth': 'ग्रंथ',
-        'swagat': 'स्वागत', 'kripaya': 'कृपया',
-        'mala': 'मला', 'tumhi': 'तुम्ही', 'ahe': 'आहे',
-        'hot': 'होत', 'aahe': 'आहे', 'na': 'ना',
-        'ka': 'का', 'kay': 'काय', 'kont': 'कोण',
-        'kuth': 'कुठे', 'kashi': 'कशी', 'kiti': 'किती'
+    const vowels = {
+        a: "अ", aa: "आ", i: "इ", ee: "ई", u: "उ", oo: "ऊ",
+        e: "ए", ai: "ऐ", o: "ओ", au: "औ"
     };
-    
-    // Convert to lowercase for matching
-    const lowerWord = word.toLowerCase();
-    
-    // Try to find exact match
-    if (transliterationMap[lowerWord]) {
-        return transliterationMap[lowerWord];
-    }
-    
-    // Try to transliterate character by character
-    let result = '';
+
+    const matras = {
+        a: "", aa: "ा", i: "ि", ee: "ी", u: "ु", oo: "ू",
+        e: "े", ai: "ै", o: "ो", au: "ौ"
+    };
+
+    const consonants = {
+        k: "क", kh: "ख", g: "ग", gh: "घ",
+        ch: "च", chh: "छ", j: "ज", jh: "झ",
+        t: "त", th: "थ", d: "द", dh: "ध",
+        n: "न", p: "प", ph: "फ", b: "ब", bh: "भ",
+        m: "म", y: "य", r: "र", l: "ल", v: "व",
+        sh: "श", s: "स", h: "ह", ng: "ङ"
+    };
+
+    const halant = "्";
+    const text = word.toLowerCase();
+    let result = "";
     let i = 0;
-    
-    while (i < lowerWord.length) {
-        // Check for 2-character combinations first
-        if (i + 1 < lowerWord.length) {
-            const twoChars = lowerWord.substr(i, 2);
-            if (transliterationMap[twoChars]) {
-                result += transliterationMap[twoChars];
+
+    while (i < text.length) {
+        let two = text.substr(i, 2);
+        let one = text[i];
+
+        // Consonant (2-letter)
+        if (consonants[two]) {
+            result += consonants[two];
+            i += 2;
+
+            // Check following vowel → matra
+            let next2 = text.substr(i, 2);
+            let next1 = text[i];
+
+            if (matras[next2] !== undefined) {
+                result += matras[next2];
                 i += 2;
-                continue;
+            } else if (matras[next1] !== undefined) {
+                result += matras[next1];
+                i += 1;
+            } else if (i < text.length) {
+                result += halant;
             }
+            continue;
         }
-        
-        // Check single character
-        const singleChar = lowerWord[i];
-        if (transliterationMap[singleChar]) {
-            result += transliterationMap[singleChar];
-        } else {
-            result += singleChar; // Keep original if no mapping
+
+        // Consonant (1-letter)
+        if (consonants[one]) {
+            result += consonants[one];
+            i++;
+
+            let next2 = text.substr(i, 2);
+            let next1 = text[i];
+
+            if (matras[next2] !== undefined) {
+                result += matras[next2];
+                i += 2;
+            } else if (matras[next1] !== undefined) {
+                result += matras[next1];
+                i += 1;
+            } else if (i < text.length) {
+                result += halant;
+            }
+            continue;
         }
+
+        // Standalone vowel
+        if (vowels[two]) {
+            result += vowels[two];
+            i += 2;
+            continue;
+        }
+        if (vowels[one]) {
+            result += vowels[one];
+            i++;
+            continue;
+        }
+
+        result += one;
         i++;
     }
-    
-    return result || word;
+
+    return result;
 }
 
 // ================= UTILITY FUNCTIONS =================
@@ -1179,7 +1283,7 @@ function toggleTransliteration(enabled) {
     if (enabled) {
         updateTransliterationUI(true);
         const languageName = currentLanguage.charAt(0).toUpperCase() + currentLanguage.slice(1);
-        showStatus(`Transliteration enabled for ${languageName}. Type in English.`, "success");
+        {% comment %} showStatus(`Transliteration enabled for ${languageName}. Type in English.`, "success"); {% endcomment %}
         updateHintMessages();
         
         // Process any existing text in inputs
@@ -1193,7 +1297,7 @@ function toggleTransliteration(enabled) {
         
     } else {
         updateTransliterationUI(false);
-        showStatus('Transliteration disabled', 'info');
+        {% comment %} showStatus('Transliteration disabled', 'info'); {% endcomment %}
     }
     
     renderKeyboards();
@@ -1224,7 +1328,7 @@ function updateHintMessages() {
     const advancedHint = document.getElementById('advancedTransliterationHint');
     const indexHint = document.getElementById('indexTransliterationHint');
     
-    if (advancedHint) {
+    {% comment %} if (advancedHint) {
         const span = advancedHint.querySelector('span');
         if (span) span.textContent = hintText;
     }
@@ -1232,36 +1336,35 @@ function updateHintMessages() {
     if (indexHint) {
         const span = indexHint.querySelector('span');
         if (span) span.textContent = hintText;
-    }
+    } {% endcomment %}
 }
 
 function updateTransliterationForLanguage(language) {
     if (transliterationEnabled) {
         // Update hint messages
         updateHintMessages();
-        showStatus('Transliteration updated for ' + (language === 'marathi' ? 'Marathi' : 'Hindi'), 'info');
+        {% comment %} showStatus('Transliteration updated for ' + (language === 'marathi' ? 'Marathi' : 'Hindi'), 'info'); {% endcomment %}
     }
 }
 
 // ================= LANGUAGE SET FUNCTION =================
 function setLanguage(lang) {
     currentLanguage = lang;
-    
-    // Update UI
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+
+    // ✅ Update active button correctly
     document.querySelectorAll('.lang-btn').forEach(btn => {
-        if (btn.textContent.toLowerCase().includes(lang.toLowerCase())) {
-            btn.classList.add('active');
-        }
+        btn.classList.toggle('active', btn.dataset.lang === lang);
     });
-    
-    // Show/hide transliteration toggle
+
+    // Show / hide transliteration toggle
     const transliterationToggle = document.getElementById('transliterationToggle');
+
     if (lang === 'hindi' || lang === 'marathi') {
         if (transliterationToggle) transliterationToggle.style.display = 'flex';
         updateTransliterationForLanguage(lang);
     } else {
         if (transliterationToggle) transliterationToggle.style.display = 'none';
+
         if (transliterationEnabled) {
             const switchElement = document.getElementById('transliterationSwitch');
             if (switchElement) {
@@ -1270,13 +1373,11 @@ function setLanguage(lang) {
             }
         }
     }
-    
-    // Update keyboards
+
+    // Update keyboards & inputs
     renderKeyboards();
     updateInputPlaceholders();
-    showStatus(`Language set to: ${lang.charAt(0).toUpperCase() + lang.slice(1)}`, 'info');
 }
-
 // ================= KEYBOARD RENDERING =================
 function renderKeyboards() {
     renderAdvancedKeyboard();
@@ -1286,39 +1387,55 @@ function renderKeyboards() {
 function renderAdvancedKeyboard() {
     const container = document.getElementById('advancedKeyboard');
     if (!container) return;
-    
+
+    const hint = container.querySelector('.keyboard-hint');
+    const body = container.querySelector('.keyboard-body');
+
+    body.innerHTML = getKeyboardHTML(currentLanguage);
+    setupKeyboardEvents(body, 'advancedSearchInput');
+
     if (transliterationEnabled && (currentLanguage === 'hindi' || currentLanguage === 'marathi')) {
         const languageName = currentLanguage.charAt(0).toUpperCase() + currentLanguage.slice(1);
-        container.innerHTML = `
-            <div style="text-align: center; padding: 15px; color: #4CAF50; background: #f0fff0; border-radius: 6px; margin-bottom: 10px;">
-                <i class="bi bi-translate" style="font-size: 24px; margin-bottom: 8px;"></i>
-                <p style="margin: 0; font-size: 12px;">Transliteration is enabled. Type in English to get ${languageName} characters.</p>
-                <p style="margin: 5px 0 0 0; font-size: 11px; color: #388E3C;">Example: "namaskar" → "नमस्कार"</p>
+
+        hint.innerHTML = `
+            <div>
+                <i class="bi bi-translate" style="font-size:22px"></i><br>
+                Type in English to get ${languageName} characters<br>
+                <small>"namaskar" → "नमस्कार"</small>
             </div>
         `;
-        return;
+        hint.classList.add('active');
+        body.style.pointerEvents = 'none'; 
+    } else {
+        hint.classList.remove('active');
+        body.style.pointerEvents = 'auto'; 
     }
-    
-    container.innerHTML = getKeyboardHTML(currentLanguage);
-    setupKeyboardEvents(container, 'advancedSearchInput');
 }
 
 function renderIndexKeyboard() {
     const container = document.getElementById('indexKeyboard');
     if (!container) return;
-    
+
+    const hint = container.querySelector('.keyboard-hint');
+    const body = container.querySelector('.keyboard-body');
+
+    body.innerHTML = getKeyboardHTML(currentLanguage);
+    setupKeyboardEvents(body, 'indexSearchInput');
+
     if (transliterationEnabled && (currentLanguage === 'hindi' || currentLanguage === 'marathi')) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 10px; color: #4CAF50; background: #f0fff0; border-radius: 6px; margin-bottom: 10px;">
-                <p style="margin: 0; font-size: 11px;">Type English letter to get ${currentLanguage === 'marathi' ? 'Marathi' : 'Hindi'} character</p>
-            </div>
+        hint.innerHTML = `
+            <div>Type English letter to get ${
+                currentLanguage === 'marathi' ? 'Marathi' : 'Hindi'
+            } character</div>
         `;
-        return;
+        hint.classList.add('active');
+        body.style.pointerEvents = 'none'; 
+    } else {
+        hint.classList.remove('active');
+        body.style.pointerEvents = 'auto'; 
     }
-    
-    container.innerHTML = getKeyboardHTML(currentLanguage);
-    setupKeyboardEvents(container, 'indexSearchInput');
 }
+
 
 function setupKeyboardEvents(container, inputId) {
     container.querySelectorAll('.keyboard-key').forEach(key => {
@@ -1467,8 +1584,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize transliteration
     initializeTransliteration();
     
+    currentLanguage = 'english';
+    currentMode = 'catalog';
     // Set default language
     setLanguage('english');
+    renderKeyboards();
     
     // Initialize UI
     initializeUI();
@@ -1517,7 +1637,7 @@ function switchToEbook() {
     
     clearResults();
     updateSearchPlaceholders();
-    showStatus('Switched to eBooks search', 'info');
+    {% comment %} showStatus('Switched to eBooks search', 'info'); {% endcomment %}
 }
 
 function updateSearchPlaceholders() {
@@ -1550,7 +1670,7 @@ function showTab(tabName, event = null) {
     if (tabContent) tabContent.classList.add('active');
     
     clearResults();
-    showStatus(`Switched to ${tabName === 'advanced' ? 'Advanced' : 'Index'} Search`, 'info');
+    {% comment %} showStatus(`Switched to ${tabName === 'advanced' ? 'Advanced' : 'Index'} Search`, 'info'); {% endcomment %}
 }
 
 function selectType(type) {
@@ -1698,7 +1818,7 @@ function executeSearch(searchType, query, page = 1) {
             document.getElementById('resultsCount').textContent = countText;
             
             // Show success status
-            showStatus(`Found ${response.length} ${currentMode === 'catalog' ? 'books' : 'ebooks'}`, 'success');
+            {% comment %} showStatus(`Found ${response.length} ${currentMode === 'catalog' ? 'books' : 'ebooks'}`, 'success'); {% endcomment %}
         },
         error: function(xhr, status, error) {
             console.error("Search error:", error);
@@ -2127,7 +2247,7 @@ function flipCard(index) {
 }
 
 // ================= UTILITY FUNCTIONS =================
-function showStatus(message, type = 'info') {
+{% comment %} function showStatus(message, type = 'info') {
     const statusDiv = document.getElementById('indexSearchStatus');
     if (!statusDiv) return;
     
@@ -2138,7 +2258,7 @@ function showStatus(message, type = 'info') {
     setTimeout(() => {
         statusDiv.style.display = 'none';
     }, 5000);
-}
+} {% endcomment %}
 
 function clearAll() {
     const advancedInput = document.getElementById('advancedSearchInput');
@@ -2164,7 +2284,7 @@ function clearAll() {
     clearResults();
     showTab('advanced');
     setLanguage('english');
-    showStatus('All search fields cleared', 'info');
+    {% comment %} showStatus('All search fields cleared', 'info'); {% endcomment %}
     
     Swal.fire('Cleared', 'All search fields have been reset.', 'success');
 }
