@@ -1276,7 +1276,7 @@ footer .footer-container {
 .hero-overlay {
     position: absolute;
     inset: 0;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0,0,0,0.1);
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -1605,7 +1605,7 @@ footer .footer-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr); 
     gap: 25px;
-    max-width: 1000px;
+    /* max-width: 1000px; */
     margin: 0 auto;
     padding: 20px;
 }

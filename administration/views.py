@@ -26,7 +26,6 @@ def library_list(request):
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
             
-
             # Default empty image
             lilo.main_image = ""
 
@@ -37,7 +36,6 @@ def library_list(request):
                 if first_image_path:
                     lilo.main_image = file_storage_service.get_file_url(first_image_path)
 
-
             # Check if membership_page_link exists and is not empty/blank
             has_membership_link = bool(
                 lilo.membership_page_link and 
@@ -46,10 +44,10 @@ def library_list(request):
             )
             lilo.has_membership_link = has_membership_link
         
-        # Handle AJAX requests for pagination
+        # Handle AJAX requests for pagination - CHANGE: 6 per page instead of 4
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             page = request.GET.get('page', 1)
-            paginator = Paginator(all_libraries, 4)
+            paginator = Paginator(all_libraries, 6)  # CHANGED: 6 per page
             
             try:
                 libraries_page = paginator.page(page)
@@ -94,7 +92,7 @@ def library_list(request):
             })
         
         # Regular request
-        paginator = Paginator(all_libraries, 4)
+        paginator = Paginator(all_libraries, 6)  # CHANGED: 6 per page
         page = request.GET.get('page', 1)
         
         try:
@@ -132,7 +130,7 @@ def library_list(request):
         
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
-    
+  
 def service_redirect(request):
     Db.closeConnection()
     m = Db.get_connection()

@@ -45,6 +45,317 @@
     </style>
 
     <style>
+        /* ================= DROPDOWN ALIGNMENT FIXES ================= */
+        .dropdown-container {
+            text-align: left !important;
+        }
+
+        .custom-dropdown {
+            text-align: left !important;
+            position: relative;
+        }
+
+        .dropdown-input {
+            text-align: left !important;
+            padding: 12px 15px 12px 45px !important; /* More left padding for icon */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .dropdown-options {
+            text-align: left !important;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            list-style: none;
+            padding: 0;
+        }
+
+        .dropdown-options li {
+            text-align: left !important;
+            justify-content: flex-start !important;
+            padding: 10px 15px !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-options li:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Search icon positioning */
+        .input-wrapper {
+            position: relative !important;
+            width: 100%;
+        }
+
+        .input-wrapper .search-icon {
+            position: absolute !important;
+            left: 15px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            pointer-events: none !important;
+            z-index: 2;
+        }
+
+        /* Loading spinner */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.25em;
+        }
+
+        /* No libraries message */
+        .no-libraries {
+            grid-column: 1 / -1;
+            padding: 3rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .no-libraries i {
+            color: #dee2e6;
+        }
+
+        /* Smooth transitions */
+        .library-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .library-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Alert styling */
+        .alert {
+            grid-column: 1 / -1;
+            margin: 1rem 0;
+        }
+
+        /* Optional: Update card button to match primary color */
+        .card-btn {
+            background-color: #015296;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .card-btn:hover {
+            background-color: #013a6b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(1, 82, 150, 0.2);
+        }
+
+        .card-btn:active {
+            transform: translateY(0);
+        }
+
+        /* CHANGED: 3 columns in grid view on desktop instead of 2 */
+        @media (min-width: 992px) {
+            .card-grid.grid-view {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr); /* CHANGED: 3 columns */
+                gap: 2rem;
+                margin: 0% 10%;
+            }
+            
+            .card-grid.list-view {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+        }
+
+        /* For medium screens (768px to 991px), show 2 columns */
+        @media (min-width: 768px) and (max-width: 991px) {
+            .card-grid.grid-view {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 767px) {
+            .card-grid.grid-view {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Pagination Styles with Primary Color #015296 */
+        .pagination-container {
+            {% comment %} margin-top: 3rem; {% endcomment %}
+            padding: 1.5rem 0;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .pagination {
+            margin-bottom: 0.5rem;
+            --primary-color: #015296;
+            --primary-hover: #013a6b;
+            --primary-light: #e6f0fa;
+        }
+
+        .page-item .page-link {
+            color: #015296; /* Primary color */
+            background-color: white;
+            border: 1px solid #dee2e6;
+            padding: 0.6rem 1.2rem;
+            margin: 0 0.25rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-item.active .page-link {
+            background-color: #015296; /* Primary color */
+            border-color: #015296;
+            color: white;
+            box-shadow: 0 2px 5px rgba(1, 82, 150, 0.3);
+        }
+
+        .page-item:not(.disabled):not(.active) .page-link:hover {
+            background-color: #e6f0fa; /* Light blue tint */
+            border-color: #015296;
+            color: #015296;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .page-item:not(.disabled):not(.active) .page-link:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-item.disabled .page-link {
+            color: #adb5bd;
+            pointer-events: none;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        /* Active page number styling */
+        .page-item.active .page-link {
+            position: relative;
+            font-weight: 600;
+        }
+
+        .page-item.active .page-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+        }
+
+        /* Dark mode support */
+        [data-bs-theme="dark"] .pagination-container {
+            border-top-color: #444;
+        }
+
+        [data-bs-theme="dark"] .page-link {
+            background-color: #2d3748;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+
+        [data-bs-theme="dark"] .page-link:hover {
+            background-color: #1a202c;
+            border-color: #015296;
+        }
+
+        [data-bs-theme="dark"] .page-item.active .page-link {
+            background-color: #015296;
+            border-color: #015296;
+            color: white;
+        }
+
+        [data-bs-theme="dark"] .page-item:not(.disabled):not(.active) .page-link:hover {
+            background-color: rgba(1, 82, 150, 0.2);
+            color: #a0d2ff;
+        }
+
+        [data-bs-theme="dark"] .page-item.disabled .page-link {
+            background-color: #1a202c;
+            color: #718096;
+        }
+
+        [data-bs-theme="dark"] .pagination-info {
+            color: #a0aec0;
+        }
+
+        /* Add to your CSS */
+        .login-badge {
+            margin-left: 8px;
+            font-size: 0.9em;
+            color: #015296;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Style for library items with membership */
+        .dropdown-options li[data-has-membership="1"] {
+            position: relative;
+            font-weight: 600;
+        }
+
+        .dropdown-options li[data-has-membership="1"]:hover::before {
+            content: 'Login available ✓';
+            position: absolute;
+            background: #015296;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        /* Style for library items without membership */
+        .dropdown-options li[data-has-membership="0"] {
+            opacity: 0.8;
+        }
+    </style>
+
+    <style>
         /* Commissioner Corner Image Styles */
         .commissioner-corner-image {
             width: 50px;
@@ -195,268 +506,6 @@
             .commissioner-corner-text span {
                 font-size: 0.9rem;
             }
-        }
-
-    </style>    
-
-    <style>
-        /* ================= DROPDOWN ALIGNMENT FIXES ================= */
-        .dropdown-container {
-            text-align: left !important;
-        }
-
-        .custom-dropdown {
-            text-align: left !important;
-            position: relative;
-        }
-
-        .dropdown-input {
-            text-align: left !important;
-            padding: 12px 15px 12px 45px !important; /* More left padding for icon */
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .dropdown-options {
-            text-align: left !important;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-top: 5px;
-            max-height: 300px;
-            overflow-y: auto;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            list-style: none;
-            padding: 0;
-        }
-
-        .dropdown-options li {
-            text-align: left !important;
-            justify-content: flex-start !important;
-            padding: 10px 15px !important;
-            display: flex !important;
-            align-items: center !important;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .dropdown-options li:hover {
-            background-color: #f5f5f5;
-        }
-
-        /* Search icon positioning */
-        .input-wrapper {
-            position: relative !important;
-            width: 100%;
-        }
-
-        .input-wrapper .search-icon {
-            position: absolute !important;
-            left: 15px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            pointer-events: none !important;
-            z-index: 2;
-        }
-
-        /* Loading spinner */
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            border-width: 0.25em;
-        }
-
-        /* No libraries message */
-        .no-libraries {
-            grid-column: 1 / -1;
-            padding: 3rem;
-            background: #f8f9fa;
-            border-radius: 0.5rem;
-            text-align: center;
-        }
-
-        .no-libraries i {
-            color: #dee2e6;
-        }
-
-        /* Smooth transitions */
-        .library-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .library-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Alert styling */
-        .alert {
-            grid-column: 1 / -1;
-            margin: 1rem 0;
-        }
-
-        /* Optional: Update card button to match primary color */
-        .card-btn {
-            background-color: #015296;
-            color: white;
-            border: none;
-            padding: 0.6rem 1.5rem;
-            border-radius: 0.375rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-        }
-
-        .card-btn:hover {
-            background-color: #013a6b;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(1, 82, 150, 0.2);
-        }
-
-        .card-btn:active {
-            transform: translateY(0);
-        }
-
-        /* Ensure 2 columns in grid view on desktop */
-        @media (min-width: 768px) {
-            .card-grid.grid-view {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 2rem;
-            }
-            
-            .card-grid.list-view {
-                display: flex;
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 767px) {
-            .card-grid.grid-view {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Pagination Styles with Primary Color #015296 */
-        .pagination-container {
-            {% comment %} margin-top: 3rem; {% endcomment %}
-            padding: 1.5rem 0;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .pagination {
-            margin-bottom: 0.5rem;
-            --primary-color: #015296;
-            --primary-hover: #013a6b;
-            --primary-light: #e6f0fa;
-        }
-
-        .page-item .page-link {
-            color: #015296; /* Primary color */
-            background-color: white;
-            border: 1px solid #dee2e6;
-            padding: 0.6rem 1.2rem;
-            margin: 0 0.25rem;
-            border-radius: 0.375rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .page-item.active .page-link {
-            background-color: #015296; /* Primary color */
-            border-color: #015296;
-            color: white;
-            box-shadow: 0 2px 5px rgba(1, 82, 150, 0.3);
-        }
-
-        .page-item:not(.disabled):not(.active) .page-link:hover {
-            background-color: #e6f0fa; /* Light blue tint */
-            border-color: #015296;
-            color: #015296;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .page-item:not(.disabled):not(.active) .page-link:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .page-item.disabled .page-link {
-            color: #adb5bd;
-            pointer-events: none;
-            background-color: #f8f9fa;
-            border-color: #dee2e6;
-        }
-
-        .pagination-info {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
-        /* Active page number styling */
-        .page-item.active .page-link {
-            position: relative;
-            font-weight: 600;
-        }
-
-        .page-item.active .page-link::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 3px;
-            background-color: white;
-            border-radius: 2px;
-        }
-
-        /* Dark mode support */
-        [data-bs-theme="dark"] .pagination-container {
-            border-top-color: #444;
-        }
-
-        [data-bs-theme="dark"] .page-link {
-            background-color: #2d3748;
-            border-color: #4a5568;
-            color: #e2e8f0;
-        }
-
-        [data-bs-theme="dark"] .page-link:hover {
-            background-color: #1a202c;
-            border-color: #015296;
-        }
-
-        [data-bs-theme="dark"] .page-item.active .page-link {
-            background-color: #015296;
-            border-color: #015296;
-            color: white;
-        }
-
-        [data-bs-theme="dark"] .page-item:not(.disabled):not(.active) .page-link:hover {
-            background-color: rgba(1, 82, 150, 0.2);
-            color: #a0d2ff;
-        }
-
-        [data-bs-theme="dark"] .page-item.disabled .page-link {
-            background-color: #1a202c;
-            color: #718096;
-        }
-
-        [data-bs-theme="dark"] .pagination-info {
-            color: #a0aec0;
         }
     </style>
 
@@ -614,7 +663,7 @@
     </section>
 
     <section id="libraries-section">
-        <div class="container">
+        <div class="">
             <div class="section-header">
                 <!-- View Toggle -->
                 <div class="view-toggle">

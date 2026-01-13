@@ -1,6 +1,7 @@
 import json
 import pydoc
 import re
+from urllib.parse import urlparse, unquote
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render,redirect,get_object_or_404
@@ -3468,24 +3469,43 @@ def library_master_edit(request):
             library_images = request.FILES.getlist("library_photo")
             removed_images = request.POST.get("removed_images")
 
-            # 1️⃣ Existing images
+            # 1️⃣ Existing DB paths
             existing_paths = []
             if library.image_url:
-                existing_paths = [p.strip() for p in library.image_url.split(",") if p.strip()]
+                existing_paths = [
+                    p.strip().lstrip("/")
+                    for p in library.image_url.split(",")
+                    if p.strip()
+                ]
 
-            # 2️⃣ Removed images (convert URL → relative path)
+            # 2️⃣ Removed images
             removed_paths = []
+
             if removed_images:
-                import json
                 removed_urls = json.loads(removed_images)
 
-                for url in removed_urls:
-                    # take last 3 parts → LIB001/library_images/img.jpg
-                    parts = url.split("/")[-3:]
-                    removed_paths.append("/".join(parts))
+                for full_url in removed_urls:
+                    # decode %20
+                    decoded_url = unquote(full_url)
 
-            # 3️⃣ Keep remaining existing images
-            remaining_existing = [p for p in existing_paths if p not in removed_paths]
+                    # 🔥 extract path only → /media/L26/...
+                    parsed_path = urlparse(decoded_url).path
+
+                    for db_path in existing_paths:
+                        base_url = file_storage_service.get_file_url(db_path)  # /media/L26/...
+
+                        if parsed_path == base_url:
+                            removed_paths.append(db_path)
+                            break
+
+            print("DB PATHS:", existing_paths)
+            print("REMOVED PATHS:", removed_paths)
+
+            # 3️⃣ Remaining images
+            remaining_existing = [
+                p for p in existing_paths if p not in removed_paths
+            ]
+
 
             # 4️⃣ Save new images
             new_paths = []
