@@ -61,6 +61,7 @@ urlpatterns = [
     # path("", Login,name='Account'),
     path("Login", Login,name='Account'),
     path("Login", Login,name='Login'),
+    path("adminLogin/", adminLogin, name='adminLogin'),
     path("home", home,name='home'),
     path("logout",logoutView,name='logout'),
     path("forgot_password",forgot_password,name='forgot_password'),

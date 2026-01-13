@@ -172,13 +172,13 @@
                         <div class="contact-itemm helpline">1800-222-999</div>
                     </div>
 
-                    <div class="employee_login">
+                    {% comment %} <div class="employee_login">
                         <button type="button"
                             class="employee-login-btn"
                             onclick="window.location.href='{% url 'Login' %}?db_alias=default'">
                             Employee Login
                         </button>
-                    </div>
+                    </div> {% endcomment %}
                     
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
@@ -204,13 +204,13 @@
                         <div class="contact-itemm helpline">१८००-२२२-९९९</div>
                     </div>
 
-                    <div class="employee_login">
+                    {% comment %} <div class="employee_login">
                         <button type="button"
                             class="employee-login-btn"
                             onclick="window.location.href='{% url 'Login' %}?db_alias=default'">
                            कर्मचारी लॉगिन
                         </button>
-                    </div>
+                    </div> {% endcomment %}
                     
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="अक्षर आकार वाढवा">अ+</button>
@@ -340,6 +340,7 @@
                             <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC तयारी</a></li>
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC तयारी</a></li>
                             <li><a href="#">संपर्क</a></li>
+                            <li><a href="{% url 'adminLogin' %}">प्रशासकीय लॉगिन</a></li>
                         </ul>
                     </div>
                     
@@ -446,6 +447,7 @@
                             <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC Preparation</a></li>
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC Preparation</a></li>
                             <li><a href="#">Contact</a></li>
+                            <li><a href="{% url 'adminLogin' %}">Administrative Login</a></li>
                         </ul>
                     </div>
                     

@@ -5,18 +5,12 @@
 
 {% block extra_css %}
 
-    <!-- Keeping only SweetAlert and essential layout styles -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Google Font: Merriweather -->
     <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
-    
     <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
 
     <style>
@@ -73,29 +67,29 @@
         }
 
         /* General action button styles */
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
 
-/* Specific View Button */
-.view-btn {
-    background-color: #FFD700; /* Gold */
-    color: #000; /* Black */
-    border: 1px solid #FFC107; /* Optional: slightly darker gold border */
-}
+        /* Specific View Button */
+        .view-btn {
+            background-color: #FFD700; /* Gold */
+            color: #000; /* Black */
+            border: 1px solid #FFC107; /* Optional: slightly darker gold border */
+        }
 
-.view-btn:hover {
-    background-color: #FFC107; /* Darker gold on hover */
-    color: #000;
-    transform: scale(1.05); /* Subtle hover effect */
-}
+        .view-btn:hover {
+            background-color: #FFC107; /* Darker gold on hover */
+            color: #000;
+            transform: scale(1.05); /* Subtle hover effect */
+        }
 
     </style>
 
@@ -196,18 +190,11 @@
 
 {% block extra_javascript %}
 
-    <!-- Keeping only SweetAlert and optional message popup -->
-    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.js"></script>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
         $(document).ready(function () {
@@ -249,8 +236,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 
     <script>
     $(document).ready(function () {

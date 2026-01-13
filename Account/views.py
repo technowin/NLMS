@@ -45,6 +45,7 @@ import logging
 import requests
 from django.db import models
 from administration.models import *
+from django.views.decorators.csrf import csrf_protect
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -319,6 +320,104 @@ def Login(request):
     else:
             messages.error(request, 'Invalid Credentials')
             return redirect("Login")
+
+from django.db import connections
+from django.db.utils import ConnectionDoesNotExist
+
+@csrf_protect
+def adminLogin(request):
+    """
+    Administrative login view for library administrators
+    Uses password_storage table for authentication
+    Only allows users with role_id = 1 (Admin) to login
+    """
+    # If user is already authenticated, redirect to admin dashboard
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('LMS_Dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        
+        # Validate input
+        if not username or not password:
+            messages.error(request, 'Please provide both username and password.')
+            return render(request, 'bootstrap/account/admin_login.html')
+        
+        try:
+            # Clear any library session data for admin login
+            if 'library_db' in request.session:
+                del request.session['library_db']
+            
+            User = get_user_model()
+            
+            try:
+                # Find user in default database
+                user = User.objects.using('default').get(username=username)
+                
+                # Check password_storage table
+                try:
+                    from .models import password_storage
+                    pwd_storage = password_storage.objects.using('default').get(user=user)
+                    
+                    # Verify password from storage
+                    if pwd_storage.passwordText == password:
+                        # Check admin privileges
+                        if user.is_staff or user.is_superuser:
+                            # Check if user has role_id = 1 (Admin role)
+                            if hasattr(user, 'role_id') and user.role_id == 1:
+                                # Login user
+                                user.backend = 'django.contrib.auth.backends.ModelBackend'
+                                login(request, user)
+                                
+                                # Set session variables
+                                request.session['using_database'] = 'default'
+                                request.session['library_db'] = 'default'
+                                request.session['is_admin'] = True
+                                request.session['username'] = str(user.username)
+                                request.session['full_name'] = str(user.full_name)
+                                request.session['user_id'] = str(user.id)
+                                request.session['role_id'] = str(user.role_id)
+                                request.session['last_login'] = user.last_login.isoformat() if user.last_login else ''
+                                
+                                # Update last_login timestamp
+                                user.last_login = timezone.now()
+                                user.save(update_fields=['last_login'])
+                                
+                                messages.success(request, f'Administrative login successful! Welcome, {user.full_name or user.username}.')
+                                return redirect('LMS_Dashboard')
+                            else:
+                                messages.error(request, 'Access denied. This login is for administrators only.')
+                        else:
+                            messages.error(request, 'Access denied. This login is for administrative staff only.')
+                    else:
+                        messages.error(request, 'Invalid username or password.')
+                        
+                except password_storage.DoesNotExist:
+                    messages.error(request, 'Password not configured. Please contact system administrator.')
+                    
+            except User.DoesNotExist:
+                messages.error(request, 'Invalid username or password.')
+                
+        except Exception as e:
+            messages.error(request, 'An error occurred during login. Please try again.')
+            # Log the error properly in production
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Admin login error for user '{username}': {str(e)}", exc_info=True)
+    
+    # Clean up database connections
+    try:
+        for conn_name in connections:
+            if conn_name != 'default':
+                try:
+                    connections[conn_name].close()
+                except:
+                    pass
+    except:
+        pass
+    
+    return render(request, 'bootstrap/account/admin_login.html')
 
 def logoutView(request):
     library_code = request.session.get('library_db', None)

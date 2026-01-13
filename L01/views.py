@@ -4010,107 +4010,223 @@ def update_user_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+from django.db import transaction
+
 @login_required
 def user_create(request):
     try:
         user_id = request.user.id
 
         if request.method == "POST":
+            with transaction.atomic():
+                enc_id = request.POST.get("id")  # Hidden encrypted ID (for editing)
+                username = request.POST.get("username", "").strip()
+                first_name = request.POST.get("first_name", "").strip()
+                last_name = request.POST.get("last_name", "").strip()
+                full_name = f"{first_name} {last_name}".strip()
+                email = request.POST.get("email", "").strip()
+                phone = request.POST.get("mobile", "").strip()
+                role_id = request.POST.get("role_id", "").strip()
+                is_active = request.POST.get("is_active", 1)
+                
+                # Get password from hidden field (real password) or visible field
+                password = request.POST.get("real_password", "").strip()
+                if not password:  # Fallback to visible field
+                    password = request.POST.get("password", "").strip()
+                
+                confirm_password = request.POST.get("confirm_password", "").strip()
 
-            enc_id = request.POST.get("id")  # Hidden encrypted ID (for editing)
-            username = request.POST.get("username", "").strip()
-            first_name = request.POST.get("first_name", "").strip()
-            last_name = request.POST.get("last_name", "").strip()
-            full_name = f"{first_name} {last_name}".strip()  # auto-generate full name
-            email = request.POST.get("email", "").strip()
-            phone = request.POST.get("mobile", "").strip()  # ✅ Added phone
-            role_id = request.POST.get("role_id", "").strip()
-            is_active = request.POST.get("is_active", 1)
-            password = request.POST.get("password", "").strip()
+                # 🔹 Validation
+                validation_errors = []
+                if not username:
+                    validation_errors.append("User Name is required!")
+                if not first_name:
+                    validation_errors.append("First Name is required!")
+                if not last_name:
+                    validation_errors.append("Last Name is required!")
+                if not email:
+                    validation_errors.append("Email is required!")
+                if not phone:
+                    validation_errors.append("Phone Number is required!")
+                if not role_id:
+                    validation_errors.append("Role is required!")
+                
+                # 🔹 CRITICAL: Different validation for NEW vs EDIT users
+                if not enc_id:  # NEW user
+                    if not password:
+                        validation_errors.append("Password is required for new user!")
+                    elif password == "********":  # Should not happen with new fix
+                        validation_errors.append("Please enter a valid password.")
+                # For EDIT users, password can be empty (means don't change password)
+                else:
+                    # For EDIT: Check if password was provided (means user wants to change it)
+                    if password:
+                        # Check if password is just asterisks (masked)
+                        if password == "********":
+                            # Password is masked, treat as empty (no change)
+                            password = ""
+                        # Validate password rules if password is being changed
+                        elif len(password) > 0:
+                            # Validate password strength
+                            if len(password) < 6:
+                                validation_errors.append("Password must be at least 6 characters.")
+                            if len(password) > 20:
+                                validation_errors.append("Password cannot exceed 20 characters.")
+                            if not any(c.isupper() for c in password):
+                                validation_errors.append("Password must contain at least one uppercase letter.")
+                            if not any(c.isdigit() for c in password):
+                                validation_errors.append("Password must contain at least one number.")
+                            if not any(c in "_@-" for c in password):
+                                validation_errors.append("Password must contain at least one special character (_ @ -).")
+                
+                if validation_errors:
+                    for error in validation_errors:
+                        messages.error(request, error)
+                    roles_list = roles.objects.exclude(role_type='member')
+                    return render(request, "L01/Master/user_create.html", {
+                        "roles_list": roles_list,
+                        "post_data": request.POST,
+                        "user_obj": None
+                    })
 
-            # 🔹 Validation
-            if not username:
-                messages.error(request, "User Name is required!")
-            elif not first_name:
-                messages.error(request, "First Name is required!")
-            elif not last_name:
-                messages.error(request, "Last Name is required!")
-            elif not email:
-                messages.error(request, "Email is required!")
-            elif not phone:
-                messages.error(request, "Phone Number is required!")  # ✅ Validation added
-            elif not role_id:
-                messages.error(request, "Role is required!")
-            elif not enc_id and not password:
-                messages.error(request, "Password is required for new user!")
-
-            # If there were validation errors → re-render form
-            if messages.get_messages(request):
-                roles_list = roles.objects.exclude(role_type='member')
-                return render(request, "L01/Master/user_create.html", {
-                    "roles_list": roles_list,
-                    "post_data": request.POST,
-                    "user_obj": None
-                })
-
-            # 🔹 Update existing user
-            if enc_id:
-                try:
+                # 🔹 Update existing user
+                if enc_id:
                     user_pk = int(dec(enc_id))
                     user_obj = CustomUser.objects.get(pk=user_pk)
 
+                    # Check for duplicate username (if changed)
+                    if user_obj.username != username and CustomUser.objects.filter(username=username).exists():
+                        messages.error(request, f"Username '{username}' already exists!")
+                        roles_list = roles.objects.exclude(role_type='member')
+                        return render(request, "L01/Master/user_create.html", {
+                            "roles_list": roles_list,
+                            "post_data": request.POST,
+                            "user_obj": user_obj
+                        })
+
+                    # Check for duplicate email (if changed)
+                    if user_obj.email != email and CustomUser.objects.filter(email=email).exists():
+                        messages.error(request, f"Email '{email}' already exists!")
+                        roles_list = roles.objects.exclude(role_type='member')
+                        return render(request, "L01/Master/user_create.html", {
+                            "roles_list": roles_list,
+                            "post_data": request.POST,
+                            "user_obj": user_obj
+                        })
+
+                    # Update user fields
                     user_obj.username = username
                     user_obj.first_name = first_name
                     user_obj.last_name = last_name
                     user_obj.full_name = full_name
                     user_obj.email = email
-                    user_obj.phone = phone  # ✅ Save phone
+                    user_obj.phone = phone
                     user_obj.is_active = bool(int(is_active))
-                    user_obj.role_id = role_id   # direct field in CustomUser
+                    user_obj.role_id = role_id
                     user_obj.updated_by = user_id
                     user_obj.updated_at = timezone.now()
 
+                    # ✅ Update password ONLY if provided and not empty
                     if password:
+                        # Store plain password before hashing
+                        plain_password = password
+                        # Set hashed password for CustomUser
                         user_obj.set_password(password)
+                        user_obj.save()
+                        
+                        # Update REAL password in password_storage
+                        password_storage.objects.update_or_create(
+                            user=user_obj,
+                            defaults={'passwordText': plain_password}
+                        )
+                        
+                        messages.success(request, f"User '{username}' updated with new password!")
+                    else:
+                        # Save without changing password
+                        user_obj.save()
+                        messages.success(request, f"User '{username}' updated successfully!")
 
-                    user_obj.save()
-
-                    messages.success(request, f"User '{username}' updated successfully!")
                     return redirect("L01:user_master_index")
 
-                except CustomUser.DoesNotExist:
-                    messages.error(request, "User not found.")
-                    return redirect("L01:user_master_index")
+                # 🔹 Create new user (enc_id is empty)
+                # Check for duplicate username
+                if CustomUser.objects.filter(username=username).exists():
+                    messages.error(request, f"Username '{username}' already exists!")
+                    roles_list = roles.objects.exclude(role_type='member')
+                    return render(request, "L01/Master/user_create.html", {
+                        "roles_list": roles_list,
+                        "post_data": request.POST,
+                        "user_obj": None
+                    })
+                
+                # Check for duplicate email
+                if CustomUser.objects.filter(email=email).exists():
+                    messages.error(request, f"Email '{email}' already exists!")
+                    roles_list = roles.objects.exclude(role_type='member')
+                    return render(request, "L01/Master/user_create.html", {
+                        "roles_list": roles_list,
+                        "post_data": request.POST,
+                        "user_obj": None
+                    })
 
-            # 🔹 Create new user
-            new_user = CustomUser.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                is_active=bool(int(is_active))
-            )
-            new_user.first_name = first_name
-            new_user.last_name = last_name
-            new_user.full_name = full_name
-            new_user.phone = phone  # ✅ Save phone
-            new_user.role_id = role_id
-            new_user.created_by = user_id
-            new_user.created_at = timezone.now()
-            new_user.save()
+                # Store plain password before creating user
+                plain_password = password
+                
+                # Create user with hashed password
+                new_user = CustomUser.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    is_active=bool(int(is_active))
+                )
+                
+                # Set additional fields
+                new_user.first_name = first_name
+                new_user.last_name = last_name
+                new_user.full_name = full_name
+                new_user.phone = phone
+                new_user.role_id = role_id
+                new_user.created_by = user_id
+                new_user.created_at = timezone.now()
+                new_user.save()
 
-            messages.success(request, f"User '{username}' created successfully!")
-            return redirect("L01:user_master_index")
+                # Store plain text password in password_storage
+                password_storage.objects.create(
+                    user=new_user,
+                    passwordText=plain_password
+                )
 
-        # GET → Show form, exclude 'member' roles
+                messages.success(request, f"User '{username}' created successfully!")
+                return redirect("L01:user_master_index")
+
+        # GET → Show form
         roles_list = roles.objects.exclude(role_type='member')
-        return render(request, "L01/Master/user_create.html", {
+        
+        # Prepare context for template
+        context = {
             "roles_list": roles_list,
             "user_obj": None
-        })
+        }
+        
+        # If editing, pass the user object
+        if 'id' in request.GET:
+            try:
+                enc_id = request.GET.get('id')
+                user_pk = int(dec(enc_id))
+                user_obj = CustomUser.objects.get(pk=user_pk)
+                context['user_obj'] = user_obj
+                context['user_obj'].encrypted_id = enc_id
+            except:
+                pass
 
+        return render(request, "L01/Master/user_create.html", context)
+
+    except CustomUser.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("L01:user_master_index")
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name
+        fun = tb[0].name if tb else 'user_create'
         callproc("stp_error_log", [fun, str(e), user_id])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("L01:user_master_index")
