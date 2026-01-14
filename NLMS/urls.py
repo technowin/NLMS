@@ -186,7 +186,7 @@ urlpatterns = [
     path("tables",tables,name='tables'),
     
     # library list
-    path("library_list",library_list,name='library_list'),
+    # path("library_list",library_list,name='library_list'),
     path('service_redirect', service_redirect, name='service_redirect'),
     path('set_library_session_and_login', set_library_session_and_login, name='set_library_session_and_login'),
     path('L01/', include(('L01.urls', 'L01'), namespace='L01')),

@@ -225,7 +225,7 @@ def Login(request):
                 except MembershipMaster.DoesNotExist:
                     membership_id = None
             # Inactive membership
-            if member.isactive != 1:
+            if member and member.isactive != 1:
                 request.session["sweet_alert"] = {
                     "title": "Membership Inactive",
                     "text": "आपली सदस्यता सध्या सक्रिय नाही. कृपया प्रशासनाशी संपर्क साधा.",
@@ -235,7 +235,7 @@ def Login(request):
                 return redirect("L01:membership_dashboard")
 
             # Membership expired
-            if today > member.to_date:
+            if member and today > member.to_date:
                 request.session["sweet_alert"] = {
                     "title": "Membership Expired",
                     "text": "आपली सदस्यता संपलेली आहे. कृपया नूतनीकरण करा.",
@@ -245,7 +245,7 @@ def Login(request):
                 return redirect("L01:membership_dashboard")
 
             # Membership not started yet
-            if today < member.from_date:
+            if member and today < member.from_date:
                 request.session["sweet_alert"] = {
                     "title": "Membership Not Active Yet",
                     "text": "आपली सदस्यता अद्याप सुरू झालेली नाही.",

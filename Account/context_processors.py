@@ -34,7 +34,13 @@ def logged_in_user(request):
         library_name_show = None
         library_details = None
         membershipshow = None
+        membership_page_link = None
         profile_picture_url = None  # Initialize as None
+        
+        if library_code:
+            library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+        if library_details:
+            membership_page_link = library_details.membership_page_link
 
         if request.user.is_authenticated:
             user = str(request.user.id or '')
@@ -193,6 +199,7 @@ def logged_in_user(request):
             'membershipshow': membershipshow,
             'library_name_show': library_name_show,
             'membership_active': membership_active,
+            'membership_page_link':membership_page_link
         }
 
     except Exception as e:

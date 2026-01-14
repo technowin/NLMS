@@ -1883,7 +1883,7 @@ footer .footer-container {
 .oz-library-content h1 {
     font-size: 1.8rem; /* Increased from 1.5rem */
     margin-bottom: 5px;
-    color: #3b82f6; /* Changed to primary blue color */
+    color: var(--primary-color); /* Changed to primary blue color */
     font-weight: 700; /* Increased from 600 */
     letter-spacing: -0.3px;
     position: relative;
@@ -1921,7 +1921,7 @@ footer .footer-container {
     padding: 12px; /* Slightly increased padding */
     background: #f8fafc;
     border-radius: 10px;
-    border-left: 3px solid #3b82f6;
+    border-left: 3px solid var(--primary-color);
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -1943,7 +1943,7 @@ footer .footer-container {
     gap: 5px;
     margin-top: 8px;
     padding: 6px 12px;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 20px;
@@ -2055,13 +2055,13 @@ footer .footer-container {
 }
 
 .library-contact-inline i {
-    color: #3b82f6;
+    color: var(--primary-color);
     font-size: 16px;
     min-width: 20px;
 }
 
 .library-contact-inline a {
-    color: #3b82f6;
+    color: var(--primary-color);
     text-decoration: none;
     transition: color 0.2s ease;
 }
