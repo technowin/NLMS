@@ -198,6 +198,8 @@ urlpatterns = [
     
     # Layout
     path('commissioner-message/', commissioner_message, name='commissioner_message'),
+    path('swd-libraries/', swd_libraries, name='swd_libraries'),
+
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

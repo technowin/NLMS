@@ -255,3 +255,26 @@ def commissioner_message(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("commissioner_message")
+    
+# views.py
+def swd_libraries(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        context = {
+            'page_title': 'SWD - Library Information',
+            'page_title_mar': 'समाज विकास विभाग - ग्रंथालय माहिती',
+            'MEDIA_URL': settings.MEDIA_URL
+        }
+        return render(request, 'administration/swd_libraries.html', context)
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'swd_libraries'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("swd_libraries")

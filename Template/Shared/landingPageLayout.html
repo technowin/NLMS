@@ -171,14 +171,6 @@
                         <div class="contact-itemm phone">+91 22 2756 1234</div>
                         <div class="contact-itemm helpline">1800-222-999</div>
                     </div>
-
-                    {% comment %} <div class="employee_login">
-                        <button type="button"
-                            class="employee-login-btn"
-                            onclick="window.location.href='{% url 'Login' %}?db_alias=default'">
-                            Employee Login
-                        </button>
-                    </div> {% endcomment %}
                     
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
@@ -203,14 +195,6 @@
                         <div class="contact-itemm phone">+९१ २२ २७५६ १२३४</div>
                         <div class="contact-itemm helpline">१८००-२२२-९९९</div>
                     </div>
-
-                    {% comment %} <div class="employee_login">
-                        <button type="button"
-                            class="employee-login-btn"
-                            onclick="window.location.href='{% url 'Login' %}?db_alias=default'">
-                           कर्मचारी लॉगिन
-                        </button>
-                    </div> {% endcomment %}
                     
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="अक्षर आकार वाढवा">अ+</button>
@@ -244,90 +228,92 @@
 
                 <!-- Navbar -->
                 <nav class="navbar navbar-expand-lg navbar-light" id="navbar-english" style="display: none;">
-                <div class="container-fluid">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item"><a href="{% url 'library_list' %}">Home</a></li>
-                        <li class="nav-item dropdown">
-                            <a href="javascript:void(0);" class="dropbtn">About Us ▾</a>
-                            <ul class="dropdown-menu">
-                                <li class="nav-item"><a href="{% url 'commissioner_message' %}">Message from Commissioner NMMC</a></li>
-                                <li><a href="#">Vision and Mission</a></li>
-                                <li><a href="#">Infrastructure</a></li>
-                                <li><a href="#">Awards and Recognitions</a></li>
-                                <li><a href="#">Achievements</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a href="javascript:void(0);" class="dropbtn">Services ▾</a>
-                            <ul class="dropdown-menu">
-                                <li><a href="#">Library Services</a></li>
-                                <li><a href="#">Online Services</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'L01:mpsc_ebooks_index' %}">Maharashtra Public Service Commission(MPSC)</a></li>
-                                <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
-                            </ul>
-                        </li>
-
-                        <!-- Add 'ms-auto' to shift login button towards right but not at the extreme end -->
-                        {% if request.session.library_db and request.path != '/' %}
-                            <li class="nav-item ms-auto">
-                                <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">Login</button>
+                    <div class="container-fluid">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item"><a href="{% url 'library_list' %}">Home</a></li>
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="dropbtn">About Us ▾</a>
+                                <ul class="dropdown-menu">
+                                    <li class="nav-item"><a href="{% url 'commissioner_message' %}">Message from Commissioner NMMC</a></li>
+                                    {% comment %} <li><a href="#">Vision and Mission</a></li>
+                                    <li><a href="#">Infrastructure</a></li>
+                                    <li><a href="#">Awards and Recognitions</a></li>
+                                    <li><a href="#">Achievements</a></li> {% endcomment %}
+                                </ul>
                             </li>
-                        {% endif %}
-
-                        <li class="icon">
-                            <a href="javascript:void(0);" onclick="toggleNavbar('navbar-english')">☰</a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-
-            <nav class="navbar navbar-expand-lg navbar-light" id="navbar-marathi">
-                <div class="container-fluid">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item"><a href="{% url 'library_list' %}">मुख्य पृष्ठ</a></li>
-                        <li class="nav-item dropdown">
-                            <a href="javascript:void(0);" class="dropbtn">आमच्याबद्दल ▾</a>
-                            <ul class="dropdown-menu">
-                                <li class="nav-item"><a href="{% url 'commissioner_message' %}">नवी मुंबई महानगरपालिकेच्या आयुक्तांचे संदेश</a></li>
-                                <li><a href="#">दृष्टिकोन आणि ध्येय</a></li>
-                                <li><a href="#">आधारभूत सुविधा</a></li>
-                                <li><a href="#">पुरस्कार आणि सन्मान</a></li>
-                                <li><a href="#">यश आणि उपलब्धी</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a href="javascript:void(0);" class="dropbtn">सेवा ▾</a>
-                            <ul class="dropdown-menu">
-                                <li><a href="#">ग्रंथालय सेवा</a></li>
-                                <li><a href="#">ऑनलाइन सेवा</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a href="javascript:void(0);" class="dropbtn">परीक्षा तयारी ▾</a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'L01:mpsc_ebooks_index' %}">महाराष्ट्र लोकसेवा आयोग (MPSC)</a></li>
-                                <li><a href="{% url 'L01:upsc_ebook_index' %}">केंद्रीय लोकसेवा आयोग (UPSC)</a></li>
-                            </ul>
-                        </li>
-
-                        <!-- Add 'ms-auto' to shift login button towards right but not at the extreme end -->
-                        {% if request.session.library_db and request.path != '/' and membership_page_link %}
-                            <li class="nav-item ms-auto">
-                                <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">लॉगिन</button>
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="dropbtn">Services ▾</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{% url 'swd_libraries' %}">Library Information</a></li>
+                                    {% comment %} <li><a href="#">Library Services</a></li>
+                                    <li><a href="#">Online Services</a></li> {% endcomment %}
+                                </ul>
                             </li>
-                        {% endif %}
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{% url 'L01:mpsc_ebooks_index' %}">Maharashtra Public Service Commission(MPSC)</a></li>
+                                    <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
+                                </ul>
+                            </li>
 
-                        <li class="icon">
-                            <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+                            <!-- Add 'ms-auto' to shift login button towards right but not at the extreme end -->
+                            {% if request.session.library_db and request.path != '/' %}
+                                <li class="nav-item ms-auto">
+                                    <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">Login</button>
+                                </li>
+                            {% endif %}
+
+                            <li class="icon">
+                                <a href="javascript:void(0);" onclick="toggleNavbar('navbar-english')">☰</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+                <nav class="navbar navbar-expand-lg navbar-light" id="navbar-marathi">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item"><a href="{% url 'library_list' %}">मुख्य पृष्ठ</a></li>
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="dropbtn">आमच्याबद्दल ▾</a>
+                                <ul class="dropdown-menu">
+                                    <li class="nav-item"><a href="{% url 'commissioner_message' %}">नवी मुंबई महानगरपालिकेच्या आयुक्तांचे संदेश</a></li>
+                                    {% comment %} <li><a href="#">दृष्टिकोन आणि ध्येय</a></li>
+                                    <li><a href="#">आधारभूत सुविधा</a></li>
+                                    <li><a href="#">पुरस्कार आणि सन्मान</a></li>
+                                    <li><a href="#">यश आणि उपलब्धी</a></li> {% endcomment %}
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="dropbtn">सेवा ▾</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{% url 'swd_libraries' %}">ग्रंथालय माहिती</a></li>
+                                    {% comment %} <li><a href="#">ग्रंथालय सेवा</a></li>
+                                    <li><a href="#">ऑनलाइन सेवा</a></li> {% endcomment %}
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="javascript:void(0);" class="dropbtn">परीक्षा तयारी ▾</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{% url 'L01:mpsc_ebooks_index' %}">महाराष्ट्र लोकसेवा आयोग (MPSC)</a></li>
+                                    <li><a href="{% url 'L01:upsc_ebook_index' %}">केंद्रीय लोकसेवा आयोग (UPSC)</a></li>
+                                </ul>
+                            </li>
+
+                            <!-- Add 'ms-auto' to shift login button towards right but not at the extreme end -->
+                            {% if request.session.library_db and request.path != '/' and membership_page_link %}
+                                <li class="nav-item ms-auto">
+                                    <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">लॉगिन</button>
+                                </li>
+                            {% endif %}
+
+                            <li class="icon">
+                                <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
 
         </header>
 
