@@ -38,10 +38,10 @@ def logged_in_user(request):
         membership_page_link = None
         profile_picture_url = None  # Initialize as None
         
-        # if library_code != 'default' and library_code == 'L01':
-        #     library_details = tbl_librarymasterL01.objects.using(library_code).filter(library_code=library_code).first()
-        # if library_details:
-        #     membership_page_link = library_details.membership_page_link
+        if library_code != 'default' and library_code == 'L01':
+            library_details = tbl_librarymasterL01.objects.using(library_code).filter(library_code=library_code).first()
+        if library_details:
+            membership_page_link = library_details.membership_page_link
 
         if request.user.is_authenticated:
             user = str(request.user.id or '')
