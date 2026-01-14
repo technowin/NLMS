@@ -867,55 +867,54 @@
             setupDropdown("memberSearch", "memberOptions", "memberCodeInput");
 
             // AJAX function to fetch member details
+            // In your existing fetchMemberDetails function, add this check:
             function fetchMemberDetails(memberId) {
                 $.ajax({
-                    url: "{% url 'L01:get_member_details' %}",  // Django URL
+                    url: "{% url 'L01:get_member_details' %}",
                     type: "POST",
                     data: {
                         member_id: memberId,
-                        csrfmiddlewaretoken: '{{ csrf_token }}'  // Include CSRF token
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
                     },
                     dataType: "json",
                     success: function(data) {
-                        debugger;
                         const container = $("#memberDetails");
                         container.empty();
-
-                        const today = new Date(); // today's date
-                        let disableSubmit = false; // flag to check if we need to disable the button
-                        let dueDateValue = ""; // will store calculated due date
+                        const today = new Date();
+                        let disableSubmit = false;
+                        let dueDateValue = "";
 
                         if (data.success && data.documents.length > 0) {
                             data.documents.forEach(member => {
-                                debugger;
+                                // Add cancellation check here
+                                const isCancelled = member.membership_status === 10 || member.membership_status === 12;
                                 const fromDate = new Date(member.membership_fromDate);
                                 const toDate = new Date(member.membership_toDate);
-
-                                // Check if this member's membership is expired
                                 const isExpired = today > toDate;
-
-                                // 🔹 Calculate due date (today + membership_days)
                                 const membershipDays = parseInt(member.membership_days) || 0;
                                 const dueDate = new Date(today);
                                 dueDate.setDate(today.getDate() + membershipDays);
-
-                                // Format date to yyyy-mm-dd for input[type=date]
                                 const formattedDueDate = dueDate.toISOString().split('T')[0];
                                 dueDateValue = formattedDueDate;
-
-                                 // 🔹 Get book counts
+                                
                                 const issuedBooks = data.issued_books_count || 0;
                                 const maxBooks = parseInt(member.membership_item) || 0;
-
-                                // 🔹 Check if limit reached
                                 const isLimitReached = issuedBooks >= maxBooks && maxBooks > 0;
-
-                                // If any member is expired, disable the submit button
-                                if (isExpired || isLimitReached) disableSubmit = true;
-
-                                const isInvalid = isExpired || isLimitReached;
+                                
+                                // Disable if cancelled, expired, or limit reached
+                                if (isCancelled || isExpired || isLimitReached) disableSubmit = true;
+                                
+                                const isInvalid = isCancelled || isExpired || isLimitReached;
                                 const cardClass = isInvalid ? "member-card invalid" : "member-card";
-
+                                
+                                // Determine cancellation message
+                                let cancellationMessage = '';
+                                if (member.membership_status === 10) {
+                                    cancellationMessage = `<small class="text-danger mt-1 d-block">Cancellation requested. Cannot issue book.</small>`;
+                                } else if (member.membership_status === 12) {
+                                    cancellationMessage = `<small class="text-danger mt-1 d-block">Membership cancelled. Cannot issue book.</small>`;
+                                }
+                                
                                 container.append(`
                                     <div class="${cardClass}">
                                         <div class="member-photo">
@@ -937,49 +936,44 @@
                                                     ${issuedBooks}/${maxBooks}
                                                     </a>
                                                 </span>
-
                                             </div>
+                                            ${isCancelled ? cancellationMessage : ''}
                                             ${isExpired ? `<small class="text-danger mt-1 d-block">Membership expired. Cannot issue book.</small>` : ''}
                                             ${isLimitReached ? `<small class="text-danger mt-1 d-block">Book issue limit reached.</small>` : ''}
                                         </div>
                                     </div>
                                 `);
                             });
-
-                            // 🔹 Auto-fill Due Date field
+                            
+                            // Auto-fill Due Date
                             if (dueDateValue) {
                                 const dueDateInput = document.querySelector("input[name='due_date']");
                                 if (dueDateInput) {
                                     dueDateInput.value = dueDateValue;
-                                    dueDateInput.min = dueDateValue; // optional: prevent earlier changes
+                                    dueDateInput.min = dueDateValue;
                                 }
                             }
-
-                            // Disable or enable the submit button based on the flag
+                            
+                            // Disable/enable button
                             if (disableSubmit) {
                                 $("#issueBookBtn")
                                     .prop("disabled", true)
                                     .removeClass("btn-success btn-secondary")
-                                    .addClass("btn-danger"); // red color when disabled
-
+                                    .addClass("btn-danger");
                                 $("#barcodeSearch").prop("disabled", true);
-                                
                             } else {
                                 $("#issueBookBtn")
                                     .prop("disabled", false)
                                     .removeClass("btn-danger btn-secondary")
-                                    .addClass("btn-success"); // green color when enabled
-
+                                    .addClass("btn-success");
                                 $("#barcodeSearch").prop("disabled", false);
                             }
-
                         } else {
                             container.html(`<p class="text-danger">${data.error || "No details found"}</p>`);
                             $("#issueBookBtn")
                                 .prop("disabled", true)
                                 .removeClass("btn-success btn-danger")
-                                .addClass("btn-secondary"); // neutral color if no members
-
+                                .addClass("btn-secondary");
                             $("#barcodeSearch").prop("disabled", true);
                         }
                     },
@@ -2301,6 +2295,57 @@
                 }
             });
         }
+    </script>
+
+    {% comment %} Clear modal content when closed/reopened {% endcomment %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookCatalogModal = document.getElementById('bookCatalogModal');
+            
+            // Clear content when modal is about to be shown
+            bookCatalogModal.addEventListener('show.bs.modal', function () {
+                // Clear search input
+                document.getElementById('bookCatalogSearch').value = '';
+                
+                // Clear table container
+                document.getElementById('bookCatalogTableContainer').innerHTML = '';
+                
+                // Clear hidden input
+                document.getElementById('bookCatalogInput').value = '';
+                
+                // Reset dropdown options to show all
+                const options = document.querySelectorAll('#bookCatalogOptions li');
+                options.forEach(option => {
+                    option.style.display = '';
+                });
+            });
+            
+            // Clear content when modal is hidden
+            bookCatalogModal.addEventListener('hidden.bs.modal', function () {
+                // Clear search input
+                document.getElementById('bookCatalogSearch').value = '';
+                
+                // Clear table container
+                document.getElementById('bookCatalogTableContainer').innerHTML = '';
+                
+                // Clear hidden input
+                document.getElementById('bookCatalogInput').value = '';
+            });
+            
+            // Also clear content when close button is clicked
+            document.querySelector('#bookCatalogModal .btn-close').addEventListener('click', function() {
+                document.getElementById('bookCatalogSearch').value = '';
+                document.getElementById('bookCatalogTableContainer').innerHTML = '';
+                document.getElementById('bookCatalogInput').value = '';
+            });
+            
+            // Clear content when "Close" button is clicked
+            document.querySelector('#bookCatalogModal .btn-secondary').addEventListener('click', function() {
+                document.getElementById('bookCatalogSearch').value = '';
+                document.getElementById('bookCatalogTableContainer').innerHTML = '';
+                document.getElementById('bookCatalogInput').value = '';
+            });
+        });
     </script>
 
 {% endblock %}

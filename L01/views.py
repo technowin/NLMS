@@ -2507,8 +2507,6 @@ def membership_form_cancellation(request):
             except Exception as e:
                 print("Error fetching membership details:", e)
                 return JsonResponse({"success": False, "message": "सर्व्हर त्रुटी आली."})
-
-            return JsonResponse({"success": False, "message": "Invalid request method."})
         
         if request.method == "POST":
             membership_id = dec(request.POST.get("membership_id"))
@@ -2539,6 +2537,12 @@ def membership_form_cancellation(request):
                 membership.status = cancelled_status
                 membership.updated_by = user_id
                 membership.remarks = "Cancelled by Member (Pending Librarian Approval)"
+                
+                # ✅ Update audit trail for member request
+                membership.actionperformed = "Membership Cancellation Requested"  # What action was performed
+                membership.reviewed = None  # Not reviewed yet
+                membership.reviewed_at = None  # Not reviewed yet
+                
                 membership.save()
                 
                 messages.success(
@@ -2579,10 +2583,18 @@ def membership_form_cancellation(request):
                 if not cancelled_status:
                     raise Exception("APP_CANCEL status not found in StatusMaster.")
                 
+                current_time = timezone.now()
+                
                 # ✅ Step 2: Librarian confirms cancellation & deactivates user + membership
                 membership.status = cancelled_status
                 membership.updated_by = user_id  # librarian's ID (for audit)
                 membership.remarks = "Cancellation Approved by Librarian"
+                
+                # ✅ Update audit trail fields
+                membership.actionperformed = "Membership Cancelled"  # What action was performed
+                membership.reviewed = user_id  # Who reviewed/approved the cancellation
+                membership.reviewed_at = current_time  # When it was reviewed/approved
+                
                 membership.save()
                 
                 # ✅ Deactivate the member's user account (not librarian's)
@@ -3076,33 +3088,33 @@ def issue_return_book_create(request):
         role_id = request.session["role_id"]
 
         if request.method == "GET":
-            
-            # members = MembershipDetails.objects.filter(isactive=1)
-            # members = MembershipDetails.objects.filter(isactive=1).exclude(membership__id=8)
-            active_usernames = CustomUser.objects.filter(
-                is_active=True
+            # Get only active MEMBERS (role_id=3)
+            active_member_usernames = CustomUser.objects.filter(
+                is_active=True,
+                role_id=3  # Only Member role
             ).values_list("username", flat=True)
 
+            # Status IDs to exclude: Cancellation Requested (10), Membership cancelled (12)
+            EXCLUDED_STATUS_IDS = [10, 12]
+            
             members = (
                 MembershipDetails.objects
                 .filter(isactive=1)                       # active members only
                 .exclude(membership__id=8)               # exclude Practitioner Branch
-                .filter(user_id__in=active_usernames)    # join on username = user_id
+                .filter(user_id__in=active_member_usernames)  # only Member role users
+                .exclude(status__id__in=EXCLUDED_STATUS_IDS)  # FIXED: status__status_id
             )
             
             for m in members:
                 m.member_encrypted_id = enc(str(m.id))
                 
-            # circulation = CirculationCopyStatus.objects.all()
             circulation = CirculationCopyStatus.objects.filter(shelf_location__isnull=False)
             
             for circ in circulation:
                 circ.circ_encrypted_barcode = enc(str(circ.barcode))
                 circ.circ_encrypted_id = enc(str(circ.id))
-                # circ.circ_encrypted_accession_id = enc(str(circ.accession.accession_id))
             
             # barcode for returned books
-            
             barcodes_qs = CirculationCopyStatus.objects.filter(current_status=14).values_list('barcode', flat=True)
             circulationTran = CirculationTransaction.objects.select_related(
                 'catalog', 'member', 'circulation', 'return_condition'
@@ -3115,14 +3127,12 @@ def issue_return_book_create(request):
                 tran.circulation_encrypted_barcode = enc(str(tran.barcode))
             
             # book Info
-            
             bookcatelog = BookCatalog.objects.all()
             
             for bc in bookcatelog:
                 bc.bc_encryp_id = enc(str(bc.cat_ref_num))
                 
             # status dropdown for return condition
-            
             status = status_master.objects.filter(status_type='circulation transaction', is_active=1)
             for st in status:
                 st.status_encrypted_id = enc(str(st.status_id))
@@ -3289,7 +3299,7 @@ def issue_return_book_create(request):
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/Circulation/issue_return_book_create.html", {})
 
-@csrf_exempt  # Only if needed; otherwise use CSRF token in JS
+@csrf_exempt
 def get_member_details(request):
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "Invalid request method"})
@@ -3307,6 +3317,19 @@ def get_member_details(request):
         user_id = request.session["user_id"]
         role_id = request.session["role_id"]
 
+        # 🔴 FIRST: Check if member has cancellation status
+        try:
+            membership = MembershipDetails.objects.select_related('status').get(id=member_id)
+            
+            # FIXED: Use status.id instead of status.status_id
+            if membership.status and membership.status.id in [10, 12]:  # 10=Cancellation Requested, 12=Membership cancelled
+                return JsonResponse({
+                    "success": False,
+                    "error": f"Member has '{membership.status.status_name}'. Cannot issue books."
+                })
+        except MembershipDetails.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Member not found"})
+
         # Fetch DocumentDetails for this member where document_id=1
         documents = DocumentDetails.objects.filter(
             membership_id=member_id,
@@ -3315,6 +3338,7 @@ def get_member_details(request):
         ).select_related(
             'membership__membership',       # MembershipMaster
             'membership__member_type',      # parameter_master_L01
+            'membership__status',           # Include status
             'document'
         )
 
@@ -3346,23 +3370,26 @@ def get_member_details(request):
                 "membership_fromDate": from_date,
                 "membership_toDate": to_date,
                 "membership_duration": membership.membership_duration,
+                "membership_status": membership.status.id if membership.status else None,  # FIXED: status.id
+                "membership_status_name": membership.status.status_name if membership.status else None,
                 "document_id": doc.document.id,
                 "document_name": doc.document.document_name if doc.document else '',
                 "file_name": doc.file_name,
                 "file_path": doc.file_path,
-                "file_url": file_url,  # Add this
+                "file_url": file_url,
             })
             
+        # Count issued books (only books not returned yet)
         issued_books_count = CirculationTransaction.objects.filter(
             member_id=member_id,
-            return_condition_id=14
+            return_date__isnull=True
         ).count()
 
         return JsonResponse({
             "success": True,
             "documents": document_list,
             "MEDIA_URL": settings.MEDIA_URL,
-            "issued_books_count":issued_books_count,
+            "issued_books_count": issued_books_count,
         })
 
     except Exception as e:
@@ -3370,9 +3397,8 @@ def get_member_details(request):
         fun = tb[0].name if tb else "library_list"
         cursor.callproc("stp_error_log", [fun, str(e), library_code])
         print(f"error: {e}")
-        messages.error(request, "Oops...! Something went wrong!")
-        return render(request, "L01/Circulation/issue_return_book_create.html", {})
-
+        return JsonResponse({"success": False, "error": f"Internal server error: {str(e)}"})
+    
 @csrf_exempt  # Remove this if you’re using CSRF token in AJAX
 def get_book_details(request):
     if request.method == "POST":
@@ -4985,6 +5011,7 @@ def mpsc_chapters_index(request, topic_id):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+
 def member_entry_exit(request):
     from django.utils.timezone import localdate
     active_user_ids = CustomUser.objects.filter(
@@ -6793,7 +6820,6 @@ class StockReportView(View):
         except Exception as e:
             print(f"Error saving report: {str(e)}")
             print(traceback.format_exc())
-
 class GenerateStockReportAPI(View):
     """
     API endpoint for AJAX report generation
@@ -6821,7 +6847,6 @@ class GenerateStockReportAPI(View):
             
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
 class ExportStockReportView(View):
     """
     View for exporting stock reports in different formats
