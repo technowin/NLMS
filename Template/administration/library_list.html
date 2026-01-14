@@ -478,36 +478,195 @@
             }
         }
 
-        @media (max-width: 768px) {
+        /* HIDE ON MOBILE DEVICES (screens less than 768px) */
+        @media (max-width: 767px) {
             .commissioner-corner-container {
-                position: relative;
-                top: auto;
-                left: auto;
-                margin: 20px auto 30px;
-                display: flex;
-                justify-content: center;
-            }
-            
-            .commissioner-corner-button {
-                max-width: 300px;
-                justify-content: center;
+                display: none !important;
             }
         }
 
-        @media (max-width: 576px) {
+        /* Optional: Alternative approach - show only on larger screens */
+        /* Uncomment if you want to use this instead */
+        /*
+        .commissioner-corner-container {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
             .commissioner-corner-container {
-                margin: 15px auto 25px;
-            }
-            
-            .commissioner-corner-button {
-                max-width: 280px;
-                padding: 10px 12px;
-            }
-            
-            .commissioner-corner-text span {
-                font-size: 0.9rem;
+                display: block;
             }
         }
+        */
+    </style>
+
+    <style>
+        /* SWD Corner Button Styles */
+        .swd-corner-container {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 100;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .swd-corner-button {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 12px 18px;
+            text-decoration: none;
+            color: #2c3e50;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            max-width: 280px;
+            backdrop-filter: blur(5px);
+        }
+
+        .swd-corner-button:hover {
+            transform: translateY(-3px) translateX(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            border-color: #D4AF37; /* Golden color */
+            background: white;
+            color: #B8860B; /* Darker gold for text */
+        }
+
+        .swd-corner-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 12px;
+            flex-shrink: 0;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #D4AF37, #B8860B); /* Golden gradient */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .swd-corner-button:hover .swd-corner-icon {
+            transform: scale(1.1);
+            border-color: #D4AF37; /* Golden color */
+            background: linear-gradient(135deg, #B8860B, #D4AF37); /* Reversed gradient on hover */
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5); /* Golden glow effect */
+        }
+
+        .swd-corner-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .swd-corner-text span {
+            display: block;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            color: inherit;
+            line-height: 1.2;
+        }
+
+        .swd-corner-text small {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 500;
+            opacity: 0.9;
+            line-height: 1.2;
+        }
+
+        .swd-corner-button:hover .swd-corner-text small {
+            color: #B8860B; /* Darker gold */
+        }
+
+        /* Golden hover effects for text */
+        .swd-corner-button:hover .swd-corner-text span {
+            color: #D4AF37; /* Main golden color */
+            text-shadow: 0 1px 3px rgba(212, 175, 55, 0.2);
+        }
+
+        /* Optional: Add a subtle golden glow to the entire button on hover */
+        .swd-corner-button:hover {
+            box-shadow: 0 12px 30px rgba(212, 175, 55, 0.15);
+        }
+
+        /* Animation for SWD Button */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Optional: Add a subtle pulse animation to attract attention */
+        @keyframes goldenPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(212, 175, 55, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+            }
+        }
+
+        /* Responsive Design for SWD Button */
+        @media (max-width: 992px) {
+            .swd-corner-container {
+                top: 20px;
+                right: 20px;
+            }
+            
+            .swd-corner-button {
+                max-width: 250px;
+                padding: 10px 15px;
+            }
+            
+            .swd-corner-text span {
+                font-size: 0.95rem;
+            }
+            
+            .swd-corner-text small {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* HIDE ON MOBILE DEVICES (screens less than 768px) */
+        @media (max-width: 767px) {
+            .swd-corner-container {
+                display: none !important;
+            }
+            
+            /* Remove any mobile-specific styles for these buttons */
+            .swd-corner-container,
+            .commissioner-corner-container {
+                display: none !important;
+            }
+        }
+
+        /* Optional: Alternative approach using min-width */
+        /*
+        .swd-corner-container {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .swd-corner-container {
+                display: block;
+            }
+        }
+        */
     </style>
 
     <section class="hero-section" id="hero-english"
@@ -522,6 +681,19 @@
                 <div class="commissioner-corner-text">
                     <span id="commissioner-button-english-hero">Commissioner's Message</span>
                     <small id="commissioner-subtitle-english-hero">Read Message</small>
+                </div>
+            </a>
+        </div>
+
+        <!-- SWD Button - TOP RIGHT CORNER -->
+        <div class="swd-corner-container">
+            <a href="{% url 'swd_libraries' %}" class="swd-corner-button">
+                <div class="swd-corner-icon">
+                    <i class="fas fa-handshake-angle"></i>
+                </div>
+                <div class="swd-corner-text">
+                    <span id="swd-button-english-hero">Social Welfare Dept.</span>
+                    <small id="swd-subtitle-english-hero">View Libraries</small>
                 </div>
             </a>
         </div>
@@ -598,6 +770,19 @@
                 <div class="commissioner-corner-text">
                     <span id="commissioner-button-marathi-hero">आयुक्तांचा संदेश</span>
                     <small id="commissioner-subtitle-marathi-hero">संदेश वाचा</small>
+                </div>
+            </a>
+        </div>
+
+        <!-- SWD Button - TOP RIGHT CORNER -->
+        <div class="swd-corner-container">
+            <a href="{% url 'swd_libraries' %}" class="swd-corner-button">
+                <div class="swd-corner-icon">
+                    <i class="fas fa-handshake-angle"></i>
+                </div>
+                <div class="swd-corner-text">
+                    <span id="swd-button-marathi-hero">समाज विकास विभाग</span>
+                    <small id="swd-subtitle-marathi-hero">ग्रंथालये पहा</small>
                 </div>
             </a>
         </div>
@@ -1284,6 +1469,68 @@
                 observer.observe(headEnglish, { attributes: true });
             }
         });
+    </script>
+
+    <script>
+        function syncSWDWithLayout() {
+            // Check current layout language
+            const headEnglish = document.getElementById('head-english');
+            const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+            
+            console.log("Syncing layout. English:", isEnglish);
+            
+            // Elements to toggle
+            const marathiElements = [
+                'header-marathi',
+                'sidebar-marathi',
+                'breadcrumb-current-marathi',
+                'breadcrumb-home-marathi',
+                'breadcrumb-services-marathi',
+                'hero-marathi',
+                'commissioner-button-marathi-hero',
+                'commissioner-subtitle-marathi-hero',
+                'swd-button-marathi-hero',
+                'swd-subtitle-marathi-hero'
+            ];
+            
+            const englishElements = [
+                'header-english',
+                'sidebar-english',
+                'breadcrumb-current-english',
+                'breadcrumb-home-english',
+                'breadcrumb-services-english',
+                'hero-english',
+                'commissioner-button-english-hero',
+                'commissioner-subtitle-english-hero',
+                'swd-button-english-hero',
+                'swd-subtitle-english-hero'
+            ];
+            
+            if (isEnglish) {
+                // Switch to English
+                marathiElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                englishElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+            } else {
+                // Switch to Marathi
+                marathiElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+                englishElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+            
+            // Switch content to match current tab in new language
+            switchContent(currentTab);
+        }
     </script>
 
 {% endblock %}
