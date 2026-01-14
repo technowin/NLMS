@@ -3399,6 +3399,7 @@ def get_member_details(request):
         print(f"error: {e}")
         return JsonResponse({"success": False, "error": f"Internal server error: {str(e)}"})
     
+
 @csrf_exempt  # Remove this if you’re using CSRF token in AJAX
 def get_book_details(request):
     if request.method == "POST":
@@ -4805,10 +4806,11 @@ def topic_index(request, section_no):
                 section_no=section.section_no
             ).order_by('topic_id')
 
-            subjects_data.append({
-                "subject": subject,
-                "topics": topics
-            })
+            # Use get_file_url for the topic image URL
+            for topic in topics:
+                if topic.topic_image_url:
+                    # Get the full URL for the topic image
+                    topic.topic_image_url = file_storage_service.get_file_url(topic.topic_image_url)
 
         # ✅ Pass the structured data to the template
         return render(request, "L01/UPSC/topics_index.html", {
@@ -4949,6 +4951,11 @@ def mpsc_topics_index(request, section_no):
                 subject_id=subject.subject_id,
                 section_no=section.section_no
             ).order_by('topic_id')
+
+            # Use get_file_url for the topic image URL
+            for topic in topics:
+                if topic.topic_image_url:
+                    topic.topic_image_url = file_storage_service.get_file_url(topic.topic_image_url)
 
             subjects_data.append({
                 "subject": subject,
