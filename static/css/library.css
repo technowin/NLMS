@@ -1415,7 +1415,7 @@ footer .footer-container {
         justify-content: center;     /* Horizontally center the content */
         align-items: center;         /* Vertically center the content */
         padding: 0 20px;              /* Add small horizontal padding */
-        background: rgba(0, 0, 0, 0.5); /* Optional: semi-transparent background for overlay */
+        background: rgba(0, 0, 0, 0.1); /* Optional: semi-transparent background for overlay */
     }
 
     .hero-text {
