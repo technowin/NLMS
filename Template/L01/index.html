@@ -779,12 +779,12 @@
                                 <div class="book-flip-inner">
                                     {% if book.front_page_photo %}
                                         <div class="book-flip-front">
-                                            <img src="{{ book.front_page_photo|urlencode }}"
+                                            <img src="{{ book.front_page_photo }}"
                                                 alt="{{ book.title }} Front Cover"
                                                 class="book-image"
                                                 onclick="zoomImage(this)"
-                                                data-front-image="{{ book.front_page_photo|urlencode }}"
-                                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo|urlencode }}{% endif %}"
+                                                data-front-image="{{ book.front_page_photo }}"
+                                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
                                                 data-author="{{ book.author }}"
                                                 data-title="{{ book.title }}"
                                                 data-subtitle="{{ book.subtitle }}"
@@ -802,12 +802,12 @@
                                         </div>
                                     {% elif book.last_page_photo %}
                                         <div class="book-flip-back">
-                                            <img src="{{ book.last_page_photo|urlencode }}"
+                                            <img src="{{ book.last_page_photo }}"
                                                 alt="{{ book.title }} Back Cover"
                                                 class="book-image"
                                                 onclick="zoomImage(this)"
-                                                data-front-image="{{ book.front_page_photo|urlencode }}"
-                                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo|urlencode }}{% endif %}"
+                                                data-front-image="{{ book.front_page_photo }}"
+                                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
                                                 data-author="{{ book.author }}"
                                                 data-title="{{ book.title }}"
                                                 data-subtitle="{{ book.subtitle }}"
@@ -887,8 +887,8 @@
                             <p class="book-title"
                                 style="margin-bottom: 4px; cursor:pointer;"
                                 onclick="zoomFromTitle(this)"
-                                data-image="{% if book.front_page_photo %}{{ book.front_page_photo|urlencode }}{% endif %}"
-                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo|urlencode }}{% endif %}"
+                                data-image="{% if book.front_page_photo %}{{ book.front_page_photo }}{% endif %}"
+                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
                                 data-author="{{ book.author }}"
                                 data-title="{{ book.title }}"
                                 data-subtitle="{{ book.subtitle }}"
@@ -959,12 +959,12 @@
                             <div class="book-flip-inner">
                                 {% if ebook.eb_front_page_photo %}
                                     <div class="book-flip-front">
-                                        <img src="{{ ebook.eb_front_page_photo|urlencode }}"
+                                        <img src="{{ ebook.eb_front_page_photo }}"
                                             alt="{{ ebook.eb_title }} Front Cover"
                                             class="book-image"
                                             onclick="zoomImage(this)"
-                                            data-front-image="{{ ebook.eb_front_page_photo|urlencode }}"
-                                            data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                                            data-front-image="{{ ebook.eb_front_page_photo }}"
+                                            data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
                                             data-title="{{ ebook.eb_title }}"
                                             data-subtitle="{{ ebook.eb_subtitle }}"
                                             data-author="{{ ebook.eb_author }}"
@@ -984,12 +984,12 @@
                                     </div>
                                 {% elif ebook.eb_last_page_photo %}
                                     <div class="book-flip-back">
-                                        <img src="{{ ebook.eb_last_page_photo|urlencode }}"
+                                        <img src="{{ ebook.eb_last_page_photo }}"
                                             alt="{{ ebook.eb_title }} Back Cover"
                                             class="book-image"
                                             onclick="zoomImage(this)"
-                                            data-front-image="{{ ebook.eb_front_page_photo|urlencode }}"
-                                            data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                                            data-front-image="{{ ebook.eb_front_page_photo }}"
+                                            data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
                                             data-title="{{ ebook.eb_title }}"
                                             data-subtitle="{{ ebook.eb_subtitle }}"
                                             data-author="{{ ebook.eb_author }}"
@@ -1073,8 +1073,8 @@
                     <p class="book-title"
                         style="margin-bottom: 4px; cursor:pointer;"
                         onclick="zoomFromTitle(this)"
-                        data-image="{% if ebook.eb_front_page_photo %}{{ ebook.eb_front_page_photo|urlencode }}{% endif %}"
-                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo|urlencode }}{% endif %}"
+                        data-image="{% if ebook.eb_front_page_photo %}{{ ebook.eb_front_page_photo }}{% endif %}"
+                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
                         data-author="{{ ebook.eb_author }}"
                         data-title="{{ ebook.eb_title }}"
                         data-subtitle="{{ ebook.eb_subtitle }}"
