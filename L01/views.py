@@ -207,8 +207,8 @@ def index(request):
                     "year_of_publication": book.year_of_publication or "N/A",
                     "pages": book.pages or "",
                     "language": book.language or "Unknown",
-                    "front_page_photo": book.front_page_photo if book.front_page_photo else "",
-                    "last_page_photo": book.last_page_photo if book.last_page_photo else "",
+                    "front_page_photo":  file_storage_service.get_file_url(book.front_page_photo) if book.front_page_photo else "",
+                    "last_page_photo":  file_storage_service.get_file_url(book.last_page_photo) if book.last_page_photo else "",
                     "remarks": book.remarks or "",
                     "description": book.remarks or "No description available.",
                     "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
