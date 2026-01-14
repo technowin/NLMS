@@ -46,6 +46,7 @@ import requests
 from django.db import models
 from administration.models import *
 from django.views.decorators.csrf import csrf_protect
+from datetime import date
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -95,6 +96,7 @@ def authenticate_from_db(request, username, password, db_alias):
 def Login(request):
 
     library_code = request.session.get('library_db', None)
+    today = date.today()
 
     # ============================================================
     # GET METHOD
@@ -222,6 +224,35 @@ def Login(request):
                     membership_id = membership.id
                 except MembershipMaster.DoesNotExist:
                     membership_id = None
+            # Inactive membership
+            if member.isactive != 1:
+                request.session["sweet_alert"] = {
+                    "title": "Membership Inactive",
+                    "text": "आपली सदस्यता सध्या सक्रिय नाही. कृपया प्रशासनाशी संपर्क साधा.",
+                    "icon": "warning"
+                }
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
+
+            # Membership expired
+            if today > member.to_date:
+                request.session["sweet_alert"] = {
+                    "title": "Membership Expired",
+                    "text": "आपली सदस्यता संपलेली आहे. कृपया नूतनीकरण करा.",
+                    "icon": "warning"
+                }
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
+
+            # Membership not started yet
+            if today < member.from_date:
+                request.session["sweet_alert"] = {
+                    "title": "Membership Not Active Yet",
+                    "text": "आपली सदस्यता अद्याप सुरू झालेली नाही.",
+                    "icon": "info"
+                }
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
             if membership_id == 8:
 
                 # Clear any previous pending action
