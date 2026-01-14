@@ -3,6 +3,7 @@
 from django.conf import settings
 from Account.models import *
 from L01.models import *
+from administration.models import *
 from NLMS.encryption import dec
 import Db
 from .db_utils import callproc
@@ -38,7 +39,7 @@ def logged_in_user(request):
         profile_picture_url = None  # Initialize as None
         
         if library_code:
-            library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+            library_details = LibraryMaster.objects.using(library_code).filter(library_code=library_code).first()
         if library_details:
             membership_page_link = library_details.membership_page_link
 
