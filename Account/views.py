@@ -362,6 +362,26 @@ def adminLogin(request):
     Uses password_storage table for authentication
     Only allows users with role_id = 1 (Admin) to login
     """
+    # IMPORTANT: Clear problematic session keys FIRST THING
+    # This must be the very first operation
+    if 'library_db' in request.session:
+        del request.session['library_db']
+    if 'using_database' in request.session:
+        del request.session['using_database']
+    
+    # Clear ALL library-related session data
+    keys_to_delete = []
+    for key in request.session.keys():
+        key_lower = key.lower()
+        if any(term in key_lower for term in ['library', 'db', 'branch', 'l0', 'l1', 'l2', 'l3']):
+            keys_to_delete.append(key)
+    
+    for key in keys_to_delete:
+        del request.session[key]
+    
+    # Force session save immediately
+    request.session.save()
+    
     # If user is already authenticated, redirect to admin dashboard
     if request.user.is_authenticated and request.user.is_staff:
         return redirect('LMS_Dashboard')
@@ -376,10 +396,6 @@ def adminLogin(request):
             return render(request, 'bootstrap/account/admin_login.html')
         
         try:
-            # Clear any library session data for admin login
-            if 'library_db' in request.session:
-                del request.session['library_db']
-            
             User = get_user_model()
             
             try:
@@ -401,7 +417,7 @@ def adminLogin(request):
                                 user.backend = 'django.contrib.auth.backends.ModelBackend'
                                 login(request, user)
                                 
-                                # Set session variables
+                                # Set session variables - ONLY default database
                                 request.session['using_database'] = 'default'
                                 request.session['library_db'] = 'default'
                                 request.session['is_admin'] = True
@@ -437,17 +453,8 @@ def adminLogin(request):
             logger = logging.getLogger(__name__)
             logger.error(f"Admin login error for user '{username}': {str(e)}", exc_info=True)
     
-    # Clean up database connections
-    try:
-        for conn_name in connections:
-            if conn_name != 'default':
-                try:
-                    connections[conn_name].close()
-                except:
-                    pass
-    except:
-        pass
-    
+    # REMOVE the problematic connection cleanup - it's causing issues
+    # Just return the template
     return render(request, 'bootstrap/account/admin_login.html')
 
 def logoutView(request):
