@@ -4812,9 +4812,13 @@ def topic_index(request, section_no):
                     # Get the full URL for the topic image
                     topic.topic_image_url = file_storage_service.get_file_url(topic.topic_image_url)
 
+            subjects_data.append({
+                "subject": subject,
+                "topics": topics
+            })
+
         # ✅ Pass the structured data to the template
         return render(request, "L01/UPSC/topics_index.html", {
-            "MEDIA_URL": settings.MEDIA_URL,
             "competitive_exam": competitive_exam,
             "section": section,
             "subjects_data": subjects_data,
