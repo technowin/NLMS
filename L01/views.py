@@ -4396,6 +4396,7 @@ def view_ebook_catalogue(request):
         "MEDIA_URL": settings.MEDIA_URL
     })
 
+
 @csrf_exempt
 def bookcatalog_search(request):
     try:
@@ -4404,38 +4405,54 @@ def bookcatalog_search(request):
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
+        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
 
         if not query or not search_type:
-            return JsonResponse({"error": "Please provide both query and search type."}, status=400)
+            return JsonResponse(
+                {"error": "Please provide both query and search type."},
+                status=400
+            )
 
-        # Base queryset from L01 database
+        # Base queryset
         results = BookCatalog.objects.using('L01').all()
 
-        # Filter by selected search type
+        # 🔑 STEP 1: APPLY LANGUAGE FILTER FIRST
+        if language:
+            results = results.filter(language__iexact=language)
+
+        # 🔍 STEP 2: APPLY SEARCH FILTER
         if search_type in ["title", "books"]:
             results = results.filter(title__istartswith=query)
+
         elif search_type == "author":
             results = results.filter(author__istartswith=query)
+
         elif search_type == "publisher":
             results = results.filter(publisher__icontains=query)
-        elif search_type == "language":
-            results = results.filter(language__icontains=query)
+
         elif search_type == "keyword":
             results = results.filter(keywords__icontains=query)
+
         elif search_type == "year":
             year_filters = Q()
             if query.isdigit():
                 year_filters |= Q(year_of_publication=int(query))
             year_filters |= Q(publication_year__icontains=query)
             results = results.filter(year_filters)
+
         elif search_type == "call_number":
             results = results.filter(call_number__icontains=query)
+
         elif search_type == "cutter_number":
             results = results.filter(cutter_number__icontains=query)
-        else:
-            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
 
-        # Limit results to 50
+        else:
+            return JsonResponse(
+                {"error": f"Invalid search type: {search_type}"},
+                status=400
+            )
+
+        # 🔢 LIMIT + FIELDS
         results = results.values(
             "title",
             "author",
@@ -4446,20 +4463,30 @@ def bookcatalog_search(request):
             "call_number",
             "cutter_number",
             "front_page_photo",
+            "last_page_photo",
             "ebook_available",
-            "cat_ref_num",  # <-- Include cat_ref_num from DB
+            "cat_ref_num",
         )[:50]
 
-        # Convert front_page_photo to absolute URL
+        # 📷 IMAGE + ENCRYPT
         updated_results = []
         for r in results:
-            image_path = r.get("front_page_photo")
-            r["front_page_photo"] = request.build_absolute_uri(f"/media/{image_path}") if image_path else ""
-            r["encrypted_cat_ref_num"] = enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
+            front = r.get("front_page_photo")
+            back = r.get("last_page_photo")
+
+            r["front_page_photo"] = (
+                request.build_absolute_uri(f"/media/{front}") if front else ""
+            )
+
+            r["last_page_photo"] = (                              # ✅ ADD
+                request.build_absolute_uri(f"/media/{back}") if back else ""
+            )
+            r["encrypted_cat_ref_num"] = (
+                enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
+            )
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
-    
 
     except Exception as e:
         return JsonResponse(
@@ -4467,6 +4494,7 @@ def bookcatalog_search(request):
             status=500
         )
     
+
 @csrf_exempt
 def index_book_search(request):
     try:
@@ -4478,6 +4506,7 @@ def index_book_search(request):
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
+        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
 
         if not query:
             return JsonResponse(
@@ -4488,7 +4517,11 @@ def index_book_search(request):
         # Base queryset
         results = BookCatalog.objects.using('L01').all()
 
-        # 🔤 INDEX SEARCH → ALWAYS STARTS WITH
+        # 🔑 STEP 1: APPLY LANGUAGE FILTER FIRST
+        if language:
+            results = results.filter(language__iexact=language)
+
+        # 🔤 STEP 2: INDEX SEARCH → ALWAYS STARTS WITH
         if search_type in ["", "title", "books"]:
             results = results.filter(title__istartswith=query)
 
@@ -4497,9 +4530,6 @@ def index_book_search(request):
 
         elif search_type == "publisher":
             results = results.filter(publisher__istartswith=query)
-
-        elif search_type == "language":
-            results = results.filter(language__istartswith=query)
 
         elif search_type == "keyword":
             results = results.filter(keywords__istartswith=query)
@@ -4528,17 +4558,23 @@ def index_book_search(request):
             "call_number",
             "cutter_number",
             "front_page_photo",
+            "last_page_photo",
             "ebook_available",
-            "cat_ref_num",   # ✅ REQUIRED
+            "cat_ref_num",
         )[:50]
 
         # 📷 Image URL + encryption
         updated_results = []
         for r in results:
-            image_path = r.get("front_page_photo")
+            front = r.get("front_page_photo")
+            back = r.get("last_page_photo")
+
             r["front_page_photo"] = (
-                request.build_absolute_uri(f"/media/{image_path}")
-                if image_path else ""
+                request.build_absolute_uri(f"/media/{front}") if front else ""
+            )
+
+            r["last_page_photo"] = (                              
+                request.build_absolute_uri(f"/media/{back}") if back else ""
             )
             r["encrypted_cat_ref_num"] = (
                 enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
@@ -4552,37 +4588,46 @@ def index_book_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
+    
 
 @csrf_exempt
 def libraryebook_search(request):
     try:
         if request.method != "POST":
-            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+            return JsonResponse(
+                {"error": "Invalid request method. Use POST."},
+                status=405
+            )
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
+        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
 
         if not query or not search_type:
-            return JsonResponse({"error": "Please provide both query and search type."}, status=400)
+            return JsonResponse(
+                {"error": "Please provide both query and search type."},
+                status=400
+            )
 
         # Base queryset
         results = LibraryEbook.objects.using('L01').all()
 
-        # ---- FILTER BASED ON SEARCH TYPE ----
+        # 🔑 STEP 1: APPLY LANGUAGE FILTER FIRST
+        if language:
+            results = results.filter(eb_language__iexact=language)
+
+        # 🔍 STEP 2: SEARCH FILTER
         if search_type in ["title", "ebook", "book"]:
-            results = results.filter(eb_title__istartswith=query)
+            results = results.filter(eb_title__icontains=query)
 
         elif search_type == "author":
             results = results.filter(
-                Q(eb_author__istartswith=query) |
+                Q(eb_author__icontains=query) |
                 Q(eb_other_authors__icontains=query)
             )
 
         elif search_type == "publisher":
             results = results.filter(eb_publisher__icontains=query)
-
-        elif search_type == "language":
-            results = results.filter(eb_language__icontains=query)
 
         elif search_type == "keyword":
             results = results.filter(eb_keywords__icontains=query)
@@ -4598,7 +4643,10 @@ def libraryebook_search(request):
             results = results.filter(year_filters)
 
         else:
-            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+            return JsonResponse(
+                {"error": f"Invalid search type: {search_type}"},
+                status=400
+            )
 
         # ---- LIMIT AND RETURN FIELDS ----
         results = results.values(
@@ -4612,21 +4660,28 @@ def libraryebook_search(request):
             "eb_keywords",
             "eb_isbn_issn",
             "eb_pdf_url",
-            "eb_front_page_photo"
+            "eb_front_page_photo",
+            "eb_last_page_photo",
         )[:50]
 
         # ---- FORMAT + ENCRYPT ----
         updated_results = []
         for r in results:
-            # absolute image url
-            img = r.get("eb_front_page_photo")
+            front = r.get("eb_front_page_photo")
+            back = r.get("eb_last_page_photo")
+
             r["eb_front_page_photo"] = (
-                request.build_absolute_uri(f"/media/{img}") if img else ""
+                request.build_absolute_uri(f"/media/{front}") if front else ""
             )
 
-            # Encrypt ID + PDF URL
+            r["eb_last_page_photo"] = (                              # ✅ ADD
+                request.build_absolute_uri(f"/media/{back}") if back else ""
+            )
+
             r["encrypted_ebook_id"] = enc(str(r["ebook_id"]))
-            r["encrypted_pdf_url"] = enc(r["eb_pdf_url"]) if r["eb_pdf_url"] else ""
+            r["encrypted_pdf_url"] = (
+                enc(r["eb_pdf_url"]) if r["eb_pdf_url"] else ""
+            )
 
             updated_results.append(r)
 
@@ -4638,23 +4693,35 @@ def libraryebook_search(request):
             status=500
         )
 
+
+
 @csrf_exempt
 def index_ebook_search(request):
     try:
-        library_code = request.session.get('library_db', None)
         if request.method != "POST":
-            return JsonResponse({"error": "Invalid request method. Use POST."}, status=405)
+            return JsonResponse(
+                {"error": "Invalid request method. Use POST."},
+                status=405
+            )
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
+        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
 
         if not query:
-            return JsonResponse({"error": "Please enter a search term."}, status=400)
+            return JsonResponse(
+                {"error": "Please enter a search term."},
+                status=400
+            )
 
         # Base queryset
         results = LibraryEbook.objects.using('L01').all()
 
-        # ---- FIRST-LETTER SEARCH ----
+        # 🔑 STEP 1: APPLY LANGUAGE FILTER FIRST
+        if language:
+            results = results.filter(eb_language__iexact=language)
+
+        # 🔤 STEP 2: FIRST-LETTER SEARCH
         if search_type in ["title", "book", "ebook", ""]:
             results = results.filter(eb_title__istartswith=query)
 
@@ -4667,9 +4734,6 @@ def index_ebook_search(request):
         elif search_type == "publisher":
             results = results.filter(eb_publisher__istartswith=query)
 
-        elif search_type == "language":
-            results = results.filter(eb_language__istartswith=query)
-
         elif search_type == "keyword":
             results = results.filter(eb_keywords__istartswith=query)
 
@@ -4680,7 +4744,10 @@ def index_ebook_search(request):
             results = results.filter(eb_year_of_publication__istartswith=query)
 
         else:
-            return JsonResponse({"error": f"Invalid search type: {search_type}"}, status=400)
+            return JsonResponse(
+                {"error": f"Invalid search type: {search_type}"},
+                status=400
+            )
 
         # ---- SELECT FIELDS ----
         results = results.values(
@@ -4695,19 +4762,27 @@ def index_ebook_search(request):
             "eb_isbn_issn",
             "eb_pdf_url",
             "eb_front_page_photo",
+            "eb_last_page_photo",
         )[:50]
 
         # ---- FORMAT + ENCRYPT ----
         updated_results = []
         for r in results:
-            img = r.get("eb_front_page_photo")
+            front = r.get("eb_front_page_photo")
+            back = r.get("eb_last_page_photo")
+
             r["eb_front_page_photo"] = (
-                request.build_absolute_uri(f"/media/{img}") if img else ""
+                request.build_absolute_uri(f"/media/{front}") if front else ""
             )
 
-            # Encrypt ID + PDF URL
+            r["eb_last_page_photo"] = (                              # ✅ ADD
+                request.build_absolute_uri(f"/media/{back}") if back else ""
+            )
+
             r["encrypted_ebook_id"] = enc(str(r["ebook_id"]))
-            r["encrypted_pdf_url"] = enc(r["eb_pdf_url"]) if r["eb_pdf_url"] else ""
+            r["encrypted_pdf_url"] = (
+                enc(r["eb_pdf_url"]) if r["eb_pdf_url"] else ""
+            )
 
             updated_results.append(r)
 

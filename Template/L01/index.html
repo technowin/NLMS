@@ -574,7 +574,7 @@
     @media (max-width: 1024px) {
         .zoom-modal-content-wrapper {
             width: 95%;
-            height: 90vh;
+            height: 70vh;
         }
         
         .book-info-grid {
@@ -761,6 +761,9 @@
                                 onclick="window.location.href='{% url 'Login' %}'">
                                 🚀 Login
                             </button>
+                            <button type="button" class="join-link search-btn" style="margin-left: 0px;background:linear-gradient(135deg, #3b82f6, #1e40af); color:#fff; border:none; border-radius:30px; padding:8px 18px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 10px rgba(30,64,175,0.3); transition:all 0.3s ease; letter-spacing:0.3px; text-decoration:none; outline:none;"
+                                onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.boxShadow='0 6px 14px rgba(30,64,175,0.5)'; this.style.transform='translateY(-2px) scale(1.05)';"
+                                onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #1e40af)'; this.style.boxShadow='0 4px 10px rgba(30,64,175,0.3)'; this.style.transform='translateY(0) scale(1)';" onclick="window.location.href='{% url 'L01:view_ebook_catalogue' %}'">🔍 Search Books</button>
                         </div>
                     </div>
                 {% endif %}
@@ -925,32 +928,13 @@
                     {% endfor %}
                 </div>
 
-                {% comment %} <!-- View More Button -->
-                <div class="view-more-btn-container" style="display:flex; justify-content:center; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
-                    <!-- View More Button -->
-                    <a href="{% url 'L01:view_catalogue' %}"
-                        style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
-                        onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)'; this.style.transform='translateY(-2px) scale(1.05)';"
-                        onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)'; this.style.transform='translateY(0) scale(1)';">
-                        <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
-                    </a>
-
-                    <!-- Login Button -->
-                    <a href="{% url 'Login' %}"
-                        style="background:linear-gradient(135deg, #10b981, #047857); color:#fff; text-decoration:none; padding:8px 18px; border-radius:30px; font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15); transition:all 0.3s ease;"
-                        onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)'; this.style.transform='translateY(-2px) scale(1.05)';"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)'; this.style.transform='translateY(0) scale(1)';">
-                        <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
-                    </a>
-                </div> {% endcomment %}
-                <br>
             </div>
         {% endif %}
 
         {% if library.ebooks %}
             <div class="library-books-section">
-                 <h4 id="marathi-header">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
-                <h4 id="english-header" style="display:none;">{{ library.library_name }} Books are available here</h4>
+                <h4 id="marathi-header">{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
+                <h4 id="english-header" style="display:none;">{{ library.library_name }} EBooks are available here</h4>
 
                 <div class="book-gallery">
                     {% for ebook in library.ebooks %}
@@ -1107,7 +1091,7 @@
                             transition:all 0.3s ease;"
                     onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)';this.style.transform='translateY(-2px) scale(1.05)';"
                     onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)';this.style.transform='translateY(0) scale(1)';">
-                        <i class="fas fa-arrow-down" style="margin-right:6px;"></i> View More
+                        <i class="fas fa-arrow-down" style="margin-right:6px;"></i> Search Books
                     </a>
 
                     <a href="{% url 'Login' %}"
@@ -1183,14 +1167,6 @@
                             </div>
                         </div>
                         
-                        <div class="book-description-section">
-                            <div class="description-item">
-                                <strong>Remarks:</strong> <span id="zoomBookRemarks"></span>
-                            </div>
-                            <div class="description-item">
-                                <strong>Description:</strong> <span id="zoomBookDescription"></span>
-                            </div>
-                        </div>
                         
                         <span id="zoomEncryptedEbookId" style="display:none;"></span>
                         <span id="zoomEncryptedPdfUrl" style="display:none;"></span>
