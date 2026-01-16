@@ -329,6 +329,9 @@
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC तयारी</a></li>
                             <li><a href="#">संपर्क</a></li>
                             <li><a href="{% url 'adminLogin' %}">प्रशासकीय लॉगिन</a></li>
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                                <li><a href="{% url 'librarianLogin' %}">लायब्ररियन स्टाफ लॉगिन</a></li>
+                            {% endif %}
                         </ul>
                     </div>
                     
@@ -436,6 +439,9 @@
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC Preparation</a></li>
                             <li><a href="#">Contact</a></li>
                             <li><a href="{% url 'adminLogin' %}">Administrative Login</a></li>
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                                <li><a href="{% url 'librarianLogin' %}">Librarian Staff Login</a></li>
+                            {% endif %}
                         </ul>
                     </div>
                     

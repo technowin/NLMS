@@ -1,0 +1,138 @@
+{% extends "bootstrap/account/base.html" %}
+{% load static i18n crispy_forms_tags %}
+
+{% block title %}{% trans "Librarian Staff Login" %}{% endblock title %}
+
+{% block body_extra %}
+    class="authentication-bg position-relative"
+{% endblock %}
+
+{% block page_content %}
+<div class="position-absolute start-0 end-0 start-0 bottom-0 w-100 h-100">
+    <svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%' viewBox='0 0 800 800'>
+        <g fill-opacity='0.22'>
+            <circle style="fill: rgba(30, 64, 175, 0.1);" cx="400" cy="400" r="600" />
+            <circle style="fill: rgba(30, 64, 175, 0.2);" cx="400" cy="400" r="500" />
+            <circle style="fill: rgba(30, 64, 175, 0.3);" cx="400" cy="400" r="300" />
+            <circle style="fill: rgba(30, 64, 175, 0.4);" cx="400" cy="400" r="200" />
+            <circle style="fill: rgba(30, 64, 175, 0.5);" cx="400" cy="400" r="100" />
+        </g>
+    </svg>
+</div>
+<div class="account-pages pt-2 pt-sm-5 pb-4 pb-sm-5 position-relative">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xxl-4 col-lg-5">
+                <div class="card">
+
+                    <!-- Logo -->
+                    <div class="card-header py-4 text-center" style="background-color: #1e40af;">
+                        <a href="">
+                            <span style="color:white !important;font-weight:bold;">
+                                <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="logo" height="100">
+                                &nbsp;&nbsp;
+                            </span>
+                        </a>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="text-center w-75 m-auto">
+                            <h4 class="text-dark-50 text-center pb-0 fw-bold" style="color: #1e40af;">
+                                Librarian Staff Login
+                            </h4>
+                            <p class="text-muted mb-4">Enter your credentials to access the library management system.</p>
+                        </div>
+
+                        <form method="POST" action="{% url 'librarianLogin' %}" novalidate>
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input class="form-control" type="text" id="username" name="username" required
+                                    placeholder="Enter your username">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group input-group-merge">
+                                    <input type="password" id="password" name="password" class="form-control"
+                                        placeholder="Enter your password" required>
+                                    <div class="input-group-text" data-password="false">
+                                        <span class="password-eye"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 mb-0 text-center">
+                                <button class="btn btn-primary" style="background-color:#1e40af;color:white;" type="submit">
+                                    Login as Librarian
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-3">
+                            <a href="/" class="text-muted" style="color: #1e40af !important;">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Main Site
+                            </a>
+                        </div>
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_javascript %}
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% if messages %}
+    <script>
+        $(document).ready(function() {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            
+            {% for message in messages %}
+            Swal.fire({
+                icon: '{{ message.tags }}',
+                title: '{{ message.tags|title }}',
+                text: '{{ message|escapejs }}',
+                confirmButtonText: 'OK',
+                background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                customClass: {
+                    popup: 'rounded-4 shadow',
+                    confirmButton: 'btn btn-primary px-4 py-2'
+                }
+            });
+            {% endfor %}
+        });
+    </script>
+{% endif %}
+
+<script>
+    // Password visibility toggle
+    document.querySelectorAll('[data-password="false"]').forEach(function(el) {
+        el.addEventListener('click', function() {
+            const input = this.parentElement.querySelector('input');
+            const eye = this.querySelector('.password-eye');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                input.type = 'password';
+                eye.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        });
+    });
+    
+    // Initialize password eye icon
+    document.querySelectorAll('.password-eye').forEach(function(el) {
+        el.innerHTML = '<i class="fas fa-eye"></i>';
+    });
+</script>
+{% endblock %}

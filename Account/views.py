@@ -172,8 +172,17 @@ def Login(request):
             # Authenticate user
             # ------------------------------------------
             user = authenticate_from_db(request, username, password, db_alias)
+
             if user is None:
-                messages.error(request, 'Invalid Credentials')
+                messages.error(request, 'Login unsuccessful. Please verify your credentials.')
+                return redirect("Login")
+
+            # 🔒 ROLE GATE — ONLY MEMBERS ALLOWED
+            if str(user.role_id) != '3':
+                messages.error(
+                    request,
+                    'Access denied. This portal is available to registered members only.'
+                )
                 return redirect("Login")
             
             # ------------------------------------------
@@ -199,8 +208,17 @@ def Login(request):
             # Authenticate user
             # ------------------------------------------
             user = authenticate_from_db(request, username, password, db_alias)
+
             if user is None:
-                messages.error(request, 'Invalid Credentials')
+                messages.error(request, 'Login unsuccessful. Please verify your credentials.')
+                return redirect("Login")
+
+            # 🔒 ROLE GATE — ONLY MEMBERS ALLOWED
+            if str(user.role_id) != '3':
+                messages.error(
+                    request,
+                    'Access denied. This portal is available to registered members only.'
+                )
                 return redirect("Login")
 
             # ------------------------------------------
@@ -456,6 +474,65 @@ def adminLogin(request):
     # REMOVE the problematic connection cleanup - it's causing issues
     # Just return the template
     return render(request, 'bootstrap/account/admin_login.html')
+
+@csrf_protect
+def librarianLogin(request):
+    """
+    Librarian staff login view for library staff.
+    Uses Django's built-in authentication with PBKDF2 passwords.
+    """
+
+    library_code = request.session.get('library_db', None)
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        if not username or not password:
+            messages.error(request, 'Login unsuccessful. Please verify your credentials.')
+            return render(request, 'bootstrap/account/librarian_login.html')
+
+        try:
+            user = authenticate(request, username=username, password=password)
+
+            if user and hasattr(user, 'role_id') and user.role_id != 3:
+                login(request, user)
+
+                request.session['using_database'] = library_code
+                request.session['is_librarian'] = True
+                request.session['username'] = str(user.username)
+                request.session['full_name'] = str(getattr(user, 'full_name', user.username))
+                request.session['user_id'] = str(user.id)
+                request.session['role_id'] = str(user.role_id)
+                request.session['last_login'] = (
+                    user.last_login.isoformat() if user.last_login else ''
+                )
+
+                messages.success(
+                    request,
+                    f'Login successful. Welcome, {user.full_name or user.username}.'
+                )
+                return redirect('L01:dashboard')
+
+            # 🔒 Generic failure message (no role / user leakage)
+            messages.error(
+                request,
+                'Login unsuccessful. Invalid credentials or insufficient access rights.'
+            )
+
+        except Exception as e:
+            messages.error(
+                request,
+                'Login could not be completed at this time. Please try again later.'
+            )
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Librarian login error for username '{username}'",
+                exc_info=True
+            )
+
+    return render(request, 'bootstrap/account/librarian_login.html')
 
 def logoutView(request):
     library_code = request.session.get('library_db', None)

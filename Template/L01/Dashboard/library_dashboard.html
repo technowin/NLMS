@@ -716,5 +716,28 @@ function showLoading(show) {
 })();
 </script>
 
+{% if messages %}
+    <script>
+        $(document).ready(function() {
+            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            
+            {% for message in messages %}
+            Swal.fire({
+                icon: '{{ message.tags }}',
+                title: '{{ message.tags|title }}',
+                text: '{{ message|escapejs }}',
+                confirmButtonText: 'OK',
+                background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                customClass: {
+                    popup: 'rounded-4 shadow',
+                    confirmButton: 'btn btn-primary px-4 py-2'
+                }
+            });
+            {% endfor %}
+        });
+    </script>
+{% endif %}
 
 {% endblock %}

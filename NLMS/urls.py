@@ -62,6 +62,7 @@ urlpatterns = [
     path("Login", Login,name='Account'),
     path("Login", Login,name='Login'),
     path("adminLogin/", adminLogin, name='adminLogin'),
+    path('librarian-login/', librarianLogin, name='librarianLogin'),
     path("home", home,name='home'),
     path("logout",logoutView,name='logout'),
     path("forgot_password",forgot_password,name='forgot_password'),
