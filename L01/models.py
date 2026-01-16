@@ -903,3 +903,47 @@ class MembershipRenewalStaging(models.Model):
     class Meta:
         db_table = "tbl_membership_renewal_staging"
         ordering = ['-created_at']
+        
+class GoogleBookMaster(models.Model):
+    title = models.CharField(max_length=500)
+    isbn = models.CharField(max_length=20, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.isbn})"
+    
+    class Meta:
+        db_table = "tbl_google_book_master"
+    
+class GoogleBookDetail(models.Model):
+    book = models.ForeignKey(GoogleBookMaster,on_delete=models.CASCADE,related_name='google_details')
+    key = models.CharField(max_length=255)
+    value = models.TextField()
+
+    def __str__(self):
+        return f"{self.key}: {self.value[:30]}"
+
+    class Meta:
+        db_table = "tbl_google_book_detail"
+
+class LOCBookMaster(models.Model):
+    title = models.CharField(max_length=500)
+    isbn = models.CharField(max_length=20, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.isbn})"
+    
+    class Meta:
+        db_table = "tbl_loc_book_master"
+    
+class LOCBookDetail(models.Model):
+    book = models.ForeignKey(LOCBookMaster,on_delete=models.CASCADE,related_name='loc_details')
+    key = models.CharField(max_length=255)
+    value = models.TextField()
+
+    def __str__(self):
+        return f"{self.key}: {self.value[:30]}"
+    
+    class Meta:
+        db_table = "tbl_loc_book_detail"

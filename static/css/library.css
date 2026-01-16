@@ -1269,7 +1269,7 @@ footer .footer-container {
     min-height: 500px;
     position: relative;
     width: 100%;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Overlay */

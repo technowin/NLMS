@@ -4857,11 +4857,19 @@ def chapters_index(request, topic_id):
             .order_by('chapter_no_int')
 
         # ✅ Prepare structured data (if needed for template)
-        chapters_data = []
-        for chapter in chapters:
-            chapters_data.append({
-                "chapter": chapter
-            })
+        # chapters_data = []
+        # for chapter in chapters:
+        #     chapters_data.append({
+        #         "chapter": chapter
+        #     })
+        
+        chapters_data = [
+            {
+                "chapter": chapter,
+                "chapter_pdf_url": file_storage_service.get_file_url(chapter.chapter_pdf_url)  # Call the function here
+            }
+            for chapter in chapters
+        ]
 
         # ✅ Render the chapters page
         return render(request, "L01/UPSC/chapters_index.html", {
@@ -5007,7 +5015,15 @@ def mpsc_chapters_index(request, topic_id):
             .annotate(chapter_no_int=Cast('chapter_no', IntegerField())) \
             .order_by('chapter_no_int')
 
-        chapters_data = [{"chapter": chapter} for chapter in chapters]
+        # chapters_data = [{"chapter": chapter} for chapter in chapters]
+        
+        chapters_data = [
+            {
+                "chapter": chapter,
+                "chapter_pdf_url": file_storage_service.get_file_url(chapter.chapter_pdf_url)  # Call the function here
+            }
+            for chapter in chapters
+        ]
 
         return render(request, "L01/MPSC/mpsc_chapters_index.html", {
             "MEDIA_URL": settings.MEDIA_URL,

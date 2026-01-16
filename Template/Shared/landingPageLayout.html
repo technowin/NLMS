@@ -253,7 +253,7 @@
                             </li>
 
                             <!-- Add 'ms-auto' to shift login button towards right but not at the extreme end -->
-                            {% if request.session.library_db and request.path != '/' %}
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item ms-auto">
                                     <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">Login</button>
                                 </li>
