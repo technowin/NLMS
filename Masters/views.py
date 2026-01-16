@@ -1015,6 +1015,256 @@ def book_accession_create(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
 
+# Book Accession Edit
+@login_required
+def book_accession_edit(request):
+    try:
+        user_id = request.user.id
+        
+        # Get encrypted_id from URL parameter
+        encrypted_id = request.GET.get('encrypted_id')
+        if not encrypted_id:
+            messages.error(request, 'Invalid record ID')
+            return redirect('book_accession_index')
+        
+        # Decrypt the ID
+        try:
+            accession_id = dec(str(encrypted_id.strip()))
+        except:
+            messages.error(request, 'Invalid record ID')
+            return redirect('book_accession_index')
+        
+        # Get the accession record
+        accession = get_object_or_404(BookAccession, accession_id=accession_id)
+        
+        if request.method == "GET":
+            # Fetch dropdown data
+            suppliers = SupplierMaster.objects.filter(is_active=1)
+            for sup in suppliers:
+                sup.encrypted_id = enc(str(sup.supplier_id))
+
+            funding_sources = FundingSourceMaster.objects.filter(is_active=1)
+            for fs in funding_sources:
+                fs.encrypted_id = enc(str(fs.source_id))
+
+            conditions = ConditionAtEntryMaster.objects.filter(is_active=1)
+            for cond in conditions:
+                cond.encrypted_id = enc(str(cond.condition_id))
+
+            currencies = CurrencyMaster.objects.filter(is_active=1)
+            for cur in currencies:
+                cur.encrypted_id = enc(str(cur.currency_id))
+
+            locations = ResourceLocationMaster.objects.filter(is_active=1)
+            for loc in locations:
+                loc.encrypted_id = enc(str(loc.location_id))
+
+            statuses = status_master.objects.filter(is_active=1)
+            for st in statuses:
+                st.encrypted_id = enc(str(st.status_id))
+
+            catalogues = BookCatalog.objects.all()
+            for cat in catalogues:
+                cat.encrypted_id = enc(str(cat.cat_ref_num))
+            
+            # Create context with current values
+            context = {
+                'accession': accession,
+                'suppliers': suppliers,
+                'funding_sources': funding_sources,
+                'conditions': conditions,
+                'currencies': currencies,
+                'locations': locations,
+                'statuses': statuses,
+                'catalogues': catalogues,
+            }
+            return render(request, 'Master/book_accession_edit.html', context)
+        
+        elif request.method == "POST":
+            # Check if any data has actually changed
+            has_changed = False
+            original_data = {}
+            
+            # Store original data for comparison
+            original_data = {
+                'catalogue_id': accession.catalogue_id,
+                # 'copy_number': accession.copy_number,
+                'acquisition_date': accession.acquisition_date,
+                'supplier_id': accession.supplier_id,
+                'invoice_number': accession.invoice_number,
+                'invoice_date': accession.invoice_date,
+                'price': accession.price,
+                'currency_id': accession.currency_id,
+                'funding_source_id': accession.funding_source_id,
+                'condition_id': accession.condition_at_entry_id,
+                'location_id': accession.location_id,
+                # 'status_id': accession.status_id,
+                'remarks': accession.remarks,
+            }
+            
+            # Prepare new data
+            new_data = {}
+            
+            # Catalogue
+            if request.POST.get('catalogue_id'):
+                new_catalogue_id = dec(str(request.POST.get('catalogue_id')))
+                if new_catalogue_id != original_data['catalogue_id']:
+                    accession.catalogue_id = new_catalogue_id
+                    has_changed = True
+            
+            # Copy Number
+            # new_copy_number = request.POST.get('copy_number')
+            # if new_copy_number and str(new_copy_number) != str(original_data['copy_number']):
+            #     accession.copy_number = new_copy_number
+            #     has_changed = True
+            
+            # Acquisition Date
+            new_acquisition_date = request.POST.get('acquisition_date')
+            if new_acquisition_date and str(new_acquisition_date) != str(original_data['acquisition_date']):
+                accession.acquisition_date = new_acquisition_date
+                has_changed = True
+            
+            # Supplier
+            if request.POST.get('supplier_id'):
+                new_supplier_id = dec(str(request.POST.get('supplier_id')))
+                if new_supplier_id != original_data['supplier_id']:
+                    accession.supplier_id = new_supplier_id
+                    has_changed = True
+            
+            # Invoice Number
+            new_invoice_number = request.POST.get('invoice_number')
+            if new_invoice_number != original_data['invoice_number']:
+                accession.invoice_number = new_invoice_number
+                has_changed = True
+            
+            # Invoice Date
+            new_invoice_date = request.POST.get('invoice_date')
+            if new_invoice_date and str(new_invoice_date) != str(original_data['invoice_date']):
+                accession.invoice_date = new_invoice_date
+                has_changed = True
+            
+            # Price
+            new_price = request.POST.get('price')
+            if new_price and str(new_price) != str(original_data['price']):
+                accession.price = new_price
+                has_changed = True
+            
+            # Currency
+            if request.POST.get('currency_id'):
+                new_currency_id = dec(str(request.POST.get('currency_id')))
+                if new_currency_id != original_data['currency_id']:
+                    accession.currency_id = new_currency_id
+                    has_changed = True
+            
+            # Funding Source
+            if request.POST.get('funding_source_id'):
+                new_funding_source_id = dec(str(request.POST.get('funding_source_id')))
+                if new_funding_source_id != original_data['funding_source_id']:
+                    accession.funding_source_id = new_funding_source_id
+                    has_changed = True
+            
+            # Condition
+            if request.POST.get('condition_id'):
+                new_condition_id = dec(str(request.POST.get('condition_id')))
+                if new_condition_id != original_data['condition_id']:
+                    accession.condition_at_entry_id = new_condition_id
+                    has_changed = True
+            
+            # Location
+            if request.POST.get('location_id'):
+                new_location_id = dec(str(request.POST.get('location_id')))
+                if new_location_id != original_data['location_id']:
+                    accession.location_id = new_location_id
+                    has_changed = True
+            
+            # Status
+            # if request.POST.get('status_id'):
+            #     new_status_id = dec(str(request.POST.get('status_id')))
+            #     if new_status_id != original_data['status_id']:
+            #         accession.status_id = new_status_id
+            #         has_changed = True
+            
+            # Remarks
+            new_remarks = request.POST.get('remarks')
+            if new_remarks != original_data['remarks']:
+                accession.remarks = new_remarks
+                has_changed = True
+            
+            # Only save if something changed
+            if has_changed:
+                accession.updated_by = request.user.username
+                accession.save()
+                messages.success(request, 'Book accession updated successfully!')
+            else:
+                messages.info(request, 'No changes were made to the record.')
+            
+            return redirect('book_accession_index')
+           
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[-1].name
+        callproc("stp_error_log", [fun, str(e), user_id])
+        messages.error(request, 'Oops...! Something went wrong while updating!')
+        return redirect('book_accession_index')
+
+# Book Accession view
+@login_required
+def book_accession_view(request, encrypted_id=None):
+    try:
+        user_id = request.user.id
+        
+        # Get encrypted_id from either URL parameter or query parameter
+        if encrypted_id:
+            # From URL path: /view/encrypted_value/
+            enc_id = encrypted_id
+        else:
+            # From query parameter: /view/?encrypted_id=encrypted_value
+            enc_id = request.GET.get('encrypted_id', '')
+        
+        if not enc_id:
+            messages.error(request, 'Invalid record ID')
+            return redirect('book_accession_index')
+        
+        # Decrypt the ID
+        try:
+            accession_id = int(dec(enc_id.strip()))
+        except Exception as dec_error:
+            print(f"Decryption error: {dec_error}")
+            messages.error(request, 'Invalid record ID')
+            return redirect('book_accession_index')
+        
+        # Get the accession record with all related data
+        accession = get_object_or_404(
+            BookAccession.objects.select_related(
+                'catalogue',
+                'supplier', 
+                'currency', 
+                'funding_source',
+                'condition_at_entry', 
+                'location', 
+                'status'
+            ), 
+            accession_id=accession_id
+        )
+        
+        # Add encrypted_id to the accession object (like you do in index view)
+        accession.encrypted_id = enc_id
+        
+        # Fetch all related data for display context
+        context = {
+            'accession': accession,
+            'is_view_mode': True,
+            'encrypted_id': enc_id,  # Also pass separately if needed
+        }
+        
+        return render(request, 'Master/book_accession_view.html', context)
+            
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[-1].name
+        callproc("stp_error_log", [fun, str(e), user_id])
+        messages.error(request, 'Oops...! Something went wrong while loading the record!')
+        return redirect('book_accession_index')
 # translate_word
 
 def translate_word(request):
