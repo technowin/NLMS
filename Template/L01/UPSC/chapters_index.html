@@ -6,154 +6,154 @@
 {% block content %}
 {% load encryption_filters %}
 <style>
-/* ===== Chapters Section ===== */
-.chapters-section {
-  margin-top: 50px;
-}
+    /* ===== Chapters Section ===== */
+    .chapters-section {
+      margin-top: 50px;
+    }
 
-.chapters-title {
-  color: #002b5c; /* fallback color */
-  font-weight: 700;
-  font-size: 1.6rem;
-  margin-bottom: 25px;
-  text-align: center;
-  
-  /* Gradient text effect */
-  background: linear-gradient(90deg, #002b5c, #0077b6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+    .chapters-title {
+      color: #002b5c; /* fallback color */
+      font-weight: 700;
+      font-size: 1.6rem;
+      margin-bottom: 25px;
+      text-align: center;
+      
+      /* Gradient text effect */
+      background: linear-gradient(90deg, #002b5c, #0077b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
 
-  /* Subtle shadow for depth */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0);
+      /* Subtle shadow for depth */
+      text-shadow: 1px 1px 2px rgba(0, 0, 0);
 
-  /* Letter spacing and line height */
-  letter-spacing: 1px;
-  line-height: 1.4;
+      /* Letter spacing and line height */
+      letter-spacing: 1px;
+      line-height: 1.4;
 
-  /* Smooth transition for hover effect */
-  transition: all 0.3s ease;
-}
+      /* Smooth transition for hover effect */
+      transition: all 0.3s ease;
+    }
 
-/* Hover effect */
-.chapters-title:hover {
-  transform: scale(1.05);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0);
-}
+    /* Hover effect */
+    .chapters-title:hover {
+      transform: scale(1.05);
+      text-shadow: 2px 2px 4px rgba(0, 0, 0);
+    }
 
-/* Responsive for smaller screens */
-@media (max-width: 768px) {
-  .chapters-title {
-    font-size: 1.4rem;
-  }
-}
+    /* Responsive for smaller screens */
+    @media (max-width: 768px) {
+      .chapters-title {
+        font-size: 1.4rem;
+      }
+    }
 
-@media (max-width: 480px) {
-  .chapters-title {
-    font-size: 1.2rem;
-  }
-}
+    @media (max-width: 480px) {
+      .chapters-title {
+        font-size: 1.2rem;
+      }
+    }
 
-.chapters-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: 'Merriweather', Georgia, serif;
-  font-size: 0.95rem;
-}
+    .chapters-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Merriweather', Georgia, serif;
+      font-size: 0.95rem;
+    }
 
-.chapters-table thead {
-  background-color: #003366;
-  color: #fff;
-}
+    .chapters-table thead {
+      background-color: #003366;
+      color: #fff;
+    }
 
-.chapters-table th,
-.chapters-table td {
-  padding: 10px 15px;
-  text-align: left;  /* ✅ changed from center to left */
-  vertical-align: middle; /* optional, keeps vertical alignment nice */
-}
+    .chapters-table th,
+    .chapters-table td {
+      padding: 10px 15px;
+      text-align: left;  /* ✅ changed from center to left */
+      vertical-align: middle; /* optional, keeps vertical alignment nice */
+    }
 
-/* Optional: make header text bold */
-.chapters-table thead th {
-  font-weight: 700;
-}
+    /* Optional: make header text bold */
+    .chapters-table thead th {
+      font-weight: 700;
+    }
 
-/* Optional: add hover effect for rows */
-.chapters-table tbody tr:hover {
-  background-color: rgba(0, 51, 102, 0.05);
-}
+    /* Optional: add hover effect for rows */
+    .chapters-table tbody tr:hover {
+      background-color: rgba(0, 51, 102, 0.05);
+    }
 
-/* Alternating row colors */
-.chapters-table tbody tr:nth-child(even) {
-  background-color: #f7f9fc;
-}
+    /* Alternating row colors */
+    .chapters-table tbody tr:nth-child(even) {
+      background-color: #f7f9fc;
+    }
 
-.chapters-table tbody tr:hover {
-  background-color: #e6effc;
-  transition: background-color 0.2s ease;
-}
+    .chapters-table tbody tr:hover {
+      background-color: #e6effc;
+      transition: background-color 0.2s ease;
+    }
 
-/* ===== View Button ===== */
-.chapters-table .btn-primary {
-  background-color: #003366;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: background-color 0.2s ease;
-}
+    /* ===== View Button ===== */
+    .chapters-table .btn-primary {
+      background-color: #003366;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+    }
 
-.chapters-table .btn-primary:hover {
-  background-color: #0055aa;
-}
+    .chapters-table .btn-primary:hover {
+      background-color: #0055aa;
+    }
 
-/* Pagination container */
-#pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+    /* Pagination container */
+    #pagination {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
 
-/* Pagination buttons */
-#pagination button {
-  min-width: 35px;
-  padding: 6px 12px;
-  border: 2px solid #007bff;
-  border-radius: 50px; /* pill-shaped buttons */
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  background-color: #fff;
-  color: #007bff;
-}
+    /* Pagination buttons */
+    #pagination button {
+      min-width: 35px;
+      padding: 6px 12px;
+      border: 2px solid #007bff;
+      border-radius: 50px; /* pill-shaped buttons */
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      background-color: #fff;
+      color: #007bff;
+    }
 
-/* Active page button */
-#pagination button.btn-primary {
-  background-color: #007bff;
-  color: #fff;
-  border-color: #0056b3;
-  box-shadow: 0 2px 5px rgba(0, 0, 0);
-}
+    /* Active page button */
+    #pagination button.btn-primary {
+      background-color: #007bff;
+      color: #fff;
+      border-color: #0056b3;
+      box-shadow: 0 2px 5px rgba(0, 0, 0);
+    }
 
-/* Hover effect for all buttons */
-#pagination button:hover {
-  background-color: #0056b3;
-  color: #fff;
-  transform: translateY(-2px);
-}
+    /* Hover effect for all buttons */
+    #pagination button:hover {
+      background-color: #0056b3;
+      color: #fff;
+      transform: translateY(-2px);
+    }
 
-/* Disabled buttons (optional) */
-#pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  background-color: #e9ecef;
-  color: #6c757d;
-  border-color: #dee2e6;
-}
+    /* Disabled buttons (optional) */
+    #pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      background-color: #e9ecef;
+      color: #6c757d;
+      border-color: #dee2e6;
+    }
 {% comment %} 
 /* 🌟 Breadcrumb Styling */
 .breadcrumb {
@@ -246,7 +246,7 @@
                 <td>
                   {% if chapter_data.chapter.chapter_pdf_url %}
                     <a
-                      href="{{ chapter_data.chapter.chapter_pdf_url }}"
+                      href="{{ chapter_data.chapter_pdf_url }}"
                       target="_blank"
                       class="btn btn-sm btn-primary"
                     >
