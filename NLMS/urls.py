@@ -204,6 +204,8 @@ urlpatterns = [
     path('swd-libraries/', swd_libraries, name='swd_libraries'),
     path('vision-mission/', vision_mission, name='vision_mission'),
 
+    path('reports/', include(('library_reports.urls', 'reports'), namespace='reports')),
+
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 
