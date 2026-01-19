@@ -11548,3 +11548,549 @@ def mpsc_topics_logged(request, section_no):
         callproc("stp_error_log", [fun, str(e), ''])
         print(f"error: {e}")
         return JsonResponse({"error": "Oops... Something went wrong!"}, status=500)
+    
+# views.py
+from django.core.files.storage import FileSystemStorage
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Dict, Any, List
+
+
+
+def flatten_json(data: Dict[str, Any], parent_key: str = '', separator: str = '_') -> Dict[str, str]:
+    """
+    Flatten a nested dictionary for storage in key-value pairs.
+    
+    Args:
+        data: The JSON/dictionary to flatten
+        parent_key: Parent key for nested structures
+        separator: Separator between nested keys
+    
+    Returns:
+        Flattened dictionary with string keys and values
+    """
+    items: Dict[str, str] = {}
+    
+    def _flatten(value: Any, key: str = '') -> None:
+        """Recursive helper function to flatten nested structures."""
+        
+        if isinstance(value, dict):
+            for k, v in value.items():
+                new_key = f"{key}{separator}{k}" if key else k
+                _flatten(v, new_key)
+        elif isinstance(value, list):
+            for i, item in enumerate(value):
+                new_key = f"{key}{separator}{i}" if key else str(i)
+                _flatten(item, new_key)
+        else:
+            # Convert value to string
+            if value is None:
+                items[key] = ''
+            elif isinstance(value, bool):
+                items[key] = str(value).lower()
+            else:
+                items[key] = str(value)
+    
+    _flatten(data, parent_key)
+    return items
+
+
+def flatten_json_iterative(data: Dict[str, Any], separator: str = '_') -> Dict[str, str]:
+    """
+    Alternative iterative version of flatten_json to avoid recursion depth issues.
+    """
+    items: Dict[str, str] = {}
+    stack: List[tuple] = [(data, '')]
+    
+    while stack:
+        current_data, parent_key = stack.pop()
+        
+        if isinstance(current_data, dict):
+            for key, value in current_data.items():
+                new_key = f"{parent_key}{separator}{key}" if parent_key else key
+                
+                if isinstance(value, dict):
+                    stack.append((value, new_key))
+                elif isinstance(value, list):
+                    for i, item in enumerate(value):
+                        list_key = f"{new_key}{separator}{i}"
+                        stack.append((item, list_key))
+                else:
+                    if value is None:
+                        items[new_key] = ''
+                    elif isinstance(value, bool):
+                        items[new_key] = str(value).lower()
+                    else:
+                        items[new_key] = str(value)
+        
+        elif isinstance(current_data, list):
+            for i, item in enumerate(current_data):
+                new_key = f"{parent_key}{separator}{i}" if parent_key else str(i)
+                stack.append((item, new_key))
+        
+        else:
+            if current_data is None:
+                items[parent_key] = ''
+            elif isinstance(current_data, bool):
+                items[parent_key] = str(current_data).lower()
+            else:
+                items[parent_key] = str(current_data)
+    
+    return items
+
+@login_required
+def get_book_data_isbn(request):
+    """Render the main search page"""
+    return render(request, 'L01/ISBN/book_search_isbn.html')
+
+def validate_isbn(isbn: str) -> str:
+    """Validate and clean ISBN"""
+    # Remove all non-alphanumeric characters
+    clean_isbn = re.sub(r'[^0-9X]', '', isbn.upper())
+    
+    # Check for valid ISBN-10
+    if len(clean_isbn) == 10:
+        # Validate check digit for ISBN-10
+        check_sum = 0
+        for i in range(9):
+            check_sum += int(clean_isbn[i]) * (10 - i)
+        check_digit = clean_isbn[9]
+        if check_digit == 'X':
+            check_sum += 10
+        else:
+            check_sum += int(check_digit)
+        if check_sum % 11 == 0:
+            return clean_isbn
+    
+    # Check for valid ISBN-13
+    elif len(clean_isbn) == 13 and clean_isbn.isdigit():
+        # Validate check digit for ISBN-13
+        check_sum = 0
+        for i in range(12):
+            if i % 2 == 0:
+                check_sum += int(clean_isbn[i])
+            else:
+                check_sum += int(clean_isbn[i]) * 3
+        check_digit = (10 - (check_sum % 10)) % 10
+        if check_digit == int(clean_isbn[12]):
+            return clean_isbn
+    
+    return None
+
+
+def save_google_book_data(isbn: str, book_data: Dict[str, Any]) -> bool:
+    """Save Google Books data to database using flattened JSON"""
+    try:
+        items = book_data.get('items', [])
+        if not items:
+            logger.info(f"No items found in Google Books data for ISBN {isbn}")
+            return False
+        
+        volume_info = items[0].get('volumeInfo', {})
+        book_title = volume_info.get('title', f'Unknown Title - {isbn}')
+        
+        # Extract ISBN from industryIdentifiers if available
+        isbn_to_use = isbn
+        industry_ids = volume_info.get('industryIdentifiers', [])
+        for id_item in industry_ids:
+            if id_item.get('type') in ['ISBN_13', 'ISBN_10']:
+                isbn_to_use = id_item.get('identifier', isbn)
+                break
+        
+        # Validate ISBN format
+        isbn_to_use = validate_isbn(isbn_to_use) or isbn_to_use
+        
+        # Save to master table
+        with transaction.atomic(using='L01'):  # Specify database for transaction
+            google_book, created = GoogleBookMaster.objects.using('L01').get_or_create(
+                isbn=isbn_to_use,
+                defaults={'title': book_title[:200]}  # Limit title length
+            )
+            
+            if not created:
+                # Update title if book already exists
+                google_book.title = book_title[:200]
+                google_book.save(using='L01')
+            
+            # Get book_id for foreign key
+            book_id = google_book.id
+            
+            # Clear existing details using book_id
+            GoogleBookDetail.objects.using('L01').filter(book_id=book_id).delete()
+            
+            # Flatten and save all data
+            flattened_data = flatten_json(book_data)
+            
+            # Save each key-value pair (batch insert for efficiency)
+            details_list = []
+            for key, value in flattened_data.items():
+                # Skip empty values
+                if value is None or value == '':
+                    continue
+                    
+                # Truncate key if too long
+                truncated_key = key[:255]
+                
+                # Convert value to string and truncate if too long
+                if isinstance(value, (dict, list)):
+                    truncated_value = json.dumps(value, ensure_ascii=False)[:5000]
+                else:
+                    truncated_value = str(value)[:5000]
+                
+                details_list.append(GoogleBookDetail(
+                    book_id=book_id,  # Use book_id instead of book object
+                    key=truncated_key,
+                    value=truncated_value
+                ))
+                
+                # Batch insert in chunks to avoid memory issues
+                if len(details_list) >= 100:
+                    GoogleBookDetail.objects.using('L01').bulk_create(details_list, batch_size=100)
+                    details_list = []
+            
+            # Insert any remaining items
+            if details_list:
+                GoogleBookDetail.objects.using('L01').bulk_create(details_list, batch_size=100)
+            
+            logger.info(f"Successfully saved Google Books data for ISBN {isbn_to_use} with {len(flattened_data)} flattened keys")
+            return True
+        
+    except Exception as e:
+        logger.error(f"Error saving Google book data for ISBN {isbn}: {str(e)}")
+        return False
+
+
+
+def save_loc_book_data(isbn: str, loc_data: Dict[str, Any]) -> bool:
+    """Save LOC data to database"""
+    try:
+        # Check if we have actual book data
+        results = loc_data.get('results', [])
+        total_results = loc_data.get('pagination', {}).get('total', 0)
+        
+        # IMPORTANT: Check if results array is actually empty
+        # Even if total_results > 0, if results array is empty, there's no book data
+        if total_results == 0 or not results or len(results) == 0:
+            logger.info(f"No book results found in LOC data for ISBN {isbn}. Total: {total_results}, Results count: {len(results)}")
+            return False
+        
+        # Extract title from first result
+        first_result = results[0]
+        title = first_result.get('title', '') 
+        if not title:
+            title = first_result.get('item', {}).get('title', f'Unknown Title - {isbn}')
+        
+        # Save to master table
+        with transaction.atomic():
+            loc_book, created = LOCBookMaster.objects.using('L01').get_or_create(
+                isbn=isbn,
+                defaults={'title': title}
+            )
+            
+            if not created:
+                # Update title if book already exists
+                loc_book.title = title
+                loc_book.save()
+            
+            # Clear existing details
+            LOCBookDetail.objects.using('L01').filter(book=loc_book).delete()
+            
+            # Flatten and save all data
+            flattened_data = flatten_json(loc_data)
+            
+            # Save each key-value pair
+            details_list = []
+            for key, value in flattened_data.items():
+                # Truncate key if too long
+                truncated_key = key[:255]
+                # Truncate value if too long
+                truncated_value = value[:10000] if len(value) > 10000 else value
+                
+                details_list.append(LOCBookDetail(
+                    book=loc_book,
+                    key=truncated_key,
+                    value=truncated_value
+                ))
+            
+            # Batch insert
+            if details_list:
+                LOCBookDetail.objects.using('L01').bulk_create(details_list, batch_size=100)
+            
+            logger.info(f"Successfully saved LOC data for ISBN {isbn}")
+            return True
+        
+    except Exception as e:
+        logger.error(f"Error saving LOC book data for ISBN {isbn}: {str(e)}")
+        return False
+
+
+def search_book_by_isbn(isbn: str) -> Dict[str, Any]:
+    """Search for a book by ISBN in LOC first, then Google"""
+    isbn = isbn.strip()
+    results = {
+        'isbn': isbn,
+        'source': None,
+        'success': False,
+        'message': '',
+        'title': ''
+    }
+    
+    # Try LOC API first
+    # try:
+    #     logger.info(f"Searching LOC for ISBN: {isbn}")
+
+    #     loc_url = f"https://www.loc.gov/search/?q={isbn}&fo=json"
+
+    #     headers = {
+    #         "User-Agent": "BookSearchApp/1.0 (contact@example.com)"
+    #     }
+
+    #     response = requests.get(
+    #         loc_url,
+    #         headers=headers,   # ✅ REQUIRED
+    #         timeout=15
+    #     )
+
+    #     if response.status_code == 200:
+    #         loc_data = response.json()
+
+    #         total_results = loc_data.get('pagination', {}).get('total', 0)
+    #         actual_results = loc_data.get('results', [])
+
+    #         logger.info(
+    #             f"LOC Response - Total: {total_results}, "
+    #             f"Actual results count: {len(actual_results)}"
+    #         )
+
+    #         if total_results > 0 and len(actual_results) > 0:
+    #             logger.info(f"Found data in LOC for ISBN: {isbn}")
+
+    #             if save_loc_book_data(isbn, loc_data):
+    #                 results['source'] = 'Library of Congress'
+    #                 results['success'] = True
+    #                 results['message'] = 'Data found in Library of Congress'
+
+    #                 first_result = actual_results[0]
+    #                 results['title'] = first_result.get('title', 'Unknown Title')
+
+    #                 return results
+    #             else:
+    #                 results['message'] = 'Failed to save LOC data'
+    #         else:
+    #             logger.info(f"No actual book results in LOC for ISBN: {isbn}")
+    #             results['message'] = 'No book data found in Library of Congress'
+
+    #     else:
+    #         logger.warning(
+    #             f"LOC API returned status {response.status_code} for ISBN {isbn}"
+    #         )
+    #         results['message'] = f'LOC API error: HTTP {response.status_code}'
+
+    # except requests.RequestException as e:
+    #     logger.warning(
+    #         f"LOC API connection error for ISBN {isbn}: {str(e)}"
+    #     )
+    #     results['message'] = f'LOC API connection error: {str(e)}'
+
+    # except Exception as e:
+    #     logger.error(
+    #         f"Error processing LOC data for ISBN {isbn}: {str(e)}"
+    #     )
+    #     results['message'] = f'Error processing LOC data: {str(e)}'
+
+    
+    # If LOC fails or has no data, try Google Books API
+    try:
+        logger.info(f"Searching Google Books for ISBN: {isbn}")
+        google_url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
+        response = requests.get(google_url, timeout=15)
+        
+        if response.status_code == 200:
+            google_data = response.json()
+            
+            # Check if we have items
+            total_items = google_data.get('totalItems', 0)
+            if total_items > 0:
+                logger.info(f"Found data in Google Books for ISBN: {isbn}")
+                # Save Google data
+                if save_google_book_data(isbn, google_data):
+                    results['source'] = 'Google Books'
+                    results['success'] = True
+                    results['message'] = 'Data found in Google Books'
+                    
+                    # Extract title
+                    items = google_data.get('items', [{}])
+                    if items:
+                        results['title'] = items[0].get('volumeInfo', {}).get('title', 'Unknown Title')
+                    
+                    return results
+                else:
+                    results['message'] = 'Failed to save Google Books data'
+            else:
+                logger.info(f"No results in Google Books for ISBN: {isbn}")
+                if not results['message']:  # Only update if LOC also had no message
+                    results['message'] = 'No data found in Google Books'
+        
+        else:
+            logger.warning(f"Google Books API returned status {response.status_code} for ISBN {isbn}")
+            if not results['message']:
+                results['message'] = f'Google Books API error: HTTP {response.status_code}'
+                
+    except requests.RequestException as e:
+        logger.warning(f"Google Books API connection error for ISBN {isbn}: {str(e)}")
+        if not results['message']:
+            results['message'] = f'Google Books API connection error: {str(e)}'
+    except Exception as e:
+        logger.error(f"Error processing Google Books data for ISBN {isbn}: {str(e)}")
+        if not results['message']:
+            results['message'] = f'Error processing Google Books data: {str(e)}'
+    
+    # If we reach here, no data was found
+    if not results['message']:
+        results['message'] = 'No data found in both Library of Congress and Google Books'
+    
+    return results
+
+
+@csrf_exempt
+def search_books(request):
+    """Handle ISBN search from frontend"""
+    if request.method == 'POST':
+        isbns_input = request.POST.get('isbns', '').strip()
+        
+        if not isbns_input:
+            return JsonResponse({'error': 'Please enter ISBN(s)'}, status=400)
+        
+        # Split by comma and clean up
+        raw_isbns = [isbn.strip() for isbn in isbns_input.split(',') if isbn.strip()]
+        
+        # Validate ISBNs (basic validation)
+        valid_isbns = []
+        for isbn in raw_isbns:
+            # Remove any dashes or spaces
+            clean_isbn = isbn.replace('-', '').replace(' ', '')
+            if clean_isbn.isdigit() and len(clean_isbn) in [10, 13]:
+                valid_isbns.append(clean_isbn)
+            else:
+                logger.warning(f"Invalid ISBN format: {isbn}")
+        
+        if not valid_isbns:
+            return JsonResponse({'error': 'No valid ISBNs found. Please enter valid 10 or 13 digit ISBNs.'}, status=400)
+        
+        # Limit to 20 ISBNs per request to prevent timeout
+        isbns_to_process = valid_isbns[:2000]
+        if len(valid_isbns) > 2000:
+            logger.warning(f"Limiting search to first 20 ISBNs out of {len(valid_isbns)}")
+        
+        # Process ISBNs
+        results = []
+        
+        # For single ISBN, process sequentially
+        if len(isbns_to_process) == 1:
+            result = search_book_by_isbn(isbns_to_process[0])
+            results.append(result)
+        else:
+            # For multiple ISBNs, use threading with limited workers
+            with ThreadPoolExecutor(max_workers=3) as executor:  # Reduced workers to avoid rate limiting
+                future_to_isbn = {
+                    executor.submit(search_book_by_isbn, isbn): isbn 
+                    for isbn in isbns_to_process
+                }
+                
+                for future in as_completed(future_to_isbn):
+                    try:
+                        result = future.result(timeout=45)  # Increased timeout
+                        results.append(result)
+                    except Exception as e:
+                        isbn = future_to_isbn[future]
+                        logger.error(f"Thread error for ISBN {isbn}: {str(e)}")
+                        results.append({
+                            'isbn': isbn,
+                            'source': None,
+                            'success': False,
+                            'message': f'Processing error: {str(e)}',
+                            'title': ''
+                        })
+        
+        # Count successes
+        success_count = sum(1 for r in results if r['success'])
+        
+        return JsonResponse({
+            'success': True,
+            'results': results,
+            'total_searched': len(isbns_to_process),
+            'total_found': success_count,
+            'summary': f'Found {success_count} out of {len(isbns_to_process)} ISBN(s)',
+            'warning': 'Limited to first 20 ISBNs' if len(valid_isbns) > 20 else None
+        })
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def upload_excel(request):
+    """Handle Excel file upload"""
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        excel_file = request.FILES['excel_file']
+        
+        try:
+            # Save the uploaded file temporarily
+            fs = FileSystemStorage()
+            filename = fs.save(f"temp_{int(time.time())}.xlsx", excel_file)
+            file_path = fs.path(filename)
+            
+            # Read the Excel file
+            try:
+                df = pd.read_excel(file_path)
+            except:
+                # Try reading as CSV
+                df = pd.read_csv(file_path)
+            
+            # Find ISBN column (look for columns that might contain ISBNs)
+            isbn_column = None
+            for col in df.columns:
+                # Check if column name suggests ISBN
+                col_lower = str(col).lower()
+                if 'isbn' in col_lower or 'ean' in col_lower or 'barcode' in col_lower:
+                    isbn_column = col
+                    break
+            
+            # If no obvious ISBN column, use first column
+            if isbn_column is None:
+                isbn_column = df.columns[0]
+                logger.info(f"No ISBN column found, using first column: {isbn_column}")
+            
+            # Extract ISBNs
+            isbns = []
+            for value in df[isbn_column].dropna().astype(str):
+                # Clean the value
+                clean_value = value.strip().replace('-', '').replace(' ', '')
+                # Basic validation
+                if clean_value.isdigit() and len(clean_value) in [10, 13]:
+                    isbns.append(clean_value)
+                elif len(clean_value) > 0:
+                    logger.warning(f"Skipping invalid ISBN format: {value}")
+            
+            # Clean up
+            fs.delete(filename)
+            
+            # Remove duplicates and limit
+            unique_isbns = list(set(isbns))[:500]  # Limit to 100 ISBNs
+         
+            return JsonResponse({
+                'success': True,
+                'isbns': unique_isbns,
+                'count': len(unique_isbns),
+                'message': f'Successfully extracted {len(unique_isbns)} valid ISBN(s) from {isbn_column} column'
+            })
+            
+        except pd.errors.EmptyDataError:
+            return JsonResponse({'error': 'The Excel file is empty'}, status=400)
+        except Exception as e:
+            logger.error(f"Error processing Excel file: {str(e)}")
+            return JsonResponse({
+                'error': f'Error processing file: {str(e)}. Please ensure it\'s a valid Excel or CSV file.'
+            }, status=400)
+    
+    return JsonResponse({'error': 'No file uploaded'}, status=400)
+

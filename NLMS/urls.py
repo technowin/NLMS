@@ -202,7 +202,7 @@ urlpatterns = [
     # Layout
     path('commissioner-message/', commissioner_message, name='commissioner_message'),
     path('swd-libraries/', swd_libraries, name='swd_libraries'),
-
+    path('vision-mission/', vision_mission, name='vision_mission'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

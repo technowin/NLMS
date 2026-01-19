@@ -144,6 +144,11 @@ urlpatterns = [
     path('get_dashboard3_data', get_dashboard3_data, name='get_dashboard3_data'),
     path('get_membershipType_data_dashboardThree', get_membershipType_data_dashboardThree, name='get_membershipType_data_dashboardThree'),
     path('dashboard/export/', dashboard_export, name='dashboard_export'),
+    
+    path('get_book_data_isbn/', get_book_data_isbn, name='get_book_data_isbn'),
+    path('search-books/',search_books, name='search_books'),
+    path('upload-excel/', upload_excel, name='upload_excel'),
+
 
 
 ]

@@ -1,0 +1,837 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+{% csrf_token %}
+{% block title %}पुस्तक शोध (ISBN){% endblock title %}
+
+{% block extra_css %}
+{% comment %} <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"> {% endcomment %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+<link rel="stylesheet" href="{% static 'css/member_log.css' %}">
+
+{% endblock %}
+
+ 
+
+{% block page_title %}
+  {% include "bootstrap/partials/page-title.html" with page_title='पुस्तक शोध (ISBN)'  %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 10px;
+        }
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            border-color: #86b7fe;
+        }
+        .upload-area {
+            border: 2px dashed #28a745;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: rgba(40, 167, 69, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        .upload-area:hover {
+            background-color: rgba(40, 167, 69, 0.1);
+            border-color: #218838;
+        }
+        .upload-area.dragover {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-color: #1e7e34;
+        }
+        .progress {
+            height: 20px;
+            border-radius: 10px;
+        }
+        .progress-bar {
+            border-radius: 10px;
+        }
+        .result-card {
+            border-left: 4px solid #6c757d;
+            transition: all 0.2s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .result-success {
+            border-left-color: #28a745;
+        }
+        .result-warning {
+            border-left-color: #ffc107;
+        }
+        .result-danger {
+            border-left-color: #dc3545;
+        }
+        .isbn-badge {
+            background-color: #6f42c1;
+            color: white;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+        .badge {
+            font-weight: 500;
+        }
+        .display-4 {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+        .list-group-item {
+            background-color: transparent;
+            border: none;
+            padding: 8px 0;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        .stat-card {
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .btn {
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 8px 16px;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        .btn-outline-primary {
+            color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-outline-primary:hover {
+            background-color: #0d6efd;
+            color: white;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        #cancelUploadBtn {
+            margin-top: 10px;
+        }
+        .fas {
+            margin-right: 8px;
+        }
+        h5 .fas {
+            margin-right: 10px;
+        }
+        .text-muted {
+            font-size: 0.9em;
+        }
+        .form-text {
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .status-message {
+            font-size: 0.9em;
+            font-style: italic;
+            color: #6c757d;
+        }
+        .rate-limit-info {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-search"></i> Search ISBN Numbers</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="searchForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="isbnInput" class="form-label">
+                                    <i class="fas fa-barcode"></i> Enter ISBN Numbers
+                                </label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="isbnInput" 
+                                    rows="4" 
+                                    placeholder="Enter ISBN numbers separated by commas&#10;Example: 9780061122415, 9780143127550, 9780545010221"
+                                    required></textarea>
+                                <div class="form-text">
+                                    Enter multiple ISBN numbers separated by commas. Supports ISBN-10 and ISBN-13 formats.
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary" id="clearBtn">
+                                        <i class="fas fa-eraser"></i> Clear All
+                                    </button>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary" id="searchBtn">
+                                        <i class="fas fa-search"></i> Search Books
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="uploadBtn">
+                                        <i class="fas fa-file-excel"></i> Upload Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Upload Area (Hidden by default) -->
+                        <div id="uploadArea" class="upload-area" style="display: none;">
+                            <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
+                            <h5>Upload Excel File</h5>
+                            <p class="text-muted">Drag & drop your Excel file here or click to browse</p>
+                            <p class="text-muted small">Supports: .xlsx, .xls, .csv (Max 500 ISBNs)</p>
+                            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display: none;">
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-outline-secondary" id="cancelUploadBtn">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> How It Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item border-0 px-0">
+                                Enter ISBN numbers (comma separated) or upload Excel
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                System searches Library of Congress first
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                If not found or rate limited, searches Google Books
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                Data is saved to appropriate database tables
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                View results and statistics
+                            </li>
+                        </ol>
+                        <hr>
+                        <div class="alert alert-warning">
+                            <small>
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Note:</strong> Rate limiting protection included. Max 500 ISBNs per upload.
+                            </small>
+                        </div>
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-lightbulb"></i>
+                                <strong>Tip:</strong> Invalid ISBNs in Excel will be automatically skipped.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="row mt-4" id="progressSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-spinner fa-spin"></i> Search Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span id="progressText">Initializing...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress mb-3">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="currentStatus" class="text-muted small"></div>
+                        <div id="rateLimitInfo" class="rate-limit-info" style="display: none;">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            <span id="rateLimitMessage">Rate limiting detected. Automatically switching to alternative sources...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row mt-4" id="resultsSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-list-check"></i> Search Results</h5>
+                            <span id="resultsSummary" class="badge bg-light text-dark"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultsContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="row mt-4" id="statsSection" style="display: none;">
+            <div class="col-md-3">
+                <div class="card text-center stat-card">
+                    <div class="card-body">
+                        <h1 id="totalSearched" class="display-4 text-primary">0</h1>
+                        <p class="text-muted">Total ISBNs Searched</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center stat-card">
+                    <div class="card-body">
+                        <h1 id="totalFound" class="display-4 text-success">0</h1>
+                        <p class="text-muted">Books Found</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center stat-card">
+                    <div class="card-body">
+                        <h1 id="successRate" class="display-4 text-info">0%</h1>
+                        <p class="text-muted">Success Rate</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center stat-card">
+                    <div class="card-body">
+                        <h1 id="rateLimitedCount" class="display-4 text-warning">0</h1>
+                        <p class="text-muted">Rate Limited</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warning Section -->
+        <div class="row mt-3" id="warningSection" style="display: none;">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="warningMessage"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // CSRF token setup
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            // Elements
+            const searchForm = $('#searchForm');
+            const isbnInput = $('#isbnInput');
+            const searchBtn = $('#searchBtn');
+            const uploadBtn = $('#uploadBtn');
+            const clearBtn = $('#clearBtn');
+            const uploadArea = $('#uploadArea');
+            const excelFile = $('#excelFile');
+            const cancelUploadBtn = $('#cancelUploadBtn');
+            const progressSection = $('#progressSection');
+            const resultsSection = $('#resultsSection');
+            const statsSection = $('#statsSection');
+            const warningSection = $('#warningSection');
+            const warningMessage = $('#warningMessage');
+            const resultsContainer = $('#resultsContainer');
+            const progressBar = $('#progressBar');
+            const progressText = $('#progressText');
+            const progressPercent = $('#progressPercent');
+            const currentStatus = $('#currentStatus');
+            const resultsSummary = $('#resultsSummary');
+            const totalSearched = $('#totalSearched');
+            const totalFound = $('#totalFound');
+            const successRate = $('#successRate');
+            const rateLimitedCount = $('#rateLimitedCount');
+            const rateLimitInfo = $('#rateLimitInfo');
+            const rateLimitMessage = $('#rateLimitMessage');
+
+            // Global variables
+            let currentSearchIsbns = [];
+            let processedCount = 0;
+            let foundCount = 0;
+            let rateLimitedCountValue = 0;
+            let searchInProgress = false;
+
+            // Toggle upload area
+            uploadBtn.click(function() {
+                if (searchInProgress) {
+                    alert('Please wait for current search to complete');
+                    return;
+                }
+                uploadArea.show();
+                searchForm.find('button, textarea').prop('disabled', true);
+            });
+
+            cancelUploadBtn.click(function() {
+                uploadArea.hide();
+                searchForm.find('button, textarea').prop('disabled', false);
+                excelFile.val('');
+            });
+
+            // Handle file upload
+            uploadArea.click(function() {
+                excelFile.click();
+            });
+
+            excelFile.change(function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validate file type
+                const validTypes = ['.xlsx', '.xls', '.csv'];
+                const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+                
+                if (!validTypes.includes(fileExt)) {
+                    alert('Please upload an Excel file (.xlsx, .xls, .csv)');
+                    excelFile.val('');
+                    return;
+                }
+
+                // Show loading
+                uploadArea.html(`
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Processing file...</p>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                    </div>
+                `);
+
+                // Upload file
+                const formData = new FormData();
+                formData.append('excel_file', file);
+                formData.append('csrfmiddlewaretoken', csrftoken);
+
+                $.ajax({
+                    url: '{% url "L01:upload_excel" %}',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            // Populate ISBN input
+                            isbnInput.val(response.isbns.join(', '));
+                            // Hide upload area
+                            uploadArea.hide();
+                            searchForm.find('button, textarea').prop('disabled', false);
+                            
+                            // Show success message with warnings
+                            let message = `Successfully loaded ${response.count} valid ISBN(s) from file`;
+                            if (response.warning) {
+                                message += `\n${response.warning}`;
+                            }
+                            if (response.skipped_count && response.skipped_count > 0) {
+                                message += `\n${response.skipped_count} ISBN(s) were skipped due to invalid format`;
+                            }
+                            alert(message);
+                        } else {
+                            alert('Error: ' + response.error);
+                            resetUploadArea();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Upload failed: ' + error);
+                        resetUploadArea();
+                    }
+                });
+            });
+
+            // Handle drag and drop
+            uploadArea.on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+
+            uploadArea.on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+
+            uploadArea.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    excelFile[0].files = files;
+                    excelFile.trigger('change');
+                }
+            });
+
+            // Clear button
+            clearBtn.click(function() {
+                if (searchInProgress) {
+                    if (!confirm('Search is in progress. Are you sure you want to clear?')) {
+                        return;
+                    }
+                }
+                isbnInput.val('');
+                resultsContainer.empty();
+                resultsSection.hide();
+                statsSection.hide();
+                warningSection.hide();
+                searchInProgress = false;
+            });
+
+            // Search form submission
+            searchForm.submit(function(e) {
+                e.preventDefault();
+                
+                if (searchInProgress) {
+                    alert('A search is already in progress. Please wait.');
+                    return;
+                }
+                
+                const isbns = isbnInput.val().trim();
+                if (!isbns) {
+                    alert('Please enter at least one ISBN number');
+                    return;
+                }
+
+                // Parse ISBNs
+                const rawIsbns = isbns.split(',').map(isbn => isbn.trim()).filter(isbn => isbn);
+                if (rawIsbns.length === 0) {
+                    alert('Please enter valid ISBN numbers');
+                    return;
+                }
+
+                // Check limit
+                if (rawIsbns.length > 500) {
+                    alert('Maximum 500 ISBNs allowed. Please reduce the number.');
+                    return;
+                }
+
+                // Start search
+                startSearch(rawIsbns);
+            });
+
+            // Start search function
+            function startSearch(isbns) {
+                searchInProgress = true;
+                currentSearchIsbns = isbns;
+                processedCount = 0;
+                foundCount = 0;
+                rateLimitedCountValue = 0;
+                
+                // Disable buttons and show progress
+                searchBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Searching...');
+                searchForm.find('button, textarea').prop('disabled', true);
+                
+                // Show progress
+                progressSection.show();
+                progressBar.css('width', '5%');
+                progressText.text('Starting search...');
+                progressPercent.text('5%');
+                currentStatus.text(`Processing ${isbns.length} ISBN(s)...`);
+                rateLimitInfo.hide();
+                
+                // Hide previous results
+                resultsSection.hide();
+                statsSection.hide();
+                warningSection.hide();
+                resultsContainer.empty();
+
+                // Update progress
+                updateProgress(5, 'Initializing search...');
+
+                // Send first batch request
+                sendBatchRequest(isbns, 0);
+            }
+
+            // Send batch request
+            function sendBatchRequest(allIsbns, startIndex) {
+                const batchSize = 20; // Process 20 at a time
+                const endIndex = Math.min(startIndex + batchSize, allIsbns.length);
+                const batch = allIsbns.slice(startIndex, endIndex);
+                
+                currentStatus.text(`Processing batch ${Math.floor(startIndex/batchSize) + 1}/${Math.ceil(allIsbns.length/batchSize)}...`);
+                
+                $.ajax({
+                    url: '{% url "L01:search_books" %}',
+                    type: 'POST',
+                    data: {
+                        isbns: batch.join(','),
+                        csrfmiddlewaretoken: csrftoken,
+                        batch_start: startIndex,
+                        batch_total: allIsbns.length
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Process results
+                            processBatchResults(response, allIsbns, endIndex);
+                        } else {
+                            handleSearchError(response.error || 'Batch search failed');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        handleSearchError(`Batch request failed: ${error}`);
+                    }
+                });
+            }
+
+            // Process batch results
+            function processBatchResults(response, allIsbns, nextIndex) {
+                // Update counts
+                processedCount += response.results.length;
+                foundCount += response.total_found;
+                
+                // Count rate limited results
+                response.results.forEach(result => {
+                    if (result.message && result.message.includes('rate limited')) {
+                        rateLimitedCountValue++;
+                    }
+                });
+                
+                // Display results
+                displayBatchResults(response.results);
+                
+                // Update progress
+                const progress = Math.min(95, Math.round((processedCount / allIsbns.length) * 95));
+                updateProgress(progress, `Processed ${processedCount} of ${allIsbns.length} ISBN(s)...`);
+                
+                // Check if we need to process more batches
+                if (nextIndex < allIsbns.length) {
+                    // Add delay between batches to avoid rate limiting
+                    setTimeout(() => {
+                        sendBatchRequest(allIsbns, nextIndex);
+                    }, 2000); // 2 second delay between batches
+                } else {
+                    // All batches processed
+                    completeSearch(allIsbns.length);
+                }
+                
+                // Show rate limit warning if detected
+                if (rateLimitedCountValue > 0) {
+                    rateLimitInfo.show();
+                    rateLimitMessage.text(`${rateLimitedCountValue} requests were rate limited. System automatically used alternative sources.`);
+                }
+            }
+
+            // Update progress
+            function updateProgress(percent, message) {
+                progressBar.css('width', percent + '%');
+                progressPercent.text(percent + '%');
+                if (message) {
+                    progressText.text(message);
+                }
+            }
+
+            // Handle search error
+            function handleSearchError(errorMessage) {
+                searchInProgress = false;
+                progressSection.hide();
+                searchBtn.prop('disabled', false).html('<i class="fas fa-search"></i> Search Books');
+                searchForm.find('button, textarea').prop('disabled', false);
+                
+                resultsContainer.html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> ${errorMessage}
+                    </div>
+                `);
+                resultsSection.show();
+            }
+
+            // Complete search
+            function completeSearch(totalIsbns) {
+                updateProgress(100, 'Search complete!');
+                currentStatus.text('Finalizing results...');
+                
+                // Calculate success rate
+                const successRateValue = totalIsbns > 0 ? Math.round((foundCount / totalIsbns) * 100) : 0;
+                
+                // Update statistics
+                totalSearched.text(totalIsbns);
+                totalFound.text(foundCount);
+                successRate.text(successRateValue + '%');
+                rateLimitedCount.text(rateLimitedCountValue);
+                
+                // Show warning if rate limited
+                if (rateLimitedCountValue > 0) {
+                    warningMessage.text(`${rateLimitedCountValue} requests were rate limited. Some data may be incomplete.`);
+                    warningSection.show();
+                }
+                
+                // Show results after a short delay
+                setTimeout(() => {
+                    progressSection.hide();
+                    resultsSummary.text(`Found ${foundCount} out of ${totalIsbns} books`);
+                    statsSection.show();
+                    resultsSection.show();
+                    
+                    // Re-enable buttons
+                    searchBtn.prop('disabled', false).html('<i class="fas fa-search"></i> Search Books');
+                    searchForm.find('button, textarea').prop('disabled', false);
+                    searchInProgress = false;
+                }, 1000);
+            }
+
+            // Display batch results
+            function displayBatchResults(results) {
+                results.forEach((result, index) => {
+                    let badgeClass, iconClass, statusClass, statusText;
+                    
+                    if (result.success) {
+                        badgeClass = 'bg-success';
+                        iconClass = 'fa-check-circle text-success';
+                        statusClass = 'result-success';
+                        statusText = 'FOUND';
+                    } else if (result.message && result.message.includes('rate limited')) {
+                        badgeClass = 'bg-warning';
+                        iconClass = 'fa-exclamation-triangle text-warning';
+                        statusClass = 'result-warning';
+                        statusText = 'RATE LIMITED';
+                    } else if (result.message && result.message.includes('Error')) {
+                        badgeClass = 'bg-danger';
+                        iconClass = 'fa-exclamation-circle text-danger';
+                        statusClass = 'result-danger';
+                        statusText = 'ERROR';
+                    } else {
+                        badgeClass = 'bg-secondary';
+                        iconClass = 'fa-times-circle text-secondary';
+                        statusClass = '';
+                        statusText = 'NOT FOUND';
+                    }
+
+                    const resultHtml = `
+                        <div class="card result-card ${statusClass} mb-2">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div style="flex: 1;">
+                                        <h6 class="card-title mb-1">
+                                            <i class="fas ${iconClass}"></i> 
+                                            ${result.title || 'No title found'}
+                                        </h6>
+                                        <p class="card-text mb-1">
+                                            <span class="badge isbn-badge">${result.isbn}</span>
+                                            ${result.source ? `<span class="badge ${badgeClass}">${result.source}</span>` : ''}
+                                        </p>
+                                        <small class="text-muted status-message">${result.message}</small>
+                                    </div>
+                                    <div class="text-end ms-3">
+                                        <span class="badge ${badgeClass}">${statusText}</span>
+                                        <br>
+                                        <small class="text-muted">${result.source || 'No source'}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultsContainer.append(resultHtml);
+                });
+            }
+
+            // Reset upload area
+            function resetUploadArea() {
+                uploadArea.html(`
+                    <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
+                    <h5>Upload Excel File</h5>
+                    <p class="text-muted">Drag & drop your Excel file here or click to browse</p>
+                    <p class="text-muted small">Supports: .xlsx, .xls, .csv (Max 500 ISBNs)</p>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display: none;">
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-secondary" id="cancelUploadBtn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                `);
+                uploadArea.show();
+            }
+
+            // Initialize tooltips
+            $(function () {
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            });
+        });
+    </script>
+
+{% endblock %}
