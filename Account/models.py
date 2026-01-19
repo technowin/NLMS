@@ -153,3 +153,16 @@ class OTPMessage(models.Model):
 
     def __str__(self):
         return f"{self.OTPPurpose} - {self.OTPIDNumber}"
+    
+class SmsTemplate(models.Model):
+    template_id = models.CharField(max_length=100, unique=True)
+    template_name = models.CharField(max_length=255)
+    template_message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=100)
+    
+    class Meta:
+        db_table = 'sms_templates'
+    
+    def __str__(self):
+        return self.template_name

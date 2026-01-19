@@ -28,6 +28,9 @@
         <div class="row mb-3">
             <div class="col-md-6">
                 {% comment %} <h2 class="fw-bold">ग्रंथ सूची</h2> {% endcomment %}
+                <a href="{% url 'book_catalog_create_isbn' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> ग्रंथ सूची तयार करा(isbn)
+                </a>
             </div>
             <div class="col-md-6 text-end">
             <a href="{% url 'book_catalog_create' %}" class="btn btn-success">

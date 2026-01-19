@@ -145,6 +145,13 @@ urlpatterns = [
     path('ebook_catalog_index/', ebook_catalog_index, name='ebook_catalog_index'),
     path('ebook_create/', ebook_create, name='ebook_create'),
     path('ebook_edit/', ebook_edit, name='ebook_edit'),
+    
+     #competitive books
+    path('create_competitive_book',create_competitive_book, name='create_competitive_book'),
+    path('save_competitive_book/',save_competitive_book, name='save_competitive_book'),
+    path('get_sections_by_competitive/',get_sections_by_competitive, name='get_sections_by_competitive'),
+    path('get_subjects_by_section/',get_subjects_by_section, name='get_subjects_by_section'),
+    path('get_topics_by_competitive/',get_topics_by_competitive, name='get_topics_by_competitive'),
 
     #Reports 
     path('payment_report', payment_report, name='payment_report'),
@@ -203,6 +210,9 @@ urlpatterns = [
     path('commissioner-message/', commissioner_message, name='commissioner_message'),
     path('swd-libraries/', swd_libraries, name='swd_libraries'),
     path('vision-mission/', vision_mission, name='vision_mission'),
+    
+    path('book_catalog_create_isbn/', book_catalog_create_isbn, name='book_catalog_create_isbn'),
+    path('isbn-lookup/', isbn_lookup, name='book_catalog_isbn_lookup'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

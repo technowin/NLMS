@@ -471,7 +471,7 @@
 
             {% if not role_id == '3' %}
 
-                {% if not membership.actionperformed or membership.actionperformed == 'rejected' or membership.status_id == 9%}
+                {% if not membership.actionperformed or membership.actionperformed == 'rejected' or membership.actionperformed == 'Applied for membership' or membership.status_id == 9%}
 
                     {% if membership.status_id == 9%}
 

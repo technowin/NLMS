@@ -1441,37 +1441,84 @@ def membership_form_view(request):
                         user_password = password_entry.passwordText
 
                         # ----------------------------------
-                        # 7. Prepare SMS message
+                        # 7. Prepare SMS message using SmsTemplate
                         # ----------------------------------
-                        otp_template = get_object_or_404(
-                            OTPMessage,
-                            OTPIDNumber=1
-                        )
-
-                        message = otp_template.OTPText.replace(
-                            '@UserId',
-                            f"{user.username} and {user_password}"
-                        )
+                        try:
+                            # Get the fees success template
+                            sms_template = SmsTemplate.objects.get(template_id='1107176880334605433')
+                            
+                            # Get user's first name or full name
+                            user_name = membership.first_name if membership.first_name else user.full_name
+                            
+                            # Create the comprehensive message with ALL details
+                            user_details = f"{user.username} and {user_password} and Membership Code: {new_membership_code}"
+                            
+                            # Replace the {#var#} placeholder with all details
+                            # The template has only one placeholder, so include everything there
+                            message = sms_template.template_message.replace('{#var#}', user_details)
+                            
+                            print(f"Generated message: {message}")
+                            
+                        except SmsTemplate.DoesNotExist:
+                            # Fallback to OTP template
+                            print("Fees success template not found, using OTP template")
+                            otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)
+                            message = otp_template.OTPText.replace(
+                                '@UserId',
+                                f"Username: {user.username}, Password: {user_password}, Membership Code: {new_membership_code}"
+                            )
 
                         # ----------------------------------
                         # 8. Send SMS (LAST STEP)
                         # ----------------------------------
-                        # send_sms(user.phone, message)
-                        # log_sms(...)
+                        # Use membership.mobile_no if available, otherwise user.phone
+                        mobile_no = membership.mobile_no if membership.mobile_no else user.phone
+                        
+                        if mobile_no:
+                            # Send SMS
+                            sms_sent = send_sms(mobile_no, message)
+                            
+                            # Generate unique ID for logging
+                            unique_id = f"PAYMENT_RECEIVED_{membership.id}_{int(time.time())}"
+                            
+                            # Log the SMS
+                            if sms_sent:
+                                log_sms(user, mobile_no, message, 'Success', unique_id)
+                                sms_status = "sent"
+                            else:
+                                log_sms(user, mobile_no, message, 'Failed', unique_id)
+                                sms_status = "failed"
+                                
+                            print(f"Payment confirmation SMS {sms_status} to {user_name}")
+                        else:
+                            print(f"No mobile number found for {user_name}")
+                            sms_sent = False
 
                         # ----------------------------------
                         # 9. Success Message
                         # ----------------------------------
                         if user_activated:
-                            messages.success(
-                                request,
-                                f"User {user.username} has been activated successfully. Payment has been recorded and SMS sent."
-                            )
+                            if sms_sent:
+                                messages.success(
+                                    request,
+                                    f"User {user.username} has been activated successfully. Payment has been recorded and SMS sent."
+                                )
+                            else:
+                                messages.warning(
+                                    request,
+                                    f"User {user.username} has been activated successfully. Payment has been recorded but SMS could not be sent (no mobile number or sending failed)."
+                                )
                         else:
-                            messages.success(
-                                request,
-                                f"User {user.username} is already active. Payment has been recorded successfully."
-                            )
+                            if sms_sent:
+                                messages.success(
+                                    request,
+                                    f"User {user.username} is already active. Payment has been recorded and SMS sent."
+                                )
+                            else:
+                                messages.warning(
+                                    request,
+                                    f"User {user.username} is already active. Payment has been recorded but SMS could not be sent."
+                                )
 
                     return redirect("L01:membership_approval")
 
@@ -1481,7 +1528,7 @@ def membership_form_view(request):
                         f"An error occurred while processing the payment: {str(e)}"
                     )
                     return redirect("L01:membership_approval")
-            
+                
             elif action == "renewal_approved":
                 try:
                     with transaction.atomic():
@@ -1616,10 +1663,71 @@ def membership_form_view(request):
                         
                         membership.save()
                         
+                        # ✅ STEP 7: SEND SMS FOR MEMBERSHIP RENEWAL
+                        try:
+                            # Get the membership renewal template
+                            sms_template = SmsTemplate.objects.get(template_id='1107176880347608387')
+                            
+                            # Get user's first name or full name
+                            user_name = membership.first_name if membership.first_name else ""
+                            
+                            # Get CustomUser for logging
+                            try:
+                                user = CustomUser.objects.get(username=membership.user_id)
+                            except CustomUser.DoesNotExist:
+                                user = None
+                            
+                            # Create renewal details message
+                            renewal_details = (
+                                f"Renewal ID: {payment.id}, "
+                                f"From: {membership.from_date.strftime('%d-%m-%Y')} to {membership.to_date.strftime('%d-%m-%Y')}, "
+                                f"Total: ₹{total_amount:.2f}"
+                            )
+                            
+                            # Replace the placeholder with user's name and renewal details
+                            message = sms_template.template_message.replace('{#var#}', user_name)
+                            
+                            # Send SMS - Use membership.mobile_no
+                            mobile_no = membership.mobile_no
+                            
+                            if mobile_no:
+                                # Send SMS
+                                sms_sent = send_sms(mobile_no, message)
+                                
+                                # Generate unique ID for logging
+                                unique_id = f"RENEWAL_APPROVED_{membership.id}_{payment.id}_{int(time.time())}"
+                                
+                                # Log the SMS
+                                if sms_sent:
+                                    if user:
+                                        log_sms(user, mobile_no, message, 'Success', unique_id)
+                                    else:
+                                        log_sms(None, mobile_no, message, 'Success', unique_id)
+                                    sms_status = "sent"
+                                else:
+                                    if user:
+                                        log_sms(user, mobile_no, message, 'Failed', unique_id)
+                                    else:
+                                        log_sms(None, mobile_no, message, 'Failed', unique_id)
+                                    sms_status = "failed"
+                                    
+                                print(f"Renewal confirmation SMS {sms_status} to {user_name}")
+                            else:
+                                print(f"No mobile number found for {user_name}")
+                                sms_sent = False
+                                
+                        except SmsTemplate.DoesNotExist:
+                            print("Membership renewal template not found")
+                            sms_sent = False
+                        except Exception as e:
+                            print(f"Error sending renewal SMS: {str(e)}")
+                            sms_sent = False
+                        
                         # ✅ STEP 6: Show appropriate success message with breakdown
+                        success_message = ""
                         if adjusted_amount_float is not None and adjusted_amount_float != original_total_fine:
                             if has_gap_fine:
-                                messages.success(request, 
+                                success_message = (
                                     f"Renewal with gap fine approved with adjustment!\n"
                                     f"Action: {action}\n"
                                     f"Original Fine: ₹{original_total_fine:.2f} (Gap Sub: ₹{gap_subscription_delay:.2f} + Gap Fine: ₹{gap_fine:.2f} + Late: ₹{late_fee:.2f})\n"
@@ -1627,7 +1735,7 @@ def membership_form_view(request):
                                     f"Payment record #{payment.id} created."
                                 )
                             else:
-                                messages.success(request, 
+                                success_message = (
                                     f"Renewal approved with adjustment!\n"
                                     f"Action: {action}\n"
                                     f"Original Fine: ₹{original_total_fine:.2f}\n"
@@ -1636,20 +1744,28 @@ def membership_form_view(request):
                                 )
                         else:
                             if has_gap_fine:
-                                messages.success(request, 
+                                success_message = (
                                     f"Renewal with gap fine approved!\n"
                                     f"Action: {action}\n"
                                     f"Fine Details: Gap Subscription Delay: ₹{gap_subscription_delay:.2f} + Gap Fine: ₹{gap_fine:.2f} + Late Fee: ₹{late_fee:.2f}\n"
                                     f"Payment record #{payment.id} created."
                                 )
                             else:
-                                messages.success(request, 
+                                success_message = (
                                     f"Renewal approved!\n"
                                     f"Action: {action}\n"
                                     f"No gap fine applied.\n"
                                     f"Payment record #{payment.id} created."
                                 )
-                          
+                        
+                        # Add SMS status to the success message
+                        if sms_sent:
+                            success_message += " SMS notification sent to member."
+                        else:
+                            success_message += " (SMS notification could not be sent)"
+                        
+                        messages.success(request, success_message)
+                        
                 except Exception as e:
                     messages.error(request, f"Error: {str(e)}")
             
@@ -1720,7 +1836,67 @@ def membership_form_view(request):
                         # ✅ STEP 8: Save membership with reverted data
                         membership.save()
                         
-                        messages.warning(request, "Renewal rejected successfully!")
+                        # ✅ STEP 9: SEND SMS FOR RENEWAL REJECTION
+                        try:
+                            # Get the renewal rejection template
+                            sms_template = SmsTemplate.objects.get(template_id='1107176880362727317')
+                            
+                            # Get user's first name or full name
+                            user_name = membership.first_name if membership.first_name else ""
+                            
+                            # Get CustomUser for logging
+                            try:
+                                user = CustomUser.objects.get(username=membership.user_id)
+                            except CustomUser.DoesNotExist:
+                                user = None
+                            
+                            # Replace the placeholder with user's name
+                            message = sms_template.template_message.replace('{#var#}', user_name)
+                            
+                            # Send SMS - Use membership.mobile_no
+                            mobile_no = membership.mobile_no
+                            
+                            if mobile_no:
+                                # Send SMS
+                                sms_sent = send_sms(mobile_no, message)
+                                
+                                # Generate unique ID for logging
+                                unique_id = f"RENEWAL_REJECTED_{membership.id}_{int(time.time())}"
+                                
+                                # Log the SMS
+                                if sms_sent:
+                                    if user:
+                                        log_sms(user, mobile_no, message, 'Success', unique_id)
+                                    else:
+                                        log_sms(None, mobile_no, message, 'Success', unique_id)
+                                    sms_status = "sent"
+                                else:
+                                    if user:
+                                        log_sms(user, mobile_no, message, 'Failed', unique_id)
+                                    else:
+                                        log_sms(None, mobile_no, message, 'Failed', unique_id)
+                                    sms_status = "failed"
+                                    
+                                print(f"Renewal rejection SMS {sms_status} to {user_name}")
+                            else:
+                                print(f"No mobile number found for {user_name}")
+                                sms_sent = False
+                                
+                        except SmsTemplate.DoesNotExist:
+                            print("Renewal rejection template not found")
+                            sms_sent = False
+                        except Exception as e:
+                            print(f"Error sending renewal rejection SMS: {str(e)}")
+                            sms_sent = False
+                        
+                        # ✅ STEP 10: Show success message
+                        success_message = "Renewal rejected successfully!"
+                        if sms_sent:
+                            success_message += " SMS notification sent to member."
+                        else:
+                            success_message += " (SMS notification could not be sent)"
+                        
+                        messages.warning(request, success_message)
                         
                 except Exception as e:
                     messages.error(request, f"Error: {str(e)}")
@@ -1734,14 +1910,13 @@ def membership_form_view(request):
                 new_status_id = status_map.get(action)
 
                 if new_status_id:
-                    # --- Only generate code if approved ---
+                    
                     if new_status_id == 2:  # APPROVED
                         
                         if membership.membership_code:
                             messages.warning(request, "Membership code already exists. No new code generated.")
 
                         if offline_flag == "1":
-                            
                             try:
                                 pay_offline_status = StatusMaster.objects.get(
                                     status_code="PAY_OFFLINE",
@@ -1750,6 +1925,40 @@ def membership_form_view(request):
                                 new_status_id = pay_offline_status.id
                                 
                                 messages.success(request, f"User {membership.first_name} is requested to kindly visit the library to complete the payment process.")
+                                
+                                # --- SMS Logic for Payment Reminder ---
+                                try:
+                                    # Get the payment reminder template
+                                    sms_template = SmsTemplate.objects.get(template_id='1107176880188300865')
+                                    
+                                    # Replace the placeholder with user's name
+                                    user_name = membership.first_name if membership.first_name else ""
+                                    message = sms_template.template_message.replace('{#var#}', user_name)
+                                    
+                                    # Send SMS - Get phone from MembershipDetails.mobile_no
+                                    if membership.mobile_no:
+                                        send_sms(membership.mobile_no, message)
+                                        
+                                        # Generate unique ID for logging
+                                        unique_id = f"PAY_OFFLINE_{membership.id}_{int(time.time())}"
+                                        
+                                        # Log the SMS - need to get user from CustomUser if exists
+                                        try:
+                                            user = CustomUser.objects.get(username=membership.user_id)
+                                            log_sms(user, membership.mobile_no, message, 'Success', unique_id)
+                                        except CustomUser.DoesNotExist:
+                                            # Create a dummy user for logging if needed
+                                            print(f"No CustomUser found for {membership.user_id}")
+                                            log_sms(None, membership.mobile_no, message, 'Success', unique_id)
+                                        
+                                        print(f"Payment reminder SMS sent to {user_name} at {membership.mobile_no}")
+                                    else:
+                                        print(f"No mobile number found for {membership.first_name}")
+                                        
+                                except SmsTemplate.DoesNotExist:
+                                    print("Payment reminder template not found")
+                                except Exception as e:
+                                    print(f"Error sending payment reminder SMS: {str(e)}")
                                 
                                 # --- Update membership fields ---
                                 membership.actionperformed = action
@@ -1762,32 +1971,65 @@ def membership_form_view(request):
                                 
                             except StatusMaster.DoesNotExist:
                                 messages.error(request, "PAY_OFFLINE status not found in StatusMaster")
-                                # Handle error - you might want to set a default status or return
                                 return
                             except Exception as e:
                                 messages.error(request, f"Error fetching status: {str(e)}")
                                 return
                             
                         else:
-                            
                             # --- Update user status to active ---
                             user = CustomUser.objects.get(username=user_id)
                             user.is_active = True
-                            # user.save()
+                            user.save()
                             
                             # --- Get password from password_storage ---
                             password_entry = get_object_or_404(password_storage, user=user)
                             user_password = password_entry.passwordText  # Password fetched from password_storage
 
-                            # --- Retrieve OTP message template ---
-                            otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)  # Assuming OTPIDNumber=1 for registration
-                            message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
-
-                            # --- Send SMS ---
-                            # send_sms(user.phone, message)  
-
-                            # --- Log the SMS ---
-                            # log_sms(user, user.phone, message, 'Success', 'unique_id_here')  
+                            # --- SMS Logic for Login Credentials ---
+                            try:
+                                # Get the login credentials template
+                                sms_template = SmsTemplate.objects.get(template_id='1107176880213056412')
+                                
+                                # Replace first placeholder with user's first name
+                                user_name = membership.first_name if membership.first_name else user.full_name
+                                message = sms_template.template_message.replace('{#var#}', user_name, 1)
+                                
+                                # Replace second placeholder with username and password
+                                credentials = f"{user.username} and {user_password}"
+                                message = message.replace('{#var#}', credentials, 1)
+                                
+                                # Send SMS - Use membership.mobile_no or user.phone
+                                mobile_no = membership.mobile_no if membership.mobile_no else user.phone
+                                if mobile_no:
+                                    send_sms(mobile_no, message)
+                                    
+                                    # Generate unique ID for logging
+                                    unique_id = f"APPROVED_{membership.id}_{int(time.time())}"
+                                    
+                                    # Log the SMS
+                                    log_sms(user, mobile_no, message, 'Success', unique_id)
+                                    
+                                    print(f"Login credentials SMS sent to {user_name} at {mobile_no}")
+                                else:
+                                    print(f"No mobile number found for {user_name}")
+                                
+                            except SmsTemplate.DoesNotExist:
+                                print("Login credentials template not found")
+                                # Fallback to old OTP message method
+                                try:
+                                    mobile_no = membership.mobile_no if membership.mobile_no else user.phone
+                                    if mobile_no:
+                                        otp_template = get_object_or_404(OTPMessage, OTPIDNumber=1)
+                                        message = otp_template.OTPText.replace('@UserId', f"{user.username} and {user_password}")
+                                        send_sms(mobile_no, message)
+                                        
+                                        unique_id = f"APPROVED_{membership.id}_{int(time.time())}"
+                                        log_sms(user, mobile_no, message, 'Success', unique_id)
+                                except OTPMessage.DoesNotExist:
+                                    print("OTP template also not found")
+                            except Exception as e:
+                                print(f"Error sending credentials SMS: {str(e)}")
 
                             messages.success(request, f"User {user.username} activated successfully and SMS sent.")
 
@@ -1799,6 +2041,41 @@ def membership_form_view(request):
                             membership.save()
                         
                     else:
+                        # --- SMS Logic for Application Rejection ---
+                        # Get phone from MembershipDetails.mobile_no
+                        if membership.mobile_no:
+                            try:
+                                # Get the application rejection template
+                                sms_template = SmsTemplate.objects.get(template_id='1107176880318206587')
+                                
+                                # Replace the placeholder with user's name
+                                user_name = membership.first_name if membership.first_name else ""
+                                message = sms_template.template_message.replace('{#var#}', user_name)
+                                
+                                # Send SMS
+                                send_sms(membership.mobile_no, message)
+                                
+                                # Generate unique ID for logging
+                                unique_id = f"REJECTED_{membership.id}_{int(time.time())}"
+                                
+                                # Log the SMS - try to get user from CustomUser
+                                try:
+                                    user = CustomUser.objects.get(username=membership.user_id)
+                                    log_sms(user, membership.mobile_no, message, 'Success', unique_id)
+                                except CustomUser.DoesNotExist:
+                                    # Log without user if not found
+                                    log_sms(None, membership.mobile_no, message, 'Success', unique_id)
+                                
+                                print(f"Application rejection SMS sent to {user_name} at {membership.mobile_no}")
+                                
+                            except SmsTemplate.DoesNotExist:
+                                print("Application rejection template not found")
+                            except Exception as e:
+                                print(f"Error sending rejection SMS: {str(e)}")
+                        else:
+                            print(f"No mobile number found for {membership.first_name}")
+                        
+                        # --- Update membership fields ---
                         membership.actionperformed = action
                         membership.reviewed = user_code
                         membership.reviewed_at = timezone.now()
@@ -1806,6 +2083,7 @@ def membership_form_view(request):
                         membership.save()
 
                         messages.success(request, f"Membership {action.capitalize()}d successfully.")
+                    
                 else:
                     messages.error(request, "Invalid action!")
 
