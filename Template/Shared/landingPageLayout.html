@@ -235,6 +235,7 @@
                                 <a href="javascript:void(0);" class="dropbtn">About Us ▾</a>
                                 <ul class="dropdown-menu">
                                     <li class="nav-item"><a href="{% url 'commissioner_message' %}">Message from Commissioner NMMC</a></li>
+                                    <li><a href="{% url 'vision_mission' %}">Vision and Mission</a></li>
                                     {% comment %} <li><a href="#">Vision and Mission</a></li>
                                     <li><a href="#">Infrastructure</a></li>
                                     <li><a href="#">Awards and Recognitions</a></li>
@@ -274,6 +275,7 @@
                                 <a href="javascript:void(0);" class="dropbtn">आमच्याबद्दल ▾</a>
                                 <ul class="dropdown-menu">
                                     <li class="nav-item"><a href="{% url 'commissioner_message' %}">नवी मुंबई महानगरपालिकेच्या आयुक्तांचे संदेश</a></li>
+                                    <li><a href="{% url 'vision_mission' %}">दृष्टिकोन आणि ध्येय</a></li>
                                     {% comment %} <li><a href="#">दृष्टिकोन आणि ध्येय</a></li>
                                     <li><a href="#">आधारभूत सुविधा</a></li>
                                     <li><a href="#">पुरस्कार आणि सन्मान</a></li>
@@ -330,7 +332,7 @@
                             <li><a href="#">संपर्क</a></li>
                             <li><a href="{% url 'adminLogin' %}">प्रशासकीय लॉगिन</a></li>
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
-                                <li><a href="{% url 'librarianLogin' %}">लायब्ररियन स्टाफ लॉगिन</a></li>
+                                <li><a href="{% url 'librarianLogin' %}">ग्रंथालय कर्मचारी लॉगिन</a></li>
                             {% endif %}
                         </ul>
                     </div>
