@@ -30,6 +30,8 @@
     padding: 40px 20px;
     margin-bottom: 30px;
     box-shadow: 0 4px 20px rgba(1, 82, 150, 0.15);
+    margin: 1%;
+    border-radius: 10px;
 }
 
 .banner-content {
@@ -39,6 +41,7 @@
     align-items: center;
     gap: 30px;
     color: white;
+    justify-content: center;
 }
 
 .banner-icon {
