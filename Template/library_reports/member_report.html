@@ -1,0 +1,203 @@
+<!-- reports/templates/reports/member_report.html -->
+{% extends 'reports/base_report.html' %}
+{% load static %}
+
+{% block left_panel %}
+<!-- Search Section -->
+<div class="search-section mb-4">
+    <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" 
+               class="form-control" 
+               id="memberSearch" 
+               placeholder="Search members..."
+               aria-label="Search members">
+        <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Active Filters -->
+<div class="active-filters-section mb-4" id="activeFiltersSection">
+    <h6 class="section-title mb-2">Active Filters</h6>
+    <div class="active-filters" id="activeFilters">
+        <div class="text-muted small" id="noActiveFilters">
+            No filters applied
+        </div>
+    </div>
+</div>
+
+<!-- Filter Groups -->
+<div class="filter-groups">
+    <!-- Membership Type Filter -->
+    <div class="filter-group mb-3">
+        <label class="form-label small fw-semibold mb-2">
+            <i class="bi bi-card-checklist me-1"></i> Membership Type
+        </label>
+        <select class="form-select form-select-sm filter-select" 
+                id="filterMembershipType" 
+                multiple
+                data-placeholder="Select membership types">
+            {% for type in membership_types %}
+            <option value="{{ type.id }}">{{ type.membership_type }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Status Filter -->
+    <div class="filter-group mb-3">
+        <label class="form-label small fw-semibold mb-2">
+            <i class="bi bi-check-circle me-1"></i> Status
+        </label>
+        <select class="form-select form-select-sm filter-select" 
+                id="filterStatus" 
+                multiple
+                data-placeholder="Select statuses">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+    
+    <!-- Member Type Filter -->
+    <div class="filter-group mb-3">
+        <label class="form-label small fw-semibold mb-2">
+            <i class="bi bi-person-badge me-1"></i> Member Type
+        </label>
+        <select class="form-select form-select-sm filter-select" 
+                id="filterMemberType" 
+                multiple
+                data-placeholder="Select member types">
+            {% for type in member_types %}
+            <option value="{{ type.id }}">{{ type.parameter_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Ward Filter -->
+    <div class="filter-group mb-3">
+        <label class="form-label small fw-semibold mb-2">
+            <i class="bi bi-geo-alt me-1"></i> Ward
+        </label>
+        <select class="form-select form-select-sm filter-select" 
+                id="filterWard" 
+                multiple
+                data-placeholder="Select wards">
+            {% for ward in wards %}
+            <option value="{{ ward }}">{{ ward }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Additional Filters -->
+    <div class="accordion accordion-flush" id="additionalFilters">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed py-2" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#moreFilters">
+                    <span class="small fw-semibold">
+                        <i class="bi bi-funnel me-1"></i> More Filters
+                    </span>
+                </button>
+            </h2>
+            <div id="moreFilters" class="accordion-collapse collapse" data-bs-parent="#additionalFilters">
+                <div class="accordion-body p-2">
+                    <!-- Resident Filter -->
+                    <div class="filter-group mb-2">
+                        <label class="form-label small mb-1">NMMC Resident</label>
+                        <select class="form-select form-select-sm" id="filterResident">
+                            <option value="">All</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Aadhar Address Filter -->
+                    <div class="filter-group mb-2">
+                        <label class="form-label small mb-1">Address Same as Aadhar</label>
+                        <select class="form-select form-select-sm" id="filterAadharAddress">
+                            <option value="">All</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div class="filter-group mb-2">
+                        <label class="form-label small mb-1">Registration Date</label>
+                        <div class="input-group input-group-sm">
+                            <input type="date" class="form-control" id="filterDateFrom" placeholder="From">
+                            <span class="input-group-text">to</span>
+                            <input type="date" class="form-control" id="filterDateTo" placeholder="To">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member List Section -->
+<div class="member-list-section mt-4 flex-grow-1 d-flex flex-column">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="section-title mb-0">
+            <i class="bi bi-people me-1"></i> Members
+            <span class="badge bg-primary rounded-pill ms-1" id="memberCount">0</span>
+        </h6>
+        <div class="member-list-actions">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="selectAllMembers">
+                <label class="form-check-label small" for="selectAllMembers">Select All</label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Member List Container -->
+    <div class="member-list-container flex-grow-1 overflow-auto border rounded" id="memberList">
+        <!-- Loading State -->
+        <div class="loading-state text-center py-5">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 small text-muted">Loading members...</p>
+        </div>
+    </div>
+    
+    <!-- Member List Pagination -->
+    <div class="member-list-pagination mt-2" id="memberPagination" style="display: none;">
+        <nav aria-label="Member pagination">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item disabled" id="prevPage">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link" id="currentPage">Page 1</span>
+                </li>
+                <li class="page-item" id="nextPage">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    
+    <!-- Selection Summary -->
+    <div class="selection-summary mt-2 pt-2 border-top">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="small text-muted">Selected: </span>
+                <strong id="selectedCount">0</strong>
+                <span class="small text-muted ms-2">of</span>
+                <strong id="totalFilteredCount">0</strong>
+            </div>
+            <button class="btn btn-sm btn-success" id="exportSelected" disabled>
+                <i class="bi bi-file-earmark-excel me-1"></i> Export Selected
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

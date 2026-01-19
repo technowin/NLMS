@@ -1,0 +1,89 @@
+<!-- reports/templates/reports/partials/document_viewer_modal.html -->
+<!-- Document Viewer Modal -->
+<div class="modal fade" id="documentViewerModal" tabindex="-1" aria-labelledby="documentViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="documentViewerModalLabel">
+                    <i class="bi bi-file-text me-1"></i> Member Documents
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loading State -->
+                <div class="text-center py-5" id="documentLoading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading documents...</span>
+                    </div>
+                    <p class="mt-3">Loading documents...</p>
+                </div>
+                
+                <!-- Document List -->
+                <div id="documentList" class="d-none">
+                    <div class="row" id="documentGrid">
+                        <!-- Documents will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- No Documents -->
+                <div id="noDocuments" class="text-center py-5 d-none">
+                    <div class="empty-state-icon mb-3">
+                        <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+                    </div>
+                    <h5 class="empty-state-title">No Documents Found</h5>
+                    <p class="empty-state-description text-muted">
+                        This member doesn't have any uploaded documents.
+                    </p>
+                </div>
+                
+                <!-- Error State -->
+                <div id="documentError" class="text-center py-5 d-none">
+                    <div class="empty-state-icon mb-3">
+                        <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+                    </div>
+                    <h5 class="empty-state-title">Error Loading Documents</h5>
+                    <p class="empty-state-description text-danger" id="documentErrorMsg">
+                        An error occurred while loading documents.
+                    </p>
+                    <button class="btn btn-outline-primary" id="retryLoadDocuments">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Try Again
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <span class="badge bg-info" id="documentCount">0 documents</span>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="downloadAllDocuments" disabled>
+                    <i class="bi bi-download me-1"></i> Download All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Preview Modal -->
+<div class="modal fade" id="documentPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="documentPreviewTitle">Document Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9 h-100">
+                    <iframe id="documentPreviewFrame" class="w-100 h-100" 
+                            style="border: none;" 
+                            title="Document Preview"></iframe>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="downloadDocumentBtn" download>
+                    <i class="bi bi-download me-1"></i> Download
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1155 @@
+<!-- reports/templates/reports/config_form.html -->
+{% extends 'reports/base.html' %}
+{% load static %}
+
+{% block title %}
+{% if mode == 'create' %}Create New Report Configuration{% else %}Edit Report Configuration{% endif %} - LMS Reports
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+<style>
+    .config-form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--bs-primary);
+        margin: 0;
+    }
+    
+    .config-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        background-color: var(--bs-body-bg);
+    }
+    
+    .config-card-header {
+        padding: 0.75rem 1rem;
+        background-color: var(--bs-tertiary-bg);
+        border-bottom: 1px solid var(--bs-border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .config-card-body {
+        padding: 1rem;
+    }
+    
+    .array-item {
+        position: relative;
+        padding: 1rem;
+        border: 1px solid var(--bs-border-color-translucent);
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        background-color: var(--bs-body-bg);
+    }
+    
+    .array-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+    }
+    
+    .array-item-title {
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .array-item-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .sortable-handle {
+        cursor: move;
+        color: var(--bs-secondary);
+        margin-right: 0.5rem;
+    }
+    
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: var(--bs-primary-bg-subtle);
+    }
+    
+    .form-section-toggle {
+        cursor: pointer;
+        color: var(--bs-primary);
+        font-size: 0.9rem;
+    }
+    
+    .json-editor-container {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        overflow: hidden;
+    }
+    
+    .CodeMirror {
+        height: 300px;
+    }
+    
+    .field-preview {
+        background-color: var(--bs-tertiary-bg);
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        border: 1px solid var(--bs-border-color);
+        font-size: 0.85rem;
+    }
+    
+    .preview-label {
+        font-weight: 600;
+        color: var(--bs-primary);
+    }
+    
+    .form-step {
+        display: none;
+    }
+    
+    .form-step.active {
+        display: block;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 24px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: var(--bs-border-color);
+        z-index: 1;
+    }
+    
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        flex: 1;
+    }
+    
+    .step-number {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--bs-secondary-bg);
+        border: 2px solid var(--bs-border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active .step-number {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: white;
+    }
+    
+    .step.completed .step-number {
+        background-color: var(--bs-success);
+        border-color: var(--bs-success);
+        color: white;
+    }
+    
+    .step-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .form-actions {
+        position: sticky;
+        bottom: 0;
+        background-color: var(--bs-body-bg);
+        padding: 1rem 0;
+        border-top: 1px solid var(--bs-border-color);
+        margin-top: 2rem;
+    }
+    
+    .model-fields-preview {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+    }
+    
+    .field-item {
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+    
+    .field-item:last-child {
+        border-bottom: none;
+    }
+    
+    .field-name {
+        color: var(--bs-primary);
+        font-weight: 600;
+    }
+    
+    .field-type {
+        color: var(--bs-success);
+    }
+    
+    .field-help {
+        color: var(--bs-secondary);
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        {% if mode == 'create' %}
+                            Create New Report Configuration
+                        {% else %}
+                            Edit Report Configuration: {{ config.name }}
+                        {% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Configure all aspects of your report including tabs, filters, and columns
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'reports:config_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Step Indicator -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Basic Info</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Tabs</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Filters</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Columns</div>
+                </div>
+                <div class="step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-label">Settings</div>
+                </div>
+                <div class="step" data-step="6">
+                    <div class="step-number">6</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Configuration Form -->
+    <form id="configForm">
+        {% csrf_token %}
+        {% if mode == 'edit' %}
+        <input type="hidden" id="configId" value="{{ config.id }}">
+        {% endif %}
+        <input type="hidden" id="mode" value="{{ mode }}">
+        
+        <!-- Step 1: Basic Information -->
+        <div class="form-step active" id="step1">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Configuration Name *</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="configName" 
+                                   value="{{ config.name|default:'' }}"
+                                   required
+                                   placeholder="Enter configuration name">
+                            <div class="form-text">
+                                A descriptive name for this configuration
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Report Type *</label>
+                            <select class="form-select" id="reportType" required>
+                                <option value="">Select report type</option>
+                                {% for type_value, type_label in report_types %}
+                                <option value="{{ type_value }}" 
+                                        {% if mode == 'edit' and config.report_type == type_value %}selected{% endif %}>
+                                    {{ type_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" 
+                                      id="configDescription" 
+                                      rows="3"
+                                      placeholder="Describe the purpose of this report configuration">{{ config.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Base Model *</label>
+                            <select class="form-select" id="baseModel" required>
+                                <option value="">Select base model</option>
+                                {% for model in available_models %}
+                                <option value="{{ model.value }}"
+                                        {% if mode == 'edit' and config.base_model == model.value %}selected{% endif %}>
+                                    {{ model.label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                The primary Django model for this report
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Load Model Fields</label>
+                            <button type="button" class="btn btn-outline-primary w-100" id="loadModelFields">
+                                <i class="bi bi-download me-1"></i> Load Fields from Model
+                            </button>
+                            <div class="form-text">
+                                Load available fields from the selected model
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Model Fields Preview -->
+                    <div class="row" id="modelFieldsContainer" style="display: none;">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Available Fields</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="model-fields-preview" id="modelFieldsPreview">
+                                        <!-- Fields will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       id="isActive"
+                                       {% if mode == 'edit' and config.is_active or mode == 'create' %}checked{% endif %}>
+                                <label class="form-check-label" for="isActive">
+                                    Active Configuration
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       id="isDefault"
+                                       {% if mode == 'edit' and config.is_default %}checked{% endif %}>
+                                <label class="form-check-label" for="isDefault">
+                                    Default Configuration for this Report Type
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 2: Tabs Configuration -->
+        <div class="form-step" id="step2">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Tabs Configuration</h5>
+                    <button type="button" class="btn btn-sm btn-primary" id="addTabBtn">
+                        <i class="bi bi-plus-circle me-1"></i> Add Tab
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Configure the tabs that will appear in the report. Each tab represents a different view of the data.
+                    </p>
+                    
+                    <div id="tabsContainer">
+                        <!-- Tabs will be added here dynamically -->
+                        <div class="text-center py-4" id="noTabsMessage">
+                            <i class="bi bi-window display-4 text-muted"></i>
+                            <p class="mt-2 text-muted">No tabs configured yet</p>
+                            <button type="button" class="btn btn-outline-primary" id="addFirstTabBtn">
+                                <i class="bi bi-plus-circle me-1"></i> Add First Tab
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 3: Filters Configuration -->
+        <div class="form-step" id="step3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Filters Configuration</h5>
+                    <button type="button" class="btn btn-sm btn-primary" id="addFilterBtn">
+                        <i class="bi bi-plus-circle me-1"></i> Add Filter
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Configure filters that users can apply to the report data. Each filter can be assigned to specific tabs.
+                    </p>
+                    
+                    <div id="filtersContainer">
+                        <!-- Filters will be added here dynamically -->
+                        <div class="text-center py-4" id="noFiltersMessage">
+                            <i class="bi bi-funnel display-4 text-muted"></i>
+                            <p class="mt-2 text-muted">No filters configured yet</p>
+                            <button type="button" class="btn btn-outline-primary" id="addFirstFilterBtn">
+                                <i class="bi bi-plus-circle me-1"></i> Add First Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 4: Columns Configuration -->
+        <div class="form-step" id="step4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Columns Configuration</h5>
+                    <button type="button" class="btn btn-sm btn-primary" id="addColumnBtn">
+                        <i class="bi bi-plus-circle me-1"></i> Add Column
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Configure the columns that will appear in the report tables. You can specify field mapping, display options, and rendering.
+                    </p>
+                    
+                    <div id="columnsContainer">
+                        <!-- Columns will be added here dynamically -->
+                        <div class="text-center py-4" id="noColumnsMessage">
+                            <i class="bi bi-columns display-4 text-muted"></i>
+                            <p class="mt-2 text-muted">No columns configured yet</p>
+                            <button type="button" class="btn btn-outline-primary" id="addFirstColumnBtn">
+                                <i class="bi bi-plus-circle me-1"></i> Add First Column
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 5: Settings Configuration -->
+        <div class="form-step" id="step5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Report Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Default Page Length</label>
+                            <select class="form-select" id="pageLength">
+                                <option value="10">10 records</option>
+                                <option value="25" selected>25 records</option>
+                                <option value="50">50 records</option>
+                                <option value="100">100 records</option>
+                                <option value="-1">All records</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Default Sort Field</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="defaultSortField"
+                                   placeholder="e.g., created_at">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Default Sort Direction</label>
+                            <select class="form-select" id="defaultSortDirection">
+                                <option value="asc">Ascending</option>
+                                <option value="desc" selected>Descending</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Export File Name Pattern</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="exportFileName"
+                                   value="{{ report_type }}_report_{date}"
+                                   placeholder="Pattern for export file names">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <h6 class="mb-3">Feature Flags</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" 
+                                               class="form-check-input" 
+                                               id="enableSearch" checked>
+                                        <label class="form-check-label" for="enableSearch">
+                                            Enable Search
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" 
+                                               class="form-check-input" 
+                                               id="enableExport" checked>
+                                        <label class="form-check-label" for="enableExport">
+                                            Enable Export
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" 
+                                               class="form-check-input" 
+                                               id="enablePrint" checked>
+                                        <label class="form-check-label" for="enablePrint">
+                                            Enable Print
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="mb-3">Advanced Settings (JSON)</h6>
+                            <div class="json-editor-container">
+                                <textarea id="advancedSettings" style="display: none;">{
+    "responsive": true,
+    "dom": "<\"top\"lfB>rt<\"bottom\"ip>",
+    "language": {
+        "search": "_INPUT_",
+        "searchPlaceholder": "Search...",
+        "lengthMenu": "_MENU_ records per page"
+    }
+}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step 6: Review and Save -->
+        <div class="form-step" id="step6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Review Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Configuration Summary</h6>
+                            <div class="field-preview mb-3">
+                                <div><span class="preview-label">Name:</span> <span id="previewName"></span></div>
+                                <div><span class="preview-label">Report Type:</span> <span id="previewReportType"></span></div>
+                                <div><span class="preview-label">Base Model:</span> <code id="previewBaseModel"></code></div>
+                                <div><span class="preview-label">Status:</span> <span id="previewStatus"></span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Configuration Stats</h6>
+                            <div class="field-preview">
+                                <div><span class="preview-label">Tabs:</span> <span id="previewTabsCount">0</span></div>
+                                <div><span class="preview-label">Filters:</span> <span id="previewFiltersCount">0</span></div>
+                                <div><span class="preview-label">Columns:</span> <span id="previewColumnsCount">0</span></div>
+                                <div><span class="preview-label">Active Features:</span> <span id="previewFeatures"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6 class="mb-3">Configuration Preview (JSON)</h6>
+                            <div class="json-editor-container">
+                                <textarea id="configPreview" style="display: none;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Review your configuration carefully before saving. You can go back to previous steps to make changes.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions mt-4">
+            <div class="row">
+                <div class="col">
+                    <button type="button" class="btn btn-secondary" id="prevStepBtn" style="display: none;">
+                        <i class="bi bi-arrow-left me-1"></i> Previous
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary me-2" id="cancelBtn">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextStepBtn">
+                        Next <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                    <button type="button" class="btn btn-success" id="saveConfigBtn" style="display: none;">
+                        <i class="bi bi-check-circle me-1"></i> Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Templates for Dynamic Elements -->
+<script type="text/template" id="tabTemplate">
+    <div class="array-item tab-item" data-tab-id="<%= id %>">
+        <div class="array-item-header">
+            <div>
+                <i class="bi bi-grip-vertical sortable-handle"></i>
+                <h6 class="array-item-title mb-0"><%= title %></h6>
+                <small class="text-muted"><%= description %></small>
+            </div>
+            <div class="array-item-actions">
+                <button type="button" class="btn btn-sm btn-outline-primary edit-tab-btn" data-tab-id="<%= id %>">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-tab-btn" data-tab-id="<%= id %>">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <small class="text-muted">ID: <code><%= id %></code></small>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Filters: <%= filters.length %></small>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">
+                    <% if (has_documents) { %>
+                    <i class="bi bi-file-text text-info"></i> Has Documents
+                    <% } %>
+                    <% if (exportable) { %>
+                    <i class="bi bi-download text-success ms-2"></i> Exportable
+                    <% } %>
+                </small>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="filterTemplate">
+    <div class="array-item filter-item" data-filter-key="<%= key %>">
+        <div class="array-item-header">
+            <div>
+                <h6 class="array-item-title mb-0"><%= label %> (<%= type %>)</h6>
+                <small class="text-muted">Field: <code><%= field %></code></small>
+            </div>
+            <div class="array-item-actions">
+                <button type="button" class="btn btn-sm btn-outline-primary edit-filter-btn" data-filter-key="<%= key %>">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-filter-btn" data-filter-key="<%= key %>">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <small class="text-muted">Key: <code><%= key %></code></small>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">
+                    <% if (multiple) { %>
+                    <i class="bi bi-check-all text-primary"></i> Multiple
+                    <% } %>
+                    <% if (searchable) { %>
+                    <i class="bi bi-search text-info ms-2"></i> Searchable
+                    <% } %>
+                </small>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">
+                    Options: <%= options ? options.length : 'N/A' %>
+                </small>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="columnTemplate">
+    <div class="array-item column-item" data-column-field="<%= data %>">
+        <div class="array-item-header">
+            <div>
+                <i class="bi bi-grip-vertical sortable-handle"></i>
+                <h6 class="array-item-title mb-0"><%= title %></h6>
+                <small class="text-muted">Field: <code><%= data %></code></small>
+            </div>
+            <div class="array-item-actions">
+                <button type="button" class="btn btn-sm btn-outline-primary edit-column-btn" data-column-field="<%= data %>">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-column-btn" data-column-field="<%= data %>">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <small class="text-muted">
+                    <% if (orderable) { %>
+                    <i class="bi bi-sort-alpha-down text-success"></i> Sortable
+                    <% } else { %>
+                    <i class="bi bi-slash-circle text-secondary"></i> Not Sortable
+                    <% } %>
+                </small>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">
+                    <% if (searchable) { %>
+                    <i class="bi bi-search text-info"></i> Searchable
+                    <% } else { %>
+                    <i class="bi bi-slash-circle text-secondary"></i> Not Searchable
+                    <% } %>
+                </small>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">
+                    <% if (visible) { %>
+                    <i class="bi bi-eye text-primary"></i> Visible
+                    <% } else { %>
+                    <i class="bi bi-eye-slash text-secondary"></i> Hidden
+                    <% } %>
+                </small>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">
+                    Render: <%= render || 'text' %>
+                </small>
+            </div>
+        </div>
+    </div>
+</script>
+
+<!-- Modal for Tab Configuration -->
+<div class="modal fade" id="tabModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure Tab</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="tabForm">
+                    <input type="hidden" id="tabId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tab ID *</label>
+                            <input type="text" class="form-control" id="tabIdInput" required>
+                            <div class="form-text">
+                                Unique identifier for the tab (no spaces, use underscores)
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tab Title *</label>
+                            <input type="text" class="form-control" id="tabTitle" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Icon</label>
+                            <select class="form-select" id="tabIcon">
+                                <option value="bi-table">Default (bi-table)</option>
+                                <option value="bi-person">Person (bi-person)</option>
+                                <option value="bi-book">Book (bi-book)</option>
+                                <option value="bi-cash-stack">Cash (bi-cash-stack)</option>
+                                <option value="bi-door-open">Door (bi-door-open)</option>
+                                <option value="bi-laptop">Laptop (bi-laptop)</option>
+                                <option value="bi-arrow-left-right">Arrows (bi-arrow-left-right)</option>
+                                <option value="bi-card-checklist">Checklist (bi-card-checklist)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Default Sort Field</label>
+                            <input type="text" class="form-control" id="tabSortField">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Default Sort Direction</label>
+                            <select class="form-select" id="tabSortDirection">
+                                <option value="asc">Ascending</option>
+                                <option value="desc" selected>Descending</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Available Filters</label>
+                            <select class="form-select" id="tabFilters" multiple>
+                                <!-- Will be populated with available filters -->
+                            </select>
+                            <div class="form-text">
+                                Select filters available for this tab
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="tabDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="tabHasDocuments">
+                                <label class="form-check-label" for="tabHasDocuments">
+                                    Has Documents
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="tabExportable" checked>
+                                <label class="form-check-label" for="tabExportable">
+                                    Exportable
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveTabBtn">Save Tab</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Filter Configuration -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure Filter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <input type="hidden" id="filterKey">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Filter Key *</label>
+                            <input type="text" class="form-control" id="filterKeyInput" required>
+                            <div class="form-text">
+                                Unique key for the filter (no spaces, use underscores)
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Display Label *</label>
+                            <input type="text" class="form-control" id="filterLabel" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Field Type *</label>
+                            <select class="form-select" id="filterType" required>
+                                {% for type_value, type_label in field_types %}
+                                <option value="{{ type_value }}">{{ type_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Database Field *</label>
+                            <input type="text" class="form-control" id="filterField" required>
+                            <div class="form-text">
+                                Database field name or lookup expression
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic options based on filter type -->
+                    <div id="filterOptionsSection" style="display: none;">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Options</label>
+                                <div id="filterOptionsContainer">
+                                    <!-- Options will be added here -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addOptionBtn">
+                                    <i class="bi bi-plus-circle me-1"></i> Add Option
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="filterAdvancedSection">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="filterMultiple">
+                                <label class="form-check-label" for="filterMultiple">
+                                    Allow Multiple Selection
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="filterSearchable">
+                                <label class="form-check-label" for="filterSearchable">
+                                    Searchable
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Placeholder Text</label>
+                            <input type="text" class="form-control" id="filterPlaceholder">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="filterDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveFilterBtn">Save Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Column Configuration -->
+<div class="modal fade" id="columnModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure Column</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="columnForm">
+                    <input type="hidden" id="columnField">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Field Name *</label>
+                            <input type="text" class="form-control" id="columnFieldInput" required>
+                            <div class="form-text">
+                                Database field name or related field (e.g., "status__name")
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Column Title *</label>
+                            <input type="text" class="form-control" id="columnTitle" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Render Type</label>
+                            <select class="form-select" id="columnRender">
+                                <option value="text" selected>Plain Text</option>
+                                <option value="currency">Currency</option>
+                                <option value="date">Date</option>
+                                <option value="datetime">Date-Time</option>
+                                <option value="boolean">Yes/No</option>
+                                <option value="badge">Badge</option>
+                                <option value="button">Button</option>
+                                <option value="link">Link</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">CSS Class</label>
+                            <input type="text" class="form-control" id="columnClass">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Default Value</label>
+                            <input type="text" class="form-control" id="columnDefault">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="columnOrderable" checked>
+                                <label class="form-check-label" for="columnOrderable">
+                                    Sortable
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="columnSearchable" checked>
+                                <label class="form-check-label" for="columnSearchable">
+                                    Searchable
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="columnVisible" checked>
+                                <label class="form-check-label" for="columnVisible">
+                                    Visible
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="columnExportable" checked>
+                                <label class="form-check-label" for="columnExportable">
+                                    Exportable
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Custom Render Function (JavaScript)</label>
+                            <textarea class="form-control" id="columnRenderFunction" rows="4" placeholder="function(data, type, row) { return data; }"></textarea>
+                            <div class="form-text">
+                                Optional custom render function for DataTables
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="columnDescription" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveColumnBtn">Save Column</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Option Item Template -->
+<script type="text/template" id="optionTemplate">
+    <div class="option-item row g-2 mb-2">
+        <div class="col-md-5">
+            <input type="text" class="form-control form-control-sm option-value" placeholder="Value" required>
+        </div>
+        <div class="col-md-5">
+            <input type="text" class="form-control form-control-sm option-label" placeholder="Display Label" required>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-option-btn">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</script>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+<script src="{% static 'js/config_form.js' %}"></script>
+{% endblock %}

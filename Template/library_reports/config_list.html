@@ -1,0 +1,517 @@
+<!-- reports/templates/reports/config_list.html -->
+{% extends 'reports/base.html' %}
+{% load static %}
+
+{% block title %}Report Configurations - LMS Reports{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .config-card {
+        transition: all 0.3s ease;
+        border: 1px solid var(--bs-border-color);
+    }
+    
+    .config-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .config-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .config-stats {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .config-actions {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .config-card:hover .config-actions {
+        opacity: 1;
+    }
+    
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+        background-color: var(--bs-tertiary-bg);
+        border-radius: 0.5rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: var(--bs-secondary);
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">Report Configurations</h1>
+                    <p class="text-muted mb-0">Manage and configure all report templates</p>
+                </div>
+                <div>
+                    <a href="{% url 'reports:config_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Create New Configuration
+                    </a>
+                    <button class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <i class="bi bi-upload me-1"></i> Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Report Type</label>
+                            <select name="report_type" class="form-select form-select-sm">
+                                <option value="">All Types</option>
+                                {% for type_value, type_label in report_types %}
+                                <option value="{{ type_value }}" {% if current_filters.report_type == type_value %}selected{% endif %}>
+                                    {{ type_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="">All Status</option>
+                                <option value="active" {% if current_filters.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if current_filters.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Search</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" 
+                                       name="search" 
+                                       class="form-control" 
+                                       placeholder="Search configurations..."
+                                       value="{{ current_filters.search }}">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-sm btn-primary w-100">
+                                <i class="bi bi-funnel me-1"></i> Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Configurations Grid -->
+    <div class="row">
+        {% if configurations %}
+            {% for config in configurations %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card config-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-1">{{ config.name }}</h5>
+                                <span class="badge bg-{{ config.report_type }} config-badge">
+                                    {{ config.get_report_type_display }}
+                                </span>
+                                {% if config.is_default %}
+                                <span class="badge bg-warning config-badge">
+                                    <i class="bi bi-star-fill"></i> Default
+                                </span>
+                                {% endif %}
+                                {% if not config.is_active %}
+                                <span class="badge bg-secondary config-badge">Inactive</span>
+                                {% endif %}
+                            </div>
+                            <div class="config-actions">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'reports:config_edit' config.id %}">
+                                                <i class="bi bi-pencil me-2"></i> Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'reports:config_preview' config.id %}">
+                                                <i class="bi bi-eye me-2"></i> Preview
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'reports:config_export' config.id %}">
+                                                <i class="bi bi-download me-2"></i> Export
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item clone-config" data-config-id="{{ config.id }}">
+                                                <i class="bi bi-copy me-2"></i> Clone
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger delete-config" 
+                                                    data-config-id="{{ config.id }}" 
+                                                    data-config-name="{{ config.name }}">
+                                                <i class="bi bi-trash me-2"></i> Delete
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="card-text text-muted small mb-3">
+                            {{ config.description|default:"No description provided"|truncatechars:100 }}
+                        </p>
+                        
+                        <div class="config-stats mb-3">
+                            <div class="stat-item">
+                                <i class="bi bi-window me-1 text-primary"></i>
+                                <span>{{ config.get_tabs_count }} tabs</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-funnel me-1 text-info"></i>
+                                <span>{{ config.get_filters_count }} filters</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-columns me-1 text-success"></i>
+                                <span>{{ config.get_columns_count }} columns</span>
+                            </div>
+                        </div>
+                        
+                        <div class="small text-muted">
+                            <div>Model: <code>{{ config.base_model|truncatechars:30 }}</code></div>
+                            <div class="mt-1">
+                                <i class="bi bi-clock me-1"></i>
+                                Updated {{ config.updated_at|timesince }} ago
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Created by {{ config.created_by|default:"system" }}
+                            </small>
+                            <a href="{% url 'reports:config_edit' config.id %}" class="btn btn-sm btn-outline-primary">
+                                Configure <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="col-12">
+                <nav aria-label="Configurations pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Previous
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Next
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            
+        {% else %}
+        <!-- Empty State -->
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <h4 class="empty-state-title">No Configurations Found</h4>
+                <p class="empty-state-description text-muted mb-4">
+                    {% if current_filters.search or current_filters.report_type or current_filters.status %}
+                        No configurations match your filters. Try adjusting your search criteria.
+                    {% else %}
+                        You haven't created any report configurations yet.
+                    {% endif %}
+                </p>
+                <a href="{% url 'reports:config_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Create Your First Configuration
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Select JSON Configuration File</label>
+                        <input type="file" class="form-control" name="config_file" accept=".json" required>
+                        <div class="form-text">
+                            Upload a JSON file exported from the report configuration system.
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importConfigBtn">
+                    <i class="bi bi-upload me-1"></i> Import Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clone Modal -->
+<div class="modal fade" id="cloneModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Clone Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cloneForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="cloneConfigId">
+                    <div class="mb-3">
+                        <label class="form-label">New Configuration Name</label>
+                        <input type="text" class="form-control" id="cloneConfigName" required>
+                        <div class="form-text">
+                            Enter a name for the cloned configuration.
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmCloneBtn">
+                    <i class="bi bi-copy me-1"></i> Clone Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteConfigName"></strong>?</p>
+                <p class="text-danger small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i> Delete Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+    // Clone configuration
+    $('.clone-config').click(function() {
+        const configId = $(this).data('config-id');
+        const configName = $(this).closest('.card').find('.card-title').text();
+        
+        $('#cloneConfigId').val(configId);
+        $('#cloneConfigName').val(configName + ' (Copy)');
+        $('#cloneModal').modal('show');
+    });
+    
+    $('#confirmCloneBtn').click(function() {
+        const configId = $('#cloneConfigId').val();
+        const newName = $('#cloneConfigName').val();
+        
+        if (!newName) {
+            alert('Please enter a name for the cloned configuration');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "reports:config_clone" %}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                config_id: configId,
+                new_name: newName
+            }),
+            success: function(response) {
+                if (response.success) {
+                    showToast('Configuration cloned successfully', 'success');
+                    $('#cloneModal').modal('hide');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast('Error: ' + response.error, 'danger');
+                }
+            },
+            error: function() {
+                showToast('Error cloning configuration', 'danger');
+            }
+        });
+    });
+    
+    // Delete configuration
+    $('.delete-config').click(function() {
+        const configId = $(this).data('config-id');
+        const configName = $(this).data('config-name');
+        
+        $('#deleteConfigName').text(configName);
+        $('#confirmDeleteBtn').data('config-id', configId);
+        $('#deleteModal').modal('show');
+    });
+    
+    $('#confirmDeleteBtn').click(function() {
+        const configId = $(this).data('config-id');
+        
+        $.ajax({
+            url: '{% url "reports:config_delete" %}',
+            method: 'POST',
+            data: {
+                config_id: configId,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showToast('Configuration deleted successfully', 'success');
+                    $('#deleteModal').modal('hide');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast('Error: ' + response.error, 'danger');
+                }
+            },
+            error: function() {
+                showToast('Error deleting configuration', 'danger');
+            }
+        });
+    });
+    
+    // Import configuration
+    $('#importConfigBtn').click(function() {
+        const formData = new FormData($('#importForm')[0]);
+        
+        $.ajax({
+            url: '{% url "reports:config_import" %}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    showToast('Configuration imported successfully', 'success');
+                    $('#importModal').modal('hide');
+                    setTimeout(() => {
+                        window.location.href = '{% url "reports:config_edit" 0 %}'.replace('0', response.config_id);
+                    }, 1000);
+                } else {
+                    showToast('Error: ' + response.error, 'danger');
+                }
+            },
+            error: function() {
+                showToast('Error importing configuration', 'danger');
+            }
+        });
+    });
+    
+    function showToast(message, type) {
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div class="toast align-items-center text-bg-${type}" id="${toastId}">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        
+        $('.toast-container').append(toastHtml);
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+        
+        $(`#${toastId}`).on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+});
+</script>
+{% endblock %}

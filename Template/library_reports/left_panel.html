@@ -1,0 +1,105 @@
+<!-- reports/templates/reports/partials/left_panel.html -->
+<div class="left-panel-content">
+    <!-- Search Section -->
+    <div class="filter-group">
+        <div class="input-group input-group-sm mb-2">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" 
+                   class="form-control" 
+                   id="memberSearch" 
+                   placeholder="Search by ID, Name..."
+                   autocomplete="off">
+            <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        
+        <!-- Active Filters Display -->
+        <div class="active-filters mb-2" id="activeFilters">
+            <!-- Filters will be displayed here -->
+        </div>
+    </div>
+    
+    <!-- Filters Section -->
+    <div class="filter-group">
+        <h6 class="filter-title">Filters</h6>
+        
+        <!-- Membership Type Filter -->
+        <div class="mb-2">
+            <label class="form-label small mb-1">Membership Type</label>
+            <select class="form-select form-select-sm" id="filterMembershipType" multiple>
+                {% for type in membership_types %}
+                <option value="{{ type.id }}">{{ type.membership_type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="mb-2">
+            <label class="form-label small mb-1">Status</label>
+            <select class="form-select form-select-sm" id="filterStatus" multiple>
+                <option value="" selected>All</option>
+                {% for status in statuses %}
+                <option value="{{ status.id }}">{{ status.status_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Member Type Filter -->
+        <div class="mb-2">
+            <label class="form-label small mb-1">Member Type</label>
+            <select class="form-select form-select-sm" id="filterMemberType" multiple>
+                {% for type in member_types %}
+                <option value="{{ type.id }}">{{ type.parameter_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Filter Actions -->
+        <div class="d-grid gap-2">
+            <button class="btn btn-sm btn-primary" id="applyFilters">
+                <i class="bi bi-funnel"></i> Apply Filters
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="resetFilters">
+                <i class="bi bi-arrow-clockwise"></i> Reset
+            </button>
+        </div>
+    </div>
+    
+    <!-- Member List Section -->
+    <div class="filter-group flex-grow-1 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="filter-title mb-0">Members 
+                <span class="badge bg-primary member-count-badge" id="memberCount">0</span>
+            </h6>
+            <div class="form-check">
+                <input class="form-check-input select-all-checkbox" type="checkbox" id="selectAllMembers">
+                <label class="form-check-label small" for="selectAllMembers">Select All</label>
+            </div>
+        </div>
+        
+        <!-- Member List Container -->
+        <div class="member-list-container flex-grow-1 overflow-auto" id="memberList">
+            <!-- Members will be loaded here via AJAX -->
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-people display-6"></i>
+                <p class="mt-2">No members loaded</p>
+                <button class="btn btn-sm btn-outline-primary" id="loadMembers">
+                    Load Members
+                </button>
+            </div>
+        </div>
+        
+        <!-- Selection Summary -->
+        <div class="member-actions">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="small">
+                    Selected: <span id="selectedCount">0</span>
+                </span>
+                <button class="btn btn-sm btn-success" id="exportSelected">
+                    <i class="bi bi-file-earmark-excel"></i> Export Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
