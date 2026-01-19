@@ -17,7 +17,7 @@ import os
 import logging
 from pathlib import Path
 
-from .services import ReportService, ExportService, MemberReportDataService, BookReportDataService
+from .services import ReportService, ExportService, MemberReportDataService
 from .filters import MemberFilter, BookFilter, TabFilter
 from .utils import get_library_code, format_date_range, parse_date, safe_int, safe_float
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class BaseReportView(LoginRequiredMixin, TemplateView):
     """Base view for all reports - COMPLETE"""
-    template_name = 'reports/base_report.html'
+    template_name = 'library_reports/base_report.html'
     report_type = None
     filters_class = None
     tabs_config = []
@@ -358,7 +358,7 @@ class BaseReportView(LoginRequiredMixin, TemplateView):
 
 class MemberReportView(BaseReportView):
     """Member Report View - COMPLETE"""
-    template_name = 'reports/member_report.html'
+    template_name = 'library_reports/member_report.html'
     report_type = 'member'
     filters_class = MemberFilter
     
@@ -413,7 +413,7 @@ class MemberReportView(BaseReportView):
 
 class BookReportView(BaseReportView):
     """Book Report View - COMPLETE"""
-    template_name = 'reports/book_report.html'
+    template_name = 'library_reports/book_report.html'
     report_type = 'book'
     filters_class = BookFilter
     
@@ -1267,7 +1267,7 @@ class LoadReportConfigurationAPI(View):
                 'error': str(e)
             }, status=400)
         
-        
+
 # reports/views.py - Extended with all tab implementations
 
 class MemberReportDataService:
