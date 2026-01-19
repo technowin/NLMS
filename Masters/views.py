@@ -4912,4 +4912,524 @@ def save_lead(request):
     except Exception as e:
         print("❌ Unexpected Error:", e)
         return JsonResponse({'status': 'error'}, status=500)
+    
+    
 
+@login_required
+def book_catalog_create_isbn(request):
+    try:
+        user = request.user.id
+
+        # ---------- AJAX endpoints ----------
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            action = request.GET.get('action', '').strip()
+            response_data = []
+
+            # --- Authors Dropdown ---
+            if action == "get_authors":
+                language_id_encrypted = request.GET.get('language_id', '').strip()
+                if language_id_encrypted:
+                    try:
+                        language_id = dec(language_id_encrypted)
+                        lang_obj = LanguageMaster.objects.filter(id=language_id).first()
+                        lang_name = lang_obj.language_name.lower() if lang_obj else ""
+
+                        if lang_name == "marathi":
+                            response_data = AuthorMaster.objects.filter(is_active=True) \
+                                .exclude(author_name_marathi__isnull=True) \
+                                .values_list('author_name_marathi', flat=True) \
+                                .distinct().order_by('author_name_marathi')
+                        else:
+                            response_data = AuthorMaster.objects.filter(is_active=True) \
+                                .exclude(author_name_english__isnull=True) \
+                                .values_list('author_name_english', flat=True) \
+                                .distinct().order_by('author_name_english')
+                    except Exception:
+                        response_data = []
+
+            # --- Publishers Dropdown ---
+            elif action == "get_publishers":
+                response_data = BookCatalog.objects.filter(~Q(publisher__exact=""), publisher__isnull=False) \
+                    .values_list('publisher', flat=True).distinct().order_by('publisher')
+
+            # --- Publication Places Dropdown ---
+            elif action == "get_places":
+                response_data = BookCatalog.objects.filter(~Q(publication_place__exact=""), publication_place__isnull=False) \
+                    .values_list('publication_place', flat=True).distinct().order_by('publication_place')
+
+            return JsonResponse({"data": list(response_data)})
+
+        # ---------- GET Request ----------
+        if request.method == "GET":
+            languages = LanguageMaster.objects.filter(is_active=1)
+            for lang in languages:
+                lang.encrypted_id = enc(str(lang.id))
+
+            subjects = SubjectTypeMaster.objects.filter(is_active=True)
+            for sub in subjects:
+                sub.encrypted_id = enc(str(sub.id))
+
+            materials = MaterialTypeMaster.objects.filter(is_active=True)
+            for mat in materials:
+                mat.encrypted_id = enc(str(mat.id))
+
+            # Years dropdown
+            from datetime import datetime
+            current_year = datetime.now().year
+            years = list(range(current_year, 1899, -1))
+
+            selected_language_id_encrypted = request.GET.get('language_id')
+            if selected_language_id_encrypted:
+                try:
+                    selected_language_id = dec(selected_language_id_encrypted)
+                    lang_obj = LanguageMaster.objects.filter(id=selected_language_id).first()
+                except Exception:
+                    lang_obj = languages[0] if languages else None
+            else:
+                lang_obj = languages[0] if languages else None
+
+            lang_name = lang_obj.language_name.lower() if lang_obj else "english"
+
+            # Author dropdown based on language
+            if lang_name == "marathi":
+                authors = AuthorMaster.objects.filter(is_active=True) \
+                    .values_list('author_name_marathi', flat=True).distinct().order_by('author_name_marathi')
+            else:
+                authors = AuthorMaster.objects.filter(is_active=True) \
+                    .values_list('author_name_english', flat=True).distinct().order_by('author_name_english')
+
+            publishers = BookCatalog.objects.filter(~Q(publisher__exact=""), publisher__isnull=False) \
+                .values_list('publisher', flat=True).distinct().order_by('publisher')
+
+            publication_places = BookCatalog.objects.filter(~Q(publication_place__exact=""), publication_place__isnull=False) \
+                .values_list('publication_place', flat=True).distinct().order_by('publication_place')
+
+            context = {
+                'languages': languages,
+                'subjects': subjects,
+                'materials': materials,
+                'authors': authors,
+                'publishers': publishers,
+                'publication_places': publication_places,
+                'years': years
+            }
+            return render(request, 'Master/book_catalog_create_isbn.html', context)
+
+        # ---------- POST Request ----------
+        if request.method == "POST":
+            form_data = {
+                "title": request.POST.get('title', '').strip(),
+                "subtitle": request.POST.get('subtitle', '').strip(),
+                "author": request.POST.get('author', '').strip(),
+                "other_authors": request.POST.get('other_authors', '').strip(),
+                "publisher": request.POST.get('publisher', '').strip(),
+                "isbn": request.POST.get('isbn', '').strip(),
+                "edition": request.POST.get('edition', '').strip(),
+                "subject_id": dec(request.POST.get('subject_id', '').strip()) if request.POST.get('subject_id', '').strip() else '',
+                "material_id": dec(request.POST.get('material_id', '').strip()) if request.POST.get('material_id', '').strip() else '',
+                "remarks": request.POST.get('remarks', '').strip(),
+                "keywords": request.POST.get('keywords', '').strip(),
+                "language_id": dec(request.POST.get('language_id_hidden', '').strip()) if request.POST.get('language_id_hidden', '').strip() else '',
+                "publication_place": request.POST.get('publication_place', '').strip(),
+                "year_of_publication": request.POST.get('year_of_publication', '').strip(),
+                "pages": request.POST.get('page_nos', '').strip(),
+            }
+
+            required_fields = ["title", "author", "publisher", "subject_id", "material_id", "language_id"]
+            missing = [f for f in required_fields if not form_data[f]]
+            if missing:
+                messages.error(request, f"Please fill in all required fields: {', '.join(missing)}")
+                return redirect('book_catalog_create_isbn')
+
+            try:
+                with transaction.atomic():
+                    subject = SubjectTypeMaster.objects.filter(id=form_data["subject_id"]).first()
+                    material = MaterialTypeMaster.objects.filter(id=form_data["material_id"]).first()
+                    language = LanguageMaster.objects.filter(id=form_data["language_id"]).first()
+
+                    author = form_data["author"]
+                    other_authors = form_data.get("other_authors", "").strip()
+
+                    # author transliteration logic
+                    if contains_non_english(author):
+                        authorEnglish = transliterate_to_english(author).lower()
+                        authorMarathi = author
+                    else:
+                        authorEnglish = author.lower()
+                        authorMarathi = None
+
+                    if contains_non_english(other_authors):
+                        otherAuthorEnglish = transliterate_to_english(other_authors).lower()
+                        otherAuthorMarathi = other_authors
+                    else:
+                        otherAuthorEnglish = other_authors.lower()
+                        otherAuthorMarathi = None
+
+                    ClassificationNumber = f"{subject.subjectCode:03}" if subject and subject.subjectCode else "000"
+                    author_name_clean = ''.join(filter(str.isalpha, authorEnglish))
+                    CutterNumber = author_name_clean[:3].title() if author_name_clean else "XXX"
+                    pub_year = form_data['year_of_publication'] or "0000"
+                    call_number = f"{ClassificationNumber}.{CutterNumber}.{pub_year}"
+
+                    book = BookCatalog.objects.create(
+                        title=form_data["title"],
+                        subtitle=form_data["subtitle"],
+                        author=form_data["author"],
+                        other_authors=other_authors,
+                        publisher=form_data["publisher"],
+                        isbn_issn=form_data["isbn"],
+                        edition=form_data["edition"],
+                        subject=subject,
+                        call_number=call_number,
+                        classification_number=ClassificationNumber,
+                        cutter_number=CutterNumber,
+                        publication_year=pub_year,
+                        material=material,
+                        remarks=form_data["remarks"],
+                        keywords=form_data["keywords"],
+                        language=language.language_name if language else None,
+                        publication_place=form_data["publication_place"],
+                        year_of_publication=int(pub_year) if pub_year.isdigit() else None,
+                        pages=form_data["pages"],
+                        date_of_registration=date.today(),
+                        status_id=1,
+                        created_by=user,
+                        updated_by=user
+                    )
+
+                    # Save Author
+                    existing_author = AuthorMaster.objects.filter(author_name_english=authorEnglish).first()
+                    if not existing_author:
+                        AuthorMaster.objects.create(
+                            author_short_name=CutterNumber,
+                            author_name_english=authorEnglish,
+                            author_name_other_english=otherAuthorEnglish,
+                            author_name_marathi=authorMarathi,
+                            author_name_other_marathi=otherAuthorMarathi,
+                            created_by=user,
+                            updated_by=user
+                        )
+
+                    # ---------- UPDATED IMAGE LOGIC USING FileStorageService ----------
+                    front_photo = request.FILES.get('front_page_image')
+                    last_photo = request.FILES.get('last_page_image')
+                    
+                    # Get library code from session
+                    library_code = request.session.get('library_db', 'default')
+                    
+                    # Use library_code for folder structure
+                    book_folder = f"{library_code}/{book.cat_ref_num}"
+                    
+                    # Generate unique timestamps for filenames
+                    timestamp = dt.now().strftime("%Y%m%dT%H%M%S")
+                    
+                    # --- Front Page Image ---
+                    if front_photo:
+                        try:
+                            # Extract original filename and extension
+                            filename, ext = os.path.splitext(front_photo.name)
+                            
+                            # Generate unique filename
+                            short_uuid = str(uuid.uuid4())[:8]
+                            # Remove special characters from filename for safety
+                            safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                            unique_filename = f"{book.cat_ref_num}_front_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                            
+                            # Build save path
+                            save_path = f"{book_folder}/{unique_filename}"
+                            
+                            # ✅ USE STORAGE SERVICE TO SAVE FILE
+                            saved_file_path = file_storage_service.save_file(front_photo, save_path)
+                            
+                            # Update book record with saved path
+                            book.front_page_photo = saved_file_path
+                            
+                            print(f"✅ Front page image saved for library {library_code}: {saved_file_path}")
+                            
+                        except Exception as e:
+                            print(f"❌ Error saving front page image: {str(e)}")
+                            # Continue without image, don't fail the entire transaction
+                            messages.warning(request, f"Front page image could not be saved: {str(e)}")
+                    
+                    # --- Last Page Image ---
+                    if last_photo:
+                        try:
+                            # Extract original filename and extension
+                            filename, ext = os.path.splitext(last_photo.name)
+                            
+                            # Generate unique filename
+                            short_uuid = str(uuid.uuid4())[:8]
+                            # Remove special characters from filename for safety
+                            safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+                            unique_filename = f"{book.cat_ref_num}_back_{safe_filename}_{timestamp}_{short_uuid}{ext}"
+                            
+                            # Build save path
+                            save_path = f"{book_folder}/{unique_filename}"
+                            
+                            # ✅ USE STORAGE SERVICE TO SAVE FILE
+                            saved_file_path = file_storage_service.save_file(last_photo, save_path)
+                            
+                            # Update book record with saved path
+                            book.last_page_photo = saved_file_path
+                            
+                            print(f"✅ Last page image saved for library {library_code}: {saved_file_path}")
+                            
+                        except Exception as e:
+                            print(f"❌ Error saving last page image: {str(e)}")
+                            # Continue without image, don't fail the entire transaction
+                            messages.warning(request, f"Last page image could not be saved: {str(e)}")
+                    
+                    # Save book with updated image paths
+                    book.save()
+
+                messages.success(request, f"Book '{book.title}' saved successfully!")
+                return redirect('book_catalog_index')
+
+            except Exception as e:
+                messages.error(request, f"Error adding book: {str(e)}")
+                return redirect('book_catalog_create_isbn')
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), user])
+        messages.error(request, 'Oops...! Something went wrong!')
+
+def isbn_lookup(request):
+    library_code = request.session.get('library_code')
+    """Lookup book information by ISBN"""
+    if request.method == 'GET':
+        isbn = request.GET.get('isbn', '').strip()
+        
+        if not isbn:
+            return JsonResponse({
+                'success': False,
+                'message': 'ISBN is required'
+            })
+        
+        try:
+            # First check if ISBN exists in GoogleBookMaster
+            book_master = GoogleBookMaster.objects.using(library_code).filter(
+                Q(isbn=isbn)
+            ).first()
+            
+            if not book_master:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Book not found in database'
+                })
+            
+            # Get all details for this book from GoogleBookDetail
+            book_details = GoogleBookDetail.objects.using(library_code).filter(book=book_master)
+            
+            # Prepare minimal response data
+            data = {
+                'title': book_master.title or '',
+                'authors': [],
+                'publishedDate': '',
+                'pageCount': '',
+                'isbn': isbn
+            }
+            
+            # Collect data from detail table (key-value pairs)
+            if book_details.exists():
+                # Get all detail records
+                for detail in book_details:
+                    # Check if this is the right detail record
+                    # Published Date
+                    if hasattr(detail, 'key') and detail.key == 'items_0_volumeInfo_publishedDate':
+                        if hasattr(detail, 'value'):
+                            data['publishedDate'] = detail.value
+                    
+                    # Page Count
+                    elif hasattr(detail, 'key') and detail.key == 'items_0_volumeInfo_pageCount':
+                        if hasattr(detail, 'value'):
+                            data['pageCount'] = detail.value
+                    
+                    # Authors - collect all authors
+                    elif hasattr(detail, 'key') and detail.key.startswith('items_0_volumeInfo_authors_'):
+                        if hasattr(detail, 'value') and detail.value:
+                            # Extract author index from key like 'items_0_volumeInfo_authors_0'
+                            data['authors'].append(detail.value)
+            
+            print(f"Found data: {data}")
+            
+            return JsonResponse({
+                'success': True,
+                'data': data
+            })
+            
+        except Exception as e:
+            print(f"Error in isbn_lookup: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'message': f'Error: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request'
+    })
+
+# Competitive Exams
+from L01.models import (
+    CompetitiveExamMaster, Sections, Subjects, 
+    Topics, Chapters
+)
+from django.core.files.storage import default_storage
+from django.db.models import Max, IntegerField
+from django.db.models.functions import Cast
+
+
+
+@login_required
+def create_competitive_book(request):
+    exams = CompetitiveExamMaster.objects.all().order_by("full_name")
+
+    return render(
+        request,
+        "L01/UPSC/create_competitive_book.html",
+        {"exams": exams}
+    )
+
+def get_sections_by_competitive(request):
+    competitive_id = request.GET.get("competitive_id")
+
+    if not competitive_id:
+        return JsonResponse({"sections": []})
+
+    sections = Sections.objects.filter(
+        competitive_id=competitive_id
+    ).order_by("section_no")
+
+    return JsonResponse({
+        "sections": list(
+            sections.values("section_no", "section_name")
+        )
+    })
+
+def get_subjects_by_section(request):
+    competitive_id = request.GET.get("competitive_id")
+    section_no = request.GET.get("section_no")
+
+    if not competitive_id or not section_no:
+        return JsonResponse({"subjects": []})
+
+    subjects = Subjects.objects.filter(
+        competitive_id=competitive_id,
+        section_no=section_no
+    ).order_by("subject_name")
+
+    return JsonResponse({
+        "subjects": list(
+            subjects.values("subject_id", "subject_name")
+        )
+    })
+
+def get_topics_by_competitive(request):
+    competitive_id = request.GET.get("competitive_id")
+    if not competitive_id:
+        return JsonResponse({"topics": []})
+
+    topics = Topics.objects.filter(competitive_id=competitive_id).order_by("topic_name")
+    return JsonResponse({
+        "topics": list(topics.values("topic_id", "topic_name"))
+    })
+
+
+def save_competitive_book(request):
+    if request.method != "POST":
+        return redirect("create_competitive_book")
+
+    try:
+        with transaction.atomic():
+            user = request.user.username
+
+            competitive_id = request.POST.get("competitive_id")
+            section_no = request.POST.get("section_no")
+            subject_id = request.POST.get("subject_id")
+
+            existing_topic_id = request.POST.get("existing_topic_id")
+            new_topic_name = request.POST.get("new_topic_name", "").strip()
+            chapter_name_input = request.POST.get("chapter_name", "").strip()
+            topic_reference = request.POST.get("topic_reference", "").strip()
+
+            cover_image = request.FILES.get("cover_image")
+            chapter_pdf = request.FILES.get("chapter_pdf")
+
+            # ---------- VALIDATION ----------
+            if not all([competitive_id, section_no, subject_id, cover_image, chapter_pdf]):
+                messages.error(request, "Please fill all required fields")
+                return redirect("create_competitive_book")
+
+            # ---------- MASTER DATA ----------
+            competitive = CompetitiveExamMaster.objects.get(competitive_id=competitive_id)
+            section = Sections.objects.get(section_no=section_no)
+            subject = Subjects.objects.get(subject_id=subject_id)
+            competitive_code = (competitive.short_form or "UNKNOWN").upper().strip()
+            library_code = request.session.get("library_db", "L01")
+
+            # ---------- SELECT OR CREATE TOPIC ----------
+            if existing_topic_id:
+                topic = Topics.objects.get(topic_id=existing_topic_id)
+                chapter_name = chapter_name_input or topic.topic_name
+            else:
+                if not new_topic_name:
+                    messages.error(request, "Please select an existing topic or enter a new topic")
+                    return redirect("create_competitive_book")
+
+                topic = Topics.objects.create(
+                    competitive_id=competitive,
+                    section_no=section,
+                    subject_id=subject,
+                    topic_name=new_topic_name,
+                    topic_reference=topic_reference,
+                    created_by=user,
+                    updated_by=user
+                )
+                chapter_name = chapter_name_input or new_topic_name
+
+            # ---------- BASE DIRECTORY ----------
+            base_dir = f"{library_code}/CompetitiveBooks/{competitive_code}/{topic.topic_id}"
+
+            # ---------- SAVE COVER IMAGE ----------
+            image_ext = os.path.splitext(cover_image.name)[1].lower()
+            cover_filename = f"cover_{topic.topic_id}{image_ext}"
+            cover_path = f"{base_dir}/book_images/{cover_filename}"
+            saved_cover_path = file_storage_service.save_file(cover_image, cover_path)
+
+            topic.topic_image_url = saved_cover_path
+            topic.save(update_fields=["topic_image_url"])
+
+            # ---------- CHAPTER NUMBER ----------
+            last_no = Chapters.objects.annotate(
+                chapter_no_int=Cast("chapter_no", IntegerField())
+            ).aggregate(max_no=Max("chapter_no_int"))["max_no"] or 0
+            new_no = last_no + 1
+
+            # ---------- SAVE PDF ----------
+            pdf_filename = f"chapter_{new_no}.pdf"
+            pdf_path = f"{base_dir}/chapters/{pdf_filename}"
+            saved_pdf_path = file_storage_service.save_file(chapter_pdf, pdf_path)
+
+            # ---------- CREATE CHAPTER ----------
+            Chapters.objects.create(
+                chapter_no=str(new_no),
+                chapter_name=chapter_name,
+                topic_id=topic,
+                competitive_id=competitive,
+                section_no=section,
+                chapter_pdf_url=saved_pdf_path,
+                created_by=user,
+                updated_by=user
+            )
+
+            messages.success(
+                request,
+                f"Chapter '{chapter_name}' created successfully (Chapter No: {new_no})"
+            )
+            return redirect("create_competitive_book")
+
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect("create_competitive_book")
