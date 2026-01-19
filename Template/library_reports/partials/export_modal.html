@@ -1,0 +1,183 @@
+<!-- reports/templates/reports/partials/export_modal.html -->
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Export Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm">
+                    <!-- Export Type -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Export Type</label>
+                            <select class="form-select" name="export_type" id="exportType">
+                                <option value="excel" selected>Excel (.xlsx)</option>
+                                <option value="csv">CSV (.csv)</option>
+                                <option value="pdf">PDF (.pdf)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Export Scope</label>
+                            <select class="form-select" name="export_scope" id="exportScope">
+                                <option value="current_tab">Current Tab Only</option>
+                                <option value="all_tabs">All Tabs</option>
+                                <option value="selected_tabs">Selected Tabs</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabs Selection (for selected_tabs scope) -->
+                    <div class="row mb-3" id="tabsSelectionSection" style="display: none;">
+                        <div class="col-12">
+                            <label class="form-label">Select Tabs to Export</label>
+                            <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                {% for tab in tabs_config %}
+                                <div class="form-check">
+                                    <input class="form-check-input export-tab-check" 
+                                           type="checkbox" 
+                                           value="{{ tab.id }}" 
+                                           id="exportTab{{ forloop.counter }}"
+                                           {% if tab.exportable %}checked{% endif %}>
+                                    <label class="form-check-label" for="exportTab{{ forloop.counter }}">
+                                        <i class="bi {{ tab.icon }} me-1"></i> {{ tab.title }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Options -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">File Name</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="file_name" 
+                                       value="{{ report_type }}_report_{{ current_date }}" 
+                                       id="exportFileName">
+                                <span class="input-group-text" id="fileExtension">.xlsx</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Compression</label>
+                            <select class="form-select" name="compression" id="exportCompression">
+                                <option value="none">No Compression</option>
+                                <option value="zip">ZIP Compression</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Options -->
+                    <div class="accordion mb-3" id="exportAdvancedOptions">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#advancedOptions">
+                                    Advanced Options
+                                </button>
+                            </h2>
+                            <div id="advancedOptions" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="include_charts" id="includeCharts">
+                                                <label class="form-check-label" for="includeCharts">
+                                                    Include Charts
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="include_filters" id="includeFilters" checked>
+                                                <label class="form-check-label" for="includeFilters">
+                                                    Include Applied Filters
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="include_summary" id="includeSummary" checked>
+                                                <label class="form-check-label" for="includeSummary">
+                                                    Include Summary Sheet
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="format_numbers" id="formatNumbers" checked>
+                                                <label class="form-check-label" for="formatNumbers">
+                                                    Format Numbers
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="auto_size_columns" id="autoSizeColumns" checked>
+                                                <label class="form-check-label" for="autoSizeColumns">
+                                                    Auto-size Columns
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="protect_sheets" id="protectSheets">
+                                                <label class="form-check-label" for="protectSheets">
+                                                    Protect Sheets
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Date Format</label>
+                                            <select class="form-select form-select-sm" name="date_format">
+                                                <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                                                <option value="dd/mm/yyyy">DD/MM/YYYY</option>
+                                                <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Number Format</label>
+                                            <select class="form-select form-select-sm" name="number_format">
+                                                <option value="comma_separated">1,234.56</option>
+                                                <option value="plain">1234.56</option>
+                                                <option value="currency">₹ 1,234.56</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Preview -->
+                    <div class="export-preview mb-3">
+                        <label class="form-label">Export Preview</label>
+                        <div class="border rounded p-2 bg-light">
+                            <small class="text-muted">
+                                <div id="exportPreview">
+                                    <p><strong>File:</strong> <span id="previewFileName">{{ report_type }}_report_{{ current_date }}.xlsx</span></p>
+                                    <p><strong>Size:</strong> <span id="previewFileSize">Estimating...</span></p>
+                                    <p><strong>Tabs:</strong> <span id="previewTabs">All tabs</span></p>
+                                    <p><strong>Records:</strong> <span id="previewRecords">Loading...</span></p>
+                                </div>
+                            </small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="startExport">
+                    <i class="bi bi-download me-1"></i> Start Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
