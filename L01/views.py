@@ -11035,6 +11035,64 @@ def visit_Library_catalogue_kiosk(request):
             {}
         )
 
+# def get_books_by_subject_kiosk(request):
+#     try:
+#         subject_id_enc = request.GET.get('subject_id')
+#         subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+#         search = request.GET.get('search', '').strip()
+#         searching = request.GET.get('searching', '').strip()
+
+#         # Base queryset
+#         all_books = BookCatalog.objects.all().select_related('subject', 'material')
+
+#         if searching:
+#             # Global search across all subjects
+#             if search:
+#                 all_books = all_books.filter(
+#                     Q(title__icontains=search) |
+#                     Q(author__icontains=search)
+#                 )
+#             elif subject_id:
+#                 all_books = all_books.filter(subject_id=subject_id)
+
+#         else:
+#             # Subject-wise browsing
+#             if subject_id:
+#                 all_books = all_books.filter(subject_id=subject_id)
+
+#             if search:
+#                 all_books = all_books.filter(
+#                     Q(title__icontains=search) |
+#                     Q(author__icontains=search)
+#                 )
+
+#         # Encode book IDs
+#         for b in all_books:
+#             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+#         # Pagination (same as normal view)
+#         paginator = Paginator(all_books, 8)
+#         page_number = request.GET.get('page', 1)
+#         books_page = paginator.get_page(page_number)
+
+#         context = {
+#             'books': books_page,
+#             'MEDIA_URL': settings.MEDIA_URL,
+#             'subject_id_enc': subject_id_enc,
+#             'is_kiosk': True,   # useful in template if needed
+#         }
+
+#         return render(
+#             request,
+#             "L01/book_details_kiosk.html",  # or reuse same partial
+#             context
+#         )
+
+#     except Exception as e:
+#         print("Kiosk error fetching books:", e)
+#         return JsonResponse({'error': 'Failed to fetch books'}, status=500)
+
 def get_books_by_subject_kiosk(request):
     try:
         subject_id_enc = request.GET.get('subject_id')
@@ -11068,66 +11126,25 @@ def get_books_by_subject_kiosk(request):
                 )
 
         # Encode book IDs
+
         for b in all_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
 
-        # Pagination (same as normal view)
-        paginator = Paginator(all_books, 8)
-        page_number = request.GET.get('page', 1)
-        books_page = paginator.get_page(page_number)
-
-        context = {
-            'books': books_page,
-            'MEDIA_URL': settings.MEDIA_URL,
-            'subject_id_enc': subject_id_enc,
-            'is_kiosk': True,   # useful in template if needed
-        }
-
-        return render(
-            request,
-            "L01/book_details_kiosk.html",  # or reuse same partial
-            context
-        )
-
-    except Exception as e:
-        print("Kiosk error fetching books:", e)
-        return JsonResponse({'error': 'Failed to fetch books'}, status=500)
-
-def get_books_by_subject_kiosk(request):
-    try:
-        subject_id_enc = request.GET.get('subject_id')
-        subject_id = dec(subject_id_enc) if subject_id_enc else None
-
-        search = request.GET.get('search', '').strip()
-        searching = request.GET.get('searching', '').strip()
-
-        # Base queryset
-        all_books = BookCatalog.objects.all().select_related('subject', 'material')
-
-        if searching:
-            # Global search across all subjects
-            if search:
-                all_books = all_books.filter(
-                    Q(title__icontains=search) |
-                    Q(author__icontains=search)
-                )
-            elif subject_id:
-                all_books = all_books.filter(subject_id=subject_id)
-
-        else:
-            # Subject-wise browsing
-            if subject_id:
-                all_books = all_books.filter(subject_id=subject_id)
-
-            if search:
-                all_books = all_books.filter(
-                    Q(title__icontains=search) |
-                    Q(author__icontains=search)
+            b.front_image_url = ""
+            if b.front_page_photo:
+                b.front_page_photo = file_storage_service.get_file_url(
+                    b.front_page_photo.strip()
                 )
 
-        # Encode book IDs
-        for b in all_books:
-            b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+            # -----------------------
+            # LAST PAGE IMAGE
+            # -----------------------
+            b.back_image_url = ""
+            if b.last_page_photo:
+                b.last_page_photo = file_storage_service.get_file_url(
+                    b.last_page_photo.strip()
+                )
+
 
         # Pagination (same as normal view)
         paginator = Paginator(all_books, 8)
