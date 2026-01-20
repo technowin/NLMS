@@ -672,7 +672,7 @@
     <section class="hero-section" id="hero-english"
         style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
         <!-- Commissioner Button - TOP LEFT CORNER -->
-        <div class="commissioner-corner-container">
+        {% comment %} <div class="commissioner-corner-container">
             <a href="{% url 'commissioner_message' %}" class="commissioner-corner-button">
                 <div class="commissioner-corner-image">
                     <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
@@ -683,7 +683,7 @@
                     <small id="commissioner-subtitle-english-hero">Read Message</small>
                 </div>
             </a>
-        </div>
+        </div> {% endcomment %}
 
         <!-- SWD Button - TOP RIGHT CORNER -->
         <div class="swd-corner-container">
@@ -761,7 +761,7 @@
 
     <section class="hero-section" id="hero-marathi" style="background-image: url('{% static "images/administrative/slider.jpg" %}');">
         <!-- Commissioner Button - TOP LEFT CORNER -->
-        <div class="commissioner-corner-container">
+        {% comment %} <div class="commissioner-corner-container">
             <a href="{% url 'commissioner_message' %}" class="commissioner-corner-button">
                 <div class="commissioner-corner-image">
                     <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
@@ -772,7 +772,7 @@
                     <small id="commissioner-subtitle-marathi-hero">संदेश वाचा</small>
                 </div>
             </a>
-        </div>
+        </div> {% endcomment %}
 
         <!-- SWD Button - TOP RIGHT CORNER -->
         <div class="swd-corner-container">

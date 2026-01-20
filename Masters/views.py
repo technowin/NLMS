@@ -4912,8 +4912,6 @@ def save_lead(request):
     except Exception as e:
         print("❌ Unexpected Error:", e)
         return JsonResponse({'status': 'error'}, status=500)
-    
-    
 
 @login_required
 def book_catalog_create_isbn(request):
@@ -5280,8 +5278,6 @@ from django.core.files.storage import default_storage
 from django.db.models import Max, IntegerField
 from django.db.models.functions import Cast
 
-
-
 @login_required
 def create_competitive_book(request):
     exams = CompetitiveExamMaster.objects.all().order_by("full_name")
@@ -5335,7 +5331,6 @@ def get_topics_by_competitive(request):
     return JsonResponse({
         "topics": list(topics.values("topic_id", "topic_name"))
     })
-
 
 def save_competitive_book(request):
     if request.method != "POST":
