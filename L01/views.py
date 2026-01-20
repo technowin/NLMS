@@ -4748,20 +4748,24 @@ def bookcatalog_search(request):
 
         # 📷 IMAGE + ENCRYPT
         updated_results = []
+
         for r in results:
             front = r.get("front_page_photo")
             back = r.get("last_page_photo")
 
+            # get full file URL from storage service
             r["front_page_photo"] = (
-                request.build_absolute_uri(f"/media/{front}") if front else ""
+                file_storage_service.get_file_url(front) if front else ""
             )
 
-            r["last_page_photo"] = (                              # ✅ ADD
-                request.build_absolute_uri(f"/media/{back}") if back else ""
+            r["last_page_photo"] = (
+                file_storage_service.get_file_url(back) if back else ""
             )
+
             r["encrypted_cat_ref_num"] = (
                 enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
             )
+
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
@@ -4843,20 +4847,24 @@ def index_book_search(request):
 
         # 📷 Image URL + encryption
         updated_results = []
+
         for r in results:
             front = r.get("front_page_photo")
             back = r.get("last_page_photo")
 
+            # get full URL from storage service
             r["front_page_photo"] = (
-                request.build_absolute_uri(f"/media/{front}") if front else ""
+                file_storage_service.get_file_url(front) if front else ""
             )
 
-            r["last_page_photo"] = (                              
-                request.build_absolute_uri(f"/media/{back}") if back else ""
+            r["last_page_photo"] = (
+                file_storage_service.get_file_url(back) if back else ""
             )
+
             r["encrypted_cat_ref_num"] = (
                 enc(str(r["cat_ref_num"])) if r["cat_ref_num"] else ""
             )
+
             updated_results.append(r)
 
         return JsonResponse(updated_results, safe=False)
