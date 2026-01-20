@@ -11716,6 +11716,13 @@ def upsc_topics_logged(request, section_no):
                 subject_id=subject.subject_id,
                 section_no=section.section_no
             ).order_by('topic_id')
+            
+            
+            for topic in topics:
+                if topic.topic_image_url:
+                    topic.topic_image_url = file_storage_service.get_file_url(
+                        topic.topic_image_url
+                    )
 
             subjects_data.append({
                 "subject": subject,
@@ -11814,6 +11821,12 @@ def mpsc_topics_logged(request, section_no):
                 subject_id=subject.subject_id,
                 section_no=section.section_no
             ).order_by('topic_id')
+            
+            for topic in topics:
+                if topic.topic_image_url:
+                    topic.topic_image_url = file_storage_service.get_file_url(
+                        topic.topic_image_url
+                    )
 
             subjects_data.append({
                 "subject": subject,
