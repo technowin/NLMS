@@ -3,7 +3,7 @@ from L01.views import *
 
 urlpatterns = [
     path("index",index,name='index'),
-    path("view_catalogue",view_catalogue,name='view_catalogue'),
+    path("view_catalogue_login_page",view_catalogue_login_page,name='view_catalogue_login_page'),
     path("view_ebook_catalogue",view_ebook_catalogue,name='view_ebook_catalogue'),
     path('upsc_ebook_index/', upsc_ebook_index, name='upsc_ebook_index'),
     path('topic_index/<str:section_no>/', topic_index, name='topic_index'),

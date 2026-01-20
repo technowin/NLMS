@@ -4330,6 +4330,7 @@ def user_create(request):
                 last_name = request.POST.get("last_name", "").strip()
                 full_name = f"{first_name} {last_name}".strip()
                 email = request.POST.get("email", "").strip()
+                address = request.POST.get("address", "").strip()
                 phone = request.POST.get("mobile", "").strip()
                 role_id = request.POST.get("role_id", "").strip()
                 is_active = request.POST.get("is_active", 1)
@@ -4393,6 +4394,12 @@ def user_create(request):
                         "post_data": request.POST,
                         "user_obj": None
                     })
+                
+                # Fetch selected role
+                selected_role = roles.objects.get(pk=role_id)
+
+                # Extract role_type
+                user_type = selected_role.role_type
 
                 # 🔹 Update existing user
                 if enc_id:
@@ -4425,9 +4432,11 @@ def user_create(request):
                     user_obj.last_name = last_name
                     user_obj.full_name = full_name
                     user_obj.email = email
+                    user_obj.address = address
                     user_obj.phone = phone
                     user_obj.is_active = bool(int(is_active))
                     user_obj.role_id = role_id
+                    user_obj.user_type = selected_role.role_type 
                     user_obj.updated_by = user_id
                     user_obj.updated_at = timezone.now()
 
@@ -4473,6 +4482,16 @@ def user_create(request):
                         "post_data": request.POST,
                         "user_obj": None
                     })
+                #Check for duplicate phone
+                if CustomUser.objects.filter(phone=phone).exists():
+                    messages.error(request, f"Phone number '{phone}' already exists!")
+                    roles_list = roles.objects.exclude(role_type='member')
+                    return render(request, "L01/Master/user_create.html", {
+                        "roles_list": roles_list,
+                        "post_data": request.POST,
+                        "user_obj": None
+                    })
+
 
                 # Store plain password before creating user
                 plain_password = password
@@ -4482,7 +4501,8 @@ def user_create(request):
                     username=username,
                     email=email,
                     password=password,
-                    is_active=bool(int(is_active))
+                    is_active=bool(int(is_active)),
+                    user_type=user_type
                 )
                 
                 # Set additional fields
@@ -4491,6 +4511,7 @@ def user_create(request):
                 new_user.full_name = full_name
                 new_user.phone = phone
                 new_user.role_id = role_id
+                new_user.address = address
                 new_user.created_by = user_id
                 new_user.created_at = timezone.now()
                 new_user.save()
@@ -4667,6 +4688,13 @@ def user_view(request):
 def view_catalogue(request):
     return render(request, "L01/view_catalogue.html", {
         "MEDIA_URL": settings.MEDIA_URL
+    })
+    
+def view_catalogue_login_page(request):
+    username = request.session.get('username')
+    return render(request, "L01/view_catalogue_login_page.html", {
+        "MEDIA_URL": settings.MEDIA_URL,
+        "username": username
     })
 
 def view_ebook_catalogue(request):
@@ -8428,8 +8456,54 @@ def export_final_report_fallback(report_data):
     buffer.seek(0)
     return buffer.getvalue()
     
+def set_book_image_urls(books):
+    for b in books:
+        if b.front_page_photo:
+            b.front_page_photo = file_storage_service.get_file_url(
+                b.front_page_photo
+            )
+        else:
+            b.front_page_photo = ""
+
+        if b.last_page_photo:
+            b.last_page_photo = file_storage_service.get_file_url(
+                b.last_page_photo
+            )
+        else:
+            b.last_page_photo = ""
+
+
 @login_required
 def led_tv_index(request):
+    
+    libraries = (
+        LibraryMaster.objects.using('default')
+        .filter(is_active=1)
+        .order_by('id')
+    )
+
+    library_list = []
+
+    for lib in libraries:
+        first_image = ""
+
+        if lib.image_url:
+            image_array = lib.image_url.split(",")
+            if image_array:
+                first_image = file_storage_service.get_file_url(image_array[0].strip())
+
+        library_list.append({
+            "library_name": lib.library_name,
+            "library_name_mar": lib.library_name_mar,
+            "description": lib.about_library,
+            "capacity": lib.capacity,
+            "email": lib.contact_email,
+            "phone": lib.contact_phone,
+            "library_image": first_image,
+            "location_url": lib.location_url,
+            "opening_hours": lib.opening_hours,
+        })
+
 
     # ============================================
     # 1️⃣ POPULAR BOOKS (with rating and reviews)
@@ -8469,6 +8543,10 @@ def led_tv_index(request):
         .filter(transactions__isnull=True)
         .order_by('-avg_rating')[:10]
     )
+    
+    set_book_image_urls(popular_books)
+    set_book_image_urls(new_arrivals)
+    set_book_image_urls(upcoming_books)
 
     # ============================================
     # ADS + EVENTS (only status=1)
@@ -8513,6 +8591,7 @@ def led_tv_index(request):
         "upcoming_books": upcoming_books,
         "advertisements": advertisements,
         "events": events,
+        "libraries": library_list, 
     })
     
 def advertisement_index(request):
@@ -10558,6 +10637,24 @@ def kiosk_display(request):
         "library_name": library_name  # Marathi name will go here if present
     })
     
+    
+def set_ebook_image_urls(ebooks):
+    for b in ebooks:
+
+        if b.eb_front_page_photo:
+            b.eb_front_page_photo = file_storage_service.get_file_url(
+                b.eb_front_page_photo
+            )
+        else:
+            b.eb_front_page_photo = ""
+
+        if b.eb_last_page_photo:
+            b.eb_last_page_photo = file_storage_service.get_file_url(
+                b.eb_last_page_photo
+            )
+        else:
+            b.eb_last_page_photo = ""
+            
 @login_required
 def visit_Library_ebook_catalogue(request):
     try:
@@ -10594,6 +10691,7 @@ def visit_Library_ebook_catalogue(request):
         # Encode ebook IDs
         for b in page_obj:
             b.ebookIdEnc = enc(str(b.ebook_id)) if 'enc' in globals() else b.ebook_id
+        set_ebook_image_urls(page_obj)
 
         # --- NEW ARRIVALS LOGIC ---
         thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -10601,6 +10699,7 @@ def visit_Library_ebook_catalogue(request):
 
         if not new_ebooks.exists():
             new_ebooks = LibraryEbook.objects.all().order_by('-ebook_id')[:10]
+        set_ebook_image_urls(new_ebooks)
 
         for b in new_ebooks:
             b.ebookIdEnc = enc(str(b.ebook_id)) if 'enc' in globals() else b.ebook_id
@@ -10851,6 +10950,8 @@ def visit_Library_catalogue_kiosk(request):
         for b in page_obj:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
 
+        set_book_image_urls(page_obj)
+
         # --- UPCOMING / LATEST BOOKS ---
         latest_created_at = BookCatalog.objects.aggregate(
             latest=Max('created_at')
@@ -10872,6 +10973,7 @@ def visit_Library_catalogue_kiosk(request):
         new_books = list(recent_books) + list(fallback_books)
         for b in new_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+        set_book_image_urls(new_books)
 
         # --- MOST REVIEWED BOOKS ---
         most_reviewed_books = (
@@ -10889,6 +10991,8 @@ def visit_Library_catalogue_kiosk(request):
             b.avg_rating = round(avg, 1)
             b.stars = [True if i < round(avg) else False for i in range(5)]
 
+        set_book_image_urls(most_reviewed_books)
+
         # --- NEW ARRIVALS IN CIRCULATION ---
         new_arrivals_qs = BookCatalog.objects.annotate(
             in_circulation=Exists(
@@ -10900,6 +11004,9 @@ def visit_Library_catalogue_kiosk(request):
 
         for b in new_arrivals_qs:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
+
+        set_book_image_urls(new_arrivals_qs)
+            
 
         # --- CONTEXT ---
         context = {

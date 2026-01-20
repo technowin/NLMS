@@ -11,6 +11,9 @@ from services.file_storage_service import file_storage_service
 from .thread_local import set_current_service
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Count, Sum, Q, F, Avg
+from L01.models import *
+from django.db.models import Max, Count, Avg, Exists, OuterRef
 
 def library_list(request):
     Db.closeConnection()
@@ -295,3 +298,186 @@ def vision_mission(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("swd_libraries")
+    
+# Public view - doesn't require login
+def public_library_catalogue(request):
+    """
+    Public-facing book catalog (no login required)
+    """
+    try:
+        # No session checks for public access
+        
+        # --- SUBJECTS ---
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))  # encoding function
+            subjects.append(s)
+
+        first_subject = subjects[0] if subjects else None
+
+        # --- BOOKS BY FIRST SUBJECT ---
+        if first_subject:
+            books = BookCatalog.objects.filter(subject_id=first_subject.id)\
+                                       .select_related('subject', 'material', 'ebook')
+        else:
+            books = BookCatalog.objects.none()
+            
+        # --- ADD FILE URLs TO BOOKS ---
+        for book in books:
+            book.bookIdEnc = enc(str(book.cat_ref_num))
+            
+            # Get book cover image
+            if book.front_page_photo:
+                book.front_page_url = file_storage_service.get_file_url(book.front_page_photo)
+            else:
+                book.front_page_url = None
+                
+            # PUBLIC ACCESS: Don't include ebook links or detailed view links
+
+        # --- PAGINATION ---
+        paginator = Paginator(books, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        for b in page_obj:
+            b.bookIdEnc = enc(str(b.cat_ref_num))
+
+        # --- UPCOMING / LATEST BOOKS ---
+        latest_created_at = BookCatalog.objects.aggregate(latest=Max('created_at'))['latest']
+        recent_books = BookCatalog.objects.filter(created_at=latest_created_at) if latest_created_at else BookCatalog.objects.none()
+
+        remaining_count = 10 - recent_books.count()
+        fallback_books = BookCatalog.objects.exclude(cat_ref_num__in=recent_books.values_list('cat_ref_num', flat=True))\
+                                           .order_by('-cat_ref_num')[:remaining_count] if remaining_count > 0 else BookCatalog.objects.none()
+
+        new_books = list(recent_books) + list(fallback_books)
+        for b in new_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num))
+            
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
+
+        # --- MOST REVIEWED BOOKS ---
+        most_reviewed_books = (
+            BookCatalog.objects.annotate(
+                review_count=Count('cat_ref_id_reviews'),
+                avg_rating=Avg('cat_ref_id_reviews__rating')
+            )
+            .filter(review_count__gt=0)
+            .order_by('-avg_rating', '-review_count')[:10]
+        )
+
+        for b in most_reviewed_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num))
+            avg = b.avg_rating or 0
+            b.avg_rating = round(avg, 1)
+            b.stars = [True if i < round(avg) else False for i in range(5)]
+            
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
+
+        # --- NEW ARRIVALS IN CIRCULATION ---
+        new_arrivals_qs = BookCatalog.objects.annotate(
+            in_circulation=Exists(
+                CirculationCopyStatus.objects.filter(bookcatalog_id=OuterRef('cat_ref_num'))
+            )
+        ).filter(in_circulation=True).order_by('-cat_ref_num')[:10]
+
+        for b in new_arrivals_qs:
+            b.bookIdEnc = enc(str(b.cat_ref_num))
+            
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
+
+        # --- CONTEXT ---
+        context = {
+            'subjects': subjects,
+            'books': page_obj,
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'new_books': new_books,
+            'most_reviewed_books': most_reviewed_books,
+            'new_arrivals_qs': new_arrivals_qs,
+            'is_public_view': True,  # Flag to identify public view
+        }
+
+        return render(request, "administration/public_book_catalogue.html", context)
+
+    except Exception as e:
+        print(f"Error in public catalog: {e}")
+        return render(request, "administration/public_book_catalogue.html", {})
+
+# Public AJAX endpoint (no login required)
+def public_get_books_by_subject(request):
+    """
+    AJAX endpoint for public book filtering
+    """
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+        search = request.GET.get('search', '').strip()
+        searching = request.GET.get('searching', '').strip()
+        
+        if searching:
+            # Global search mode
+            all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook')
+
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+            elif subject_id:
+                all_books = all_books.filter(subject_id=subject_id)
+
+        else:
+            # Filter by specific subject
+            if not subject_id:
+                return JsonResponse({'error': 'Subject ID required'}, status=400)
+                
+            all_books = BookCatalog.objects.filter(subject_id=subject_id)\
+                                           .select_related('subject', 'material', 'ebook')
+
+            if search:
+                all_books = all_books.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search)
+                )
+
+        # Add file URLs (PUBLIC ACCESS: no ebook or detailed links)
+        for b in all_books:
+            b.bookIdEnc = enc(str(b.cat_ref_num))
+            
+            if b.front_page_photo:
+                b.front_page_url = file_storage_service.get_file_url(b.front_page_photo)
+            else:
+                b.front_page_url = None
+            # NO EBOOK LINKS FOR PUBLIC
+
+        # Pagination
+        paginator = Paginator(all_books, 8)
+        page_number = request.GET.get('page', 1)
+        books_page = paginator.get_page(page_number)
+
+        context = {
+            'books': books_page,
+            'MEDIA_URL': settings.MEDIA_URL,
+            'subject_id_enc': subject_id_enc,
+            'is_public_view': True,  # Flag for template
+        }
+        
+        return render(request, "administration/public_book_list_partial.html", context)
+
+    except Exception as e:
+        print(f"Error in public AJAX: {e}")
+        return JsonResponse({'error': 'Something went wrong'}, status=500)

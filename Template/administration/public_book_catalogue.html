@@ -1,0 +1,868 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block title %}पुस्तक सूची - सार्वजनिक प्रवेश{% endblock title %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap">
+    <link rel="stylesheet" href="{% static 'css/Master/visitLibraryCate.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        /* ===============================
+            PUBLIC CATALOG SPECIFIC STYLES
+        =============================== */
+
+        /* Container for better scrolling */
+        .container-fluid {
+            position: relative;
+            {% comment %} z-index: 1; {% endcomment %}
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 10; /* Reduced z-index */
+            background: white;
+            padding: 15px 0;
+            background-color: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .search-box {
+            border-radius: 50px;
+            border: 2px solid #e0e0e0;
+            padding: 15px 25px;
+            padding-right: 60px;
+            font-size: 1.1rem;
+            transition: all 0.4s ease;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            width: 100%;
+        }
+
+        .search-box:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+            outline: none;
+            transform: translateY(-3px);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 1.3rem;
+        }
+
+        /* Subject Sidebar - Fixed with scroll */
+        #subjectSidebar {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 15px;
+            position: sticky;
+            margin-top: 20px;
+            scroll-behavior: smooth;
+            z-index: 1; /* Added z-index */
+        }
+
+        /* Custom scrollbar for subject sidebar */
+        #subjectSidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #subjectSidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        #subjectSidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        #subjectSidebar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+
+        /* Subject Cards - Simplified with less animation */
+        .subject-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* SIMPLIFIED ACTIVE STATE - Only color change */
+        .subject-card.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-color: rgba(255,255,255,0.3);
+            transform: none; /* Remove transform */
+            box-shadow: 0 6px 15px rgba(245, 87, 108, 0.3);
+        }
+
+        /* Remove pulse animation */
+        .subject-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 3px;
+            line-height: 1.3;
+        }
+
+        .subject-count {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Books Container */
+        #books-container {
+            min-height: 600px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Book Cards with staggered animation */
+        .book-card-public {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Stagger animation for book cards */
+        .book-card-public:nth-child(1) { animation-delay: 0.1s; }
+        .book-card-public:nth-child(2) { animation-delay: 0.2s; }
+        .book-card-public:nth-child(3) { animation-delay: 0.3s; }
+        .book-card-public:nth-child(4) { animation-delay: 0.4s; }
+        .book-card-public:nth-child(5) { animation-delay: 0.5s; }
+        .book-card-public:nth-child(6) { animation-delay: 0.6s; }
+
+        .book-card-public:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            z-index: 2; /* Low z-index for book cards */
+        }
+
+        .book-img-box {
+            height: 250px;
+            overflow: hidden;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .book-img-box img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+
+        .book-card-public:hover .book-img-box img {
+            transform: scale(1.05);
+        }
+
+        /* Discovery Section */
+        .discovery-column {
+            position: sticky;
+            max-height: calc(100vh - 160px);
+            overflow: hidden;
+            border-radius: 15px;
+            background: #f8f9fa;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            z-index: 1; /* Added z-index */
+        }
+
+        .discovery-wrapper {
+            animation: scrollDiscovery 35s linear infinite;
+            padding-bottom: 100px;
+        }
+
+        @keyframes scrollDiscovery {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-33.33%);
+            }
+        }
+
+        .discovery-column:hover .discovery-wrapper {
+            animation-play-state: paused;
+        }
+
+        .discovery-section {
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .discovery-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Discovery section colors */
+        .discovery-upcoming {
+            border-left: 6px solid #ff7eb3;
+            background: linear-gradient(135deg, rgba(255, 126, 179, 0.08) 0%, rgba(255, 126, 179, 0.02) 100%);
+        }
+
+        .discovery-reviewed {
+            border-left: 6px solid #ff9966;
+            background: linear-gradient(135deg, rgba(255, 153, 102, 0.08) 0%, rgba(255, 153, 102, 0.02) 100%);
+        }
+
+        .discovery-new {
+            border-left: 6px solid #2ecc71;
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.08) 0%, rgba(46, 204, 113, 0.02) 100%);
+        }
+
+        .discovery-section h6 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+        }
+
+        .discovery-section h6 i {
+            font-size: 1.2rem;
+        }
+
+        .book-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .book-item:last-child {
+            border-bottom: none;
+        }
+
+        .book-item:hover {
+            padding-left: 10px;
+        }
+
+        .book-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 2px;
+        }
+
+        .book-author {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        /* Mobile Subject Dropdown */
+        #mobileSubjectSelect {
+            border-radius: 10px;
+            border: 2px solid #667eea;
+            padding: 10px 15px;
+            background: white;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        #mobileSubjectSelect:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        /* Pagination Styling */
+        .pagination-custom {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .pagination-custom .page-link {
+            border: none;
+            border-radius: 8px;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 8px 15px;
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .pagination-custom .page-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .pagination-custom .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Public Notice */
+        .public-notice {
+            background: #e3f2fd;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #1565c0;
+            border-left: 4px solid #1565c0;
+        }
+
+        .public-notice i {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        /* Back to Top Button - Fixed position with proper z-index */
+        .back-to-top {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 100; /* Higher z-index to be above footer */
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            font-size: 1.2rem;
+        }
+
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(102, 126, 234, 0.1);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Smooth scrolling for entire page */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .discovery-column {
+                position: static;
+                max-height: none;
+                margin-top: 30px;
+            }
+            
+            .discovery-wrapper {
+                animation: none;
+                padding-bottom: 0;
+            }
+            
+            .discovery-section {
+                margin-bottom: 15px;
+            }
+            
+            #subjectSidebar {
+                max-height: 300px;
+                position: static;
+                margin-bottom: 20px;
+            }
+            
+            .search-wrapper {
+                padding: 10px 0;
+            }
+            
+            .book-card-public:hover {
+                z-index: 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .book-img-box {
+                height: 220px;
+            }
+            
+            .search-box {
+                padding: 12px 20px;
+                padding-right: 50px;
+                font-size: 1rem;
+            }
+            
+            .subject-card {
+                padding: 10px 12px;
+                margin-bottom: 8px;
+            }
+            
+            .subject-name {
+                font-size: 0.95rem;
+            }
+            
+            .book-card-public {
+                margin-bottom: 20px;
+            }
+            
+            .discovery-section {
+                padding: 15px;
+            }
+            
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .search-box {
+                font-size: 0.95rem;
+                padding: 10px 15px;
+                padding-right: 45px;
+            }
+            
+            .book-img-box {
+                height: 200px;
+            }
+            
+            .discovery-column {
+                padding: 15px;
+            }
+        }
+
+        /* Ensure footer stays on top */
+        .subject-card,
+        .discovery-column,
+        #subjectSidebar {
+            position: relative !important;
+        }
+        
+        .sticky-top {
+            position: sticky !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <!-- Search Bar -->
+        <div class="search-wrapper">
+            <div class="">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 col-md-10">
+                        <div class="position-relative">
+                            <input type="text" id="bookSearch" class="form-control search-box" 
+                                placeholder="🔍 पुस्तकाचे नाव किंवा लेखकाचे नाव शोधा...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="">
+            <div class="row g-4">
+                <!-- LEFT: SUBJECTS -->
+                <div class="col-lg-2 col-md-3">
+                    <div class="sticky-top" style="top: 120px;">
+                        <!-- Desktop Subjects -->
+                        <div class="d-none d-md-block" id="subjectSidebar">
+                            {% for subject in subjects %}
+                            <div class="subject-card {% if forloop.first %}active{% endif %}" 
+                                data-subject-id="{{ subject.id_enc }}">
+                                <div class="subject-name">{{ subject.subjectNameMarathi }}</div>
+                                {% comment %} <div class="subject-count">{{ subject.book_count }} पुस्तके</div> {% endcomment %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Mobile Subject Dropdown -->
+                        <div class="d-md-none mb-4">
+                            <select id="mobileSubjectSelect" class="form-select">
+                                <option value="">सर्व विषय</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id_enc }}">
+                                    {{ subject.subjectNameMarathi }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CENTER: BOOKS -->
+                <div class="col-lg-7 col-md-9">
+                    <div id="books-container">
+                        {% include "administration/public_book_list_partial.html" with books=books subject_id_enc=first_subject_id_enc %}
+                    </div>
+                </div>
+
+                <!-- RIGHT: DISCOVERY -->
+                <div class="col-lg-3">
+                    <div class="discovery-column">
+                        <div class="discovery-wrapper">
+                            {% if new_books %}
+                            <div class="discovery-section discovery-upcoming">
+                                <h6><i class="fas fa-clock"></i>आगामी पुस्तके</h6>
+                                {% for book in new_books|slice:":5" %}
+                                <div class="book-item">
+                                    <div class="book-title">{{ book.title }}</div>
+                                    {% if book.author %}
+                                    <div class="book-author">- {{ book.author }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if most_reviewed_books %}
+                            <div class="discovery-section discovery-reviewed">
+                                <h6><i class="fas fa-star"></i>सर्वाधिक प्रशंसित</h6>
+                                {% for book in most_reviewed_books|slice:":5" %}
+                                <div class="book-item">
+                                    <div class="book-title">{{ book.title }}</div>
+                                    {% if book.author %}
+                                    <div class="book-author">- {{ book.author }}</div>
+                                    {% endif %}
+                                    {% if book.avg_rating %}
+                                    <div class="rating mt-2">
+                                        <small class="d-flex align-items-center">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= book.avg_rating|floatformat:0|add:"0" %}
+                                                    <i class="fas fa-star text-warning me-1"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-warning me-1"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <span class="ms-1">({{ book.avg_rating }})</span>
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if new_arrivals_qs %}
+                            <div class="discovery-section discovery-new">
+                                <h6><i class="fas fa-book-medical"></i>नवीन पुस्तके</h6>
+                                {% for book in new_arrivals_qs|slice:":5" %}
+                                <div class="book-item">
+                                    <div class="book-title">{{ book.title }}</div>
+                                    {% if book.author %}
+                                    <div class="book-author">- {{ book.author }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Public Notice -->
+                        <div class="public-notice">
+                            <i class="fas fa-info-circle"></i>
+                            <p class="mb-0">
+                                <strong>सार्वजनिक प्रवेश:</strong><br>
+                                विस्तृत माहिती व ई-पुस्तकांसाठी लॉगिन करा.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    
+    <script>
+        $(document).ready(function () {
+            console.log("Enhanced public catalog JS loaded");
+            
+            // Get initial active subject
+            let activeSubjectId = "{{ first_subject_id_enc|default:'' }}";
+            
+            // Initialize back to top button
+            const backToTop = $('#backToTop');
+            
+            // Scroll event for back to top button only
+            $(window).scroll(function() {
+                const scrollTop = $(this).scrollTop();
+                
+                // Show/hide back to top button
+                if (scrollTop > 300) {
+                    backToTop.addClass('active');
+                } else {
+                    backToTop.removeClass('active');
+                }
+            });
+
+            // Back to top button click
+            backToTop.click(function(e) {
+                e.preventDefault();
+                $('html, body').animate({ 
+                    scrollTop: 0 
+                }, 600);
+            });
+
+            // 1. SUBJECT CARD CLICK - Simplified
+            $(document).on('click', '.subject-card', function () {
+                // Remove active class from all subject cards
+                $('.subject-card').removeClass('active');
+                // Add active class to clicked card (ONLY color change)
+                $(this).addClass('active');
+                
+                // Get subject ID from data attribute
+                activeSubjectId = $(this).data('subject-id');
+                
+                // Load books for this subject
+                loadBooks(activeSubjectId);
+            });
+
+            // 2. MOBILE DROPDOWN
+            $('#mobileSubjectSelect').on('change', function () {
+                activeSubjectId = $(this).val();
+                
+                if (activeSubjectId) {
+                    // Also update active subject card
+                    $('.subject-card').removeClass('active');
+                    $(`.subject-card[data-subject-id="${activeSubjectId}"]`).addClass('active');
+                    
+                    loadBooks(activeSubjectId);
+                }
+            });
+
+            // 3. ENHANCED SEARCH FUNCTIONALITY WITH DEBOUNCING
+            let searchTimeout;
+            $(document).on("keyup", "#bookSearch", function() {
+                clearTimeout(searchTimeout);
+                
+                const search = $(this).val().trim();
+                
+                // Show loading with animation
+                $('#books-container').html(`
+                    <div class="text-center py-5">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-3">शोध परिणाम लोड होत आहेत...</p>
+                    </div>
+                `);
+                
+                searchTimeout = setTimeout(() => {
+                    $.ajax({
+                        url: "/public-get-books/",
+                        type: "GET",
+                        data: {
+                            subject_id: activeSubjectId,
+                            search: search,
+                            searching: 'Searching'
+                        },
+                        success: function(html) {
+                            $("#books-container").html(html);
+                            // Re-initialize animations for new content
+                            initAnimations();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Search error:", error);
+                            $("#books-container").html(`
+                                <div class="alert alert-danger" style="border-radius: 10px;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    शोध करताना त्रुटी. कृपया पुन्हा प्रयत्न करा.
+                                </div>
+                            `);
+                        }
+                    });
+                }, 500); // 500ms debounce
+            });
+
+            // 4. MAIN FUNCTION TO LOAD BOOKS
+            function loadBooks(subjectId, search='') {
+                // Show loading with animation
+                $('#books-container').html(`
+                    <div class="text-center py-5">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-3">पुस्तके लोड होत आहेत...</p>
+                    </div>
+                `);
+                
+                $.ajax({
+                    url: "/public-get-books/",
+                    type: "GET",
+                    data: {
+                        subject_id: subjectId,
+                        search: search
+                    },
+                    success: function (html) {
+                        $('#books-container').html(html);
+                        
+                        // Smooth scroll to books section
+                        $('html, body').animate({ 
+                            scrollTop: $('#books-container').offset().top - 100 
+                        }, 600);
+                        
+                        // Re-initialize animations for new content
+                        initAnimations();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error loading books:", error, xhr.responseText);
+                        $('#books-container').html(`
+                            <div class="alert alert-danger" style="border-radius: 10px;">
+                                <h5><i class="fas fa-exclamation-triangle me-2"></i>त्रुटी</h5>
+                                <p>पुस्तके लोड करताना त्रुटी आली आहे.</p>
+                                <button class="btn btn-sm btn-outline-danger mt-2" onclick="location.reload()">
+                                    <i class="fas fa-redo me-1"></i> पृष्ठ रीफ्रेश करा
+                                </button>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            // 5. PAGINATION CLICK
+            $(document).on('click', '.pagination-link', function(e) {
+                e.preventDefault();
+                
+                const page = $(this).data('page');
+                const subjectId = $(this).data('subject-id');
+                const search = $('#bookSearch').val().trim();
+
+                // Show loading
+                $('#books-container').html(`
+                    <div class="text-center py-5">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-3">पृष्ठ लोड होत आहे...</p>
+                    </div>
+                `);
+
+                $.ajax({
+                    url: "/public-get-books/",
+                    type: "GET",
+                    data: {
+                        subject_id: subjectId,
+                        page: page,
+                        search: search,
+                        searching: search ? 'Searching' : ''
+                    },
+                    success: function(html) {
+                        $('#books-container').html(html);
+                        // Smooth scroll to books section
+                        $('html, body').animate({ 
+                            scrollTop: $('#books-container').offset().top - 100 
+                        }, 600);
+                        
+                        // Re-initialize animations
+                        initAnimations();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Pagination error:", error, xhr.responseText);
+                        $('#books-container').html(`
+                            <div class="alert alert-danger" style="border-radius: 10px;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                पृष्ठ लोड करताना त्रुटी. कृपया पुन्हा प्रयत्न करा.
+                            </div>
+                        `);
+                    }
+                });
+            });
+
+            // 6. Initialize animations
+            function initAnimations() {
+                // Reset book card animations
+                $('.book-card-public').css({
+                    'opacity': '0',
+                    'transform': 'translateY(20px)'
+                });
+                
+                // Trigger animation after a delay
+                setTimeout(() => {
+                    $('.book-card-public').each(function(index) {
+                        $(this).css({
+                            'animation-delay': (index * 0.1) + 's'
+                        });
+                    });
+                }, 100);
+            }
+
+            // 7. Initial setup
+            console.log("Total subject cards found:", $('.subject-card').length);
+            console.log("Active subject ID:", activeSubjectId);
+            console.log("AJAX URL will be: /public-get-books/");
+            
+            // Initialize animations on page load
+            setTimeout(initAnimations, 500);
+        });
+    </script>
+{% endblock %}

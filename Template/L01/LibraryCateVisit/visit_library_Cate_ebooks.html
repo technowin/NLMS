@@ -90,7 +90,7 @@
                             <div class="card book-card">
                                 <div class="book-img-container">
                                     {% if book.eb_front_page_photo %}
-                                        <img src="{{ MEDIA_URL }}{{ book.eb_front_page_photo }}" 
+                                        <img src="{{ book.eb_front_page_photo }}" 
                                             alt="{{ book.eb_title }}" 
                                             class="book-img">
                                     {% else %}
