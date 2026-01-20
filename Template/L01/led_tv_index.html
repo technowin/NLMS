@@ -508,7 +508,7 @@ html, body {
             {% for b in popular_books %}
                 {% if b.front_page_photo %}
                 <div class="book-card">
-                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                    <img src="{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
                    
                 </div>
                 {% endif %}
@@ -523,13 +523,13 @@ html, body {
     <div class="book-detail-image flip-card">
         <div class="flip-inner">
             <div class="flip-front">
-                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
             </div>
             <div class="flip-back">
                 {% if book.last_page_photo %}
-                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.last_page_photo }}" alt="{{ book.title }}">
                 {% else %}
-                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
                 {% endif %}
             </div>
         </div>
@@ -597,7 +597,7 @@ html, body {
             {% for b in new_arrivals %}
                 {% if b.front_page_photo %}
                 <div class="book-card">
-                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                    <img src="{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
                    
                 </div>
                 {% endif %}
@@ -611,13 +611,13 @@ html, body {
     <div class="book-detail-image flip-card">
         <div class="flip-inner">
             <div class="flip-front">
-                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
             </div>
             <div class="flip-back">
                 {% if book.last_page_photo %}
-                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.last_page_photo }}" alt="{{ book.title }}">
                 {% else %}
-                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
                 {% endif %}
             </div>
         </div>
@@ -688,7 +688,7 @@ html, body {
             {% for b in upcoming_books %}
                 {% if b.front_page_photo %}
                 <div class="book-card">
-                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                    <img src="{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
                    
                 </div>
                 {% endif %}
@@ -702,13 +702,13 @@ html, body {
     <div class="book-detail-image flip-card">
         <div class="flip-inner">
             <div class="flip-front">
-                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
             </div>
             <div class="flip-back">
                 {% if book.last_page_photo %}
-                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.last_page_photo }}" alt="{{ book.title }}">
                 {% else %}
-                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
                 {% endif %}
             </div>
         </div>
