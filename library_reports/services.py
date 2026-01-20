@@ -1,10 +1,27 @@
-# reports/services.py - Complete implementation
+
+
+# reports/services.py
+from django.db.models import Count, F, Q, Sum, Case, When, Value, Avg, Max, Min
+from django.db.models.functions import TruncMonth, TruncYear, Coalesce, ExtractYear, Concat
+from django.utils import timezone
+from datetime import timedelta, datetime
 import pandas as pd
 from io import BytesIO
-from datetime import datetime, date
-from django.db.models import Q, F, Count, Sum, Value, CharField
-from django.db.models.functions import Concat, Coalesce
-from django.core.paginator import Paginator
+from django.http import HttpResponse
+from decimal import Decimal
+import calendar
+from django.db import models
+from django.db.models import Subquery, OuterRef
+
+# Import your actual models
+from L01.models import (
+    MembershipDetails, MembershipMaster, StatusMaster, 
+    PaymentDetails, MembershipDetailsHistory, DocumentDetails,
+    MemberEntryExit, MemberLoginSession, MemberScreenActivity,
+    MembershipRenewalStaging, CirculationTransaction, 
+    parameter_master_L01, BookCatalog, BookReview
+)
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -772,3 +789,1041 @@ class ExportService:
         wb.save(output)
         output.seek(0)
         return output.getvalue()
+    
+
+
+class BaseReportService:
+    """Base service with common report functionality"""
+    
+    @staticmethod
+    def get_db_alias(request):
+        """Get database alias from session"""
+        return request.session.get('library_db', None)
+    
+    @staticmethod
+    def get_queryset_with_db(model, request, *args, **kwargs):
+        """Get queryset using appropriate database"""
+        db_alias = BaseReportService.get_db_alias(request)
+        if db_alias:
+            return model.objects.using(db_alias).filter(*args, **kwargs)
+        return model.objects.filter(*args, **kwargs)
+    
+    @staticmethod
+    def apply_filters(queryset, filters):
+        """Apply filters to queryset dynamically"""
+        for field, value in filters.items():
+            if value and value not in ['', 'all', 'All', None]:
+                if '__in' in field or field.endswith('__in'):
+                    queryset = queryset.filter(**{field: value})
+                elif isinstance(value, list):
+                    queryset = queryset.filter(**{f"{field}__in": value})
+                elif field.endswith('__gte'):
+                    queryset = queryset.filter(**{field: value})
+                elif field.endswith('__lte'):
+                    queryset = queryset.filter(**{field: value})
+                elif field.endswith('__contains'):
+                    queryset = queryset.filter(**{field: value})
+                elif field.endswith('__icontains'):
+                    queryset = queryset.filter(**{field: value})
+                else:
+                    queryset = queryset.filter(**{field: value})
+        return queryset
+
+
+class MemberReportDataService(BaseReportService):
+    """Service for generating member-related reports"""
+    
+    # ====================== LEFT PANEL DATA ======================
+    
+    @classmethod
+    def get_member_selector_data(cls, request, filters=None):
+        """
+        Get data for left-side member selector panel
+        
+        Args:
+            request: Django request object
+            filters: Dictionary of filters from left panel
+        
+        Returns:
+            QuerySet: Filtered member list
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        # Base queryset
+        if db_alias:
+            queryset = MembershipDetails.objects.using(db_alias).all()
+        else:
+            queryset = MembershipDetails.objects.all()
+        
+        # Apply left panel filters
+        if filters:
+            # Membership Type filter
+            if filters.get('membership_type'):
+                queryset = queryset.filter(
+                    membership__membership_type=filters['membership_type']
+                )
+            
+            # Status filter
+            status_filter = filters.get('status', 'active')
+            if status_filter == 'active':
+                queryset = queryset.filter(isactive=1)
+            elif status_filter == 'inactive':
+                queryset = queryset.filter(isactive=0)
+            elif status_filter == 'cancelled':
+                # Assuming cancelled status has status_id for cancelled
+                queryset = queryset.filter(status__status_name__icontains='cancelled')
+        
+        # Select related for performance
+        queryset = queryset.select_related('membership', 'status')
+        
+        # Annotate with display fields
+        queryset = queryset.annotate(
+            display_name=Concat(
+                F('first_name'), Value(' '), F('last_name'),
+                output_field=models.CharField()
+            )
+        )
+        
+        return queryset
+    
+    @classmethod
+    def search_members(cls, request, search_term):
+        """
+        Search members by various criteria (for left panel search)
+        
+        Args:
+            request: Django request object
+            search_term: Search string
+        
+        Returns:
+            list: List of matching member IDs
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            queryset = MembershipDetails.objects.using(db_alias)
+        else:
+            queryset = MembershipDetails.objects
+        
+        # Search in multiple fields
+        members = queryset.filter(
+            Q(user_id__icontains=search_term) |
+            Q(first_name__icontains=search_term) |
+            Q(last_name__icontains=search_term) |
+            Q(membership_code__icontains=search_term) |
+            Q(aadhar_no__icontains=search_term)
+        ).values('id', 'user_id', 'first_name', 'last_name', 'membership_code')
+        
+        return list(members)
+    
+    # ====================== TAB 1: MEMBER DETAILS ======================
+    
+    @classmethod
+    def get_member_details_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 1: Member Details
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs (from left panel)
+            filters: Tab-specific filters
+        
+        Returns:
+            QuerySet: Member details data
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            queryset = MembershipDetails.objects.using(db_alias)
+        else:
+            queryset = MembershipDetails.objects
+        
+        # Filter by selected members
+        if member_ids:
+            queryset = queryset.filter(id__in=member_ids)
+        
+        # Apply tab-specific filters
+        if filters:
+            # Membership Month From
+            if filters.get('membership_month_from'):
+                month_year = filters['membership_month_from']
+                year, month = map(int, month_year.split('-'))
+                first_day = datetime(year, month, 1)
+                last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+                queryset = queryset.filter(from_date__range=[first_day, last_day])
+            
+            # Membership Month To
+            if filters.get('membership_month_to'):
+                month_year = filters['membership_month_to']
+                year, month = map(int, month_year.split('-'))
+                first_day = datetime(year, month, 1)
+                last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+                queryset = queryset.filter(to_date__range=[first_day, last_day])
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                queryset = queryset.filter(
+                    membership__membership_type=filters['membership_type']
+                )
+            
+            # Ward
+            if filters.get('ward'):
+                queryset = queryset.filter(ward=filters['ward'])
+            
+            # Status
+            if filters.get('status'):
+                queryset = queryset.filter(status__status_name=filters['status'])
+            
+            # Renewal Due Month
+            if filters.get('renewal_due_month'):
+                month_year = filters['renewal_due_month']
+                year, month = map(int, month_year.split('-'))
+                first_day = datetime(year, month, 1)
+                last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+                queryset = queryset.filter(to_date__range=[first_day, last_day])
+            
+            # Member Type
+            if filters.get('member_type'):
+                queryset = queryset.filter(member_type__parameter_value=filters['member_type'])
+        
+        # Select related for performance
+        queryset = queryset.select_related(
+            'membership', 'status', 'member_type'
+        )
+        
+        # Annotate with combined names
+        queryset = queryset.annotate(
+            full_name=Concat(
+                F('first_name'), Value(' '), 
+                Case(
+                    When(middle_name__isnull=False, then=F('middle_name')),
+                    default=Value('')
+                ),
+                Value(' '), F('last_name'),
+                output_field=models.CharField()
+            ),
+            full_name_mar=Concat(
+                F('first_name_mar'), Value(' '), 
+                Case(
+                    When(middle_name_mar__isnull=False, then=F('middle_name_mar')),
+                    default=Value('')
+                ),
+                Value(' '), F('last_name_mar'),
+                output_field=models.CharField()
+            ),
+            renewal_status=Case(
+                When(membership_renew=1, then=Value('Renewed')),
+                When(to_date__lt=timezone.now().date(), then=Value('Expired')),
+                default=Value('Active')
+            )
+        )
+        
+        return queryset
+    
+    # ====================== TAB 2: MEMBERSHIP DETAILS ======================
+    
+    @classmethod
+    def get_membership_details_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 2: Membership Details
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            filters: Tab-specific filters
+        
+        Returns:
+            dict: Contains both current and historical membership data
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        # Get current membership details
+        if db_alias:
+            current_qs = MembershipDetails.objects.using(db_alias)
+            history_qs = MembershipDetailsHistory.objects.using(db_alias)
+        else:
+            current_qs = MembershipDetails.objects
+            history_qs = MembershipDetailsHistory.objects
+        
+        # Filter by selected members
+        if member_ids:
+            current_qs = current_qs.filter(id__in=member_ids)
+            history_qs = history_qs.filter(membership_id__in=member_ids)
+        
+        # Apply filters
+        if filters:
+            # From Date
+            if filters.get('from_date'):
+                current_qs = current_qs.filter(from_date__gte=filters['from_date'])
+                history_qs = history_qs.filter(from_date__gte=filters['from_date'])
+            
+            # To Date
+            if filters.get('to_date'):
+                current_qs = current_qs.filter(to_date__lte=filters['to_date'])
+                history_qs = history_qs.filter(to_date__lte=filters['to_date'])
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                current_qs = current_qs.filter(
+                    membership__membership_type=filters['membership_type']
+                )
+                history_qs = history_qs.filter(
+                    membershipmaster__membership_type=filters['membership_type']
+                )
+            
+            # Gap Period
+            if filters.get('gap_period'):
+                if filters['gap_period'] == 'with_gap':
+                    current_qs = current_qs.filter(gap_months__gt=0)
+                    history_qs = history_qs.filter(gap_months__gt=0)
+                elif filters['gap_period'] == 'without_gap':
+                    current_qs = current_qs.filter(gap_months=0)
+                    history_qs = history_qs.filter(gap_months=0)
+            
+            # Action Performed
+            if filters.get('action_performed'):
+                current_qs = current_qs.filter(
+                    actionperformed__icontains=filters['action_performed']
+                )
+                history_qs = history_qs.filter(
+                    actionperformed__icontains=filters['action_performed']
+                )
+        
+        # Select related
+        current_qs = current_qs.select_related('membership', 'status')
+        history_qs = history_qs.select_related('membershipmaster', 'status')
+        
+        # Annotate with display fields
+        current_qs = current_qs.annotate(
+            member_name=Concat(F('first_name'), Value(' '), F('last_name')),
+            info=F('actionperformed'),
+            gap_fine_subscription=F('gap_subscription_delay'),
+            gap_fine_delay=F('late_fee')
+        )
+        
+        history_qs = history_qs.annotate(
+            member_name=Concat(F('first_name'), Value(' '), F('last_name')),
+            info=F('actionperformed'),
+            gap_fine_subscription=F('gap_subscription_delay'),
+            gap_fine_delay=F('late_fee'),
+            changed_by_name=F('changed_by')
+        )
+        
+        return {
+            'current_memberships': current_qs,
+            'membership_history': history_qs
+        }
+    
+    # ====================== TAB 3: LOAN ======================
+    
+    @classmethod
+    def get_loan_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 3: Loan (Circulation Transactions)
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            filters: Tab-specific filters
+        
+        Returns:
+            QuerySet: Loan/transaction data
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            queryset = CirculationTransaction.objects.using(db_alias)
+        else:
+            queryset = CirculationTransaction.objects
+        
+        # Filter by selected members
+        if member_ids:
+            queryset = queryset.filter(member_id__in=member_ids)
+        
+        # Apply filters
+        if filters:
+            # From Date
+            if filters.get('from_date'):
+                queryset = queryset.filter(issue_date__gte=filters['from_date'])
+            
+            # To Date
+            if filters.get('to_date'):
+                queryset = queryset.filter(issue_date__lte=filters['to_date'])
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                queryset = queryset.filter(
+                    member__membership__membership_type=filters['membership_type']
+                )
+            
+            # Overdue
+            if filters.get('overdue'):
+                if filters['overdue'] == 'overdue':
+                    queryset = queryset.filter(
+                        return_date__isnull=True,
+                        due_date__lt=timezone.now().date()
+                    )
+                elif filters['overdue'] == 'not_overdue':
+                    queryset = queryset.filter(
+                        Q(return_date__isnull=False) |
+                        Q(due_date__gte=timezone.now().date())
+                    )
+            
+            # Fine Status
+            if filters.get('fine_status'):
+                if filters['fine_status'] == 'paid':
+                    queryset = queryset.filter(fine_status='paid')
+                elif filters['fine_status'] == 'not_paid':
+                    queryset = queryset.filter(fine_status='unpaid')
+        
+        # Select related for performance
+        queryset = queryset.select_related(
+            'member', 'catalog', 'accession'
+        )
+        
+        # Annotate with member name
+        queryset = queryset.annotate(
+            member_name=Concat(
+                F('member__first_name'), Value(' '), F('member__last_name')
+            )
+        )
+        
+        return queryset
+    
+    # ====================== TAB 4: TRANSACTIONS ======================
+    
+    @classmethod
+    def get_transactions_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 4: Transactions (Detailed)
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            filters: Tab-specific filters
+        
+        Returns:
+            QuerySet: Transaction data
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            queryset = CirculationTransaction.objects.using(db_alias)
+        else:
+            queryset = CirculationTransaction.objects
+        
+        # Filter by selected members
+        if member_ids:
+            queryset = queryset.filter(member_id__in=member_ids)
+        
+        # Apply filters
+        if filters:
+            # From Month
+            if filters.get('from_month'):
+                month_year = filters['from_month']
+                year, month = map(int, month_year.split('-'))
+                first_day = datetime(year, month, 1)
+                queryset = queryset.filter(issue_date__gte=first_day)
+            
+            # To Month
+            if filters.get('to_month'):
+                month_year = filters['to_month']
+                year, month = map(int, month_year.split('-'))
+                last_day = datetime(year, month, calendar.monthrange(year, month)[1])
+                queryset = queryset.filter(issue_date__lte=last_day)
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                queryset = queryset.filter(
+                    member__membership__membership_type=filters['membership_type']
+                )
+            
+            # Late Returns
+            if filters.get('late_returns'):
+                if filters['late_returns'] == 'late':
+                    queryset = queryset.filter(
+                        return_date__gt=F('due_date')
+                    )
+                elif filters['late_returns'] == 'on_time':
+                    queryset = queryset.filter(
+                        Q(return_date__lte=F('due_date')) |
+                        Q(return_date__isnull=True, due_date__gte=timezone.now().date())
+                    )
+            
+            # Fine Status
+            if filters.get('fine_status'):
+                queryset = queryset.filter(fine_status=filters['fine_status'])
+        
+        # Select related
+        queryset = queryset.select_related(
+            'member', 'catalog', 'accession', 'circulation'
+        )
+        
+        # Annotate with additional fields
+        queryset = queryset.annotate(
+            member_name=Concat(
+                F('member__first_name'), Value(' '), F('member__last_name')
+            ),
+            is_overdue=Case(
+                When(
+                    return_date__isnull=True,
+                    due_date__lt=timezone.now().date(),
+                    then=Value('Yes')
+                ),
+                When(
+                    return_date__gt=F('due_date'),
+                    then=Value('Yes')
+                ),
+                default=Value('No')
+            ),
+            overdue_days=Case(
+                When(
+                    return_date__isnull=True,
+                    due_date__lt=timezone.now().date(),
+                    then=timezone.now().date() - F('due_date')
+                ),
+                When(
+                    return_date__gt=F('due_date'),
+                    then=F('return_date') - F('due_date')
+                ),
+                default=Value(0)
+            )
+        )
+        
+        return queryset
+    
+    # ====================== TAB 5: PHYSICAL VISIT ======================
+    
+    @classmethod
+    def get_physical_visit_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 5: Physical Visit (Member Entry/Exit)
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            filters: Tab-specific filters
+        
+        Returns:
+            QuerySet: Physical visit data
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            queryset = MemberEntryExit.objects.using(db_alias)
+        else:
+            queryset = MemberEntryExit.objects
+        
+        # Filter by selected members
+        if member_ids:
+            # Get membership codes for selected members
+            membership_codes = MembershipDetails.objects.filter(
+                id__in=member_ids
+            ).values_list('membership_code', flat=True)
+            queryset = queryset.filter(membership_code__in=membership_codes)
+        
+        # Apply filters
+        if filters:
+            # From Date
+            if filters.get('from_date'):
+                queryset = queryset.filter(entry_time__date__gte=filters['from_date'])
+            
+            # To Date
+            if filters.get('to_date'):
+                queryset = queryset.filter(entry_time__date__lte=filters['to_date'])
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                # Need to join with MembershipDetails
+                membership_codes = MembershipDetails.objects.filter(
+                    membership__membership_type=filters['membership_type']
+                ).values_list('membership_code', flat=True)
+                queryset = queryset.filter(membership_code__in=membership_codes)
+        
+        # Annotate with member name by joining with MembershipDetails
+        from django.db import models
+        queryset = queryset.annotate(
+            member_name=Subquery(
+                MembershipDetails.objects.filter(
+                    membership_code=models.OuterRef('membership_code')
+                ).values('first_name')[:1]
+            )
+        )
+        
+        return queryset
+    
+    # ====================== TAB 6: VIRTUAL USAGE ======================
+    
+    @classmethod
+    def get_virtual_usage_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 6: Virtual Usage (Login & Screen Activity)
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            filters: Tab-specific filters
+        
+        Returns:
+            dict: Contains login sessions and screen activity
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        # Get login sessions
+        if db_alias:
+            login_qs = MemberLoginSession.objects.using(db_alias)
+            activity_qs = MemberScreenActivity.objects.using(db_alias)
+        else:
+            login_qs = MemberLoginSession.objects
+            activity_qs = MemberScreenActivity.objects
+        
+        # Filter by selected members
+        if member_ids:
+            login_qs = login_qs.filter(member_id__in=member_ids)
+            # Get session IDs for activity filter
+            session_ids = login_qs.values_list('id', flat=True)
+            activity_qs = activity_qs.filter(session_id__in=session_ids)
+        
+        # Apply filters
+        if filters:
+            # From Date
+            if filters.get('from_date'):
+                login_qs = login_qs.filter(login_time__date__gte=filters['from_date'])
+                activity_qs = activity_qs.filter(visited_at__date__gte=filters['from_date'])
+            
+            # To Date
+            if filters.get('to_date'):
+                login_qs = login_qs.filter(login_time__date__lte=filters['to_date'])
+                activity_qs = activity_qs.filter(visited_at__date__lte=filters['to_date'])
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                # Filter members by membership type first
+                members_with_type = MembershipDetails.objects.filter(
+                    membership__membership_type=filters['membership_type']
+                ).values_list('id', flat=True)
+                
+                login_qs = login_qs.filter(member_id__in=members_with_type)
+                # Re-get session IDs
+                session_ids = login_qs.values_list('id', flat=True)
+                activity_qs = activity_qs.filter(session_id__in=session_ids)
+        
+        # Select related
+        login_qs = login_qs.select_related('member')
+        activity_qs = activity_qs.select_related('session__member')
+        
+        # Annotate login sessions
+        login_qs = login_qs.annotate(
+            member_name=Concat(
+                F('member__first_name'), Value(' '), F('member__last_name')
+            ),
+            membership_code=F('member__membership_code'),
+            session_duration=Case(
+                When(
+                    logout_time__isnull=False,
+                    then=F('logout_time') - F('login_time')
+                ),
+                default=None
+            )
+        )
+        
+        # Annotate screen activity
+        activity_qs = activity_qs.annotate(
+            member_name=Concat(
+                F('session__member__first_name'), Value(' '), 
+                F('session__member__last_name')
+            ),
+            membership_code=F('session__member__membership_code')
+        )
+        
+        return {
+            'login_sessions': login_qs,
+            'screen_activity': activity_qs
+        }
+    
+    # ====================== TAB 7: PAYMENTS ======================
+    
+    @classmethod
+    def get_payments_data(cls, request, member_ids=None, filters=None):
+        """
+        Get data for Tab 7: Payments
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            filters: Tab-specific filters
+        
+        Returns:
+            QuerySet: Payment data
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            queryset = PaymentDetails.objects.using(db_alias)
+        else:
+            queryset = PaymentDetails.objects
+        
+        # Filter by selected members
+        if member_ids:
+            queryset = queryset.filter(membership_id__in=member_ids)
+        
+        # Apply filters
+        if filters:
+            # From Date
+            if filters.get('from_date'):
+                queryset = queryset.filter(
+                    Q(payment_date__gte=filters['from_date']) |
+                    Q(created_at__date__gte=filters['from_date'])
+                )
+            
+            # To Date
+            if filters.get('to_date'):
+                queryset = queryset.filter(
+                    Q(payment_date__lte=filters['to_date']) |
+                    Q(created_at__date__lte=filters['to_date'])
+                )
+            
+            # Membership Type
+            if filters.get('membership_type'):
+                queryset = queryset.filter(
+                    membership__membership__membership_type=filters['membership_type']
+                )
+            
+            # Payment Type
+            if filters.get('payment_type'):
+                queryset = queryset.filter(payment_type=filters['payment_type'])
+        
+        # Select related
+        queryset = queryset.select_related('membership', 'status', 'circulation_transaction')
+        
+        # Annotate with member name and total amount
+        queryset = queryset.annotate(
+            member_name=Concat(
+                F('membership__first_name'), Value(' '), F('membership__last_name')
+            ),
+            total_amount=Coalesce(
+                F('deposit_amount'), Value(0)
+            ) + Coalesce(
+                F('entry_fee_amount'), Value(0)
+            ) + Coalesce(
+                F('monthly_subscription_amount'), Value(0)
+            ) + Coalesce(
+                F('fine_amount'), Value(0)
+            ) + Coalesce(
+                F('book_fine_amount'), Value(0)
+            )
+        )
+        
+        return queryset
+    
+    # ====================== EXPORT SERVICES ======================
+    
+    @classmethod
+    def export_member_report(cls, request, member_ids=None, left_filters=None, tab_filters=None):
+        """
+        Export complete member report to Excel with multiple sheets
+        
+        Args:
+            request: Django request object
+            member_ids: List of selected member IDs
+            left_filters: Filters from left panel
+            tab_filters: Dictionary of filters for each tab
+        
+        Returns:
+            HttpResponse: Excel file response
+        """
+        # Create Excel writer
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            
+            # Tab 1: Member Details
+            member_details = cls.get_member_details_data(
+                request, member_ids, tab_filters.get('tab1', {})
+            )
+            df1 = pd.DataFrame(list(member_details.values(
+                'user_id', 'first_name', 'last_name', 'first_name_mar', 'last_name_mar',
+                'membership__membership_type', 'member_type__parameter_value',
+                'membership_code', 'from_date', 'to_date', 'user_id', 'ward',
+                'pincode', 'local_address', 'mobile_no', 'email', 'occupation',
+                'office_phone', 'education', 'institute_name', 'recommender_details',
+                'dob', 'aadhar_no', 'is_resident_of_nmmc', 'status__status_name',
+                'isactive', 'created_at', 'created_by', 'updated_at', 'updated_by'
+            )))
+            df1.to_excel(writer, sheet_name='Member Details', index=False)
+            
+            # Tab 2: Membership Details
+            membership_data = cls.get_membership_details_data(
+                request, member_ids, tab_filters.get('tab2', {})
+            )
+            
+            # Current memberships
+            df2_current = pd.DataFrame(list(membership_data['current_memberships'].values(
+                'member_name', 'actionperformed', 'from_date', 'to_date',
+                'deposit', 'entry_fees', 'subscription', 'fine_calculated_at',
+                'gap_subscription_delay', 'late_fee', 'gap_months'
+            )))
+            df2_current.to_excel(writer, sheet_name='Current Memberships', index=False)
+            
+            # Membership history
+            df2_history = pd.DataFrame(list(membership_data['membership_history'].values(
+                'member_name', 'actionperformed', 'from_date', 'to_date',
+                'deposit', 'entry_fees', 'subscription', 'fine_calculated_at',
+                'gap_subscription_delay', 'late_fee', 'gap_months',
+                'changed_at', 'changed_by'
+            )))
+            df2_history.to_excel(writer, sheet_name='Membership History', index=False)
+            
+            # Tab 3: Loan
+            loan_data = cls.get_loan_data(
+                request, member_ids, tab_filters.get('tab3', {})
+            )
+            df3 = pd.DataFrame(list(loan_data.values(
+                'member__membership_code', 'barcode', 'accession__accession_no',
+                'catalog__title', 'issue_date', 'due_date', 'return_date',
+                'days_overdue_count', 'fine_amount', 'issued_by', 'remarks',
+                'created_at'
+            )))
+            df3.to_excel(writer, sheet_name='Loans', index=False)
+            
+            # Tab 4: Transactions
+            transactions_data = cls.get_transactions_data(
+                request, member_ids, tab_filters.get('tab4', {})
+            )
+            df4 = pd.DataFrame(list(transactions_data.values(
+                'member_name', 'member__membership_code', 'barcode',
+                'accession__accession_no', 'catalog__title', 'issue_date',
+                'due_date', 'issued_by', 'return_date', 'received_by',
+                'days_overdue_count', 'fine_amount', 'book_fine_amount',
+                'total_fine', 'adjusted_fine', 'fine_status', 'fine_paid_date',
+                'remarks', 'created_at', 'updated_at'
+            )))
+            df4.to_excel(writer, sheet_name='Transactions', index=False)
+            
+            # Tab 5: Physical Visit
+            visit_data = cls.get_physical_visit_data(
+                request, member_ids, tab_filters.get('tab5', {})
+            )
+            df5 = pd.DataFrame(list(visit_data.values(
+                'member_name', 'membership_code', 'entry_time',
+                'exit_time', 'remark'
+            )))
+            df5.to_excel(writer, sheet_name='Physical Visits', index=False)
+            
+            # Tab 6: Virtual Usage
+            virtual_data = cls.get_virtual_usage_data(
+                request, member_ids, tab_filters.get('tab6', {})
+            )
+            
+            # Login sessions
+            df6_login = pd.DataFrame(list(virtual_data['login_sessions'].values(
+                'member_name', 'member__membership_code', 'login_time',
+                'logout_time', 'ip_address', 'device_type', 'session_duration'
+            )))
+            df6_login.to_excel(writer, sheet_name='Login Sessions', index=False)
+            
+            # Screen activity
+            df6_activity = pd.DataFrame(list(virtual_data['screen_activity'].values(
+                'member_name', 'session__member__membership_code', 'screen_name',
+                'screen_route', 'visited_at'
+            )))
+            df6_activity.to_excel(writer, sheet_name='Screen Activity', index=False)
+            
+            # Tab 7: Payments
+            payments_data = cls.get_payments_data(
+                request, member_ids, tab_filters.get('tab7', {})
+            )
+            df7 = pd.DataFrame(list(payments_data.values(
+                'member_name', 'payment_mode', 'payment_type', 'payment_method',
+                'deposit_amount', 'entry_fee_amount', 'monthly_subscription_amount',
+                'total_subscription_amount', 'subscription_from', 'subscription_to',
+                'transaction_id', 'remarks', 'user_id', 'membership_code',
+                'payment_date', 'status__status_name', 'book_fine_amount',
+                'fine_amount', 'adjusted_amount', 'created_at', 'created_by',
+                'updated_at', 'updated_by', 'total_amount'
+            )))
+            df7.to_excel(writer, sheet_name='Payments', index=False)
+        
+        # Prepare response
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="member_report_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+        
+        return response
+    
+    # ====================== DOCUMENT VIEW SERVICES ======================
+    
+    @classmethod
+    def get_member_documents(cls, request, member_id):
+        """
+        Get documents for a specific member
+        
+        Args:
+            request: Django request object
+            member_id: Member ID
+        
+        Returns:
+            QuerySet: Member documents
+        """
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            return DocumentDetails.objects.using(db_alias).filter(
+                membership_id=member_id, isactive=1
+            ).select_related('document')
+        
+        return DocumentDetails.objects.filter(
+            membership_id=member_id, isactive=1
+        ).select_related('document')
+    
+    @classmethod
+    def get_membership_type_options(cls, request):
+        """Get all membership type options for filters"""
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            return MembershipMaster.objects.using(db_alias).filter(
+                isactive=1
+            ).values_list('membership_type', flat=True).distinct()
+        
+        return MembershipMaster.objects.filter(
+            isactive=1
+        ).values_list('membership_type', flat=True).distinct()
+    
+    @classmethod
+    def get_ward_options(cls, request):
+        """Get all ward options for filters"""
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            return MembershipDetails.objects.using(db_alias).exclude(
+                ward__isnull=True
+            ).values_list('ward', flat=True).distinct()
+        
+        return MembershipDetails.objects.exclude(
+            ward__isnull=True
+        ).values_list('ward', flat=True).distinct()
+    
+    @classmethod
+    def get_status_options(cls, request):
+        """Get all status options for filters"""
+        db_alias = cls.get_db_alias(request)
+        
+        if db_alias:
+            return StatusMaster.objects.using(db_alias).filter(
+                isactive=1
+            ).values_list('status_name', flat=True).distinct()
+        
+        return StatusMaster.objects.filter(
+            isactive=1
+        ).values_list('status_name', flat=True).distinct()
+
+
+class ExportService:
+    """Generic export service for reports"""
+    
+    @staticmethod
+    def export_to_excel(dataframes, sheet_names, filename):
+        """
+        Export multiple dataframes to Excel
+        
+        Args:
+            dataframes: List of pandas DataFrames
+            sheet_names: List of sheet names
+            filename: Output filename
+        
+        Returns:
+            HttpResponse: Excel file response
+        """
+        output = BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            for df, sheet_name in zip(dataframes, sheet_names):
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+    
+    @staticmethod
+    def export_to_csv(dataframe, filename):
+        """
+        Export dataframe to CSV
+        
+        Args:
+            dataframe: pandas DataFrame
+            filename: Output filename
+        
+        Returns:
+            HttpResponse: CSV file response
+        """
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        dataframe.to_csv(response, index=False, encoding='utf-8-sig')
+        
+        return response
+
+
+class ReportService:
+    """Generic report service with common utilities"""
+    
+    @staticmethod
+    def get_filter_options(request, model_name, field_name):
+        """
+        Get distinct filter options for a model field
+        
+        Args:
+            request: Django request object
+            model_name: Name of the model
+            field_name: Name of the field
+        
+        Returns:
+            list: Distinct values
+        """
+        db_alias = BaseReportService.get_db_alias(request)
+        
+        # Map model names to actual models
+        model_map = {
+            'MembershipDetails': MembershipDetails,
+            'MembershipMaster': MembershipMaster,
+            'StatusMaster': StatusMaster,
+            'PaymentDetails': PaymentDetails,
+            'CirculationTransaction': CirculationTransaction,
+        }
+        
+        if model_name in model_map:
+            model = model_map[model_name]
+            if db_alias:
+                queryset = model.objects.using(db_alias)
+            else:
+                queryset = model.objects
+            
+            return list(queryset.values_list(field_name, flat=True).distinct())
+        
+        return []
+    
+    @staticmethod
+    def validate_filters(filters, allowed_filters):
+        """
+        Validate and sanitize filter parameters
+        
+        Args:
+            filters: Dictionary of filters
+            allowed_filters: List of allowed filter keys
+        
+        Returns:
+            dict: Sanitized filters
+        """
+        sanitized = {}
+        for key, value in filters.items():
+            if key in allowed_filters and value not in ['', None, 'all', 'All']:
+                sanitized[key] = value
+        return sanitized

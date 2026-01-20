@@ -1,0 +1,172 @@
+<!-- reports/templates/reports/partials/save_config_modal.html -->
+<div class="modal fade" id="saveConfigModal" tabindex="-1" aria-labelledby="saveConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveConfigModalLabel">
+                    <i class="bi bi-save me-2"></i>Save Report Configuration
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="saveConfigForm">
+                    {% csrf_token %}
+                    
+                    <!-- Configuration Details -->
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Configuration Details</h6>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label for="configName" class="form-label required">
+                                    Configuration Name
+                                </label>
+                                <input type="text" class="form-control" id="configName" 
+                                       name="config_name" required
+                                       placeholder="e.g., Monthly Member Report - Active Users">
+                                <div class="form-text">
+                                    Choose a descriptive name for easy identification
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="configCategory" class="form-label">
+                                    Category
+                                </label>
+                                <select class="form-select" id="configCategory" name="category">
+                                    <option value="">-- Select Category --</option>
+                                    <option value="member">Member Reports</option>
+                                    <option value="book">Book Reports</option>
+                                    <option value="transaction">Transaction Reports</option>
+                                    <option value="financial">Financial Reports</option>
+                                    <option value="analytical">Analytical Reports</option>
+                                    <option value="operational">Operational Reports</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="configVisibility" class="form-label">
+                                    Visibility
+                                </label>
+                                <select class="form-select" id="configVisibility" name="visibility">
+                                    <option value="private">Private (Only Me)</option>
+                                    <option value="shared">Shared with Team</option>
+                                    <option value="public">Public (All Users)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters to Save -->
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Save Current Filters</h6>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="30">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="selectAllFilters" checked>
+                                                <label class="form-check-label" for="selectAllFilters"></label>
+                                            </div>
+                                        </th>
+                                        <th>Filter Type</th>
+                                        <th>Filter Name</th>
+                                        <th>Current Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filtersToSaveList">
+                                    <!-- Will be populated dynamically -->
+                                    <tr>
+                                        <td colspan="4" class="text-center py-3">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="visually-hidden">Loading filters...</span>
+                                            </div>
+                                            <span class="ms-2">Loading current filters...</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="alert alert-info mt-2">
+                            <small>
+                                <i class="bi bi-info-circle me-1"></i>
+                                Selected filters will be saved and can be quickly applied later.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Column Configuration -->
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Column Visibility</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="alert alert-warning">
+                                    <small>
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Column visibility settings are tab-specific. 
+                                        Please configure columns within each tab before saving.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes & Description -->
+                    <div class="mb-3">
+                        <label for="configDescription" class="form-label">
+                            Description / Notes
+                        </label>
+                        <textarea class="form-control" id="configDescription" 
+                                  name="description" rows="3"
+                                  placeholder="Add any notes or description about this configuration..."></textarea>
+                        <div class="form-text">
+                            Optional: Describe what this configuration is for, who should use it, etc.
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Existing Configurations (for reference) -->
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="mb-3">Your Existing Configurations</h6>
+                    
+                    <div class="list-group" id="existingConfigsList">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-center py-2">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Loading your configurations...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveConfigBtn">
+                    <i class="bi bi-save me-1"></i> Save Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Configuration Success Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="saveConfigToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span id="toastMessage">Configuration saved successfully!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>

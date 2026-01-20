@@ -214,6 +214,8 @@ urlpatterns = [
     path('book_catalog_create_isbn/', book_catalog_create_isbn, name='book_catalog_create_isbn'),
     path('isbn-lookup/', isbn_lookup, name='book_catalog_isbn_lookup'),
 
+    path('reports/', include(('library_reports.urls', 'reports'), namespace='reports')),
+
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 
