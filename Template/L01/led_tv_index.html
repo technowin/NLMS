@@ -397,21 +397,19 @@
 <style>
 
     /* Increase library image width */
+    /* Set a fixed size for the library image */
     .book-detail-image1 {
-        width: 40% !important;   /* default is ~30% */
+        width: 500px !important;  /* Set a fixed width */
+        height: 600px !important; /* Set a fixed height */
     }
 
-    /* Adjust right side automatically */
-    .book-detail-info {
-        width: 60% !important;
-    }
-
-    /* Make image fill container */
+    /* Make sure the image fills the container proportionally */
     .book-detail-image1 img.libary_image {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: cover;  /* Ensure image covers the area */
     }
+
 
     .placeholder-ad {
         border: 2px dashed #ffd700;
