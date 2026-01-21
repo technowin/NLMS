@@ -5470,6 +5470,9 @@ def edit_competitive_book(request, enc_chapter_no):
     competitive = chapter.competitive_id
     section = chapter.section_no
 
+    topic_image_url = file_storage_service.get_file_url(topic.topic_image_url)  # Get topic image URL
+    chapter_pdf_url = file_storage_service.get_file_url(chapter.chapter_pdf_url)
+
     if request.method == "POST":
         try:
             with transaction.atomic():
@@ -5543,6 +5546,8 @@ def edit_competitive_book(request, enc_chapter_no):
         "L01/Master/edit_competitive_book.html",
         {
             "chapter": chapter,
+            'topic_image_url': topic_image_url,
+            'chapter_pdf_url': chapter_pdf_url,
             "topic": topic,
             "competitive": competitive,
             "section": section,
