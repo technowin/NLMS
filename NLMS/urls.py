@@ -152,6 +152,8 @@ urlpatterns = [
     path('get_sections_by_competitive/',get_sections_by_competitive, name='get_sections_by_competitive'),
     path('get_subjects_by_section/',get_subjects_by_section, name='get_subjects_by_section'),
     path('get_topics_by_competitive/',get_topics_by_competitive, name='get_topics_by_competitive'),
+    path('competitive_book_index/',competitive_book_index, name='competitive_book_index'),
+    path('edit_competitive_book/<str:enc_chapter_no>/',edit_competitive_book, name='edit_competitive_book'),
 
     #Reports 
     path('payment_report', payment_report, name='payment_report'),

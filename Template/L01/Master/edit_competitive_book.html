@@ -1,0 +1,467 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}Edit Competitive Book{% endblock title %}
+
+{% block extra_css %}
+  <!-- SweetAlert CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Font: Merriweather -->
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    
+  <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+  
+  <style>
+    .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+    }
+    .form-label {
+      font-weight: 600;
+      color: #495057;
+    }
+    .preview-box {
+      border: 1px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 1.5rem;
+      background-color: #f8f9fa;
+    }
+    .preview-image {
+      max-width: 200px;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    .file-info {
+      background-color: #e9ecef;
+      border-radius: 4px;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .pdf-preview {
+      font-size: 4rem;
+      color: #dc3545;
+    }
+    .current-file {
+      background-color: #e7f1ff;
+      border-left: 4px solid #0d6efd;
+      padding: 0.75rem;
+      border-radius: 4px;
+    }
+  </style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-edit me-2"></i>
+            Edit Chapter: {{ chapter.chapter_name }}
+          </h5>
+        </div>
+        
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" id="editForm">
+            {% csrf_token %}
+            
+            <!-- Current Information Display -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="current-file">
+                  <h6><i class="fas fa-info-circle me-2"></i>Current Information</h6>
+                  <p class="mb-1"><strong>Exam:</strong> {{ competitive.full_name }}</p>
+                  <p class="mb-1"><strong>Section:</strong> {{ section.section_name }}</p>
+                  <p class="mb-1"><strong>Subject:</strong> {{ subject.subject_name }}</p>
+                  <p class="mb-1"><strong>Topic:</strong> {{ topic.topic_name }}</p>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="current-file">
+                  <h6><i class="fas fa-file-alt me-2"></i>Current Files</h6>
+              {% if topic_image_url %}
+                <p class="mb-1">
+                    <strong>Cover Image:</strong> 
+                    <a href="{{ topic_image_url }}" target="_blank" class="text-decoration-none">
+                    <i class="fas fa-image text-primary me-1"></i>View Image
+                    </a>
+                </p>
+                {% endif %}
+
+                {% if chapter_pdf_url %}
+                <p class="mb-0">
+                    <strong>Chapter PDF:</strong> 
+                    <a href="{{ chapter_pdf_url }}" target="_blank" class="text-decoration-none">
+                    <i class="fas fa-file-pdf text-danger me-1"></i>View PDF
+                    </a>
+                </p>
+                {% endif %}
+
+                </div>
+              </div>
+            </div>
+            
+            <!-- Form Fields -->
+            <div class="row g-3">
+              
+              <!-- Topic Reference -->
+              <div class="col-md-12">
+                <label for="topic_reference" class="form-label">
+                  <i class="fas fa-quote-right me-2"></i>Topic Reference
+                </label>
+                <textarea 
+                  class="form-control" 
+                  id="topic_reference" 
+                  name="topic_reference" 
+                  rows="3"
+                  placeholder="Enter topic reference or description...">{{ topic.topic_reference|default:"" }}</textarea>
+                <div class="form-text">
+                  Additional information about the topic (optional)
+                </div>
+              </div>
+              
+              <!-- Topic Image URL / Upload -->
+              <div class="col-md-12">
+                <label class="form-label">
+                  <i class="fas fa-image me-2"></i>Topic Cover Image
+                </label>
+                
+                <!-- Current Image Preview -->
+                {% if topic.topic_image_url %}
+                <div class="preview-box mb-3">
+                  <h6>Current Cover Image:</h6>
+                  <img src="/media/{{ topic.topic_image_url }}" 
+                       alt="Current Cover" 
+                       class="preview-image mb-2"
+                       onerror="this.style.display='none'">
+                  <div class="file-info">
+                    <p class="mb-0 small">
+                      <i class="fas fa-link me-1"></i>
+                      <a href="{{ topic.topic_image_url }}" target="_blank" class="text-decoration-none">
+                        {{ topic.topic_image_url|truncatechars:50 }}
+                      </a>
+                    </p>
+                  </div>
+                </div>
+                {% endif %}
+                
+                <!-- Image Upload -->
+                <div class="mb-3">
+                  <label for="cover_image" class="form-label">Upload New Cover Image</label>
+                  <input type="file" 
+                         class="form-control" 
+                         id="cover_image" 
+                         name="cover_image"
+                         accept="image/*"
+                         onchange="previewImage(event)">
+                  <div class="form-text">
+                    Upload a new image to replace the current one (optional). Supported formats: JPG, PNG, GIF, WebP
+                  </div>
+                </div>
+                
+                <!-- New Image Preview -->
+                <div id="imagePreview" class="preview-box" style="display: none;">
+                  <h6>New Image Preview:</h6>
+                  <img id="previewImg" 
+                       alt="Preview" 
+                       class="preview-image mb-2">
+                  <div id="imageInfo" class="file-info"></div>
+                </div>
+              </div>
+              
+              <!-- Chapter Name -->
+              <div class="col-md-12">
+                <label for="chapter_name" class="form-label">
+                  <i class="fas fa-heading me-2"></i>Chapter Name
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="chapter_name" 
+                       name="chapter_name" 
+                       value="{{ chapter.chapter_name|default:topic.topic_name }}"
+                       placeholder="Enter chapter name...">
+                <div class="form-text">
+                  If left blank, topic name will be used: <strong>{{ topic.topic_name }}</strong>
+                </div>
+              </div>
+              
+              <!-- Chapter PDF Upload -->
+              <div class="col-md-12">
+                <label class="form-label">
+                  <i class="fas fa-file-pdf me-2"></i>Chapter PDF
+                </label>
+                
+                <!-- Current PDF Info -->
+                {% if chapter.chapter_pdf_url %}
+                <div class="preview-box mb-3">
+                  <h6>Current PDF:</h6>
+                  <div class="text-center">
+                    <i class="fas fa-file-pdf pdf-preview mb-3"></i>
+                    <div class="file-info">
+                      <p class="mb-0">
+                        <i class="fas fa-link me-1"></i>
+                        <a href="/media/{{ chapter.chapter_pdf_url }}" target="_blank" class="text-decoration-none">
+                          {{ chapter.chapter_pdf_url|truncatechars:60 }}
+                        </a>
+                      </p>
+                      <p class="mb-0 small mt-1">
+                        <i class="fas fa-clock me-1"></i>
+                        Last updated: {{ chapter.updated_at|date:"d M Y, H:i"|default:"N/A" }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-3">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  No PDF file currently uploaded for this chapter.
+                </div>
+                {% endif %}
+                
+                <!-- PDF Upload -->
+                <div class="mb-3">
+                  <label for="chapter_pdf" class="form-label">Upload New PDF</label>
+                  <input type="file" 
+                         class="form-control" 
+                         id="chapter_pdf" 
+                         name="chapter_pdf"
+                         accept=".pdf,application/pdf"
+                         onchange="previewPDF(event)">
+                  <div class="form-text">
+                    Upload a new PDF to replace the current one (optional). Max file size: 25MB
+                  </div>
+                </div>
+                
+                <!-- New PDF Preview -->
+                <div id="pdfPreview" class="preview-box" style="display: none;">
+                  <h6>New PDF Preview:</h6>
+                  <div class="text-center">
+                    <i class="fas fa-file-pdf pdf-preview mb-3"></i>
+                    <div id="pdfInfo" class="file-info"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div class="col-12">
+                <hr>
+                <div class="d-flex justify-content-between">
+                  <a href="{% url 'competitive_book_index' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                  </a>
+                  
+                  <div class="btn-group">
+                    <button type="reset" class="btn btn-outline-secondary">
+                      <i class="fas fa-redo me-2"></i>Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-save me-2"></i>Update Chapter
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </form>
+        </div>
+        
+        <!-- Card Footer -->
+        <div class="card-footer bg-light">
+          <div class="row">
+            <div class="col-md-6">
+              <small class="text-muted">
+                <i class="fas fa-user me-1"></i>
+                Created by: {{ chapter.created_by|default:"System" }} 
+                on {{ chapter.created_at|date:"d M Y, H:i"|default:"N/A" }}
+              </small>
+            </div>
+            <div class="col-md-6 text-end">
+              <small class="text-muted">
+                <i class="fas fa-history me-1"></i>
+                Last updated: {{ chapter.updated_at|date:"d M Y, H:i"|default:"N/A" }}
+                by {{ chapter.updated_by|default:"System" }}
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_javascript %}
+  <!-- jQuery -->
+  <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+  
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+  <script>
+    function previewImage(event) {
+      const input = event.target;
+      const previewBox = document.getElementById('imagePreview');
+      const previewImg = document.getElementById('previewImg');
+      const imageInfo = document.getElementById('imageInfo');
+      
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          previewBox.style.display = 'block';
+          
+          // Display file info
+          imageInfo.innerHTML = `
+            <p class="mb-0"><strong>File:</strong> ${file.name}</p>
+            <p class="mb-0"><strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            <p class="mb-0"><strong>Type:</strong> ${file.type}</p>
+          `;
+        };
+        
+        reader.readAsDataURL(file);
+      } else {
+        previewBox.style.display = 'none';
+      }
+    }
+    
+    function previewPDF(event) {
+      const input = event.target;
+      const previewBox = document.getElementById('pdfPreview');
+      const pdfInfo = document.getElementById('pdfInfo');
+      
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        previewBox.style.display = 'block';
+        
+        // Display file info
+        pdfInfo.innerHTML = `
+          <p class="mb-0"><strong>File:</strong> ${file.name}</p>
+          <p class="mb-0"><strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+          <p class="mb-0"><strong>Type:</strong> PDF Document</p>
+          <p class="mb-0 text-success">
+            <i class="fas fa-check-circle me-1"></i>
+            Valid PDF file
+          </p>
+        `;
+      } else {
+        previewBox.style.display = 'none';
+      }
+    }
+    
+    // Form validation
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+      const pdfInput = document.getElementById('chapter_pdf');
+      const imageInput = document.getElementById('cover_image');
+      
+      // Validate PDF file size (25MB limit)
+      if (pdfInput.files.length > 0) {
+        const pdfFile = pdfInput.files[0];
+        const maxSize = 25 * 1024 * 1024; // 25MB in bytes
+        
+        if (pdfFile.size > maxSize) {
+          e.preventDefault();
+          Swal.fire({
+            title: 'File Too Large',
+            text: 'PDF file must be less than 25MB',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+          return false;
+        }
+        
+        // Validate PDF type
+        if (!pdfFile.type.includes('pdf') && !pdfFile.name.toLowerCase().endsWith('.pdf')) {
+          e.preventDefault();
+          Swal.fire({
+            title: 'Invalid File Type',
+            text: 'Please upload a PDF file',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+          return false;
+        }
+      }
+      
+      // Validate image file
+      if (imageInput.files.length > 0) {
+        const imageFile = imageInput.files[0];
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024; // 5MB for images
+        
+        if (imageFile.size > maxSize) {
+          e.preventDefault();
+          Swal.fire({
+            title: 'Image Too Large',
+            text: 'Image file must be less than 5MB',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+          return false;
+        }
+        
+        if (!validImageTypes.includes(imageFile.type)) {
+          e.preventDefault();
+          Swal.fire({
+            title: 'Invalid Image Format',
+            text: 'Please upload JPG, PNG, GIF, or WebP image',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+          return false;
+        }
+      }
+      
+      // Show loading state
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+      submitBtn.disabled = true;
+      
+      return true;
+    });
+    
+    // Handle reset button
+    document.querySelector('button[type="reset"]').addEventListener('click', function() {
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('pdfPreview').style.display = 'none';
+    });
+    
+    // SweetAlert for messages
+    {% if messages %}
+    document.addEventListener("DOMContentLoaded", function () {
+      const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+      {% for message in messages %}
+        Swal.fire({
+          title: "{{ message.tags|title }}",
+          text: "{{ message|escapejs }}",
+          icon: "{{ message.tags }}",
+          confirmButtonText: "OK",
+          background: theme === 'dark' ? '#343a40' : '#ffffff',
+          color: theme === 'dark' ? '#f8f9fa' : '#212529',
+          confirmButtonColor: '#0d6efd',
+          customClass: {
+            popup: 'rounded-4 shadow',
+            confirmButton: 'btn btn-primary px-4 py-2'
+          }
+        }).then((result) => {
+          {% if message.tags == 'success' %}
+            // Redirect on success message
+            window.location.href = "{% url 'competitive_book_index' %}";
+          {% endif %}
+        });
+      {% endfor %}
+    });
+    {% endif %}
+  </script>
+{% endblock %}

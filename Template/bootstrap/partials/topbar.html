@@ -457,6 +457,11 @@
                         <i class="mdi mdi-logout me-1"></i>
                         <span>Logout</span>
                     </a>
+
+                    <a  class="dropdown-item">
+                        <i class="mdi mdi-logout me-1"></i>
+                        <span>Change Password</span>
+                    </a>
                     {% if request.session.role_id == '3' %}
                     <a href="javascript:void(0)" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#qrCodeModal" onclick="loadQRCode()">
                         <i class="mdi mdi-logout me-1"></i>

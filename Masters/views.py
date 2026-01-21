@@ -5278,7 +5278,7 @@ from django.core.files.storage import default_storage
 from django.db.models import Max, IntegerField
 from django.db.models.functions import Cast
 
-@login_required
+
 def create_competitive_book(request):
     exams = CompetitiveExamMaster.objects.all().order_by("full_name")
 
@@ -5423,8 +5423,134 @@ def save_competitive_book(request):
                 request,
                 f"Chapter '{chapter_name}' created successfully (Chapter No: {new_no})"
             )
-            return redirect("create_competitive_book")
+            return redirect("competitive_book_index")
 
     except Exception as e:
         messages.error(request, str(e))
-        return redirect("create_competitive_book")
+        return redirect("competitive_book_index")
+    
+def competitive_book_index(request):
+    """
+    Index page for Competitive Books (Topics & Chapters)
+    """
+
+    chapters = (
+        Chapters.objects
+        .select_related(
+            "topic_id",
+            "competitive_id",
+            "section_no",
+            "topic_id__subject_id"
+        )
+        .order_by(
+            "competitive_id__full_name",
+            "section_no__section_no",
+            "topic_id__subject_id__subject_name",
+            "topic_id__topic_name",
+            "chapter_no"
+        )
+    )
+    for chapter in chapters:
+        chapter.enc_chapter_no = enc(str(chapter.chapter_no))
+
+    return render(
+        request,
+        "L01/Master/competitive_book_index.html",
+        {
+            "chapters": chapters
+        }
+    )
+
+
+def edit_competitive_book(request, enc_chapter_no):
+    chapter_no = dec(enc_chapter_no)
+
+    chapter = get_object_or_404(Chapters, pk=chapter_no)
+    topic = chapter.topic_id
+    competitive = chapter.competitive_id
+    section = chapter.section_no
+
+    topic_image_url = file_storage_service.get_file_url(topic.topic_image_url)  # Get topic image URL
+    chapter_pdf_url = file_storage_service.get_file_url(chapter.chapter_pdf_url)
+
+    if request.method == "POST":
+        try:
+            with transaction.atomic():
+
+                user = request.user.username
+
+                chapter_name_input = request.POST.get("chapter_name", "").strip()
+                topic_reference = request.POST.get("topic_reference", "").strip()
+
+                cover_image = request.FILES.get("cover_image")
+                chapter_pdf = request.FILES.get("chapter_pdf")
+
+                # ---------- UPDATE TOPIC ----------
+                topic.topic_reference = topic_reference
+
+                # Replace cover image if uploaded
+                if cover_image:
+                    competitive_code = (competitive.short_form or "UNKNOWN").upper().strip()
+                    library_code = request.session.get("library_db", "L01")
+
+                    base_dir = f"{library_code}/CompetitiveBooks/{competitive_code}/{topic.topic_id}"
+
+                    image_ext = os.path.splitext(cover_image.name)[1].lower()
+                    cover_filename = f"cover_{topic.topic_id}{image_ext}"
+                    cover_path = f"{base_dir}/book_images/{cover_filename}"
+
+                    saved_cover_path = file_storage_service.save_file(
+                        cover_image,
+                        cover_path
+                    )
+                    topic.topic_image_url = saved_cover_path
+
+                topic.updated_by = user
+                topic.save()
+
+                # ---------- UPDATE CHAPTER ----------
+                chapter.chapter_name = (
+                    chapter_name_input if chapter_name_input else topic.topic_name
+                )
+
+                # Replace PDF if uploaded
+                if chapter_pdf:
+                    competitive_code = (competitive.short_form or "UNKNOWN").upper().strip()
+                    library_code = request.session.get("library_db", "L01")
+
+                    base_dir = f"{library_code}/CompetitiveBooks/{competitive_code}/{topic.topic_id}"
+
+                    pdf_filename = f"chapter_{chapter.chapter_no}.pdf"
+                    pdf_path = f"{base_dir}/chapters/{pdf_filename}"
+
+                    saved_pdf_path = file_storage_service.save_file(
+                        chapter_pdf,
+                        pdf_path
+                    )
+                    chapter.chapter_pdf_url = saved_pdf_path
+
+                chapter.updated_by = user
+                chapter.save()
+
+                messages.success(
+                    request,
+                    "Competitive book chapter updated successfully"
+                )
+                return redirect("competitive_book_index")
+
+        except Exception as e:
+            messages.error(request, str(e))
+
+    return render(
+        request,
+        "L01/Master/edit_competitive_book.html",
+        {
+            "chapter": chapter,
+            'topic_image_url': topic_image_url,
+            'chapter_pdf_url': chapter_pdf_url,
+            "topic": topic,
+            "competitive": competitive,
+            "section": section,
+            "subject": topic.subject_id
+        }
+    )
