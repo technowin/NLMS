@@ -17,6 +17,12 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
     <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
+
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+
+
     
     <style>
         /* Back to Top Button */
@@ -378,12 +384,19 @@
             
             <div class="col-md-6">
                 <label class="form-label required-field">Topic</label>
+
                 <select id="topic_select" name="existing_topic_id" class="form-control mb-2">
                     <option value="">-- Select Existing Topic --</option>
+                    {% for topic in topics %}
+                        <option value="{{ topic.topic_id }}">{{ topic.topic_name }}</option>
+                    {% endfor %}
                 </select>
+
                 <small class="form-text text-muted mb-1">Or enter a new topic below:</small>
-                <input type="text" id="topic_input" name="new_topic_name" class="form-control" placeholder="Enter new topic name">
+                <input type="text" id="topic_input" name="new_topic_name"
+                    class="form-control" placeholder="Enter new topic name">
             </div>
+
         </div>
 
         <!-- Row 3: Topic Reference and Chapter Name -->
@@ -462,7 +475,7 @@
             <button type="submit" class="btn btn-submit" id="submitBtn">
                 <i class="fa-solid fa-paper-plane"></i> Save Topic & Chapter
             </button>
-            <a href="{% url 'L01:dashboard' %}" class="btn-go-back">
+            <a href="{% url 'competitive_book_index' %}" class="btn-go-back">
                 <i class="fa-solid fa-arrow-left me-2"></i> Go Back
             </a>
         </div>
@@ -488,6 +501,19 @@
 {% block extra_javascript %}
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    $('#topic_select').select2({
+        placeholder: "-- Select Existing Topic --",
+        allowClear: true,
+        width: '100'
+    });
+});
+</script>
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

@@ -147,7 +147,7 @@
                                                 data-is-completed="{{ year.is_completed|yesno:'true,false' }}"
                                                 {% if selected_year_id == year.id %}selected{% endif %}>
                                             {{ year.year_name }}
-                                            {% if year.is_active %}<span class="badge bg-success ms-2">Active</span>{% endif %}
+                                            {% if year.is_active %}<span class="badge bg-success ms-2"></span>{% endif %}
                                             {% if year.is_completed %}<span class="badge bg-info ms-2">Completed</span>{% endif %}
                                         </option>
                                         {% endfor %}
