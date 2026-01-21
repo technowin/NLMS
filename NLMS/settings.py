@@ -130,7 +130,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ========== MEDIA & FILE STORAGE SETTINGS ==========
-if ENVIRONMENT == 'local': 
+if ENVIRONMENT == 'local':
     # For local development (Windows)
     MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/')
 elif ENVIRONMENT == 'test':
@@ -229,8 +229,7 @@ LOCAL_APPS = [
     'Reports',
     'administration',
     'L01',
-    'L02',
-    'library_reports'
+    'L02'
 ]
 
 # Add 'storages' to THIRD_PARTY_APPS for all environments
