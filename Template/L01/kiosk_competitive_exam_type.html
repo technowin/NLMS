@@ -6,519 +6,519 @@
 
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-/* =========================
-   BASE RESET
-========================= */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: #fff;
-    padding: 20px;
-}
-
-.page-title {
-    text-align: center;
-    margin-bottom: 50px;
-    position: relative;
-}
-
-.page-title h1 {
-    font-family: 'Merriweather', serif;
-    font-size: 2.8rem;
-    color: #fff;
-    font-weight: 700;
-    position: relative;
-    display: inline-block;
-    background: linear-gradient(90deg, #00c3ff, #1e3cff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    transition: transform 0.3s ease, filter 0.3s ease;
-}
-
-/* Hover effect for title */
-.page-title h1:hover {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 10px #00c3ff);
-}
-
-/* Decorative line under the title */
-.page-title::after {
-    content: "";
-    display: block;
-    width: 80px;
-    height: 4px;
-    margin: 15px auto 0;
-    border-radius: 2px;
-    background: linear-gradient(90deg, #00c3ff, #1e3cff);
-    transition: width 0.4s ease;
-}
-
-.page-title:hover::after {
-    width: 120px;
-}
-
-
-/* =========================
-   GRID & CONTAINER
-========================= */
-.container {
-    max-width: 1200px;
-    margin: auto;
-}
-
-.categories-grid {
-    margin-top: 40px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-}
-
-/* Card Styling */
-.category-card {
-    background: #1e1e3f; /* dark background to match your theme */
-    border-radius: 15px;
-    padding: 30px 20px 20px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* Hover Effect */
-.category-card:hover {
-    transform: translateY(-10px) scale(1.03);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-}
-
-/* Icon Styling */
-.category-card .category-icon {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 20px;
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-    border-radius: 50%;
-    background: radial-gradient(circle, #00c3ff 0%, #1e3cff 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.category-card:hover .category-icon {
-    transform: scale(1.15) rotate(5deg);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-}
-
-.category-card .category-icon i {
-    font-size: 36px;
-    color: #fff;
-}
-
-/* Text Styling */
-.category-card h3 {
-    font-family: 'Merriweather', serif;
-    font-size: 1.3rem;
-    color: #fff;
-    margin-bottom: 5px;
-    transition: color 0.3s ease;
-}
-
-.category-card:hover h3 {
-    color: #00c3ff;
-}
-
-.category-card span {
-    color: #f5b700;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-
-/* Flip Button */
-.category-card .flip-btn {
-    margin-top: auto;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    border-radius: 50px;
-    border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.category-card .flip-btn:hover {
-    background: #00c3ff;
-    border-color: #00c3ff;
-    color: #fff;
-    transform: translateY(-2px);
-}
-
-.flip-card-container {
-    height: 480px;
-    perspective: 1200px;
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-}
-
-/* =========================
-   FLIP CARD CORE
-========================= */
-.flip-card {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.flip-card-inner {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.85s cubic-bezier(0.19, 1, 0.22, 1);
-    transform-style: preserve-3d;
-    position: relative;
-}
-
-.flip-card.flipped .flip-card-inner {
-    transform: rotateY(180deg);
-}
-
-.flip-card-front,
-.flip-card-back {
-    position: absolute;
-    inset: 0;
-    backface-visibility: hidden;
-    border-radius: 22px;
-    padding: 30px 30px 120px; /* 🔒 space for button */
-}
-
-/* =========================
-   FRONT
-========================= */
-.flip-card-front {
-    background: linear-gradient(145deg, #1f1f2e, #2c2c54);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-/* =========================
-   BACK
-========================= */
-.flip-card-back {
-    background: linear-gradient(145deg, #1f1f2e, #2c2c54);
-    transform: rotateY(180deg);
-    display: flex;
-    flex-direction: column;
-}
-
-/* =========================
-   FRONT & BACK HOVER EFFECTS
-========================= */
-.flip-card-front,
-.flip-card-back {
-    transition: transform 0.5s ease, box-shadow 0.5s ease, filter 0.5s ease, background 0.5s ease;
-    will-change: transform, box-shadow, filter, background;
-}
-
-/* Front hover effect */
-.flip-card-front:hover {
-    transform: scale(1.05) translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0, 195, 255, 0.4), 0 0 25px rgba(255, 255, 255, 0.1) inset;
-    filter: brightness(1.1) saturate(1.2);
-    background: linear-gradient(145deg, #1f1f2e 0%, #2c2c70 100%);
-}
-
-/* Back hover effect */
-.flip-card-back:hover {
-    transform: scale(1.05) translateY(-5px) rotateY(180deg);
-    box-shadow: 0 20px 40px rgba(26, 208, 206, 0.4), 0 0 30px rgba(255, 255, 255, 0.08) inset;
-    filter: brightness(1.08) saturate(1.15);
-    background: linear-gradient(145deg, #1f1f2e 0%, #2c2c70 100%);
-}
-
-/* Optional: Add subtle floating glow animation */
-@keyframes floatingGlow {
-    0% { box-shadow: 0 0 10px rgba(0,195,255,0.3); }
-    50% { box-shadow: 0 0 25px rgba(0,195,255,0.5); }
-    100% { box-shadow: 0 0 10px rgba(0,195,255,0.3); }
-}
-
-.flip-card-front:hover .upsc-cover-icon,
-.flip-card-back:hover .upsc-cover-icon {
-    animation: floatingGlow 2s ease-in-out infinite alternate;
-}
-
-/* =========================
-   ICON (LOCKED)
-========================= */
-.upsc-cover-icon {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1a2980, #26d0ce);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 42px;
-    margin-bottom: 28px;
-    position: relative;
-    overflow: hidden;
-    border: 4px solid rgba(255, 255, 255, 0.25);
-    box-shadow:
-        0 18px 40px rgba(26, 41, 128, 0.45),
-        inset 0 0 25px rgba(255, 255, 255, 0.12);
-}
-
-.upsc-cover-icon::before {
-    content: '';
-    position: absolute;
-    inset: -50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px);
-    background-size: 20px 20px;
-    animation: upscRotate 22s linear infinite;
-}
-
-.upsc-cover-icon i {
-    font-size: 64px;
-    color: #ffffff;
-    z-index: 1;
-    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-
-/* =========================
-   FRONT TEXT
-========================= */
-.exam-title-front {
-    min-height: 88px;
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1.3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.exam-short-front {
-    margin-top: 6px;
-    color: #ffd369;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-/* =========================
-   BACK CONTENT
-========================= */
-.exam-header-back {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 14px;
-}
-
-.exam-header-back i {
-    font-size: 26px;
-    color: #ffd369;
-    background: rgba(255,255,255,0.15);
-    padding: 14px;
-    border-radius: 14px;
-}
-
-.exam-header-back h3 {
-    font-size: 1.6rem;
-    font-weight: 800;
-}
-
-.exam-short-back {
-    font-size: 14px;
-    font-weight: 700;
-    color: #ffd369;
-}
-
-.exam-description-back {
-    font-size: 15px;
-    line-height: 1.7;
-    color: #dde0ff;
-    margin-bottom: 16px;
-}
-
-.exam-features-back {
-    list-style: none;
-    padding: 0;
-    margin-bottom: 18px;
-}
-
-.exam-features-back li {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 15px;
-}
-
-.exam-features-back li i {
-    color: #3ee577;
-    font-size: 16px;
-}
-
-/* =========================
-   DETAILS LINK
-========================= */
-.view-details-link {
-    margin-top: auto;
-    display: block;
-    text-align: center;
-    padding: 14px 22px;
-    border-radius: 40px;
-    background: linear-gradient(135deg, #1a2980, #26d0ce);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 700;
-    transition: all 0.3s ease;
-}
-
-.view-details-link:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(26,41,128,0.45);
-}
-
-
-/* =========================
-   FIXED BACK ACTION ROW
-========================= */
-
-.back-action-row {
-    position: absolute;          /* FIXED INSIDE CARD */
-    bottom: 18px;                /* consistent vertical position */
-    left: 50%;
-    transform: translateX(-50%); /* perfect center */
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-
-    width: auto;
-    z-index: 5;
-    pointer-events: auto;
-}
-
-/* IMPORTANT: override absolute flip-btn */
-.back-action-row .flip-btn.back {
-    position: static !important; /* stops overlap */
-    white-space: nowrap;
-}
-
-/* View Study Materials button */
-.back-action-row .view-details-link {
-    position: static;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
-    color: #ffd369;
-    padding: 8px 16px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 211, 105, 0.4);
-    background: linear-gradient(135deg, #1c7cff, #2fd6b4);
-    white-space: nowrap;
-    transition: all 0.3s ease;
-}
-
-.back-action-row .view-details-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-}
-
-
-/* =========================
-   FLIP / BACK BUTTON (NO OVERLAP)
-========================= */
-.flip-btn {
-    position: absolute;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255,255,255,0.18);
-    border: 1px solid rgba(255,255,255,0.35);
-    color: #fff;
-    padding: 12px 28px;
-    border-radius: 30px;
-    font-weight: 700;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    z-index: 10;
-    transition: all 0.3s ease;
-}
-
-.flip-btn:hover {
-    background: linear-gradient(135deg, #1a2980, #26d0ce);
-    box-shadow: 0 12px 30px rgba(26,41,128,0.45);
-    transform: translateX(-50%) translateY(-3px);
-}
-
-.flip-btn i {
-    transition: transform 0.4s ease;
-}
-
-.flip-btn:hover i {
-    transform: rotate(180deg);
-}
-
-/* Back button – same position */
-.flip-btn.back {
-    bottom: 28px;
-}
-
-/* =========================
-   ANIMATIONS
-========================= */
-@keyframes upscRotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(25px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 768px) {
-    .upsc-cover-icon {
-        width: 120px;
-        height: 120px;
-    }
-    .upsc-cover-icon i {
-        font-size: 52px;
-    }
-}
-
-@media (max-width: 480px) {
-    .upsc-cover-icon {
-        width: 100px;
-        height: 100px;
-    }
-    .upsc-cover-icon i {
-        font-size: 44px;
-    }
-}
+        /* =========================
+        BASE RESET
+        ========================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            padding: 20px;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .page-title h1 {
+            font-family: 'Merriweather', serif;
+            font-size: 2.8rem;
+            color: #fff;
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(90deg, #00c3ff, #1e3cff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        /* Hover effect for title */
+        .page-title h1:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 10px #00c3ff);
+        }
+
+        /* Decorative line under the title */
+        .page-title::after {
+            content: "";
+            display: block;
+            width: 80px;
+            height: 4px;
+            margin: 15px auto 0;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #00c3ff, #1e3cff);
+            transition: width 0.4s ease;
+        }
+
+        .page-title:hover::after {
+            width: 120px;
+        }
+
+
+        /* =========================
+        GRID & CONTAINER
+        ========================= */
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .categories-grid {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Card Styling */
+        .category-card {
+            background: #1e1e3f; /* dark background to match your theme */
+            border-radius: 15px;
+            padding: 30px 20px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Hover Effect */
+        .category-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Icon Styling */
+        .category-card .category-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00c3ff 0%, #1e3cff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .category-card:hover .category-icon {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .category-card .category-icon i {
+            font-size: 36px;
+            color: #fff;
+        }
+
+        /* Text Styling */
+        .category-card h3 {
+            font-family: 'Merriweather', serif;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .category-card:hover h3 {
+            color: #00c3ff;
+        }
+
+        .category-card span {
+            color: #f5b700;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Flip Button */
+        .category-card .flip-btn {
+            margin-top: auto;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-card .flip-btn:hover {
+            background: #00c3ff;
+            border-color: #00c3ff;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .flip-card-container {
+            height: 480px;
+            perspective: 1200px;
+            animation: fadeIn 0.6s ease forwards;
+            opacity: 0;
+        }
+
+        /* =========================
+        FLIP CARD CORE
+        ========================= */
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .flip-card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.85s cubic-bezier(0.19, 1, 0.22, 1);
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 22px;
+            padding: 30px 30px 120px; /* 🔒 space for button */
+        }
+
+        /* =========================
+        FRONT
+        ========================= */
+        .flip-card-front {
+            background: linear-gradient(145deg, #1f1f2e, #2c2c54);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* =========================
+        BACK
+        ========================= */
+        .flip-card-back {
+            background: linear-gradient(145deg, #1f1f2e, #2c2c54);
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =========================
+        FRONT & BACK HOVER EFFECTS
+        ========================= */
+        .flip-card-front,
+        .flip-card-back {
+            transition: transform 0.5s ease, box-shadow 0.5s ease, filter 0.5s ease, background 0.5s ease;
+            will-change: transform, box-shadow, filter, background;
+        }
+
+        /* Front hover effect */
+        .flip-card-front:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 195, 255, 0.4), 0 0 25px rgba(255, 255, 255, 0.1) inset;
+            filter: brightness(1.1) saturate(1.2);
+            background: linear-gradient(145deg, #1f1f2e 0%, #2c2c70 100%);
+        }
+
+        /* Back hover effect */
+        .flip-card-back:hover {
+            transform: scale(1.05) translateY(-5px) rotateY(180deg);
+            box-shadow: 0 20px 40px rgba(26, 208, 206, 0.4), 0 0 30px rgba(255, 255, 255, 0.08) inset;
+            filter: brightness(1.08) saturate(1.15);
+            background: linear-gradient(145deg, #1f1f2e 0%, #2c2c70 100%);
+        }
+
+        /* Optional: Add subtle floating glow animation */
+        @keyframes floatingGlow {
+            0% { box-shadow: 0 0 10px rgba(0,195,255,0.3); }
+            50% { box-shadow: 0 0 25px rgba(0,195,255,0.5); }
+            100% { box-shadow: 0 0 10px rgba(0,195,255,0.3); }
+        }
+
+        .flip-card-front:hover .upsc-cover-icon,
+        .flip-card-back:hover .upsc-cover-icon {
+            animation: floatingGlow 2s ease-in-out infinite alternate;
+        }
+
+        /* =========================
+        ICON (LOCKED)
+        ========================= */
+        .upsc-cover-icon {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 42px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid rgba(255, 255, 255, 0.25);
+            box-shadow:
+                0 18px 40px rgba(26, 41, 128, 0.45),
+                inset 0 0 25px rgba(255, 255, 255, 0.12);
+        }
+
+        .upsc-cover-icon::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: upscRotate 22s linear infinite;
+        }
+
+        .upsc-cover-icon i {
+            font-size: 64px;
+            color: #ffffff;
+            z-index: 1;
+            text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+
+        /* =========================
+        FRONT TEXT
+        ========================= */
+        .exam-title-front {
+            min-height: 88px;
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .exam-short-front {
+            margin-top: 6px;
+            color: #ffd369;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* =========================
+        BACK CONTENT
+        ========================= */
+        .exam-header-back {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .exam-header-back i {
+            font-size: 26px;
+            color: #ffd369;
+            background: rgba(255,255,255,0.15);
+            padding: 14px;
+            border-radius: 14px;
+        }
+
+        .exam-header-back h3 {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .exam-short-back {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffd369;
+        }
+
+        .exam-description-back {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #dde0ff;
+            margin-bottom: 16px;
+        }
+
+        .exam-features-back {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 18px;
+        }
+
+        .exam-features-back li {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .exam-features-back li i {
+            color: #3ee577;
+            font-size: 16px;
+        }
+
+        /* =========================
+        DETAILS LINK
+        ========================= */
+        .view-details-link {
+            margin-top: auto;
+            display: block;
+            text-align: center;
+            padding: 14px 22px;
+            border-radius: 40px;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .view-details-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(26,41,128,0.45);
+        }
+
+
+        /* =========================
+        FIXED BACK ACTION ROW
+        ========================= */
+
+        .back-action-row {
+            position: absolute;          /* FIXED INSIDE CARD */
+            bottom: 18px;                /* consistent vertical position */
+            left: 50%;
+            transform: translateX(-50%); /* perfect center */
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+
+            width: auto;
+            z-index: 5;
+            pointer-events: auto;
+        }
+
+        /* IMPORTANT: override absolute flip-btn */
+        .back-action-row .flip-btn.back {
+            position: static !important; /* stops overlap */
+            white-space: nowrap;
+        }
+
+        /* View Study Materials button */
+        .back-action-row .view-details-link {
+            position: static;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: #ffd369;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 211, 105, 0.4);
+            background: linear-gradient(135deg, #1c7cff, #2fd6b4);
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .back-action-row .view-details-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+        }
+
+
+        /* =========================
+        FLIP / BACK BUTTON (NO OVERLAP)
+        ========================= */
+        .flip-btn {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .flip-btn:hover {
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            box-shadow: 0 12px 30px rgba(26,41,128,0.45);
+            transform: translateX(-50%) translateY(-3px);
+        }
+
+        .flip-btn i {
+            transition: transform 0.4s ease;
+        }
+
+        .flip-btn:hover i {
+            transform: rotate(180deg);
+        }
+
+        /* Back button – same position */
+        .flip-btn.back {
+            bottom: 28px;
+        }
+
+        /* =========================
+        ANIMATIONS
+        ========================= */
+        @keyframes upscRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =========================
+        RESPONSIVE
+        ========================= */
+        @media (max-width: 768px) {
+            .upsc-cover-icon {
+                width: 120px;
+                height: 120px;
+            }
+            .upsc-cover-icon i {
+                font-size: 52px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .upsc-cover-icon {
+                width: 100px;
+                height: 100px;
+            }
+            .upsc-cover-icon i {
+                font-size: 44px;
+            }
+        }
 
 
     </style>
@@ -601,14 +601,14 @@ body {
                                 </a> {% endcomment %}
 
                                 {% if exam.competitive_id == 1 %}
-                                    <a href="{% url 'L01:upsc_ebook_index' %}?competitive_id={{ exam.competitive_id }}"
+                                    <a href="{% url 'L01:upsc_index_logged' %}?competitive_id={{ exam.competitive_id }}"
                                         class="view-details-link"
                                         style="z-index:10; position:relative;">
                                             <i class="fas fa-external-link-alt"></i>
                                             View Study Materials
                                     </a>
                                 {% elif exam.competitive_id == 2 %}
-                                    <a href="{% url 'L01:mpsc_ebooks_index' %}?competitive_id={{ exam.competitive_id }}"
+                                    <a href="{% url 'L01:mpsc_index_logged' %}?competitive_id={{ exam.competitive_id }}"
                                         class="view-details-link"
                                         style="z-index:10; position:relative;">
                                             <i class="fas fa-external-link-alt"></i>

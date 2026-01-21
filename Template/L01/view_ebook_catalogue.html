@@ -937,7 +937,7 @@
 @media (max-width: 1024px) {
     .zoom-modal-content-wrapper {
         width: 95%;
-        height: 90vh;
+        height: 95vh;
     }
     
     .book-info-grid {
@@ -1335,8 +1335,8 @@ input:checked + .toggle-slider:before {
             <div id="searchResults" class="results-container">
                 <!-- Results will appear here -->
                 <div style="text-align: center; color: #94a3b8; padding: 80px 20px; width: 100%;">
-                    <i class="bi bi-search" style="font-size: 36px; margin-bottom: 15px;"></i>
-                    <h4 style="color: #64748b; margin-bottom: 10px;">Search for Books</h4>
+                    {% comment %} <i class="bi bi-search" style="font-size: 36px; margin-bottom: 15px;"></i> {% endcomment %}
+                    <h4 style="color: #64748b; margin-bottom: 10px;">Search  Results for Books</h4>
                     <p style="font-size: 13px;">Use the search controls to find books or ebooks</p>
                 </div>
             </div>
@@ -1428,7 +1428,7 @@ input:checked + .toggle-slider:before {
 let currentMode = 'catalog';
 let currentData = [];
 let currentPage = 1;
-const itemsPerPage = 16;
+const itemsPerPage = 7;
 let currentSearchType = '';
 let currentAdvancedType = 'title';
 let currentIndexType = 'title';
@@ -2290,8 +2290,8 @@ function clearResults() {
     
     resultsDiv.innerHTML = `
         <div style="text-align: center; color: #94a3b8; padding: 100px 20px; width: 100%;">
-            <i class="bi bi-search" style="font-size: 48px; margin-bottom: 20px;"></i>
-            <h3 style="color: #64748b;">Search for ${currentMode === 'catalog' ? 'Catalog Books' : 'eBooks'}</h3>
+            {% comment %} <i class="bi bi-search" style="font-size: 48px; margin-bottom: 20px;"></i> {% endcomment %}
+            <h3 style="color: #64748b;">Search  Results for ${currentMode === 'catalog' ? 'Catalog Books' : 'eBooks'}</h3>
             <p>Use the search controls on the left to find ${currentMode === 'catalog' ? 'books' : 'ebooks'}</p>
         </div>
     `;

@@ -130,7 +130,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ========== MEDIA & FILE STORAGE SETTINGS ==========
-if ENVIRONMENT == 'local':
+if ENVIRONMENT == 'local': 
     # For local development (Windows)
     MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/')
 elif ENVIRONMENT == 'test':

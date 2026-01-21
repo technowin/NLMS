@@ -395,6 +395,105 @@ html, body {
 
 </style>
 
+<style>
+
+    /* Increase library image width */
+    /* Set a fixed size for the library image */
+    .book-detail-image1 {
+        width: 500px !important;  /* Set a fixed width */
+        height: 600px !important; /* Set a fixed height */
+    }
+
+    /* Make sure the image fills the container proportionally */
+    .book-detail-image1 img.libary_image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;  /* Ensure image covers the area */
+    }
+
+
+    .placeholder-ad {
+        border: 2px dashed #ffd700;
+        background: rgba(255, 215, 0, 0.08);
+        text-align: center;
+        padding: 25px;
+    }
+
+    .placeholder-box {
+        font-size: 60px;
+        color: #ffd700;
+        margin-bottom: 15px;
+    }
+
+    .ad-contact {
+        margin-top: 10px;
+        font-size: 16px;
+        color: #ccc;
+    }
+
+
+</style>
+
+
+
+<!-- ============================= -->
+<!-- 📚 LIBRARIES SECTION -->
+<!-- ============================= -->
+
+<h2 class="catalogue-title">Libraries</h2>
+
+<div class="book-grid">
+    {% for lib in libraries %}
+        {% if lib.image %}
+        <div class="book-card">
+            <img src="{{ lib.library_image }}" class="book-img" alt="Library">
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+
+{% for lib in libraries %}
+<div class="book-detail-card">
+
+    <!-- LEFT IMAGE (NO FLIP) -->
+    <div class="book-detail-image1">
+        <img src="{{ lib.library_image }}" class="libary_image" alt="Library">
+    </div>
+    <div class="book-detail-info">
+
+        <h2>{{ lib.library_name_mar }}</h2>
+
+        {% if lib.description %}
+            <p style="margin-top:10px;">
+                {{ lib.description|truncatewords:40 }}
+            </p>
+        {% endif %}
+        <ul class="features badges">
+            {% if lib.capacity %}
+                <li class="badge badge-capacity">
+                    👥 Capacity: {{ lib.capacity }}
+                </li>
+            {% endif %}
+            {% if lib.email %}
+                <li class="badge badge-email">
+                    ✉️ {{ lib.email }}
+                </li>
+            {% endif %}
+            {% if lib.phone %}
+                <li class="badge badge-phone">
+                    📞 {{ lib.phone }}
+                </li>
+            {% endif %}
+        </ul>
+
+    </div>
+
+</div>
+</div>
+{% endfor %}
+
+
 <div class="catalogue-main-container">
 
     <!-- LEFT: books and details -->
@@ -409,7 +508,7 @@ html, body {
             {% for b in popular_books %}
                 {% if b.front_page_photo %}
                 <div class="book-card">
-                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                    <img src="{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
                    
                 </div>
                 {% endif %}
@@ -424,13 +523,13 @@ html, body {
     <div class="book-detail-image flip-card">
         <div class="flip-inner">
             <div class="flip-front">
-                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
             </div>
             <div class="flip-back">
                 {% if book.last_page_photo %}
-                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.last_page_photo }}" alt="{{ book.title }}">
                 {% else %}
-                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
                 {% endif %}
             </div>
         </div>
@@ -498,7 +597,7 @@ html, body {
             {% for b in new_arrivals %}
                 {% if b.front_page_photo %}
                 <div class="book-card">
-                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                    <img src="{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
                    
                 </div>
                 {% endif %}
@@ -512,13 +611,13 @@ html, body {
     <div class="book-detail-image flip-card">
         <div class="flip-inner">
             <div class="flip-front">
-                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
             </div>
             <div class="flip-back">
                 {% if book.last_page_photo %}
-                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.last_page_photo }}" alt="{{ book.title }}">
                 {% else %}
-                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
                 {% endif %}
             </div>
         </div>
@@ -589,7 +688,7 @@ html, body {
             {% for b in upcoming_books %}
                 {% if b.front_page_photo %}
                 <div class="book-card">
-                    <img src="/media/{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
+                    <img src="{{ b.front_page_photo }}" class="book-img" alt="{{ b.title }}">
                    
                 </div>
                 {% endif %}
@@ -603,13 +702,13 @@ html, body {
     <div class="book-detail-image flip-card">
         <div class="flip-inner">
             <div class="flip-front">
-                <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
             </div>
             <div class="flip-back">
                 {% if book.last_page_photo %}
-                    <img src="/media/{{ book.last_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.last_page_photo }}" alt="{{ book.title }}">
                 {% else %}
-                    <img src="/media/{{ book.front_page_photo }}" alt="{{ book.title }}">
+                    <img src="{{ book.front_page_photo }}" alt="{{ book.title }}">
                 {% endif %}
             </div>
         </div>
@@ -678,6 +777,7 @@ html, body {
        <!-- Advertisement -->
 <div class="advertisement">
     <h3>Advertisement</h3>
+
     {% for ad in advertisements %}
         <div class="ad-item">
             {% if ad.video_path %}
@@ -689,15 +789,30 @@ html, body {
                     preload="auto">
                 </video>
             {% endif %}
+
             <h4 class="ad-title">{{ ad.adv_title }}</h4>
+
             {% if ad.organization_name %}
                 <p class="ad-org">{{ ad.organization_name }}</p>
             {% endif %}
         </div>
+
     {% empty %}
-        <p>No advertisements available.</p>
+        <!-- PLACEHOLDER AD -->
+        <div class="ad-item placeholder-ad">
+
+            <div class="placeholder-box">
+                <i class="fa fa-bullhorn"></i>
+            </div>
+
+            <h4 class="ad-title">Advertise Your Business Here</h4>
+
+            <p class="ad-contact">
+                Contact Library Administration for advertising.
+            </p>
+
+        </div>
     {% endfor %}
-</div>
 
 
 
@@ -802,11 +917,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
  <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const sections = [
-        { title: "Popular Books", lastIdx: 0, duration: 1 * 60 * 1000 }, // 1 min
+   const sections = [
+        { title: "Libraries", lastIdx: 0, duration: 1 * 60 * 1000 }, // ✅ FIRST
+        { title: "Popular Books", lastIdx: 0, duration: 1 * 60 * 1000 },
         { title: "New Arrivals", lastIdx: 0, duration: 1 * 60 * 1000 },
         { title: "Upcoming Books", lastIdx: 0, duration: 1 * 60 * 1000 },
     ];
+
 
     let currentSection = 0;
     let scrollInterval;

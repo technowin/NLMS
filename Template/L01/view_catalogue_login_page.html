@@ -2,732 +2,2169 @@
 {% load static %}
 
 {% block content %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+<link rel="stylesheet"href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 
-<!-- Popup Animation -->
 <style>
+/* ================= GLOBAL STYLES ================= */
+:root {
+    --primary-blue: #1e40af;
+    --secondary-blue: #3b82f6;
+    --accent-teal: #0d9488;
+    --light-bg: #f8fafc;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
 
-    @keyframes popupScale {
-        from { transform:scale(0.85); opacity:0; }
-        to   { transform:scale(1); opacity:1; }
+/* Add Marathi font to all elements */
+{% comment %} * {
+    font-family: 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', 'Arial Unicode MS', sans-serif !important;
+} {% endcomment %}
+
+/* ================= COMPACT LAYOUT ================= */
+.main-container {
+    max-width: none;
+    width: 100%;
+    padding: 10px 20px;
+}
+
+.search-layout {
+    display: flex;
+    gap: 20px;
+    height: 70vh;          /* FIXED height */
+    max-height: 70vh;
+    overflow: hidden;     /* Prevent expansion */
+}
+
+
+
+.search-controls-panel {
+    flex: 0 0 350px;
+    min-width: 350px;
+    max-width: 350px;
+
+    height: 100%;          /* Fill parent */
+    max-height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;    
+}
+
+.search-controls-panel > .tab-content,
+.search-controls-panel > .tab-content.active {
+    flex: 1;
+    overflow-y: auto;     /* ✅ scroll here */
+}
+
+
+/* ================= MODE SELECTION ================= */
+.mode-selection {
+    margin-bottom: 15px;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 5px;
+    background: var(--light-bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.mode-btn.active {
+    background: white;
+    color: var(--primary-blue);
+    box-shadow: var(--card-shadow);
+}
+
+/* ================= SEARCH TYPE SELECTION ================= */
+.search-type-selection {
+    margin-bottom: 15px;
+}
+
+.search-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--light-bg);
+    padding: 3px;
+    border-radius: 8px;
+}
+
+.search-tab {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.search-tab.active {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: #ffffff;
+    box-shadow: var(--card-shadow);
+}
+
+
+.view-details-btn {
+    margin-top: auto;
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.back-btn,
+.read-ebook-btn,
+.details-btn {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+
+/* ================= LANGUAGE SELECTION ================= */
+.language-selection {
+    margin-bottom: 15px;
+}
+
+.language-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.lang-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.lang-btn.active {
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* ================= SEARCH CONTENT ================= */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.search-section {
+    background: var(--light-bg);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    flex: 1 0 auto;
+    overflow-y: auto;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ================= ADVANCED SEARCH ================= */
+.type-buttons {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.type-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.type-btn.active {
+    background: linear-gradient(135deg, var(--accent-teal), #10b981);
+    color: white;
+    border-color: var(--accent-teal);
+}
+
+.form-group {
+    margin-bottom: 3px;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.search-input-group {
+    position: relative;
+    display: flex;
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px 40px 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    color: #1e293b;
+    transition: border 0.3s ease;
+}
+
+.input-search-btn {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    height: 28px;
+    width: 28px;
+    border: none;
+    border-radius: 5px;
+    background: var(--accent-teal);
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-size: 12px;
+}
+
+/* ================= KEYBOARD LAYOUTS ================= */
+.keyboard-container {
+    margin-bottom: 10px;
+    width: 100%;
+    height: 220px;               /* fixed keyboard area */
+    min-height: 220px;
+    max-height: 240px;
+
+    position: relative;        
+    pointer-events: none;
+
+    transition: opacity 0.2s ease;
+}
+
+.english-keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.keyboard-row {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.keyboard-key {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: white;
+    color: #334155;
+    font-weight: 600;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+}
+
+/* Special buttons */
+.keyboard-key.special {
+    flex: 1.5;
+    font-size: 10px;
+}
+
+.keyboard-key.backspace-btn {
+    background: #fecaca;
+    color: #dc2626;
+}
+
+.keyboard-key.clear-btn, .keyboard-key.space-btn {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Devanagari Keyboards */
+.marathi-keyboard-grid, .hindi-keyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+    gap: 4px;
+    margin-bottom: -6px;
+    width: 100%;
+}
+
+.keyboard-key.marathi, .keyboard-key.hindi {
+    font-family: 'Noto Sans Devanagari', 'Mangal', sans-serif;
+    font-size: 13px;
+    height: 22px;
+    min-width: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.keyboard-key.marathi {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+}
+
+.keyboard-key.hindi {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.keyboard-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    width: 100%;
+}
+
+
+.keyboard-hint {
+    position: absolute;
+    inset: 0;
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    background: #f0fff0;
+    border-radius: 6px;
+
+    font-size: 12px;
+    color: #388E3C;
+    padding: 10px;
+    z-index: 2;
+}
+
+.keyboard-hint.active {
+    display: flex;
+}
+
+.keyboard-body {
+    height: 100%;
+}
+
+
+/* ================= BUTTONS ================= */
+.btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    color: white;
+    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+}
+
+.btn-help {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-clear {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.quick-actions button {
+    flex: 1;
+}
+
+//* Book Gallery Grid */
+
+.book-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* Individual Book Item */
+.book-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 160px;
+    position: relative;
+    font-family: 'Merriweather', serif;
+}
+
+/* Book Title Styling */
+.book-title {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    /* Dark brown gradient text (high contrast) */
+    background: linear-gradient(
+        135deg,
+        #3e2723,   /* deep brown */
+        #5d4037,   /* warm brown */
+        #6d4c41    /* soft highlight */
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    padding: 8px 16px;
+    transition:
+        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        text-shadow 0.35s ease;
+}
+
+/* Elegant underline */
+.book-title::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 32%;
+    height: 3px;
+    background: linear-gradient(
+        90deg,
+        #5d4037,
+        #8d6e63
+    );
+    border-radius: 10px;
+    transform: translateX(-50%);
+    opacity: 0.8;
+    transition: width 0.4s ease, opacity 0.4s ease;
+}
+
+/* Hover effect */
+.book-title:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+
+.book-title:hover::after {
+    width: 90%;
+    opacity: 1;
+}
+
+/* Click feedback */
+.book-title:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Book Image Container */
+.book-image-container {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.book-image-container:hover {
+    transform: translateY(-5px);
+}
+
+.book-cover {
+    width: 100%;
+    height: 100%;
+    {% comment %} object-fit: cover; {% endcomment %}
+    transition: transform 0.3s ease;
+}
+
+.book-cover:hover {
+    transform: scale(1.05);
+}
+
+/* Default Ebook Cover */
+.default-ebook-cover {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.ebook-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.ebook-label {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.default-ebook-title {
+    font-size: 14px;
+    line-height: 1.3;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+/* Modal Styles from index page */
+.zoom-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.zoom-modal.show {
+    display: flex;
+    animation: fadeIn 0.3s;
+}
+
+.zoom-modal-content-wrapper {
+    display: flex;
+    width: 90%;
+    max-width: 1200px;
+    height: 70vh; /* Increased height */
+    max-height: 800px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.zoom-modal-left {
+    width: 45%;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+}
+
+.zoom-modal-right {
+    width: 55%;
+    padding: 30px;
+    overflow-y: auto; /* Scroll only if content overflows */
+}
+
+.book-info-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Image Styles */
+#zoomedImage {
+    max-height: 400px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Thumbnail Styles */
+.image-preview-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    min-width: 80px;
+}
+
+.thumbnail {
+    width: 80px;
+    height: 100px;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.thumbnail:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+.thumbnail.active {
+    border-color: #007bff;
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+}
+
+.thumbnail-wrapper span {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Book Info Styles */
+.book-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 25px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item strong {
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.info-item span {
+    color: #666;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* Description Section */
+.book-description-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    flex-grow: 1;
+}
+
+.description-item {
+    margin-bottom: 20px;
+}
+
+.description-item:last-child {
+    margin-bottom: 0;
+}
+
+.description-item strong {
+    display: block;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.description-item span {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    display: block;
+}
+
+/* Close Button */
+.close-zoom {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+    z-index: 1001;
+}
+
+.close-zoom:hover {
+    color: #007bff;
+}
+
+/* Login Button */
+.login-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 25px;
+    align-self: flex-start;
+}
+
+.login-btn:hover {
+    background: #0056b3;
+}
+
+/* Scrollbar Styling */
+.zoom-modal-right::-webkit-scrollbar {
+    width: 6px;
+}
+
+.zoom-modal-right::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.zoom-modal-right::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.zoom-modal-right::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Title Styling */
+#zoomBookTitle {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 24px;
+    line-height: 1.3;
+}
+
+#zoomBookSubtitle {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 9px;
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+
+
+.page-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #333;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.page-btn:hover {
+    background: #f5f5f5;
+    border-color: #999;
+}
+
+.page-btn.active {
+    background: #0066cc;
+    color: white;
+    border-color: #0066cc;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .zoom-modal-content-wrapper {
+        width: 95%;
+        height: 95vh;
     }
-
-    @keyframes popupFade {
-        from { opacity:0; }
-        to   { opacity:1; }
+    
+    .book-info-grid {
+        grid-template-columns: 1fr;
     }
-
-    /* Background fade-in */
-    @keyframes fadeInBg {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    
+    .book-item {
+        width: 140px;
     }
+}
 
-    /* Popup zoom animation */
-    @keyframes popupZoom {
-        0% { transform: scale(0.7); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
+@media (max-width: 768px) {
+    .zoom-modal-content-wrapper {
+        flex-direction: column;
+        height: 95vh;
+        max-height: none;
     }
-
-    /* Close button hover animation */
-    #closePopup:hover {
-        color: #000;
-        transform: scale(1.2);
+    
+    .zoom-modal-left,
+    .zoom-modal-right {
+        width: 100%;
+        height: auto;
     }
+    
+    .zoom-modal-left {
+        padding: 20px;
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    #zoomedImage {
+        max-height: 300px;
+    }
+    
+    .thumbnail {
+        width: 70px;
+        height: 90px;
+    }
+    
+    .close-zoom {
+        top: 10px;
+        right: 20px;
+        font-size: 35px;
+    }
+    
+    .book-gallery {
+        gap: 15px;
+    }
+    
+    .book-item {
+        width: 120px;
+    }
+    
+    .book-image-container {
+        height: 180px;
+    }
+}
 
-    .cube-loader {
+@media (max-width: 576px) {
+    .book-item {
+        width: 100px;
+    }
+    
+    .book-image-container {
+        height: 150px;
+    }
+    
+    .book-title {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+}
+
+/* Loader Styles */
+.loader-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 300px;
+}
+
+.cube-loader {
     position: relative;
     width: 75px;
     height: 75px;
     transform-style: preserve-3d;
     transform: rotateX(-30deg);
     animation: animate 4s linear infinite;
-    margin: auto;
-    }
+}
 
-    @keyframes animate {
-    0% { transform: rotateX(-30deg) rotateY(0); }
+@keyframes animate {
+    0% { transform: rotateX(-30deg) rotateY(0deg); }
     100% { transform: rotateX(-30deg) rotateY(360deg); }
-    }
+}
 
-    .cube-loader .cube-wrapper {
+.cube-wrapper {
     position: absolute;
     width: 100%;
     height: 100%;
     transform-style: preserve-3d;
-    }
+}
 
-    .cube-loader .cube-wrapper .cube-span {
+.cube-span {
     position: absolute;
     width: 100%;
     height: 100%;
+    background: linear-gradient(#151515, #2563eb);
     transform: rotateY(calc(90deg * var(--i))) translateZ(37.5px);
-    background: hsl(176.89, 99.07%, 58.04%);
-    }
+}
 
-    .cube-top {
+.cube-top {
     position: absolute;
     width: 75px;
     height: 75px;
-    background: hsl(176.89, 99.07%, 58.04%);
+    background: #222;
     transform: rotateX(90deg) translateZ(37.5px);
-    transform-style: preserve-3d;
-    }
+}
 
-    .cube-top::before {
+.cube-top::before {
     content: '';
     position: absolute;
     width: 75px;
     height: 75px;
-    background: hsl(176.61, 42.28%, 40.7%);
+    background: #2563eb;
     transform: translateZ(-90px);
-    filter: blur(10px);
-    box-shadow: 0 0 10px #323232,
-                0 0 20px hsl(176.61, 42.28%, 40.7%),
-                0 0 30px #323232,
-                0 0 40px hsl(176.61, 42.28%, 40.7%);
-    }
-
-    /* ================== MAIN CARD WRAPPER ================== */
-    .library-card-wrapper {
-        max-width: 880px;
-        margin: 30px auto;
-        padding: 25px;
-        background: #e6d785ff; /* soft golden yellow */
-        border-radius: 18px;
-        border: 1px solid #070707ff;
-        box-shadow: 0 6px 18px rgba(0, 0, 0);
-        font-family: 'Segoe UI', sans-serif;
-    }
-
-    /* ================== HEADER ================== */
-    .library-card-header {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #000000ff;
-        margin-bottom: 5px;
-    }
-
-    .nmmc-logo {
-        width: 75px;
-    }
-
-    .nmmc-title {
-        font-size: 26px;
-        font-weight: bold;
-        color: #4a3a00;
-        letter-spacing: 0.5px;
-    }
-
-    /* ================== LIBRARY NAME ================== */
-    .library-name-section h3 {
-        text-align: center;
-        font-size: 21px;
-        margin: 10px 0 20px;
-        color: #0011ffff;
-        font-weight: bold;
-    }
-
-    /* ================== USER INFO SECTION ================== */
-    .library-user-section {
-        display: flex;
-        align-items: center;
-        gap: 25px;
-        background: #fff9df;
-        border-radius: 12px;
-        padding: 18px;
-        border: 1px solid #e5d896;
-        box-shadow: inset 0 1px 6px rgba(0,0,0);
-    }
-
-    /* Photo */
-    .library-user-photo img {
-        width: 125px;
-        height: 145px;
-        object-fit: cover;
-        border-radius: 10px;
-        border: 3px solid #d1b861;
-        box-shadow: 0 3px 8px rgba(0,0,0);
-    }
-
-    /* Details */
-    .library-user-details {
-        line-height: 1.6;
-    }
-
-    .library-user-details p {
-        margin: 2px 0;
-        font-size: 17px;
-        color: #4a3e00;
-    }
-
-    .library-user-details strong {
-        color: #6a5700;
-        font-weight: 600;
-    }
-
-    /* ================== TABLE STYLING ================== */
-    .library-table-wrapper {
-        margin-top: 25px;
-    }
-
-    /* Smooth rounded container + soft outer shadow */
-    .library-table {
-        width: 100%;
-        border-collapse: collapse;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #d9c37c;
-        box-shadow: 0 3px 12px rgba(0, 0, 0);
-        background: #fff;
-        animation: fadeIn 0.4s ease;
-    }
-
-    /* Golden Header - Gloss finish */
-    .library-table th {
-        background: linear-gradient(135deg, #d4b44a, #b99414);
-        color: #000000ff;
-        padding: 14px;
-        font-size: 16px;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-        text-align: left;
-        font-weight: 600;
-        border-bottom: 2px solid #a07d12;
-    }
-
-    /* Body cells */
-    .library-table td {
-        padding: 13px 14px;
-        background: #fffdf4;
-        border: 1px solid #000000ff;
-        color: #453900;
-        font-size: 15px;
-        transition: 0.25s ease;
-    }
-
-    /* Zebra striping */
-    .library-table tr:nth-child(even) td {
-        background: #fff9df;
-        border: 1px solid #000000ff;
-    }
+    filter: blur(20px);
+}
 
 
+/* ================= TRANSLITERATION STYLES ================= */
+.transliteration-hint {
+    font-size: 11px;
+    color: #4CAF50;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: #f0fff0;
+    border-radius: 4px;
+    border-left: 3px solid #4CAF50;
+}
 
-    /* Highlight first column */
-    .library-table td:first-child {
-        font-weight: 600;
-        color: #6b5200;
-    }
+.transliteration-hint i {
+    font-size: 12px;
+}
 
-    /* Smooth fade-in animation */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
+.transliteration-hint.hindi {
+    background: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.transliteration-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -10px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 18px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 11px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.transliteration-active {
+    background-color: #e8f5e9 !important;
+    border-color: #4CAF50 !important;
+}
+
+.results-panel {
+    flex: 1;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;     /* prevent expansion */
+}
+
+.results-container {
+    flex: 1;
+    overflow-y: auto;     /* ✅ scroll results */
+    overflow-x: hidden;
+}
 
 
-    /* ================== RESPONSIVE ================== */
-    @media (max-width: 700px) {
-        .library-user-section {
-            flex-direction: column;
-            text-align: center;
-        }
+.results-container .book-gallery {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr); /* ALWAYS 8 */
+    gap: 20px;
+    padding: 20px;
+}
 
-        .library-user-photo img {
-            margin-bottom: 10px;
-        }
-    }
-
-    .library-user-details p {
-        margin: 2px 0;
-        font-size: 17px;
-        color: #4a3e00;
-    }
-
-    .library-user-details strong {
-        color: #6a5700;
-        font-weight: 600;
-    }
-
-    .overdue-row td {
-        background-color: #f73434ff !important;  /* solid red */
-        color: white !important;
-    }
-
-    /* Overdue note above the table */
-    .overdue-note {
-        margin-bottom: 15px;        /* Space below the note */
-        margin-top: 15px;
-        padding: 12px 15px;         /* Some padding inside */
-        background-color: #fff3f3;  /* Light red background */
-        border-left: 5px solid #f44336; /* Bold red stripe on the left */
-        color: #ff0400ff;             /* Dark red text */
-        font-size: 14px;            /* Slightly smaller font */
-        font-weight: 500;           /* Medium weight */
-        border-radius: 5px;         /* Rounded corners */
-    }
-
+.results-container .book-item {
+    width: 100%;          /* auto scale */
+    min-width: 110px;     /* safety for text */
+}
 </style>
 
-<!-- ================= Search Section ================= -->
-<div class="search-section" style="background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%); padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); max-width: 1200px; margin: 20px auto;">
-
-    <!-- ====================== SEARCH + BELL + MODAL ====================== -->
-
-    <!-- ================= ROW 1 ================= -->
-    <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;
-                padding:10px; text-align:center;">
-
-        <!-- Title -->
-        <span style="font-size:18px; font-weight:600; color:#002b5c; white-space:nowrap;">
-            प्रगत शोध / Advanced Search:
-        </span>
-
-        <!-- Dropdown -->
-        <select id="searchType" onchange="clearResults();"
-            style="padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px;
-                font-size:15px; background:#f8fafc; color:#1e293b; width:180px;">
-            <option value="">Select Type</option>
-            <option value="books">पुस्तके / Books</option>
-            <option value="title">शीर्षक / Title</option>
-            <option value="author">लेखक / Author</option>
-            <option value="keyword">कीवर्ड / Keyword</option>
-            <option value="language">भाषा / Language</option>
-            <option value="publisher">प्रकाशक / Publisher</option>
-            <option value="year">प्रकाशन वर्ष / Year of Publication</option>
-        </select>
-
-        <!-- Search Input -->
-        <input type="text" id="advancedSearchInput" placeholder="Type to search..."
-            style="padding:10px 12px; width:220px; border:1px solid #cbd5e1; border-radius:8px;
-                background:#f8fafc; font-size:15px; color:#1e293b;">
-    </div>
-
-    <!-- ================= ROW 2 ================= -->
-    <div style="display:flex; justify-content:center; align-items:center; gap:12px;
-                flex-wrap:wrap; padding:10px; position:relative;">
-
-        <!-- Help Button -->
-        <button type="button" onclick="openHelp()"
-            style="background:linear-gradient(135deg,#f59e0b,#b45309); color:white;
-                font-weight:600; border:none; border-radius:25px; padding:10px 22px;
-                cursor:pointer; font-size:15px; display:flex; align-items:center;
-                gap:6px; box-shadow:0 4px 6px rgba(0,0,0,0.2);">
-            <i class="fa fa-question-circle"></i> Help
-        </button>
-
-        <!-- Search Button -->
-        <button type="button" id="advancedSearchBtn" onclick="performSearch()"
-            style="background:linear-gradient(135deg,#2563eb,#1e40af); color:white;
-                font-weight:600; border:none; border-radius:25px; padding:10px 22px;
-                cursor:pointer; font-size:15px; display:flex; align-items:center;
-                gap:6px; box-shadow:0 4px 6px rgba(0,0,0,0.2);">
-            <i class="fa fa-search"></i> शोध / Search
-        </button>
-
-        <!-- Index Search Button -->
-        <button type="button" id="indexSearchBtn" onclick="toggleKeywordSection()"
-            style="background:linear-gradient(135deg,#1d4ed8,#0f172a); color:white;
-                font-weight:600; border:none; border-radius:25px; padding:10px 22px;
-                cursor:pointer; font-size:15px; display:flex; align-items:center;
-                gap:6px; box-shadow:0 4px 6px rgba(0,0,0,0.2);">
-            <i class="fa fa-list"></i> सूची शोध / Index Search
-        </button>
-
-        <!-- NEW X BUTTON (HIDDEN BY DEFAULT) -->
-        <button id="closeXBtn" type="button"
-            onclick="window.location.reload()"
-            style="
-                position:absolute;
-                top:-5px;
-                right:-5px;
-                background:#ff4d4d; color:white; font-weight:600; border:none;
-                padding:6px 14px; border-radius:8px; cursor:pointer;
-                font-size:16px; box-shadow:0 2px 6px rgba(0,0,0,0.25);
-                transition:transform 0.2s ease;
-                display:none;
-            "
-            onmouseover="this.style.transform='translateY(-2px)'"
-            onmouseout="this.style.transform='translateY(0)'"
-            onmousedown="this.style.transform='scale(0.92)'"
-            onmouseup="this.style.transform='translateY(-2px)'">
-            X
-        </button>
-
-    </div>
-
-    <!-- ====================== MODAL ====================== -->
-
-    <div id="notePopup" 
-        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.45); 
-                display:none; justify-content:center; align-items:center; z-index:9999;
-                backdrop-filter:blur(4px); animation:fadeInBg 0.4s ease;">
-
-        <div style="background:rgba(255,255,255,0.95); width:95%; max-width:520px; padding:28px;
-                    border-radius:18px; box-shadow:0 12px 35px rgba(0,0,0); 
-                    border:1px solid rgba(255,255,255,0.4); backdrop-filter:blur(8px);
-                    position:relative; transform:scale(0.9); opacity:1; animation:popupZoom 0.35s ease;">
-
-            <!-- Close Button -->
-            <span id="closePopup"
-                style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer;
-                    color:#666; transition:0.2s;">
-                &times;
-            </span>
-
-            <!-- Note Box Marathi -->
-            <div style="
-                background:linear-gradient(90deg,#fff8db,#ffefc1);
-                border-left:6px solid #f59e0b; padding:18px 22px; border-radius:14px;
-                box-shadow:0 4px 12px rgba(255,204,80),
-                            0 0 14px rgba(255,204,80); color:#2d3748;
-                font-size:15.5px; line-height:1.75; margin-bottom:15px;
-                font-family:'Segoe UI', Tahoma, sans-serif;">
-                
-                <strong style="font-size:15px;font-weight:bold;">📘 महत्त्वाच्या टीपा :</strong>
-
-                <ul style="margin-top:10px; padding-left:20px; font-size:15px; color:black; line-height:1.7;">
-                    <li>कीवर्ड शोधामध्ये अर्धवट मजकूर/शब्द देखील स्वीकारले जातात.</li>
-                    <li>अनुक्रमणिका (Index) शोधात विद्यमान वर्गीकरणानुसार परिणाम फिल्टर केले जातात.</li>
-                    <li>अचूक निकालांसाठी पुस्तकाचे संपूर्ण शीर्षक टाइप करणे आवश्यक आहे.</li>
-                    <li>निवडलेल्या शोध प्रकारानुसार शोध परिणाम बदलतात.</li>
-                </ul>
+<!-- ================= MAIN CONTAINER ================= -->
+<div class="main-container">
+    <div class="search-layout">
+        
+        <!-- LEFT PANEL: Compact Search Controls -->
+        <div class="search-controls-panel">
+            <!-- 1. Mode Selection -->
+            <div class="mode-selection">
+                <div class="mode-buttons">
+                    <button class="mode-btn active" onclick="switchToCatalog()">
+                        <i class="bi bi-book"></i>
+                        Book Catalog
+                    </button>
+                    <button class="mode-btn" onclick="switchToEbook()">
+                        <i class="bi bi-laptop"></i>
+                        eBooks
+                    </button>
+                </div>
             </div>
-
-            <!-- Important Notes English -->
-            <div style="
-                background:linear-gradient(135deg, #e8f1ff 0%, #f4f9ff 100%);
-                border-left:6px solid #2563eb;
-                padding:20px 22px;
-                border-radius:16px;
-                box-shadow:0 4px 12px rgba(37,99,235),
-                            0 0 14px rgba(37,99,235);
-                font-size:15px;
-                color:#1e3a8a;
-                line-height:1.7;
-                position:relative;
-                overflow:hidden;
-                font-family:'Segoe UI', Tahoma, sans-serif;">
-
-                <div style="
-                    position:absolute;
-                    top:0; right:0;
-                    width:120px; height:120px;
-                    background:radial-gradient(circle, rgba(59,130,246,0.35), transparent 70%);
-                    border-radius:50%;
-                    pointer-events:none;
-                    opacity:0.7;
-                "></div>
-
-                <strong style="
-                    font-size:16px; 
-                    color:#1d4ed8; 
-                    display:flex; 
-                    align-items:center; 
-                    gap:8px;
-                    font-weight:bold;">
-                    📘 Important Notes : 
-                </strong>
-
-                <ul style="
-                    margin-top:12px;
-                    padding-left:22px;
-                    font-size:15px;
-                    color:#1e40af;
-                    list-style:none;
-                    line-height:1.75;
-                    font-weight:600;">
+            
+            <!-- 2. Search Type Selection -->
+            <div class="search-type-selection">
+                <div class="search-tabs">
+                    <button class="search-tab active" onclick="showTab('advanced')">
+                        <i class="bi bi-cogs"></i>
+                        प्रगत शोध/Advanced
+                    </button>
+                    <button class="search-tab" onclick="showTab('index')">
+                        <i class="bi bi-list-ol"></i>
+                        अनुक्रमणिका शोध/Index
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 3. Language Selection -->
+            <div class="language-selection">
+                <div class="language-buttons">
+                    <button class="lang-btn active" data-lang="english" onclick="setLanguage('english')">
+                        English
+                    </button>
+                    <button class="lang-btn" data-lang="hindi" onclick="setLanguage('hindi')">
+                        हिंदी
+                    </button>
+                    <button class="lang-btn" data-lang="marathi" onclick="setLanguage('marathi')">
+                        मराठी
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Transliteration Toggle -->
+            <div class="transliteration-toggle" id="transliterationToggle" style="display: none;">
+                <span style="font-size: 12px; font-weight: 600; color: #495057;">
+                    <i class="bi bi-translate"></i> Transliteration:
+                </span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="transliterationSwitch" onchange="toggleTransliteration(this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="font-size: 11px; color: #6c757d;" id="transliterationStatus">
+                    Off
+                </span>
+            </div>
+            
+            <!-- Advanced Search Content -->
+            <div id="advancedTab" class="tab-content active">
+                <div class="search-section">
+                    <div class="form-group">
+                        <div class="type-buttons">
+                            <button class="type-btn active" data-type="title" onclick="selectType('title')">शीर्षक/Title</button>
+                            <button class="type-btn" data-type="author" onclick="selectType('author')">लेखक/Author</button>
+                        </div>
+                    </div>
                     
-                    <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
-                        <span style='color:#2563eb; font-weight:bold;'>✔</span>
-                        Keyword search supports partial text.
-                    </li>
-
-                    <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
-                        <span style='color:#2563eb; font-weight:bold;'>✔</span>
-                        Index search will filter based on existing categories.
-                    </li>
-
-                    <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
-                        <span style='color:#2563eb; font-weight:bold;'>✔</span>
-                        Book titles must be typed completely for accurate results.
-                    </li>
-
-                    <li style="margin-bottom:8px; display:flex; align-items:flex-start; gap:8px;">
-                        <span style='color:#2563eb; font-weight:bold;'>✔</span>
-                        Search results depend on the selected search type.
-                    </li>
-                </ul>
+                    <!-- Keyboard Container -->
+                    <div class="keyboard-container" id="advancedKeyboard">
+                        <div class="keyboard-hint"></div>
+                        <div class="keyboard-body"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="search-input-group">
+                            <input type="text" class="form-input" id="advancedSearchInput" 
+                                placeholder="Type search term...">
+                            <button class="input-search-btn" onclick="performAdvancedSearch()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <small class="form-hint">Minimum 3 characters required</small>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="advancedSearchBtn" onclick="performAdvancedSearch()" disabled>
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
             </div>
-
-        </div>
-    </div>
-
-    <!-- ================= Keyword Buttons Section ================= -->
-    <div id="keywordSection"
-        style="display:none; background:#fff; border-radius:12px; padding:20px; 
-                margin-top:20px; box-shadow:0 2px 8px rgba(0,0,0); max-width:1100px; 
-                margin-left:auto; margin-right:auto;">
-
-        <!-- English A–Z -->
-        <div class="keyword-row english" 
-            style="display:flex; flex-wrap:wrap; justify-content:center;
-                    gap:5px; margin-bottom:15px; width:100%;">
-
-            {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-                <button type="button"
-                    onclick="document.getElementById('advancedSearchInput').value='{{ letter }}'; performBookSearch()"
-                    style="
-                        background:#00eaff; color:#000; border:none;
-                        padding:6px 10px; border-radius:6px;
-                        font-size:13px; cursor:pointer; min-width:32px;
-                        text-align:center; font-weight:bold;
-                        transition:transform 0.2s ease, box-shadow 0.2s ease;
-                        box-shadow:0 2px 5px rgba(0,0,0);
-                    "
-                    onmouseover="this.style.transform='translateY(-2px)'"
-                    onmouseout="this.style.transform='translateY(0)'"
-                    onmousedown="this.style.transform='scale(0.92)'"
-                    onmouseup="this.style.transform='translateY(-2px)'">
-                    {{ letter }}
+            
+            <!-- Index Search Content -->
+            <div id="indexTab" class="tab-content">
+                <div class="search-section">
+                    <div class="form-group">
+                        <div class="type-buttons">
+                            <button class="type-btn active" data-type="title" onclick="selectIndexType('title')">शीर्षक/Title</button>
+                            <button class="type-btn" data-type="author" onclick="selectIndexType('author')">लेखक/Author</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Transliteration Hint -->
+                    <div class="transliteration-hint hindi" id="indexTransliterationHint" style="display: none;">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Type English letters to get Devanagari characters</span>
+                    </div>
+                    
+                    <!-- Keyboard Container -->
+                    <div class="keyboard-container" id="indexKeyboard">
+                        <div class="keyboard-hint"></div>
+                        <div class="keyboard-body"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="search-input-group">
+                            <input type="text" class="form-input" id="indexSearchInput" 
+                                placeholder="Type starting letter...">
+                            <button class="input-search-btn" onclick="performManualIndexSearch()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        {% comment %} <small class="form-hint">Press Enter to search</small> {% endcomment %}
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="performManualIndexSearch()">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="btn-help" onclick="openHelp()">
+                    <i class="bi bi-question-circle"></i> Help
                 </button>
-            {% endfor %}
-        </div>
-
-        <!-- Marathi Letters -->
-        <div class="keyword-row marathi" 
-            style="display:flex; flex-wrap:wrap; justify-content:center;
-                    gap:5px; width:100%;">
-
-            {% for letter in "अअंआइईउऊएऐओऔअःकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसहळक्ष" %}
-                <button type="button"
-                    onclick="document.getElementById('advancedSearchInput').value='{{ letter }}'; performBookSearch()"
-                    style="
-                        background:#054f9d; color:white; border:none;
-                        padding:6px 10px; border-radius:6px;
-                        font-size:13px; cursor:pointer; min-width:32px;
-                        text-align:center; font-weight:600;
-                        transition:transform 0.2s ease, box-shadow 0.2s ease;
-                        box-shadow:0 2px 5px rgba(0,0,0,0.25);
-                    "
-                    onmouseover="this.style.transform='translateY(-2px)'"
-                    onmouseout="this.style.transform='translateY(0)'"
-                    onmousedown="this.style.transform='scale(0.92)'"
-                    onmouseup="this.style.transform='translateY(-2px)'">
-                    {{ letter }}
+                <button class="btn-clear" onclick="clearAll()">
+                    <i class="bi bi-eraser"></i> Clear
                 </button>
-            {% endfor %}
+            </div>
+            
+            <div class="search-status" id="indexSearchStatus"></div>
         </div>
+        
+        <!-- RIGHT PANEL: Search Results -->
+         <div class="results-panel">
+            <div id="searchResults" class="results-container">
+                <!-- Results will appear here -->
+                <div style="text-align: center; color: #94a3b8; padding: 80px 20px; width: 100%;">
+                    {% comment %} <i class="bi bi-search" style="font-size: 36px; margin-bottom: 15px;"></i> {% endcomment %}
+                    <h4 style="color: #64748b; margin-bottom: 10px;">Search Results for Books</h4>
+                    <p style="font-size: 13px;">Use the search controls to find books or ebooks</p>
+                </div>
+            </div>
+            
+            <div id="paginationContainer" class="pagination"></div>
+        </div>
+        
+        <!-- ================= BOOK MODAL ================= -->
+        <div id="zoomModal" class="zoom-modal" style="display: none;">
+            <span class="close-zoom" onclick="closeZoom()">&times;</span>
+            <div class="zoom-modal-content-wrapper">
+                <!-- Left: Book Image -->
+                <div class="zoom-modal-left">
+                    <img id="zoomedImage" src="" alt="Book Image">
+                    
+                    <!-- Image Preview Thumbnails -->
+                    <div class="image-preview-container">
+                        <div class="thumbnail-wrapper">
+                            <img class="thumbnail active" 
+                                id="frontPageThumb" 
+                                src="" 
+                                alt="Front Page" 
+                                onclick="switchImage(this, 'front')">
+                            <span>Front Cover</span>
+                        </div>
+                        <div class="thumbnail-wrapper">
+                            <img class="thumbnail" 
+                                id="lastPageThumb" 
+                                src="" 
+                                alt="Last Page" 
+                                onclick="switchImage(this, 'last')">
+                            <span>Back Cover</span>
+                        </div>
+                    </div>
+                </div>
 
-    </div>
+                <!-- Right: Book Info -->
+                <div class="zoom-modal-right">
+                    <div class="book-info-content">
+                        <h1 id="zoomBookTitle">Book Title</h1>
+                        <p id="zoomBookSubtitle"></p>
+                        
+                        <div class="book-info-grid">
+                            <div class="info-item">
+                                <strong>Author:</strong> <span id="zoomBookAuthor"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Publisher:</strong> <span id="zoomBookPublisher"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>ISBN/ISSN:</strong> <span id="zoomBookISBN"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Edition:</strong> <span id="zoomBookEdition"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Language:</strong> <span id="zoomBookLanguage"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Publication Place:</strong> <span id="zoomBookPlace"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Year of Publication:</strong> <span id="zoomBookYear"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Pages:</strong> <span id="zoomBookPages"></span>
+                            </div>
+                        </div>
 
-</div>
-
-</div>
-
-    <div id="searchResults" style="margin-top: 25px;"></div>
-
-</div>
-
-<!-- ================= Library Card Section ================= -->
-{% comment %} <div class="library-card-wrapper">
-
-    <!-- Top Section: Logo and NMMC Title -->
-    <div class="library-card-header">
-        <img src="{% static 'images/administrative/image_logo.png' %}" alt="NMMC Logo" class="nmmc-logo">
-        <h2 class="nmmc-title">नवी मुंबई महानगरपालिका</h2>
-    </div>
-
-    <!-- Hidden fields for JavaScript -->
-    <input type="hidden" id="memberId" value="{{ member_details.id }}">
-    <input type="hidden" id="libraryCode" value="{{ member_details.library_name }}">
-
-    <!-- Library Name from URL -->
-    <div class="library-name-section">
-        <div id="libraryNameDisplay">
-            <!-- Display library name from URL parameter -->
-            <h3><u>{{ member_details.library_name }}</u></h3>
+                        
+                        <span id="zoomEncryptedEbookId" style="display:none;"></span>
+                        <span id="zoomEncryptedPdfUrl" style="display:none;"></span>
+                        <span id="zoomEncryptedCatRefNum" style="display:none;"></span>
+                        
+                        <button class="login-btn" onclick="zoomRedirectLogin()">Open Book Details</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <!-- ====== USER DETAILS + PHOTO ====== -->
-    <div class="library-user-section">
-
-        <div class="library-user-photo">
-            {% if member_details.user_image_url %}
-                <img src="{{ MEDIA_URL }}{{ member_details.user_image_url }}" alt="User Photo">
-            {% else %}
-                <img src="{% static 'images/demo_member.jpg' %}" alt="User Photo">
-            {% endif %}
-        </div>
-
-        <div class="library-user-details">
-            <p><strong>Name :</strong> {{ member_details.name }}</p>
-            <p><strong>Address :</strong> {{ member_details.address }}</p>
-            <p><strong>Mobile No :</strong> {{ member_details.mobile_no }}</p>
-            <p><strong>Membership Date :</strong>  
-                {{ member_details.membership_from }} to {{ member_details.membership_to }}
-            </p>
-            {% comment %} <p><strong>Member ID :</strong> {{ member_details.user_id }}</p> {% endcomment %}
-            <!-- Added library address and phone here -->
-            {% comment %} <p><strong>Library Address :</strong> {{ member_details.library_address }}</p> {% endcomment %}
-            {% comment %} <p><strong>Library Phone :</strong> {{ member_details.library_phone }}</p> {% endcomment %}
-       {% comment %} </div>
-
-    </div>
-    <!-- ================================== -->
-
-<div class="overdue-note">
-    <strong>Note:</strong> Rows highlighted in red indicate that the book's due date has passed. Returning these books late will incur a fine.
-</div> {% endcomment %}
-<!-- Book Transactions Table -->
-{% comment %} <div class="library-table-wrapper">
-    <table class="library-table display" id="transactionsTable" style="width:100%">
-        <thead>
-            <tr>
-                <th>Book Title</th>
-                <th>Author</th>
-                <th>Issued Date</th>
-                <th>Due Date</th>
-                <th>Return Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if transaction_details %}
-                {% for transaction in transaction_details %}
-                    <tr class="{% if transaction.due_date and transaction.due_date < today %}overdue-row{% endif %}">
-                        <td>{{ transaction.book_title }}</td>
-                        <td>{{ transaction.author }}</td>
-                        <td>{{ transaction.issue_date }}</td>
-                        <td>{{ transaction.due_date }}</td>
-                        <td>{{ transaction.return_date }}</td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-        </tbody>
-    </table>
 </div>
 
-</div> {% endcomment %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/indic-transliteration@2/dist/indic-transliteration.min.js"></script>
 
-    <script>
-        // Open modal
-        document.querySelectorAll('.rule-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const modalId = btn.getAttribute('data-modal');
-                document.querySelector(modalId).style.display = 'block';
-            });
-        });
+<script>
+// ================= GLOBAL VARIABLES =================
+let currentMode = 'catalog';
+let currentData = [];
+let currentPage = 1;
+const itemsPerPage = 7;
+let currentSearchType = '';
+let currentAdvancedType = 'title';
+let currentIndexType = 'title';
+let currentLanguage = 'english';
+let transliterationEnabled = false;
+let transliterationDebounceTimer = null;
+const LANGUAGE_DB_MAP = {
+    english: 'English',
+    hindi: 'हिंदी',
+    marathi: 'मराठी'
+};
 
-        // Close modal
-        document.querySelectorAll('.modal .close').forEach(span => {
-            span.addEventListener('click', () => {
-                span.closest('.modal').style.display = 'none';
-            });
-        });
 
-        // Close modal on outside click
-        window.addEventListener('click', (e) => {
-            document.querySelectorAll('.modal').forEach(modal => {
-                if (e.target == modal) modal.style.display = 'none';
-            });
-        });
-    </script>
+// ================= TRANSLITERATION SETUP =================
+function initializeTransliteration() {
+    console.log("Initializing Django-based transliteration...");
+    
+    // Setup transliteration for input fields
+    setupTransliterationFields();
+    
+    console.log("Transliteration ready");
+}
 
-    <script>
-        // Flip Book
-        function flipBook(flipId) {
-            const flipContainer = document.getElementById(flipId).querySelector('.book-flip-inner');
-            flipContainer.style.transform = flipContainer.style.transform === "rotateY(180deg)" ? "rotateY(0deg)" : "rotateY(180deg)";
+function setupTransliterationFields() {
+    const advancedInput = document.getElementById('advancedSearchInput');
+    const indexInput = document.getElementById('indexSearchInput');
+    
+    if (advancedInput) {
+        advancedInput.addEventListener('input', handleTransliterationInput);
+        advancedInput.addEventListener('blur', handleTransliterationBlur);
+        advancedInput.addEventListener('keydown', handleTransliterationKeydown);
+    }
+    
+    if (indexInput) {
+        indexInput.addEventListener('input', handleTransliterationInput);
+        indexInput.addEventListener('blur', handleTransliterationBlur);
+        indexInput.addEventListener('keydown', handleTransliterationKeydown);
+    }
+    
+    console.log("Transliteration fields setup completed");
+}
+
+// ================= TRANSLITERATION LOGIC =================
+function handleTransliterationInput(event) {
+    if (!transliterationEnabled) return;
+    
+    const input = event.target;
+    const text = input.value;
+    const cursorPos = input.selectionStart;
+    
+    // Clear any existing debounce timer
+    clearTimeout(transliterationDebounceTimer);
+    
+    // Don't process empty or very short text
+    if (!text || text.length < 2) return;
+    
+    // Debounce the transliteration to avoid too many requests
+    transliterationDebounceTimer = setTimeout(() => {
+        transliterateCurrentWord(input, cursorPos);
+    }, 300);
+}
+
+function handleTransliterationKeydown(event) {
+    if (!transliterationEnabled) return;
+    
+    // Trigger transliteration on space or enter
+    if (event.key === ' ' || event.key === 'Enter') {
+        const input = event.target;
+        clearTimeout(transliterationDebounceTimer);
+        transliterateFullText(input);
+    }
+}
+
+function handleTransliterationBlur(event) {
+    if (!transliterationEnabled) return;
+    
+    const input = event.target;
+    clearTimeout(transliterationDebounceTimer);
+    
+    // Finalize transliteration when user leaves the field
+    if (input.value.trim().length > 0) {
+        transliterateFullText(input);
+    }
+}
+
+async function transliterateCurrentWord(input, cursorPos) {
+    try {
+        const text = input.value;
+        const beforeCursor = text.substring(0, cursorPos);
+        const afterCursor = text.substring(cursorPos);
+        
+        // Extract the current word being typed (around cursor)
+        const wordMatch = beforeCursor.match(/(\b\w+\b)$/);
+        if (!wordMatch) return;
+        
+        const currentWord = wordMatch[1];
+        
+        // Only transliterate if word is English (no Devanagari)
+        if (containsDevanagari(currentWord)) return;
+        
+        // Call Django transliteration endpoint
+        const translatedWord = await fetchTransliteration(currentWord);
+        
+        if (translatedWord && translatedWord !== currentWord) {
+            // Replace the current word with translated version
+            const newBeforeCursor = beforeCursor.substring(0, beforeCursor.length - currentWord.length) + translatedWord;
+            input.value = newBeforeCursor + afterCursor;
+            
+            // Adjust cursor position
+            const newCursorPos = newBeforeCursor.length;
+            setTimeout(() => {
+                input.setSelectionRange(newCursorPos, newCursorPos);
+                input.focus();
+            }, 10);
         }
-    </script>
+    } catch (error) {
+        console.warn("Transliteration error:", error);
+    }
+}
 
-    <script>
-        function zoomImage(img) {
-            const modal = document.getElementById("zoomModal");
-            const modalImg = document.getElementById("zoomedImage");
-
-            // Core fields
-            const modalAuthor = document.getElementById("zoomBookAuthor");
-            const modalTitle = document.getElementById("zoomBookTitle");
-            const modalSubtitle = document.getElementById("zoomBookSubtitle");
-            const modalPublisher = document.getElementById("zoomBookPublisher");
-            const modalISBN = document.getElementById("zoomBookISBN");
-            const modalEdition = document.getElementById("zoomBookEdition");
-            const modalSubject = document.getElementById("zoomBookSubject");
-            const modalLanguage = document.getElementById("zoomBookLanguage");
-            const modalPlace = document.getElementById("zoomBookPlace");
-            const modalYear = document.getElementById("zoomBookYear");
-            const modalPages = document.getElementById("zoomBookPages");
-            const modalRemarks = document.getElementById("zoomBookRemarks");
-            const modalDescription = document.getElementById("zoomBookDescription");
-
-            // Show modal
-            modal.style.display = "flex";
-            modal.classList.add("show");
-
-            // Assign values safely
-            modalImg.src = img.src;
-            modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
-            modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
-            modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
-            modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
-            modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
-            modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
-            modalSubject.textContent = img.getAttribute('data-subject') || "N/A";
-            modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
-            modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
-            modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
-            modalPages.textContent = img.getAttribute('data-pages') || "N/A";
-            modalRemarks.textContent = img.getAttribute('data-remarks') || "";
-            modalDescription.textContent = img.getAttribute('data-description') || "";
+async function transliterateFullText(input) {
+    try {
+        const text = input.value.trim();
+        if (!text || containsDevanagari(text)) return;
+        
+        // Split text into words and transliterate each
+        const words = text.split(/\s+/);
+        const transliteratedWords = [];
+        
+        for (const word of words) {
+            if (word && !containsDevanagari(word)) {
+                const translated = await fetchTransliteration(word);
+                transliteratedWords.push(translated || word);
+            } else {
+                transliteratedWords.push(word);
+            }
         }
-
-        function closeZoom() {
-            const modal = document.getElementById("zoomModal");
-            modal.style.display = "none";
-            modal.classList.remove("show");
+        
+        const result = transliteratedWords.join(' ');
+        if (result !== text) {
+            input.value = result;
         }
+    } catch (error) {
+        console.warn("Full text transliteration error:", error);
+    }
+}
 
-        // Close modal on click outside image
-        document.getElementById("zoomModal").addEventListener("click", function (e) {
-            if (e.target.id === "zoomModal") {
-                closeZoom();
+// ================= DJANGO API CALL =================
+async function fetchTransliteration(word) {
+    if (!word || !/^[a-zA-Z]+$/.test(word)) {
+        return word; // Return original if not English alphabets
+    }
+    
+    try {
+        // Call your Django transliteration endpoint
+        const response = await fetch(`/translate_word/?q=${encodeURIComponent(word)}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             }
         });
-    </script>
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            console.warn("Transliteration API error:", data.error);
+            return fallbackTransliteration(word); // Use fallback on error
+        }
+        
+        return data.translated || word;
+        
+    } catch (error) {
+        console.error("Transliteration fetch failed:", error);
+        // Fallback to client-side transliteration
+        return fallbackTransliteration(word);
+    }
+}
 
-    <!-- AJAX Script -->
-    {% comment %} <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> {% endcomment %}
-    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+// ================= FALLBACK TRANSLITERATION =================
+function fallbackTransliteration(word) {
+    const vowels = {
+        a: "अ", aa: "आ", i: "इ", ee: "ई", u: "उ", oo: "ऊ",
+        e: "ए", ai: "ऐ", o: "ओ", au: "औ"
+    };
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    const matras = {
+        a: "", aa: "ा", i: "ि", ee: "ी", u: "ु", oo: "ू",
+        e: "े", ai: "ै", o: "ो", au: "ौ"
+    };
 
+    const consonants = {
+        k: "क", kh: "ख", g: "ग", gh: "घ",
+        ch: "च", chh: "छ", j: "ज", jh: "झ",
+        t: "त", th: "थ", d: "द", dh: "ध",
+        n: "न", p: "प", ph: "फ", b: "ब", bh: "भ",
+        m: "म", y: "य", r: "र", l: "ल", v: "व",
+        sh: "श", s: "स", h: "ह", ng: "ङ"
+    };
 
+    const halant = "्";
+    const text = word.toLowerCase();
+    let result = "";
+    let i = 0;
 
-<!-- ================= JS Section ================= -->
-<script>
-    let currentPage = 1;
-    const itemsPerPage = 6;
-    let currentData = []; // Stores last search results
+    while (i < text.length) {
+        let two = text.substr(i, 2);
+        let one = text[i];
 
-    function performSearch(page = 1) {
-        const type = document.getElementById("searchType").value;
-        const query = document.getElementById("advancedSearchInput").value.trim();
-        const resultsDiv = document.getElementById("searchResults");
+        // Consonant (2-letter)
+        if (consonants[two]) {
+            result += consonants[two];
+            i += 2;
 
-        if (!type || !query) {
-            resultsDiv.innerHTML =
-                "<p style='color:red;'>Please select a type and enter a search term.</p>";
-            return;
+            // Check following vowel → matra
+            let next2 = text.substr(i, 2);
+            let next1 = text[i];
+
+            if (matras[next2] !== undefined) {
+                result += matras[next2];
+                i += 2;
+            } else if (matras[next1] !== undefined) {
+                result += matras[next1];
+                i += 1;
+            } else if (i < text.length) {
+                result += halant;
+            }
+            continue;
         }
 
-        // Show loader while fetching
-        resultsDiv.innerHTML = `
+        // Consonant (1-letter)
+        if (consonants[one]) {
+            result += consonants[one];
+            i++;
+
+            let next2 = text.substr(i, 2);
+            let next1 = text[i];
+
+            if (matras[next2] !== undefined) {
+                result += matras[next2];
+                i += 2;
+            } else if (matras[next1] !== undefined) {
+                result += matras[next1];
+                i += 1;
+            } else if (i < text.length) {
+                result += halant;
+            }
+            continue;
+        }
+
+        // Standalone vowel
+        if (vowels[two]) {
+            result += vowels[two];
+            i += 2;
+            continue;
+        }
+        if (vowels[one]) {
+            result += vowels[one];
+            i++;
+            continue;
+        }
+
+        result += one;
+        i++;
+    }
+
+    return result;
+}
+
+// ================= UTILITY FUNCTIONS =================
+function containsDevanagari(text) {
+    // Check if text contains Devanagari characters
+    return /[\u0900-\u097F]/.test(text);
+}
+
+function getCSRFToken() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    return csrfToken ? csrfToken.value : '';
+}
+
+function toggleTransliteration(enabled) {
+    transliterationEnabled = enabled;
+    
+    if (enabled) {
+        updateTransliterationUI(true);
+        const languageName = currentLanguage.charAt(0).toUpperCase() + currentLanguage.slice(1);
+        updateHintMessages();
+        
+        // Process any existing text in inputs
+        const inputs = ['advancedSearchInput', 'indexSearchInput'];
+        inputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input && input.value.trim() && !containsDevanagari(input.value)) {
+                setTimeout(() => transliterateFullText(input), 500);
+            }
+        });
+        
+    } else {
+        updateTransliterationUI(false);
+    }
+    
+    renderKeyboards();
+    updateInputPlaceholders();
+}
+
+function updateTransliterationUI(enabled) {
+    // Show/hide hints
+    const advancedHint = document.getElementById('advancedTransliterationHint');
+    const indexHint = document.getElementById('indexTransliterationHint');
+    
+    if (advancedHint) advancedHint.style.display = enabled ? 'flex' : 'none';
+    if (indexHint) indexHint.style.display = enabled ? 'flex' : 'none';
+    
+    // Update status text
+    const statusElement = document.getElementById('transliterationStatus');
+    if (statusElement) {
+        statusElement.textContent = enabled ? 'On' : 'Off';
+        statusElement.style.color = enabled ? '#4CAF50' : '#6c757d';
+    }
+}
+
+function updateHintMessages() {
+    {% comment %} const hintText = currentLanguage === 'मराठी' 
+        ? 'Type in English (e.g., "namaskar") and it will convert to Marathi'
+        : 'Type in English (e.g., "namaste") and it will convert to Hindi'; {% endcomment %}
+    
+    const advancedHint = document.getElementById('advancedTransliterationHint');
+    const indexHint = document.getElementById('indexTransliterationHint');
+}
+
+function updateTransliterationForLanguage(language) {
+    if (transliterationEnabled) {
+        // Update hint messages
+        updateHintMessages();
+    }
+}
+
+// ================= LANGUAGE SET FUNCTION =================
+function setLanguage(lang) {
+    currentLanguage = lang;
+
+    // ✅ Update active button correctly
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+
+    // Show / hide transliteration toggle
+    const transliterationToggle = document.getElementById('transliterationToggle');
+
+    if (lang === 'hindi' || lang === 'marathi') {
+        if (transliterationToggle) transliterationToggle.style.display = 'flex';
+        updateTransliterationForLanguage(lang);
+    } else {
+        if (transliterationToggle) transliterationToggle.style.display = 'none';
+
+        if (transliterationEnabled) {
+            const switchElement = document.getElementById('transliterationSwitch');
+            if (switchElement) {
+                switchElement.checked = false;
+                toggleTransliteration(false);
+            }
+        }
+    }
+
+    // Update keyboards & inputs
+    renderKeyboards();
+    updateInputPlaceholders();
+}
+
+// ================= KEYBOARD RENDERING =================
+function renderKeyboards() {
+    renderAdvancedKeyboard();
+    renderIndexKeyboard();
+}
+
+function renderAdvancedKeyboard() {
+    const container = document.getElementById('advancedKeyboard');
+    if (!container) return;
+
+    const hint = container.querySelector('.keyboard-hint');
+    const body = container.querySelector('.keyboard-body');
+
+    body.innerHTML = getKeyboardHTML(currentLanguage);
+    setupKeyboardEvents(body, 'advancedSearchInput');
+
+    if (transliterationEnabled && (currentLanguage === 'hindi' || currentLanguage === 'marathi')) {
+        const languageName = currentLanguage.charAt(0).toUpperCase() + currentLanguage.slice(1);
+
+        hint.innerHTML = `
+            <div>
+                <i class="bi bi-translate" style="font-size:22px"></i><br>
+                Type in English to get ${languageName} characters<br>
+                <small>"namaskar" → "नमस्कार"</small>
+            </div>
+        `;
+        hint.classList.add('active');
+        body.style.pointerEvents = 'none'; 
+    } else {
+        hint.classList.remove('active');
+        body.style.pointerEvents = 'auto'; 
+    }
+}
+
+function renderIndexKeyboard() {
+    const container = document.getElementById('indexKeyboard');
+    if (!container) return;
+
+    const hint = container.querySelector('.keyboard-hint');
+    const body = container.querySelector('.keyboard-body');
+
+    body.innerHTML = getKeyboardHTML(currentLanguage);
+    setupKeyboardEvents(body, 'indexSearchInput');
+
+    if (transliterationEnabled && (currentLanguage === 'hindi' || currentLanguage === 'marathi')) {
+        hint.innerHTML = `
+            <div>Type English letter to get ${
+                currentLanguage === 'marathi' ? 'Marathi' : 'Hindi'
+            } character</div>
+        `;
+        hint.classList.add('active');
+        body.style.pointerEvents = 'none'; 
+    } else {
+        hint.classList.remove('active');
+        body.style.pointerEvents = 'auto'; 
+    }
+}
+
+function setupKeyboardEvents(container, inputId) {
+    container.querySelectorAll('.keyboard-key').forEach(key => {
+        key.addEventListener('click', function() {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            
+            const char = this.textContent.trim();
+            if (char === '⌫') {
+                input.value = input.value.slice(0, -1);
+            } else if (this.classList.contains('clear-btn')) {
+                input.value = '';
+            } else if (this.classList.contains('space-btn')) {
+                input.value += ' ';
+            } else {
+                if (inputId === 'indexSearchInput') {
+                    input.value = char;
+                } else {
+                    input.value += char;
+                }
+            }
+            input.focus();
+            
+            if (inputId === 'advancedSearchInput') {
+                validateAdvancedSearch();
+            }
+        });
+    });
+}
+
+function getKeyboardHTML(language) {
+    if (language === 'english') {
+        return `
+            <div class="english-keyboard">
+                <div class="keyboard-row">
+                    ${'ABCDEFG'.split('').map(char => 
+                        `<button class="keyboard-key" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div class="keyboard-row">
+                    ${'HIJKLMN'.split('').map(char => 
+                        `<button class="keyboard-key" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div class="keyboard-row">
+                    ${'OPQRSTU'.split('').map(char => 
+                        `<button class="keyboard-key" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div class="keyboard-row">
+                    ${'VWXYZ'.split('').map(char => 
+                        `<button class="keyboard-key" title="${char}">${char}</button>`
+                    ).join('')}
+                    <button class="keyboard-key backspace-btn" title="Backspace">⌫</button>
+                </div>
+                <div class="keyboard-actions">
+                    <button class="keyboard-key special clear-btn">Clear</button>
+                    <button class="keyboard-key special space-btn">Space</button>
+                </div>
+            </div>
+        `;
+    } else if (language === 'marathi') {
+        const marathiVowels = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ', 'अं', 'अः'];
+        const marathiConsonants = ['क', 'ख', 'ग', 'घ', 'ङ', 'च', 'छ', 'ज', 'झ', 'ञ', 'ट', 'ठ', 'ड', 'ढ', 'ण', 'त', 'थ', 'द', 'ध', 'न', 'प', 'फ', 'ब', 'भ', 'म', 'य', 'र', 'ल', 'व', 'श', 'ष', 'स', 'ह', 'ळ', 'क्ष', 'ज्ञ'];
+        
+        return `
+            <div>
+                <div style="font-size:10px;color:#64748b;margin-bottom:5px;">स्वर / Vowels</div>
+                <div class="marathi-keyboard-grid">
+                    ${marathiVowels.map(char => 
+                        `<button class="keyboard-key marathi" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div style="font-size:10px;color:#64748b;margin-top:8px;margin-bottom:5px;">व्यंजन / Consonants</div>
+                <div class="marathi-keyboard-grid">
+                    ${marathiConsonants.map(char => 
+                        `<button class="keyboard-key marathi" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div class="keyboard-actions">
+                    <button class="keyboard-key backspace-btn">⌫</button>
+                    <button class="keyboard-key special clear-btn">Clear</button>
+                    <button class="keyboard-key special space-btn">Space</button>
+                </div>
+            </div>
+        `;
+    } else if (language === 'hindi') {
+        const hindiVowels = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ', 'अं', 'अः'];
+        const hindiConsonants = ['क', 'ख', 'ग', 'घ', 'ङ', 'च', 'छ', 'ज', 'झ', 'ञ', 'ट', 'ठ', 'ड', 'ढ', 'ण', 'त', 'थ', 'द', 'ध', 'न', 'प', 'फ', 'ब', 'भ', 'म', 'य', 'र', 'ल', 'व', 'श', 'ष', 'स', 'ह'];
+        
+        return `
+            <div>
+                <div style="font-size:10px;color:#64748b;margin-bottom:5px;">स्वर</div>
+                <div class="hindi-keyboard-grid">
+                    ${hindiVowels.map(char => 
+                        `<button class="keyboard-key hindi" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div style="font-size:10px;color:#64748b;margin-top:8px;margin-bottom:5px;">व्यंजन</div>
+                <div class="hindi-keyboard-grid">
+                    ${hindiConsonants.map(char => 
+                        `<button class="keyboard-key hindi" title="${char}">${char}</button>`
+                    ).join('')}
+                </div>
+                <div class="keyboard-actions">
+                    <button class="keyboard-key backspace-btn">⌫</button>
+                    <button class="keyboard-key special clear-btn">Clear</button>
+                    <button class="keyboard-key special space-btn">Space</button>
+                </div>
+            </div>
+        `;
+    }
+    return '';
+}
+
+function updateInputPlaceholders() {
+    const advancedInput = document.getElementById('advancedSearchInput');
+    const indexInput = document.getElementById('indexSearchInput');
+    
+    if (!advancedInput || !indexInput) return;
+    
+    if (currentLanguage === 'english') {
+        advancedInput.placeholder = 'Type search term...';
+        indexInput.placeholder = 'Type starting letter...';
+    } else if (currentLanguage === 'मराठी') {
+        if (transliterationEnabled) {
+            advancedInput.placeholder = 'Type in English (e.g., "pustak")...';
+            indexInput.placeholder = 'Type English letter (e.g., "k")...';
+        } else {
+            advancedInput.placeholder = 'शोध मजकूर टाइप करा...';
+            indexInput.placeholder = 'प्रारंभिक अक्षर टाइप करा...';
+        }
+    } else if (currentLanguage === 'hindi') {
+        if (transliterationEnabled) {
+            advancedInput.placeholder = 'Type in English (e.g., "pustak")...';
+            indexInput.placeholder = 'Type English letter (e.g., "k")...';
+        } else {
+            advancedInput.placeholder = 'खोज पाठ टाइप करें...';
+            indexInput.placeholder = 'प्रारंभिक अक्षर टाइप करें...';
+        }
+    }
+}
+
+// ================= MAIN INITIALIZATION =================
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize transliteration
+    initializeTransliteration();
+    
+    currentLanguage = 'english';
+    currentMode = 'catalog';
+    // Set default language
+    setLanguage('english');
+    renderKeyboards();
+    
+    // Initialize UI
+    initializeUI();
+    setupEventListeners();
+    setupKeyboardShortcuts();
+    
+    // Setup transliteration switch event
+    const transliterationSwitch = document.getElementById('transliterationSwitch');
+    if (transliterationSwitch) {
+        transliterationSwitch.addEventListener('change', function() {
+            toggleTransliteration(this.checked);
+        });
+    }
+});
+
+// ================= TEST FUNCTION =================
+function testTransliteration() {
+    console.log("Testing transliteration...");
+    const testWords = ['namaskar', 'dhanyavad', 'pustak', 'mala', 'kay'];
+    
+    testWords.forEach(async (word) => {
+        const result = await fetchTransliteration(word);
+        console.log(`${word} → ${result}`);
+    });
+}
+
+// ================= UI CONTROL FUNCTIONS =================
+function switchToCatalog() {
+    currentMode = 'catalog';
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    const firstBtn = document.querySelector('.mode-btn:first-child');
+    if (firstBtn) firstBtn.classList.add('active');
+    
+    clearResults();
+    updateSearchPlaceholders();
+}
+
+function switchToEbook() {
+    currentMode = 'ebook';
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    const lastBtn = document.querySelector('.mode-btn:last-child');
+    if (lastBtn) lastBtn.classList.add('active');
+    
+    clearResults();
+    updateSearchPlaceholders();
+}
+
+function updateSearchPlaceholders() {
+    const advancedInput = document.getElementById('advancedSearchInput');
+    const indexInput = document.getElementById('indexSearchInput');
+    
+    if (!advancedInput || !indexInput) return;
+    
+    if (currentMode === 'catalog') {
+        advancedInput.placeholder = 'Search catalog books...';
+        indexInput.placeholder = 'Type letter for catalog...';
+    } else {
+        advancedInput.placeholder = 'Search ebooks...';
+        indexInput.placeholder = 'Type letter for ebooks...';
+    }
+}
+
+function showTab(tabName, event = null) {
+    document.querySelectorAll('.search-tab').forEach(tab => tab.classList.remove('active'));
+    
+    if (event) {
+        event.target.classList.add('active');
+    } else {
+        const tabElement = document.querySelector(`.search-tab:nth-child(${tabName === 'advanced' ? '1' : '2'})`);
+        if (tabElement) tabElement.classList.add('active');
+    }
+    
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    const tabContent = document.getElementById(tabName + 'Tab');
+    if (tabContent) tabContent.classList.add('active');
+    
+    clearResults();
+}
+
+function selectType(type) {
+    currentAdvancedType = type;
+    document.querySelectorAll('#advancedTab .type-btn').forEach(btn => btn.classList.remove('active'));
+    const selectedBtn = document.querySelector(`#advancedTab .type-btn[data-type="${type}"]`);
+    if (selectedBtn) selectedBtn.classList.add('active');
+}
+
+function selectIndexType(type) {
+    currentIndexType = type;
+    document.querySelectorAll('#indexTab .type-btn').forEach(btn => btn.classList.remove('active'));
+    const selectedBtn = document.querySelector(`#indexTab .type-btn[data-type="${type}"]`);
+    if (selectedBtn) selectedBtn.classList.add('active');
+}
+
+// ================= VALIDATION FUNCTIONS =================
+function validateAdvancedSearch() {
+    const searchBtn = document.getElementById('advancedSearchBtn');
+    const searchInput = document.getElementById('advancedSearchInput');
+    
+    if (!searchBtn || !searchInput) return;
+    
+    if (searchInput.value.trim().length >= 3) {
+        searchBtn.disabled = false;
+        searchBtn.style.opacity = '1';
+    } else {
+        searchBtn.disabled = true;
+        searchBtn.style.opacity = '0.5';
+    }
+}
+
+// ================= SEARCH FUNCTIONS =================
+function performAdvancedSearch(page = 1) {
+    const query = document.getElementById('advancedSearchInput')?.value.trim();
+    
+    if (!query || query.length < 3) {
+        Swal.fire('Validation', 'Please enter at least 3 characters.', 'warning');
+        return;
+    }
+    
+    currentSearchType = 'advanced';
+    executeSearch(currentAdvancedType, query, page);
+}
+
+function performIndexLetterSearch(letter) {
+    const indexInput = document.getElementById('indexSearchInput');
+    if (indexInput) {
+        indexInput.value = letter;
+    }
+    currentSearchType = 'index';
+    executeSearch(currentIndexType, letter);
+}
+
+function performManualIndexSearch() {
+    const query = document.getElementById('indexSearchInput')?.value.trim();
+    
+    if (!query) {
+        Swal.fire('Validation', 'Please enter a letter to search.', 'warning');
+        return;
+    }
+    
+    currentSearchType = 'index';
+    executeSearch(currentIndexType, query);
+}
+
+function executeSearch(searchType, query, page = 1) {
+    const resultsDiv = document.getElementById('searchResults');
+    
+    // Show loader
+    resultsDiv.innerHTML = `
+        <div class="loader-container">
             <div class="cube-loader">
                 <div class="cube-wrapper">
                     <span class="cube-span" style="--i:0;"></span>
@@ -737,540 +2174,625 @@
                     <div class="cube-top"></div>
                 </div>
             </div>
-        `;
-
-        $.ajax({
-            url: "{% url 'L01:bookcatalog_search' %}",
-            type: "POST",
-            data: {
-                searchType: type,
-                query: query
-            },
-            dataType: "json",
-            headers: { "X-CSRFToken": "{{ csrf_token }}" },
-            success: function(data) {
-                if (!data || data.length === 0) {
-                    resultsDiv.innerHTML = "<p style='color:orange;'>No records found.</p>";
-                    Swal.fire("No Results", "No matching records found.", "info");
-                    return;
-                }
-
-                currentData = data;
-                currentPage = page;
-                renderPage(currentPage); // Loader is replaced by results
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching data:", error);
-                resultsDiv.innerHTML =
-                    "<p style='color:red;'>An error occurred while searching.</p>";
-                Swal.fire("Error!", "An error occurred while fetching search results.", "error");
-            }
-        });
-    }
-
-    // Render a specific page
-    function renderPage(page) {
-        const resultsDiv = document.getElementById("searchResults");
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageData = currentData.slice(startIndex, endIndex);
-
-        let html = `<div class='show' style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">`;
-
-        pageData.forEach((item, index) => {
-            const globalIndex = startIndex + index;
-            const imageUrl = item.front_page_photo || "/static/images/no_image_available.png";
-
-            html += `
-                <div class="flip-card" style="width:300px; height:400px; perspective:1200px; margin:10px;">
-                    <div class="flip-card-inner" id="flipCard${globalIndex}" style="
-                        position: relative;
-                        width:100%;
-                        height:100%;
-                        text-align:center;
-                        transform-style: preserve-3d;
-                        transition: transform 0.8s cubic-bezier(0.4,0,0.2,1);
-                        border-radius:12px;
-                        box-shadow:0 6px 20px rgba(0,0,0,0.15);
-                    ">
-                        <div class="flip-card-front" style="
-                            position:absolute;
-                            width:100%;
-                            height:100%;
-                            backface-visibility:hidden;
-                            border-radius:12px;
-                            display:flex;
-                            flex-direction:column;
-                            justify-content:center;
-                            align-items:center;
-                            padding:12px;
-                            background: linear-gradient(135deg, #f8fafc, #e0f2fe);
-                        ">
-                            <img src="${imageUrl}" alt="Book Image" style="
-                                width:100%;
-                                height:85%;
-                                border-radius:8px;
-                                object-fit: cover;
-                                transition: transform 0.3s ease;
-                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            <button onclick="flipCard(${globalIndex})" style="
-                                margin-top:8px;
-                                background:#0d9488;
-                                color:white;
-                                border:none;
-                                padding:8px 14px;
-                                border-radius:6px;
-                                cursor:pointer;
-                                font-weight:600;
-                            " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Flip</button>
-                        </div>
-
-                        <div class="flip-card-back" style="
-                            position:absolute;
-                            width:100%;
-                            height:100%;
-                            backface-visibility:hidden;
-                            border-radius:12px;
-                            transform:rotateY(180deg);
-                            overflow:auto;
-                            padding:12px;
-                            text-align:left;
-                            background: linear-gradient(135deg, #ffffff, #e0f7fa);
-                        ">
-                            <h4 style="font-size:16px; color:#0f172a; margin-bottom:8px;">${item.title || "Untitled Book"}</h4>
-                            <p><strong>लेखक / Author:</strong> ${item.author || "N/A"}</p>
-                            <p><strong>प्रकाशक / Publisher:</strong> ${item.publisher || "N/A"}</p>
-                            <p><strong>भाषा / Language:</strong> ${item.language || "N/A"}</p>
-                            <p><strong>Year (Publication):</strong> ${item.year_of_publication || item.publication_year || "N/A"}</p>
-
-                            <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
-                                <button onclick="flipCard(${globalIndex})" style="
-                                    flex:1;
-                                    background:#0d9488;
-                                    color:white;
-                                    border:none;
-                                    padding:8px 14px;
-                                    border-radius:6px;
-                                    cursor:pointer;
-                                    font-weight:600;
-                                " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        html += `</div>`;
-
-        // Pagination
-        const totalPages = Math.ceil(currentData.length / itemsPerPage);
-        if (totalPages > 1) {
-            html += `<div style="margin-top:15px; text-align:center;">`;
-            for (let i = 1; i <= totalPages; i++) {
-                html += `<button onclick="renderPage(${i})" style="
-                            margin:2px;
-                            padding:6px 12px;
-                            border-radius:6px;
-                            border:1px solid #cbd5e1;
-                            background:${i === page ? '#2563eb' : '#f8fafc'};
-                            color:${i === page ? 'white' : '#1e293b'};
-                            cursor:pointer;
-                        " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.2)'" 
-                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 0 rgba(0,0,0,0)'">
-                            ${i}
-                        </button>`;
-            }
-            html += `</div>`;
-        }
-
-        resultsDiv.innerHTML = html;
-    }
-
-    // Flip card logic
-    function flipCard(index) {
-        const card = document.getElementById(`flipCard${index}`);
-        card.style.transform = (card.style.transform === "rotateY(180deg)") ? "rotateY(0deg)" : "rotateY(180deg)";
-    }
-</script>
-
-<script>
+        </div>
+    `;
     
-    let currentPageNew = 1;
-    const itemsPerPageNew = 6;
-    let currentDataNew = []; // Stores last search results
+    // Determine URL based on mode and search type
+    let url, dataToSend;
+    let selectedLanguage = LANGUAGE_DB_MAP[currentLanguage] || 'english';
 
-    function performBookSearch(page = 1) {
-        const query = document.getElementById("advancedSearchInput").value.trim();
-        const searchType = document.getElementById("searchType").value; // <-- get dropdown value
-        const resultsDiv = document.getElementById("searchResults");
-
-        if (!query) {
-            resultsDiv.innerHTML = "<p style='color:red;'>Please enter a search term.</p>";
-            return;
-        }
-
-        // Show loader while fetching
-        resultsDiv.innerHTML = `...`; // your existing loader
-
-        $.ajax({
-            url: "{% url 'L01:index_book_search' %}",
-            type: "POST",
-            data: { 
+    
+    if (currentMode === 'catalog') {
+        if (currentSearchType === 'advanced') {
+            url = "{% url 'L01:bookcatalog_search' %}";
+            dataToSend = {
+                searchType: searchType,
                 query: query,
-                searchType: searchType // <-- send searchType to backend
-            },
-            dataType: "json",
-            headers: { "X-CSRFToken": "{{ csrf_token }}" },
-            success: function(data) {
-                if (!data || data.length === 0) {
-                    resultsDiv.innerHTML = "<p style='color:orange;'>No records found.</p>";
-                    Swal.fire("No Results", "No matching records found.", "info");
-                    return;
-                }
-
-                currentDataNew = data;
-                currentPageNew = page;
-                renderPageNew(currentPageNew);
-
-                // ✅ CLEAR TEXTBOX AFTER SUCCESSFUL SEARCH
-                document.getElementById("advancedSearchInput").value = "";
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching data:", error);
-                resultsDiv.innerHTML = "<p style='color:red;'>An error occurred while searching.</p>";
-                Swal.fire("Error!", "An error occurred while fetching search results.", "error");
-            }
-        });
+                language: selectedLanguage,
+            };
+        } else {
+            url = "{% url 'L01:index_book_search' %}";
+            dataToSend = {
+                searchType: searchType,
+                query: query,
+                language: selectedLanguage,
+            };
+        }
+    } else {
+        if (currentSearchType === 'advanced') {
+            url = "{% url 'L01:libraryebook_search' %}";
+            dataToSend = {
+                searchType: searchType,
+                query: query,
+                language: selectedLanguage,
+            };
+        } else {
+            url = "{% url 'L01:index_ebook_search' %}";
+            dataToSend = {
+                searchType: searchType,
+                query: query,
+                language: selectedLanguage,
+            };
+        }
     }
+    
+    // Add CSRF token
+    dataToSend.csrfmiddlewaretoken = getCSRFToken();
+    
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: dataToSend,
+        success: function(response) {
+            // Handle response
+            if (response.error) {
+                showResultsError(response.error);
+                document.getElementById('resultsCount').textContent = '0 results';
+                return;
+            }
+            
+            if (!response || response.length === 0) {
+                showNoResults();
+                document.getElementById('resultsCount').textContent = '0 results';
+                return;
+            }
+            
+            currentData = response;
+            currentPage = page;
+            renderResults(page);
+            
+            // Update results count
+            const countText = `${response.length} result${response.length !== 1 ? 's' : ''} found`;
+            document.getElementById('resultsCount').textContent = countText;
+        },
+        error: function(xhr, status, error) {
+            console.error("Search error:", error);
+            showResultsError('An error occurred while searching. Please try again.');
+            Swal.fire('Error', 'Search request failed. Please try again.', 'error');
+        }
+    });
+}
 
+// ================= RESULT DISPLAY FUNCTIONS =================
+function showResultsError(message) {
+    const resultsDiv = document.getElementById('searchResults');
+    if (!resultsDiv) return;
+    
+    resultsDiv.innerHTML = `
+        <div style="text-align: center; padding: 80px 20px; width: 100%;">
+            <i class="bi bi-exclamation-triangle" style="font-size: 64px; color: #ef4444; margin-bottom: 20px;"></i>
+            <h3 style="color: #dc2626;">Search Error</h3>
+            <p style="color: #ef4444;">${message}</p>
+        </div>
+    `;
+    
+    const paginationDiv = document.getElementById('paginationContainer');
+    if (paginationDiv) paginationDiv.innerHTML = '';
+}
 
-    // Render a specific page
-    function renderPageNew(page) {
-        const resultsDiv = document.getElementById("searchResults");
-        const startIndex = (page - 1) * itemsPerPageNew;
-        const endIndex = startIndex + itemsPerPageNew;
-        const pageData = currentDataNew.slice(startIndex, endIndex);
+function showNoResults() {
+    const resultsDiv = document.getElementById('searchResults');
+    if (!resultsDiv) return;
+    
+    resultsDiv.innerHTML = `
+        <div style="text-align: center; padding: 80px 20px; width: 100%;">
+            <i class="bi bi-inbox" style="font-size: 64px; color: #cbd5e1; margin-bottom: 20px;"></i>
+            <h3 style="color: #64748b;">No Results Found</h3>
+            <p style="color: #94a3b8;">Try a different search term or browse using Index Search</p>
+        </div>
+    `;
+    
+    const paginationDiv = document.getElementById('paginationContainer');
+    if (paginationDiv) paginationDiv.innerHTML = '';
+}
 
-        let html = `<div class='show' style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">`;
+function clearResults() {
+    const resultsDiv = document.getElementById('searchResults');
+    if (!resultsDiv) return;
+    
+    resultsDiv.innerHTML = `
+        <div style="text-align: center; color: #94a3b8; padding: 100px 20px; width: 100%;">
+            {% comment %} <i class="bi bi-search" style="font-size: 48px; margin-bottom: 20px;"></i> {% endcomment %}
+            <h3 style="color: #64748b;">Search Results for ${currentMode === 'catalog' ? 'Catalog Books' : 'eBooks'}</h3>
+            <p>Use the search controls on the left to find ${currentMode === 'catalog' ? 'books' : 'ebooks'}</p>
+        </div>
+    `;
+    
+    const paginationDiv = document.getElementById('paginationContainer');
+    if (paginationDiv) paginationDiv.innerHTML = '';
+    
+    const resultsCount = document.getElementById('resultsCount');
+    if (resultsCount) resultsCount.textContent = '';
+}
 
-        pageData.forEach((item, index) => {
-            const globalIndex = startIndex + index;
-            const imageUrl = item.front_page_photo || "/static/images/no_image_available.png";
+function renderResults(page) {
+    const resultsDiv = document.getElementById('searchResults');
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageData = currentData.slice(startIndex, endIndex);
+    
+    if (pageData.length === 0) {
+        showNoResults();
+        return;
+    }
+    
+    let html = `<div class="book-gallery">`;
+    
+    pageData.forEach((item, index) => {
+        const globalIndex = startIndex + index;
+        
+        // Get data based on current mode
+        let title, author, publisher, year, language, imageUrl, encryptedId, encryptedPdfUrl, encryptedCatRefNum;
+        let subtitle, isbn, edition, publicationPlace, pages, remarks, description;
+        let lastImageUrl = '';
 
-            html += `
-                <div class="flip-card" style="width:300px; height:400px; perspective:1200px; margin:10px;">
-                    <div class="flip-card-inner" id="flipCardNew${globalIndex}" style="
-                        position: relative;
-                        width:100%;
-                        height:100%;
-                        text-align:center;
-                        transform-style: preserve-3d;
-                        transition: transform 0.8s cubic-bezier(0.4,0,0.2,1);
-                        border-radius:12px;
-                        box-shadow:0 6px 20px rgba(0,0,0);
-                    ">
-                        <div class="flip-card-front" style="
-                            position:absolute;
-                            width:100%;
-                            height:100%;
-                            backface-visibility:hidden;
-                            border-radius:12px;
-                            box-shadow:0 6px 20px rgba(0,0,0);
-                            display:flex;
-                            flex-direction:column;
-                            justify-content:center;
-                            align-items:center;
-                            padding:12px;
-                            background: linear-gradient(135deg, #f8fafc, #e0f2fe);
-                            transition: all 0.3s ease;
-                        ">
-                            <img src="${imageUrl}" alt="Book Image" style="
-                                width:100%;
-                                height:85%;
-                                border-radius:8px;
-                                object-fit: cover;
-                                transition: transform 0.3s ease;
-                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            <button onclick="flipCardNew(${globalIndex})" style="
-                                margin-top:8px;
-                                background:#0d9488;
-                                color:white;
-                                border:none;
-                                padding:8px 14px;
-                                border-radius:6px;
-                                cursor:pointer;
-                                font-weight:600;
-                                transition: all 0.3s ease;
-                                box-shadow:0 2px 5px rgba(0,0,0);
-                            " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Flip</button>
+        
+        if (currentMode === 'catalog') {
+            title = item.title || 'Untitled';
+            author = item.author || 'N/A';
+            publisher = item.publisher || 'N/A';
+            year = item.year_of_publication || item.publication_year || 'N/A';
+            language = item.language || 'N/A';
+            imageUrl = item.front_page_photo || '';
+            lastImageUrl = item.last_page_photo || ''; 
+            encryptedId = item.encrypted_cat_ref_num || '';
+            encryptedCatRefNum = item.encrypted_cat_ref_num || '';
+            encryptedPdfUrl = '';
+            subtitle = item.subtitle || '';
+            isbn = item.isbn_issn || 'N/A';
+            edition = item.edition || 'N/A';
+            publicationPlace = item.publication_place || 'N/A';
+            pages = item.pages || 'N/A';
+            remarks = item.remarks || '';
+            description = item.description || item.keywords || '';
+        } else {
+            // For eBooks
+            title = item.eb_title || 'Untitled';
+            author = item.eb_author || item.eb_other_authors || 'N/A';
+            publisher = item.eb_publisher || 'N/A';
+            year = item.eb_year_of_publication || 'N/A';
+            language = item.eb_language || 'N/A';
+            imageUrl = item.eb_front_page_photo || '';
+            lastImageUrl = item.eb_last_page_photo || '';
+            encryptedId = item.encrypted_ebook_id || '';
+            encryptedPdfUrl = item.encrypted_pdf_url || '';
+            encryptedCatRefNum = '';
+            subtitle = item.eb_subtitle || '';
+            isbn = item.eb_isbn_issn || 'N/A';
+            edition = item.eb_edition || 'N/A';
+            publicationPlace = item.eb_publication_place || 'N/A';
+            pages = item.eb_pages || 'N/A';
+            remarks = item.remarks || item.eb_remarks || '';
+            description = item.eb_description || item.eb_keywords || '';
+        }
+        
+        // Create a shorter version of the title for display (removed author display)
+        const shortTitle = title.length > 50 ? title.substring(0, 47) + '...' : title;
+        
+        html += `
+            <div class="book-item">
+                <!-- Book Image Container -->
+                <div class="book-image-container">
+                    ${imageUrl ? `
+                        <img src="${imageUrl}" 
+                            alt="${title}"
+                            class="book-cover"
+                            onclick="openBookModalFromImage(this)"
+                            data-front-image="${imageUrl}"
+                            data-last-image="${lastImageUrl}"
+                            data-title="${title}"
+                            data-subtitle="${subtitle}"
+                            data-author="${author}"
+                            data-publisher="${publisher}"
+                            data-isbn_issn="${isbn}"
+                            data-edition="${edition}"
+                            data-language="${language}"
+                            data-publication_place="${publicationPlace}"
+                            data-year_of_publication="${year}"
+                            data-pages="${pages}"
+                            data-remarks="${remarks}"
+                            data-description="${description}"
+                            data-encrypted-ebook-id="${encryptedId}"
+                            data-encrypted-pdf-url="${encryptedPdfUrl}"
+                            data-encrypted-cat-ref-num="${encryptedCatRefNum}">
+                    ` : `
+                        <div class="default-ebook-cover" 
+                            onclick="openBookModalFromTitle(this)"
+                            data-front-image=""
+                            data-last-image=""
+                            data-title="${title}"
+                            data-subtitle="${subtitle}"
+                            data-author="${author}"
+                            data-publisher="${publisher}"
+                            data-isbn_issn="${isbn}"
+                            data-edition="${edition}"
+                            data-language="${language}"
+                            data-publication_place="${publicationPlace}"
+                            data-year_of_publication="${year}"
+                            data-pages="${pages}"
+                            data-remarks="${remarks}"
+                            data-description="${description}"
+                            data-encrypted-ebook-id="${encryptedId}"
+                            data-encrypted-pdf-url="${encryptedPdfUrl}"
+                            data-encrypted-cat-ref-num="${encryptedCatRefNum}">
+                            <div class="ebook-icon">📱</div>
+                            <div class="ebook-label">BOOK</div>
+                            <div class="default-ebook-title">${shortTitle}</div>
                         </div>
-
-                        <div class="flip-card-back" style="
-                            position:absolute;
-                            width:100%;
-                            height:100%;
-                            backface-visibility:hidden;
-                            border-radius:12px;
-                            box-shadow:0 6px 20px rgba(0,0,0);
-                            transform:rotateY(180deg);
-                            overflow:auto;
-                            padding:12px;
-                            justify-content:center;
-                            align-items:center;
-                            text-align:left;
-                            background: linear-gradient(135deg, #ffffff, #e0f7fa);
-                        ">
-                            <h4 style="font-size:16px; color:#0f172a; margin-bottom:8px;">${item.title || "Untitled Book"}</h4><br>
-                            <p><strong>लेखक / Author:</strong> ${item.author || "N/A"}</p>
-                            <p><strong>प्रकाशक / Publisher:</strong> ${item.publisher || "N/A"}</p>
-                            <p><strong>भाषा / Language:</strong> ${item.language || "N/A"}</p>
-                            <p><strong>प्रकाशन वर्ष / Year:</strong> ${item.year_of_publication || "N/A"}</p>
-
-                            <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
-                                <button onclick="flipCardNew(${globalIndex})" style="
-                                    flex:1;
-                                    background:#0d9488;
-                                    color:white;
-                                    border:none;
-                                    padding:8px 14px;
-                                    border-radius:6px;
-                                    cursor:pointer;
-                                    font-weight:600;
-                                    box-shadow:0 2px 5px rgba(0,0,0);
-                                    transition: all 0.3s ease;
-                                " onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">Back</button>
-
-                                <button onclick="window.location.href='{% url 'Login' %}'" style="
-                                    flex:1;
-                                    background:linear-gradient(135deg,#2563eb,#1e40af);
-                                    color:white;
-                                    border:none;
-                                    padding:8px 14px;
-                                    border-radius:6px;
-                                    font-weight:600;
-                                    cursor:pointer;
-                                    box-shadow:0 2px 5px rgba(0,0,0);
-                                    transition: all 0.3s ease;
-                                " onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">Login</button>
-                            </div>
-
-                            <div style="
-                                margin-top:10px;
-                                padding:10px 12px;
-                                background: linear-gradient(135deg, #d0ebff, #74c0fc);
-                                border-left: 4px solid #1c7ed6;
-                                border-radius:8px;
-                                color:black;
-                                font-size:13px;
-                                font-weight:bold;
-                                text-align:center;
-                                box-shadow: 0 4px 10px rgba(0,0,0);
-                                line-height:1.4;
-                            ">
-                                <span style="margin-right:6px; font-size:14px;">&#9432;</span> 
-                                Note: Please login to access full book details.
-                            </div>
-
-                        </div>
-                    </div>
+                    `}
                 </div>
+                
+                <!-- Book Title Below Image (Only title, no author) -->
+                <p class="book-title" 
+                   onclick="openBookModalFromTitle(this)"
+                   data-front-image="${imageUrl}"
+                   data-last-image="${item.eb_last_page_photo || ''}"
+                   data-title="${title}"
+                   data-subtitle="${subtitle}"
+                   data-author="${author}"
+                   data-publisher="${publisher}"
+                   data-isbn_issn="${isbn}"
+                   data-edition="${edition}"
+                   data-language="${language}"
+                   data-publication_place="${publicationPlace}"
+                   data-year_of_publication="${year}"
+                   data-pages="${pages}"
+                   data-remarks="${remarks}"
+                   data-description="${description}"
+                   data-encrypted-ebook-id="${encryptedId}"
+                   data-encrypted-pdf-url="${encryptedPdfUrl}"
+                   data-encrypted-cat-ref-num="${encryptedCatRefNum}">
+                    ${shortTitle}
+                </p>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    resultsDiv.innerHTML = html;
+    
+    // Render pagination
+    renderPagination(page);
+}
+
+function openBookModalFromImage(img) {
+    const modal = document.getElementById("zoomModal");
+    const modalImg = document.getElementById("zoomedImage");
+    const frontPageThumb = document.getElementById("frontPageThumb");
+    const lastPageThumb = document.getElementById("lastPageThumb");
+
+    // Get image URLs from data attributes
+    const frontImageUrl = img.getAttribute('data-front-image') || img.src;
+    const lastImageUrl = img.getAttribute('data-last-image') || '';
+    
+    // Core fields
+    const modalAuthor = document.getElementById("zoomBookAuthor");
+    const modalTitle = document.getElementById("zoomBookTitle");
+    const modalSubtitle = document.getElementById("zoomBookSubtitle");
+    const modalPublisher = document.getElementById("zoomBookPublisher");
+    const modalISBN = document.getElementById("zoomBookISBN");
+    const modalEdition = document.getElementById("zoomBookEdition");
+    const modalLanguage = document.getElementById("zoomBookLanguage");
+    const modalPlace = document.getElementById("zoomBookPlace");
+    const modalYear = document.getElementById("zoomBookYear");
+    const modalPages = document.getElementById("zoomBookPages");
+    const modalRemarks = document.getElementById("zoomBookRemarks");
+    const modalDescription = document.getElementById("zoomBookDescription");
+
+    // Show modal
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+
+    // Set main image and thumbnails
+    modalImg.src = frontImageUrl;
+    frontPageThumb.src = frontImageUrl;
+    
+    if (lastImageUrl) {
+        lastPageThumb.src = lastImageUrl;
+        lastPageThumb.style.display = 'block';
+        document.querySelectorAll('.thumbnail-wrapper')[1].style.display = 'flex';
+    } else {
+        lastPageThumb.style.display = 'none';
+        document.querySelectorAll('.thumbnail-wrapper')[1].style.display = 'none';
+    }
+
+    // Set active thumbnail
+    frontPageThumb.classList.add('active');
+    lastPageThumb.classList.remove('active');
+
+    // Assign values safely
+    if (modalAuthor) modalAuthor.textContent = img.getAttribute('data-author') || "N/A";
+    if (modalTitle) modalTitle.textContent = img.getAttribute('data-title') || "Untitled";
+    if (modalSubtitle) modalSubtitle.textContent = img.getAttribute('data-subtitle') || "";
+    if (modalPublisher) modalPublisher.textContent = img.getAttribute('data-publisher') || "N/A";
+    if (modalISBN) modalISBN.textContent = img.getAttribute('data-isbn_issn') || "N/A";
+    if (modalEdition) modalEdition.textContent = img.getAttribute('data-edition') || "N/A";
+    if (modalLanguage) modalLanguage.textContent = img.getAttribute('data-language') || "N/A";
+    if (modalPlace) modalPlace.textContent = img.getAttribute('data-publication_place') || "N/A";
+    if (modalYear) modalYear.textContent = img.getAttribute('data-year_of_publication') || "N/A";
+    if (modalPages) modalPages.textContent = img.getAttribute('data-pages') || "N/A";
+    if (modalRemarks) modalRemarks.textContent = img.getAttribute('data-remarks') || "";
+    if (modalDescription) modalDescription.textContent = img.getAttribute('data-description') || "";
+
+    // Set encrypted ebook_id + pdf_url
+    const encryptedEbookId = document.getElementById("zoomEncryptedEbookId");
+    const encryptedPdfUrl = document.getElementById("zoomEncryptedPdfUrl");
+    const encryptedCatRefNum = document.getElementById("zoomEncryptedCatRefNum");
+    
+    if (encryptedEbookId) encryptedEbookId.textContent = img.getAttribute("data-encrypted-ebook-id") || "";
+    if (encryptedPdfUrl) encryptedPdfUrl.textContent = img.getAttribute("data-encrypted-pdf-url") || "";
+    if (encryptedCatRefNum) encryptedCatRefNum.textContent = img.getAttribute("data-encrypted-cat-ref-num") || "";
+}
+
+function openBookModalFromTitle(el) {
+    const modal = document.getElementById("zoomModal");
+    if (!modal) {
+        console.error("zoomModal not found!");
+        return;
+    }
+    
+    const modalImg = document.getElementById("zoomedImage");
+    const frontPageThumb = document.getElementById("frontPageThumb");
+    const lastPageThumb = document.getElementById("lastPageThumb");
+    
+    // Get image URLs from data attributes
+    const frontImageUrl = el.getAttribute('data-front-image') || '';
+    const lastImageUrl = el.getAttribute('data-last-image') || '';
+    
+    // Fill modal data
+    const zoomBookTitle = document.getElementById("zoomBookTitle");
+    const zoomBookSubtitle = document.getElementById("zoomBookSubtitle");
+    const zoomBookAuthor = document.getElementById("zoomBookAuthor");
+    const zoomBookPublisher = document.getElementById("zoomBookPublisher");
+    const zoomBookISBN = document.getElementById("zoomBookISBN");
+    const zoomBookEdition = document.getElementById("zoomBookEdition");
+    const zoomBookLanguage = document.getElementById("zoomBookLanguage");
+    const zoomBookPlace = document.getElementById("zoomBookPlace");
+    const zoomBookYear = document.getElementById("zoomBookYear");
+    const zoomBookPages = document.getElementById("zoomBookPages");
+    const zoomBookRemarks = document.getElementById("zoomBookRemarks");
+    const zoomBookDescription = document.getElementById("zoomBookDescription");
+
+    if (zoomBookTitle) zoomBookTitle.textContent = el.getAttribute('data-title') || '';
+    if (zoomBookSubtitle) zoomBookSubtitle.textContent = el.getAttribute('data-subtitle') || '';
+    if (zoomBookAuthor) zoomBookAuthor.textContent = el.getAttribute('data-author') || '';
+    if (zoomBookPublisher) zoomBookPublisher.textContent = el.getAttribute('data-publisher') || '';
+    if (zoomBookISBN) zoomBookISBN.textContent = el.getAttribute('data-isbn_issn') || '';
+    if (zoomBookEdition) zoomBookEdition.textContent = el.getAttribute('data-edition') || '';
+    if (zoomBookLanguage) zoomBookLanguage.textContent = el.getAttribute('data-language') || '';
+    if (zoomBookPlace) zoomBookPlace.textContent = el.getAttribute('data-publication_place') || '';
+    if (zoomBookYear) zoomBookYear.textContent = el.getAttribute('data-year_of_publication') || '';
+    if (zoomBookPages) zoomBookPages.textContent = el.getAttribute('data-pages') || '';
+    if (zoomBookRemarks) zoomBookRemarks.textContent = el.getAttribute('data-remarks') || '';
+    if (zoomBookDescription) zoomBookDescription.textContent = el.getAttribute('data-description') || '';
+
+    // Set encrypted ebook_id + pdf_url
+    const encryptedEbookId = document.getElementById("zoomEncryptedEbookId");
+    const encryptedPdfUrl = document.getElementById("zoomEncryptedPdfUrl");
+    const encryptedCatRefNum = document.getElementById("zoomEncryptedCatRefNum");
+    
+    if (encryptedEbookId) encryptedEbookId.textContent = el.getAttribute("data-encrypted-ebook-id") || "";
+    if (encryptedPdfUrl) encryptedPdfUrl.textContent = el.getAttribute("data-encrypted-pdf-url") || "";
+    if (encryptedCatRefNum) encryptedCatRefNum.textContent = el.getAttribute("data-encrypted-cat-ref-num") || "";
+
+    // Set main image and thumbnails
+    if (modalImg && frontPageThumb) {
+        modalImg.src = frontImageUrl || '/static/images/no-image.jpg';
+        frontPageThumb.src = frontImageUrl || '/static/images/no-image.jpg';
+    }
+    
+    // Handle last page image
+    if (lastPageThumb) {
+        if (lastImageUrl && lastImageUrl !== '') {
+            lastPageThumb.src = lastImageUrl;
+            lastPageThumb.style.display = 'block';
+            const thumbnailWrappers = document.querySelectorAll('.thumbnail-wrapper');
+            if (thumbnailWrappers.length > 1) {
+                thumbnailWrappers[1].style.display = 'flex';
+            }
+        } else {
+            lastPageThumb.style.display = 'none';
+            const thumbnailWrappers = document.querySelectorAll('.thumbnail-wrapper');
+            if (thumbnailWrappers.length > 1) {
+                thumbnailWrappers[1].style.display = 'none';
+            }
+        }
+    }
+
+    // Set active thumbnail
+    if (frontPageThumb && lastPageThumb) {
+        frontPageThumb.classList.add('active');
+        lastPageThumb.classList.remove('active');
+    }
+
+    // Show modal
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+}
+
+function switchImage(thumbnailElement, imageType) {
+    const modalImg = document.getElementById("zoomedImage");
+    const frontPageThumb = document.getElementById("frontPageThumb");
+    const lastPageThumb = document.getElementById("lastPageThumb");
+    
+    // Update main image
+    if (modalImg) modalImg.src = thumbnailElement.src;
+    
+    // Update active states
+    if (frontPageThumb) frontPageThumb.classList.remove('active');
+    if (lastPageThumb) lastPageThumb.classList.remove('active');
+    thumbnailElement.classList.add('active');
+}
+
+function closeZoom() {
+    const modal = document.getElementById("zoomModal");
+    if (modal) {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+    }
+}
+
+function zoomRedirectLogin() {
+    const ebookId   = document.getElementById("zoomEncryptedEbookId")?.textContent.trim();
+    const pdfUrl    = document.getElementById("zoomEncryptedPdfUrl")?.textContent.trim();
+    const catRefNum = document.getElementById("zoomEncryptedCatRefNum")?.textContent.trim();
+
+    // CASE 1: Open PDF in new tab
+    if (ebookId && pdfUrl) {
+        window.open(`/L01/open_pdf/?pdf=${encodeURIComponent(pdfUrl)}`, "_blank");
+        return;
+    }
+
+    // CASE 2: Redirect to catalog book details
+    if (catRefNum) {
+        window.location.href = `/L01/view_book_detail/?cat_ref_num=${encodeURIComponent(catRefNum)}`;
+        return;
+    }
+
+    // OPTIONAL: fallback
+    alert("Book details are not available.");
+}
+
+
+
+// Setup modal close events
+document.addEventListener('DOMContentLoaded', function() {
+    const zoomModal = document.getElementById("zoomModal");
+    if (zoomModal) {
+        zoomModal.addEventListener("click", function (e) {
+            if (e.target === zoomModal) {
+                closeZoom();
+            }
+        });
+    }
+    
+    // Close with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeZoom();
+        }
+    });
+});
+
+function renderPagination(currentPage) {
+    const totalPages = Math.ceil(currentData.length / itemsPerPage);
+    const paginationDiv = document.getElementById('paginationContainer');
+    
+    if (!paginationDiv || totalPages <= 1) {
+        if (paginationDiv) paginationDiv.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    if (currentPage > 1) {
+        html += `<button class="page-btn" onclick="renderResults(${currentPage - 1})">
+                    <i class="bi bi-chevron-left"></i>
+                 </button>`;
+    }
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            html += `
+                <button class="page-btn ${i === currentPage ? 'active' : ''}" 
+                        onclick="renderResults(${i})">
+                    ${i}
+                </button>
             `;
-        });
-
-        html += `</div>`;
-
-        // Pagination buttons
-        const totalPages = Math.ceil(currentDataNew.length / itemsPerPageNew);
-        if(totalPages > 1){
-            html += `<div style="margin-top:15px; text-align:center;">`;
-            for(let i = 1; i <= totalPages; i++){
-                html += `<button onclick="renderPageNew(${i})" style="
-                            margin:2px;
-                            padding:6px 12px;
-                            border-radius:6px;
-                            border:1px solid #cbd5e1;
-                            background:${i === page ? '#2563eb' : '#f8fafc'};
-                            color:${i===page?'white':'#1e293b'};
-                            cursor:pointer;
-                            transition: all 0.3s ease;
-                        ">${i}</button>`;
-            }
-            html += `</div>`;
-        }
-
-        resultsDiv.innerHTML = html;
-    }
-
-    // Flip card logic
-    function flipCardNew(index) {
-        const card = document.getElementById(`flipCardNew${index}`);
-        card.style.transform = (card.style.transform === "rotateY(180deg)") 
-            ? "rotateY(0deg)" 
-            : "rotateY(180deg)";
-    }
-
-</script>
-
-<script>
-    function toggleKeywordSection() {
-        const keywordSection = document.getElementById("keywordSection");
-        const advancedSearchSection = document.getElementById("advancedSearchSection");
-
-        if (keywordSection.style.display === "none" || keywordSection.style.display === "") {
-            // Show keyword section and hide advanced search
-            keywordSection.style.display = "block";
-            advancedSearchSection.style.display = "none";
-        } else {
-            // Hide keyword section and show advanced search
-            keywordSection.style.display = "none";
-            advancedSearchSection.style.display = "flex";
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            html += `<span style="padding: 8px 16px;">...</span>`;
         }
     }
-</script>
-
-<!-- ================= Validation Script ================= -->
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const searchInput = document.getElementById("advancedSearchInput");
-        const searchBtn = document.getElementById("advancedSearchBtn");
-
-        // Initially disable button and make it faded
-        searchBtn.disabled = true;
-        searchBtn.style.opacity = 0.5;
-
-        // Listen to input changes
-        searchInput.addEventListener("input", function() {
-            if (this.value.trim().length > 3) {
-                searchBtn.disabled = false;
-                searchBtn.style.opacity = 1; // fully visible
-            } else {
-                searchBtn.disabled = true;
-                searchBtn.style.opacity = 0.5; // faded
-            }
-        });
-    });
-</script>
-
-<script>
-    function openHelp() {
-        document.getElementById('notePopup').style.display = 'flex';
+    
+    if (currentPage < totalPages) {
+        html += `<button class="page-btn" onclick="renderResults(${currentPage + 1})">
+                    <i class="bi bi-chevron-right"></i>
+                 </button>`;
     }
+    
+    paginationDiv.innerHTML = html;
+}
 
-    document.getElementById("closePopup").onclick = function() {
-        document.getElementById("notePopup").style.display = "none";
-    };
-</script>
 
-<!-- ================= JS — SHOW/HIDE X BUTTON ================= -->
-<script>
-    function toggleKeywordSection() {
-        const section = document.getElementById("keywordSection");
-        const closeBtn = document.getElementById("closeXBtn");
-
-        if (section.style.display === "none" || section.style.display === "") {
-            section.style.display = "block";
-            closeBtn.style.display = "block";  // Show X
-        } else {
-            section.style.display = "none";
-            closeBtn.style.display = "none";   // Hide X
+function clearAll() {
+    const advancedInput = document.getElementById('advancedSearchInput');
+    const indexInput = document.getElementById('indexSearchInput');
+    const advancedBtn = document.getElementById('advancedSearchBtn');
+    
+    if (advancedInput) advancedInput.value = '';
+    if (indexInput) indexInput.value = '';
+    
+    if (advancedBtn) {
+        advancedBtn.disabled = true;
+        advancedBtn.style.opacity = '0.5';
+    }
+    
+    if (transliterationEnabled) {
+        const switchElement = document.getElementById('transliterationSwitch');
+        if (switchElement) {
+            switchElement.checked = false;
+            toggleTransliteration(false);
         }
     }
-</script>
+    
+    clearResults();
+    showTab('advanced');
+    setLanguage('english');
+    
+    Swal.fire('Cleared', 'All search fields have been reset.', 'success');
+}
 
-<script>
-    $(document).ready(function() {
-        const memberId = $("#memberId").val();
-        const libraryCode = $("#libraryCode").val();
-
-        if (!memberId || !libraryCode) {
-            return;
-        }
-
-        $.ajax({
-            url: "{% url 'L01:view_catalogue_login_page' %}",
-            type: "GET",
-            data: { 
-                member_id: memberId,
-                library_code: libraryCode
-            },
-            success: function(response) {
-                console.log("AJAX RESPONSE:", response);
-                // No HTML updates - just making the AJAX call
-            },
-            error: function(xhr, status, error) {
-                console.error("AJAX ERROR:", status, error);
-                // No error messages displayed
-            }
-        });
+function openHelp() {
+    const transliterationHelp = transliterationEnabled ? `
+        <div style="background: #e8f5e9; padding: 10px; border-radius: 6px; margin: 10px 0;">
+            <h5 style="margin-top: 0; color: #2e7d32;"><i class="bi bi-translate"></i> Transliteration Help</h5>
+            <ul style="margin-bottom: 0; font-size: 13px;">
+                <li>Type English to get ${currentLanguage === 'marathi' ? 'Marathi' : 'Hindi'} characters</li>
+                <li>Example: "namaskar" → "नमस्कार"</li>
+                <li>Press Space after typing a word to convert</li>
+                <li>Use Backspace to delete characters</li>
+            </ul>
+        </div>
+    ` : '';
+    
+    Swal.fire({
+        title: 'Search Help',
+        html: `
+            <div style="text-align: left; font-size: 14px;">
+                <p><strong>Search Steps:</strong></p>
+                <ol>
+                    <li>Select search mode (Book Catalog or eBooks)</li>
+                    <li>Choose search type (Advanced or Index)</li>
+                    <li>Select language for keyboard</li>
+                    <li>${currentLanguage === 'hindi' || currentLanguage === 'marathi' ? 'Toggle transliteration if needed' : 'Type using on-screen keyboard or physical keyboard'}</li>
+                    <li>Click Search button</li>
+                </ol>
+                ${transliterationHelp}
+            </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'OK',
+        width: 600
     });
+}
 </script>
 
-<script>
-    $(document).ready(function() {
-        $('#transactionsTable').DataTable({
-            "pageLength": 5,              // default items per page
-            "lengthMenu": [5, 10, 25, 50, 100], 
-            "ordering": true,             // enable sorting
-            "searching": true,            // enable search
-            "info": true,                 // show "Showing 1 to 5 of ..."
-            "paging": true,               // enable pagination
-            "language": {
-                "search": "Search transactions:",
-                "lengthMenu": "Show _MENU_ entries",
-                "info": "Showing _START_ to _END_ of _TOTAL_ entries",
-                "infoEmpty": "Showing 0 to 0 of 0 entries",
-                "infoFiltered": "(filtered from _MAX_ total entries)",
-                "paginate": {
-                    "first": "First",
-                    "last": "Last",
-                    "next": "Next",
-                    "previous": "Previous"
-                }
-            }
-        });
-    });
-</script>
-
-<script>
-    $(document).ready(function () {
-
-        $("#transactionsTable tbody tr").each(function () {
-            const dueDateText = $(this).find("td:nth-child(4)").text().trim();
-
-            if (!dueDateText) return;
-
-            const dueDate = new Date(dueDateText);
-            const today = new Date();
-
-            if (dueDate < today) {
-                $(this).addClass("overdue-row");
-            }
-        });
-
-    });
-</script>
 
 {% endblock %}
 
 {% block extra_javascript %}
-
 {% include "bootstrap/partials/syntax-highlight.html" %}
-
 <!-- Third party js -->
 <script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
 <script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
 <script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
 <!-- Third party js ends -->
-
 <script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
-
 <!-- Init js -->
 <script src="{% static 'js/pages/demo.typehead.js' %}"></script>
 <script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
 <!-- Init js end -->
-
 <!-- Selectize.js JS -->
 <script src="{% static 'js/selectize.min.js' %}"></script>
 <script src="{% static 'js/vendor/select2.min.js' %}"></script>
-
 {% endblock %}

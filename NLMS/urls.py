@@ -215,6 +215,10 @@ urlpatterns = [
     path('isbn-lookup/', isbn_lookup, name='book_catalog_isbn_lookup'),
 
     path('reports/', include(('library_reports.urls', 'reports'), namespace='reports')),
+    
+    # NEW PUBLIC ROUTES (no login required)
+    path('public-book-catalogue/', public_library_catalogue, name='public_book_catalogue'),
+    path('public-get-books/', public_get_books_by_subject, name='public_get_books'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
