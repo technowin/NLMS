@@ -1,0 +1,226 @@
+<div class="row">
+    {% if ebooks %}
+        {% for ebook in ebooks %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 shadow-sm ebook-card">
+                    <!-- Ebook Badge -->
+                    <div class="ebook-badge">
+                        <i class="ri-smartphone-line"></i> ई-पुस्तक
+                    </div>
+                    
+                    <!-- Image -->
+                    <div class="ebook-img-box">
+                        {% if ebook.eb_front_page_photo %}
+                            <img src="{{ ebook.eb_front_page_photo }}" alt="{{ ebook.eb_title }}" class="img-fluid">
+                        {% else %}
+                            <span class="text-muted">ई-पुस्तक प्रतिमा</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ebook Info -->
+                    <div class="ebook-card-body">
+                        {% if ebook.eb_title %}
+                            <h5 class="ebook-card-title">{{ ebook.eb_title }}</h5>
+                        {% endif %}
+                        
+                        {% if ebook.eb_author %}
+                            <p class="ebook-info-line"><b>लेखक:</b> {{ ebook.eb_author }}</p>
+                        {% endif %}
+                        
+                        {% if ebook.eb_publisher %}
+                            <p class="ebook-info-line"><b>प्रकाशक:</b> {{ ebook.eb_publisher }}</p>
+                        {% endif %}
+                        
+                        {% if ebook.eb_edition %}
+                            <p class="ebook-info-line"><b>आवृत्ती:</b> {{ ebook.eb_edition }}</p>
+                        {% endif %}
+                        
+                        {% if ebook.eb_year_of_publication %}
+                            <p class="ebook-info-line"><b>प्रकाशन वर्ष:</b> {{ ebook.eb_year_of_publication }}</p>
+                        {% endif %}
+                        
+                        {% if ebook.eb_subject %}
+                            <p class="ebook-info-line"><b>विषय:</b> {{ ebook.eb_subject.subjectNameMarathi|default:ebook.eb_subject.subjectNameEnglish }}</p>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+            
+        <!-- Pagination -->
+        <div class="col-12 text-end mt-3">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-end">
+                    <!-- Previous Button -->
+                    {% if ebooks.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link ebook-page-link pagination-link" 
+                               href="#" 
+                               data-page="{{ ebooks.previous_page_number }}" 
+                               data-subject-id="{{ subject_id_enc }}">
+                                <i class="ri-arrow-left-s-line"></i> मागील
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link ebook-page-link">
+                                <i class="ri-arrow-left-s-line"></i> मागील
+                            </span>
+                        </li>
+                    {% endif %}
+
+                    <!-- Page Numbers with Smart Range -->
+                    {% if ebooks.paginator.num_pages <= 7 %}
+                        <!-- Show all pages if less than or equal to 7 -->
+                        {% for num in ebooks.paginator.page_range %}
+                            {% if num == ebooks.number %}
+                                <li class="page-item active">
+                                    <span class="page-link ebook-page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link ebook-page-link pagination-link" 
+                                       href="#" 
+                                       data-page="{{ num }}" 
+                                       data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Smart pagination for many pages -->
+                        {% if ebooks.number <= 4 %}
+                            <!-- First pages -->
+                            {% for num in ebooks.paginator.page_range|slice:":5" %}
+                                {% if num == ebooks.number %}
+                                    <li class="page-item active">
+                                        <span class="page-link ebook-page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link ebook-page-link pagination-link" 
+                                           href="#" 
+                                           data-page="{{ num }}" 
+                                           data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            <li class="page-item disabled">
+                                <span class="page-link ebook-page-link">...</span>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link ebook-page-link pagination-link" 
+                                   href="#" 
+                                   data-page="{{ ebooks.paginator.num_pages }}" 
+                                   data-subject-id="{{ subject_id_enc }}">{{ ebooks.paginator.num_pages }}</a>
+                            </li>
+                        
+                        {% elif ebooks.number >= ebooks.paginator.num_pages|add:"-3" %}
+                            <!-- Last pages -->
+                            <li class="page-item">
+                                <a class="page-link ebook-page-link pagination-link" 
+                                   href="#" 
+                                   data-page="1" 
+                                   data-subject-id="{{ subject_id_enc }}">1</a>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link ebook-page-link">...</span>
+                            </li>
+                            {% for num in ebooks.paginator.page_range|slice:"-5:" %}
+                                {% if num == ebooks.number %}
+                                    <li class="page-item active">
+                                        <span class="page-link ebook-page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link ebook-page-link pagination-link" 
+                                           href="#" 
+                                           data-page="{{ num }}" 
+                                           data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        
+                        {% else %}
+                            <!-- Middle pages -->
+                            <li class="page-item">
+                                <a class="page-link ebook-page-link pagination-link" 
+                                   href="#" 
+                                   data-page="1" 
+                                   data-subject-id="{{ subject_id_enc }}">1</a>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link ebook-page-link">...</span>
+                            </li>
+                            
+                            {% with start=ebooks.number|add:"-2" %}
+                            {% with end=ebooks.number|add:"2" %}
+                            {% for num in ebooks.paginator.page_range %}
+                                {% if num >= start and num <= end %}
+                                    {% if num == ebooks.number %}
+                                        <li class="page-item active">
+                                            <span class="page-link ebook-page-link">{{ num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link ebook-page-link pagination-link" 
+                                               href="#" 
+                                               data-page="{{ num }}" 
+                                               data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                            {% endwith %}
+                            
+                            <li class="page-item disabled">
+                                <span class="page-link ebook-page-link">...</span>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link ebook-page-link pagination-link" 
+                                   href="#" 
+                                   data-page="{{ ebooks.paginator.num_pages }}" 
+                                   data-subject-id="{{ subject_id_enc }}">{{ ebooks.paginator.num_pages }}</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- Next Button -->
+                    {% if ebooks.has_next %}
+                        <li class="page-item">
+                            <a class="page-link ebook-page-link pagination-link" 
+                               href="#" 
+                               data-page="{{ ebooks.next_page_number }}" 
+                               data-subject-id="{{ subject_id_enc }}">
+                                पुढचा <i class="ri-arrow-right-s-line"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link ebook-page-link">
+                                पुढचा <i class="ri-arrow-right-s-line"></i>
+                            </span>
+                        </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- Page Info -->
+                <div class="page-info mt-2">
+                    <small class="text-muted">
+                        पृष्ठ {{ ebooks.number }} / {{ ebooks.paginator.num_pages }}
+                        (एकूण {{ ebooks.paginator.count }} ई-पुस्तके)
+                    </small>
+                </div>
+            </nav>
+        </div>
+
+    {% else %}
+        <div class="col-12 text-center my-5">
+            <div class="no-ebooks-message">
+                <p>या विषयासाठी कोणतीही ई-पुस्तके उपलब्ध नाहीत.</p>
+                <p class="mt-2" style="font-size: 0.9rem;">कृपया दुसरा विषय निवडा किंवा शोध वापरा.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>

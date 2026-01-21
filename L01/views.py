@@ -10493,7 +10493,6 @@ def kiosk_display(request):
         "library_name": library_name  # Marathi name will go here if present
     })
     
-    
 def set_ebook_image_urls(ebooks):
     for b in ebooks:
 
@@ -10613,6 +10612,190 @@ def get_ebooks_by_subject(request):
 
     except Exception as e:
         print("Error fetching ebooks:", e)
+        return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
+
+# Ebook Kiosk View
+@login_required
+def visit_library_Cate_ebooks(request):
+    try:
+        # --- SESSION CHECKS ---
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if library_code != 'L01':
+            messages.error(request, "Invalid library access.")
+            request.session.flush()
+            return redirect('library_list')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/visit_library_Cate_ebooks.html", {})
+
+        # --- SUBJECTS ---
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))
+            subjects.append(s)
+
+        print(f"DEBUG: Found {len(subjects)} subjects")
+        
+        first_subject = subjects[0] if subjects else None
+        print(f"DEBUG: First subject ID: {first_subject.id if first_subject else 'None'}")
+
+        # --- EBOOKS BY FIRST SUBJECT ---
+        if first_subject:
+            ebooks = LibraryEbook.objects.filter(eb_subject_id=first_subject.id)\
+                                        .select_related('eb_subject', 'ebook_type')
+            print(f"DEBUG: Found {ebooks.count()} ebooks for subject {first_subject.id}")
+        else:
+            ebooks = LibraryEbook.objects.none()
+            print("DEBUG: No first subject, ebooks queryset empty")
+
+        # Debug first few ebooks
+        for i, ebook in enumerate(ebooks[:3]):
+            print(f"DEBUG: Initial ebook {i+1}: {ebook.eb_title}")
+
+        # --- PAGINATION ---
+        paginator = Paginator(ebooks, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        print(f"DEBUG: Paginator count: {paginator.count}")
+        print(f"DEBUG: Page object has {len(page_obj)} items")
+
+        # Process ebooks
+        processed_ebooks = []
+        for ebook in page_obj:
+            ebook.ebookIdEnc = enc(str(ebook.ebook_id)) if 'enc' in globals() else ebook.ebook_id
+            
+            if ebook.eb_front_page_photo:
+                ebook.eb_front_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_front_page_photo.strip()
+                )
+                print(f"DEBUG: Set front page for {ebook.eb_title}")
+            
+            if ebook.eb_last_page_photo:
+                ebook.eb_last_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_last_page_photo.strip()
+                )
+            
+            processed_ebooks.append(ebook)
+
+        # --- CONTEXT ---
+        context = {
+            'subjects': subjects,
+            'ebooks': page_obj,  # This should be 'ebooks'
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        print(f"DEBUG: Final context - ebooks count: {len(context.get('ebooks', []))}")
+
+        return render(
+            request,
+            "L01/visit_library_Cate_ebooks.html",
+            context
+        )
+
+    except Exception as e:
+        print(f"Error in ebooks kiosk: {e}")
+        return render(
+            request,
+            "L01/visit_library_Cate_ebooks.html",
+            {}
+        )
+
+def get_ebooks_by_subject_kiosk(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+        search = request.GET.get('search', '').strip()
+        page = request.GET.get('page', 1)
+
+        print(f"DEBUG: Subject ID encrypted: {subject_id_enc}")
+        print(f"DEBUG: Subject ID decrypted: {subject_id}")
+        print(f"DEBUG: Search term: {search}")
+        print(f"DEBUG: Page: {page}")
+
+        # Base queryset
+        ebooks = LibraryEbook.objects.all().select_related('eb_subject', 'ebook_type')
+        
+        print(f"DEBUG: Total ebooks in DB: {ebooks.count()}")
+
+        # Filter by subject if provided
+        if subject_id:
+            ebooks = ebooks.filter(eb_subject_id=subject_id)
+            print(f"DEBUG: After subject filter: {ebooks.count()}")
+
+        # Apply search filter
+        if search:
+            ebooks = ebooks.filter(
+                Q(eb_title__icontains=search) |
+                Q(eb_author__icontains=search) |
+                Q(eb_keywords__icontains=search)
+            )
+            print(f"DEBUG: After search filter: {ebooks.count()}")
+
+        # Debug first few ebooks
+        for i, ebook in enumerate(ebooks[:3]):
+            print(f"DEBUG: Ebook {i+1}: {ebook.eb_title} | Subject: {ebook.eb_subject_id}")
+
+        # Process ebooks
+        ebooks_list = []
+        for ebook in ebooks:
+            ebook.ebookIdEnc = enc(str(ebook.ebook_id)) if 'enc' in globals() else ebook.ebook_id
+            
+            # Set image URLs
+            if ebook.eb_front_page_photo:
+                ebook.eb_front_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_front_page_photo.strip()
+                )
+            
+            if ebook.eb_last_page_photo:
+                ebook.eb_last_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_last_page_photo.strip()
+                )
+            
+            ebooks_list.append(ebook)
+
+        print(f"DEBUG: Processed {len(ebooks_list)} ebooks")
+
+        # Pagination
+        paginator = Paginator(ebooks_list, 8)
+        try:
+            ebooks_page = paginator.page(page)
+            print(f"DEBUG: Pagination successful. Page {page} of {paginator.num_pages}")
+            print(f"DEBUG: Current page has {len(ebooks_page)} ebooks")
+        except Exception as e:
+            print(f"DEBUG: Pagination error: {e}")
+            ebooks_page = paginator.page(1)
+
+        context = {
+            'ebooks': ebooks_page,  # Make sure it's 'ebooks' not 'ebooks_page'
+            'subject_id_enc': subject_id_enc,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        print(f"DEBUG: Context keys: {context.keys()}")
+        if 'ebooks' in context:
+            print(f"DEBUG: Ebooks in context: {len(context['ebooks'])}")
+
+        return render(
+            request,
+            "L01/ebook_details_kiosk.html",
+            context
+        )
+
+    except Exception as e:
+        print(f"DEBUG: Error in get_ebooks_by_subject_kiosk: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
 
 @login_required
