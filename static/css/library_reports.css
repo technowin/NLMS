@@ -8,14 +8,14 @@
 .report-container {
     height: calc(100vh - var(--navbar-height, 60px));
     overflow: hidden;
-    background-color: var(--bs-body-bg);
+    background-color: var(--ct-body-bg);
 }
 
 .left-panel {
     width: var(--left-panel-width);
     height: 100%;
-    background-color: var(--bs-tertiary-bg);
-    border-right: 1px solid var(--bs-border-color);
+    background-color: var(--ct-tertiary-bg);
+    border-right: 1px solid var(--ct-border-color);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -36,9 +36,9 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 0;
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--ct-border-color);
     margin-bottom: 1rem;
-    background-color: var(--bs-body-bg);
+    background-color: var(--ct-body-bg);
     position: sticky;
     top: 0;
     z-index: 99;
@@ -58,7 +58,7 @@
 
 .filter-group {
     padding: 1rem;
-    border-bottom: 1px solid var(--bs-border-color-translucent);
+    border-bottom: 1px solid var(--ct-border-color-translucent);
 }
 
 .filter-group:last-child {
@@ -73,7 +73,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--bs-secondary);
+    color: var(--ct-secondary);
     margin-bottom: 0.75rem;
 }
 
@@ -81,25 +81,25 @@
     flex-grow: 1;
     overflow-y: auto;
     min-height: 0;
-    background-color: var(--bs-body-bg);
+    background-color: var(--ct-body-bg);
     border-radius: 0.375rem;
 }
 
 .member-list-item {
     padding: 0.75rem;
-    border-bottom: 1px solid var(--bs-border-color-translucent);
+    border-bottom: 1px solid var(--ct-border-color-translucent);
     cursor: pointer;
     transition: all 0.2s ease;
     border-left: 3px solid transparent;
 }
 
 .member-list-item:hover {
-    background-color: var(--bs-tertiary-bg);
+    background-color: var(--ct-tertiary-bg);
 }
 
 .member-list-item.selected {
-    background-color: var(--bs-primary-bg-subtle);
-    border-left-color: var(--bs-primary);
+    background-color: var(--ct-primary-bg-subtle);
+    border-left-color: var(--ct-primary);
 }
 
 .member-list-item .form-check-input {
@@ -109,11 +109,11 @@
 .member-code {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--bs-emphasis-color);
+    color: var(--ct-emphasis-color);
 }
 
 .member-name {
-    color: var(--bs-body-color);
+    color: var(--ct-body-color);
     margin: 0.25rem 0;
 }
 
@@ -124,7 +124,7 @@
 
 /* Tab Styles */
 .report-tabs {
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--ct-border-color);
     padding: 0 0.5rem;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -134,7 +134,7 @@
 .report-tabs .nav-link {
     border: none;
     border-bottom: 2px solid transparent;
-    color: var(--bs-secondary);
+    color: var(--ct-secondary);
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     white-space: nowrap;
@@ -142,24 +142,24 @@
 }
 
 .report-tabs .nav-link:hover {
-    color: var(--bs-primary);
-    border-bottom-color: var(--bs-primary-border-subtle);
+    color: var(--ct-primary);
+    border-bottom-color: var(--ct-primary-border-subtle);
 }
 
 .report-tabs .nav-link.active {
-    color: var(--bs-primary);
-    border-bottom-color: var(--bs-primary);
+    color: var(--ct-primary);
+    border-bottom-color: var(--ct-primary);
     background: transparent;
     font-weight: 500;
 }
 
 .tab-header {
     padding: 0.75rem 0;
-    border-bottom: 1px solid var(--bs-border-color-translucent);
+    border-bottom: 1px solid var(--ct-border-color-translucent);
     margin-bottom: 1rem;
     position: sticky;
     top: calc(var(--tab-header-height) + 1px);
-    background-color: var(--bs-body-bg);
+    background-color: var(--ct-body-bg);
     z-index: 98;
 }
 
@@ -216,7 +216,7 @@
 }
 
 .toast {
-    box-shadow: var(--bs-box-shadow);
+    box-shadow: var(--ct-box-shadow);
     margin-bottom: 0.5rem;
 }
 
@@ -232,24 +232,24 @@
 .filter-tag {
     display: inline-flex;
     align-items: center;
-    background-color: var(--bs-primary-bg-subtle);
-    color: var(--bs-primary);
+    background-color: var(--ct-primary-bg-subtle);
+    color: var(--ct-primary);
     padding: 0.25rem 0.5rem;
     border-radius: 1rem;
     font-size: 0.75rem;
-    border: 1px solid var(--bs-primary-border-subtle);
+    border: 1px solid var(--ct-primary-border-subtle);
 }
 
 .filter-tag .remove-filter {
     cursor: pointer;
     margin-left: 0.25rem;
-    color: var(--bs-danger);
+    color: var(--ct-danger);
     display: inline-flex;
     align-items: center;
 }
 
 .filter-tag .remove-filter:hover {
-    color: var(--bs-danger-emphasis);
+    color: var(--ct-danger-emphasis);
 }
 
 /* Loading States */
@@ -268,7 +268,7 @@
         height: 40vh;
         top: 0;
         border-right: none;
-        border-bottom: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--ct-border-color);
     }
     
     .right-panel {
@@ -307,17 +307,17 @@
 
 /* Dark theme adjustments */
 [data-bs-theme="dark"] .left-panel {
-    background-color: var(--bs-dark-bg-subtle);
-    border-right-color: var(--bs-border-color-translucent);
+    background-color: var(--ct-dark-bg-subtle);
+    border-right-color: var(--ct-border-color-translucent);
 }
 
 [data-bs-theme="dark"] .member-list-item.selected {
-    background-color: rgba(var(--bs-primary-rgb), 0.15);
+    background-color: rgba(var(--ct-primary-rgb), 0.15);
 }
 
 [data-bs-theme="dark"] .filter-tag {
-    background-color: rgba(var(--bs-primary-rgb), 0.2);
-    border-color: rgba(var(--bs-primary-rgb), 0.3);
+    background-color: rgba(var(--ct-primary-rgb), 0.2);
+    border-color: rgba(var(--ct-primary-rgb), 0.3);
 }
 
 /* Scrollbar styling */
@@ -327,17 +327,17 @@
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bs-tertiary-bg);
+    background: var(--ct-tertiary-bg);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--bs-secondary-bg);
+    background: var(--ct-secondary-bg);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--bs-secondary-border-subtle);
+    background: var(--ct-secondary-border-subtle);
 }
 
 /* Print styles */
