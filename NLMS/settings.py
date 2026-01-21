@@ -229,7 +229,8 @@ LOCAL_APPS = [
     'Reports',
     'administration',
     'L01',
-    'L02'
+    'L02',
+    'library_reports'
 ]
 
 # Add 'storages' to THIRD_PARTY_APPS for all environments
