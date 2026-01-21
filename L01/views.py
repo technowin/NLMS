@@ -11193,12 +11193,21 @@ def view_book_detail_kiosk(request):
         book = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
         book.bookIdEnc = enc(str(book.cat_ref_num))
 
-        # --- IMAGES ---
         images = []
         if book.front_page_photo:
-            images.append(book.front_page_photo)
+            book.front_page_photo_url = file_storage_service.get_file_url(book.front_page_photo)
+            images.append(book.front_page_photo_url)
+
         if book.last_page_photo:
-            images.append(book.last_page_photo)
+            book.last_page_photo_url = file_storage_service.get_file_url(book.last_page_photo)
+            images.append(book.last_page_photo_url)
+
+        # --- IMAGES ---
+        # images = []
+        # if book.front_page_photo:
+        #     images.append(book.front_page_photo)
+        # if book.last_page_photo:
+        #     images.append(book.last_page_photo)
 
         # --- CIRCULATION DETAILS ---
         circulation_qs = CirculationCopyStatus.objects.filter(
@@ -11244,7 +11253,6 @@ def view_book_detail_kiosk(request):
         else:
             location_display = "Unknown"
 
-        # --- REVIEWS ---
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
