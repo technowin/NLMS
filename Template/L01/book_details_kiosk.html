@@ -10,8 +10,10 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3),
                     0 1px 0 rgba(255, 255, 255, 0.05) inset;
-        height: 100%;
+        height: 500px; /* FIXED HEIGHT - IMPORTANT */
         position: relative;
+        display: flex;
+        flex-direction: column; /* ADDED */
     }
 
     .book-card::before {
@@ -54,7 +56,7 @@
 
     /* Book Image Box */
     .book-img-box {
-        height: 300px;
+        height: 350px; /* REDUCED from 300px */
         overflow: hidden;
         position: relative;
         background: linear-gradient(135deg, #141e30, #243b55);
@@ -62,6 +64,8 @@
         align-items: center;
         justify-content: center;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0; /* ADDED - Prevents image from growing */
+        padding: 5%;
     }
 
     .book-img-box::before {
@@ -119,19 +123,20 @@
         display: flex;
         flex-direction: column;
         background: linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent);
+        flex-grow: 1; /* ADDED - Takes remaining space */
+        min-height: 280px; /* ADDED - Minimum height for content */
+        justify-content: space-between; /* ADDED - Distributes space */
     }
 
     .card-title {
         color: #ffffff;
         font-size: 1.1rem;
         font-weight: 700;
-        margin-bottom: 1rem;
         line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: 3em;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         position: relative;
     }
@@ -166,25 +171,21 @@
         font-size: 0.8rem;
     }
 
-    .info-line:last-of-type {
-        margin-bottom: 1.5rem;
-    }
-
     /* View Button */
     .view-btn {
         background: linear-gradient(135deg, #8a2387 0%, #e94057 100%);
-        color: white;
+        color: white !important; /* FORCE WHITE TEXT */
         border: none;
         border-radius: 10px;
-        padding: 0.65rem 1.5rem;
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem !important;
+        font-size: 0.95rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(138, 35, 135, 0.3);
+        box-shadow: 0 4px 20px rgba(138, 35, 135, 0.4); /* STRONGER SHADOW */
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -192,6 +193,8 @@
         width: 100%;
         max-width: 200px;
         margin: 0 auto;
+        text-decoration: none !important;
+        border: 2px solid rgba(255, 255, 255, 0.2); /* ADDED BORDER */
     }
 
     .view-btn::before {
@@ -201,10 +204,10 @@
 
     .view-btn:hover {
         background: linear-gradient(135deg, #e94057 0%, #f27121 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(233, 64, 87, 0.4),
-                    0 0 0 2px rgba(233, 64, 87, 0.2);
-        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(233, 64, 87, 0.6),
+                    0 0 0 2px rgba(233, 64, 87, 0.3);
+        color: white !important;
     }
 
     .view-btn:active {
@@ -233,10 +236,11 @@
         opacity: 0.5;
     }
 
-    /* ===== PAGINATION STYLING ===== */
+    /* ===== PAGINATION IMPROVEMENTS ===== */
     .pagination {
         margin-top: 2rem;
         gap: 0.25rem;
+        flex-wrap: wrap;
     }
 
     .pagination-link {
@@ -244,11 +248,17 @@
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         color: #cbd5e1 !important;
         border-radius: 10px !important;
-        padding: 0.6rem 1rem !important;
+        padding: 0.6rem 0.8rem !important;
         font-size: 0.9rem !important;
         transition: all 0.3s ease !important;
         margin: 0 0.125rem !important;
         backdrop-filter: blur(5px);
+        min-width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none !important;
     }
 
     .pagination-link:hover {
@@ -273,13 +283,31 @@
         border-color: rgba(255, 255, 255, 0.05) !important;
         color: #64748b !important;
         cursor: not-allowed;
+        opacity: 0.5;
     }
 
+    .page-item.disabled .page-link:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Ellipsis styling */
+    .page-item.disabled span.page-link {
+        background: transparent !important;
+        border-color: transparent !important;
+        color: #94a3b8 !important;
+        font-size: 1.2rem;
+        padding: 0.6rem 0.5rem !important;
+        min-width: 30px;
+    }
+
+    /* First and Last page buttons */
     .page-item:first-child .page-link,
     .page-item:last-child .page-link {
         background: rgba(30, 41, 59, 0.8) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         font-weight: 600;
+        padding: 0.6rem 1rem !important;
     }
 
     .page-item:first-child .page-link:hover,
@@ -287,23 +315,103 @@
         background: linear-gradient(135deg, rgba(138, 35, 135, 0.3), rgba(233, 64, 87, 0.2)) !important;
     }
 
+    /* Page Info */
+    .page-info {
+        text-align: right;
+    }
+
+    .page-info .text-muted {
+        color: #94a3b8 !important;
+        font-size: 0.85rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Responsive Pagination */
+    @media (max-width: 768px) {
+        .pagination {
+            justify-content: center;
+        }
+        
+        .pagination-link {
+            padding: 0.5rem 0.6rem !important;
+            font-size: 0.85rem !important;
+            min-width: 38px;
+            height: 38px;
+            margin: 0.1rem !important;
+        }
+        
+        .page-info {
+            text-align: center;
+        }
+        
+        .page-item:first-child .page-link,
+        .page-item:last-child .page-link {
+            padding: 0.5rem 0.8rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .pagination {
+            gap: 0.125rem;
+        }
+        
+        .pagination-link {
+            padding: 0.4rem 0.5rem !important;
+            font-size: 0.8rem !important;
+            min-width: 34px;
+            height: 34px;
+        }
+        
+        .page-item.disabled span.page-link {
+            padding: 0.4rem 0.3rem !important;
+            min-width: 26px;
+        }
+        
+        .page-item:first-child .page-link,
+        .page-item:last-child .page-link {
+            padding: 0.4rem 0.6rem !important;
+            font-size: 0.75rem !important;
+        }
+    }
+
+    /* Pagination Animation */
+    @keyframes pageFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-item {
+        animation: pageFadeIn 0.3s ease forwards;
+    }
+
+    .page-item:nth-child(1) { animation-delay: 0.1s; }
+    .page-item:nth-child(2) { animation-delay: 0.15s; }
+    .page-item:nth-child(3) { animation-delay: 0.2s; }
+    .page-item:nth-child(4) { animation-delay: 0.25s; }
+    .page-item:nth-child(5) { animation-delay: 0.3s; }
+    .page-item:nth-child(6) { animation-delay: 0.35s; }
+    .page-item:nth-child(7) { animation-delay: 0.4s; }
+    .page-item:nth-child(8) { animation-delay: 0.45s; }
+    .page-item:nth-child(9) { animation-delay: 0.5s; }
+    .page-item:nth-child(10) { animation-delay: 0.55s; }
     /* ===== RESPONSIVE DESIGN ===== */
     @media (max-width: 1200px) {
+        .book-card {
+            height: 480px;
+        }
+        
         .book-img-box {
-            height: 200px;
+            height: 220px;
         }
         
-        .card-title {
-            font-size: 1rem;
-        }
-        
-        .info-line {
-            font-size: 0.82rem;
-        }
-        
-        .view-btn {
-            padding: 0.6rem 1.25rem;
-            font-size: 0.85rem;
+        .card-body {
+            min-height: 210px;
         }
     }
 
@@ -319,6 +427,31 @@
         .pagination-link {
             padding: 0.5rem 0.8rem !important;
             font-size: 0.85rem !important;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .book-card {
+            height: 460px;
+        }
+        
+        .book-img-box {
+            height: 200px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .book-card {
+            height: 440px;
+        }
+        
+        .book-img-box {
+            height: 190px;
+        }
+        
+        .card-body {
+            min-height: 200px;
+            padding: 1.25rem;
         }
     }
 
@@ -344,6 +477,26 @@
             padding: 0.5rem 0.75rem !important;
             font-size: 0.8rem !important;
             margin: 0.125rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .book-card {
+            height: 420px;
+        }
+        
+        .book-img-box {
+            height: 180px;
+        }
+        
+        .card-body {
+            min-height: 190px;
+            padding: 1rem;
+        }
+        
+        .view-btn {
+            padding: 0.65rem 1.25rem !important;
+            font-size: 0.9rem;
         }
     }
 
@@ -412,10 +565,13 @@
 
     .mt-auto {
         margin-top: auto !important;
+        position: relative;
+        z-index: 20;
     }
 
     .text-center {
-        text-align: center !important;
+        position: relative;
+        z-index: 10;
     }
 
     .col-12 {
@@ -503,7 +659,7 @@
                             <p class="info-line"><b>वर्ष:</b> {{ book.year_of_publication }}</p>
                         {% endif %}
 
-                        <div class="mt-auto text-center">
+                        <div class="text-center">
                             <a href="{% url 'L01:view_book_detail_kiosk' %}?cat_ref_num={{ book.bookIdEnc }}" class="btn btn-primary view-btn">अधिक पहा</a>
                         </div>
                     </div>
@@ -515,33 +671,136 @@
         <div class="col-12 text-end mt-3">
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-end">
+                    <!-- Previous Button -->
                     {% if books.has_previous %}
                         <li class="page-item">
-                            <a class="page-link pagination-link" href="#" data-page="{{ books.previous_page_number }}" data-subject-id="{{ subject_id_enc }}">मागील</a>
+                            <a class="page-link pagination-link" href="#" data-page="{{ books.previous_page_number }}" data-subject-id="{{ subject_id_enc }}">
+                                <i class="ri-arrow-left-s-line"></i> मागील
+                            </a>
                         </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link">मागील</span></li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="ri-arrow-left-s-line"></i> मागील
+                            </span>
+                        </li>
                     {% endif %}
 
-                    {% for num in books.paginator.page_range %}
-                        {% if num == books.number %}
-                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                        {% else %}
+                    <!-- Page Numbers with Smart Range -->
+                    {% if books.paginator.num_pages <= 7 %}
+                        <!-- Show all pages if less than or equal to 7 -->
+                        {% for num in books.paginator.page_range %}
+                            {% if num == books.number %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link pagination-link" href="#" data-page="{{ num }}" data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Smart pagination for many pages -->
+                        {% if books.number <= 4 %}
+                            <!-- First pages -->
+                            {% for num in books.paginator.page_range|slice:":5" %}
+                                {% if num == books.number %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link pagination-link" href="#" data-page="{{ num }}" data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
                             <li class="page-item">
-                                <a class="page-link pagination-link" href="#" data-page="{{ num }}" data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                <a class="page-link pagination-link" href="#" data-page="{{ books.paginator.num_pages }}" data-subject-id="{{ subject_id_enc }}">{{ books.paginator.num_pages }}</a>
+                            </li>
+                        
+                        {% elif books.number >= books.paginator.num_pages|add:"-3" %}
+                            <!-- Last pages -->
+                            <li class="page-item">
+                                <a class="page-link pagination-link" href="#" data-page="1" data-subject-id="{{ subject_id_enc }}">1</a>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% for num in books.paginator.page_range|slice:"-5:" %}
+                                {% if num == books.number %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link pagination-link" href="#" data-page="{{ num }}" data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        
+                        {% else %}
+                            <!-- Middle pages -->
+                            <li class="page-item">
+                                <a class="page-link pagination-link" href="#" data-page="1" data-subject-id="{{ subject_id_enc }}">1</a>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            
+                            {% with start=books.number|add:"-2" %}
+                            {% with end=books.number|add:"2" %}
+                            {% for num in books.paginator.page_range %}
+                                {% if num >= start and num <= end %}
+                                    {% if num == books.number %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link pagination-link" href="#" data-page="{{ num }}" data-subject-id="{{ subject_id_enc }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                            {% endwith %}
+                            
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link pagination-link" href="#" data-page="{{ books.paginator.num_pages }}" data-subject-id="{{ subject_id_enc }}">{{ books.paginator.num_pages }}</a>
                             </li>
                         {% endif %}
-                    {% endfor %}
+                    {% endif %}
 
+                    <!-- Next Button -->
                     {% if books.has_next %}
                         <li class="page-item">
-                            <a class="page-link pagination-link" href="#" data-page="{{ books.next_page_number }}" data-subject-id="{{ subject_id_enc }}">पुढचा</a>
+                            <a class="page-link pagination-link" href="#" data-page="{{ books.next_page_number }}" data-subject-id="{{ subject_id_enc }}">
+                                पुढचा <i class="ri-arrow-right-s-line"></i>
+                            </a>
                         </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link">पुढचा</span></li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                पुढचा <i class="ri-arrow-right-s-line"></i>
+                            </span>
+                        </li>
                     {% endif %}
                 </ul>
-
+                
+                <!-- Page Info -->
+                <div class="page-info mt-2">
+                    <small class="text-muted">
+                        पृष्ठ {{ books.number }} / {{ books.paginator.num_pages }}
+                        (एकूण {{ books.paginator.count }} पुस्तके)
+                    </small>
+                </div>
             </nav>
         </div>
 
