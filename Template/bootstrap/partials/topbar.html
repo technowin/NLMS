@@ -428,29 +428,6 @@
                         <h6 class="text-overflow m-0">Welcome !</h6>
                     </div>
 
-                    <!-- item-->
-                    {% comment %} <a href="javascript:void(0);" class="dropdown-item">
-                        <i class="mdi mdi-account-circle me-1"></i>
-                        <span>My Account</span>
-                    </a>
-
-                    <!-- item-->
-                    <a data-bs-toggle="offcanvas" href="#theme-settings-offcanvas" class="dropdown-item">
-                        <i class="mdi mdi-cog-outline me-1"></i>
-                        <span>Settings</span>
-                    </a> {% endcomment %}
-                   
-                    <!-- item-->
-                    {% comment %} <a href="javascript:void(0);" class="dropdown-item">
-                        <i class="mdi mdi-lifebuoy me-1"></i>
-                        <span>Support</span>
-                    </a>
-
-                    <!-- item-->
-                    <a href="javascript:void(0);" class="dropdown-item">
-                        <i class="mdi mdi-lock-outline me-1"></i>
-                        <span>Lock Screen</span>
-                    </a> {% endcomment %}
 
                     <!-- item-->
                     <a href="/logout" class="dropdown-item">
@@ -458,10 +435,11 @@
                         <span>Logout</span>
                     </a>
 
-                    <a  class="dropdown-item">
+                    <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
                         <i class="mdi mdi-logout me-1"></i>
                         <span>Change Password</span>
                     </a>
+
                     {% if request.session.role_id == '3' %}
                     <a href="javascript:void(0)" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#qrCodeModal" onclick="loadQRCode()">
                         <i class="mdi mdi-logout me-1"></i>
@@ -473,6 +451,65 @@
         </ul>
     </div>
 </div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="changePasswordForm" method="post" action="{% url 'L01:change_password' %}">
+                    {% csrf_token %}
+                        <div class="mb-3">
+                            <label>Old Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="old_password" name="old_password" required>
+                                <span class="input-group-text toggle-password" data-target="old_password">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                            <small id="oldPasswordError" class="text-danger d-none">Old password is incorrect</small>
+                            <small id="oldPasswordSuccess" class="text-success d-none">Old password verified</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="new_password" name="new_password" required disabled>
+                                <span class="input-group-text toggle-password" data-target="new_password">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                            <small id="passwordError" class="text-danger d-none"></small>
+                            <small id="samePasswordError" class="text-danger d-none">New password cannot be the same as the old password.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Retype Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="retype_password" name="retype_password" required disabled>
+                                <span class="input-group-text toggle-password" data-target="retype_password">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                            <small id="repeatPasswordError" class="text-danger d-none"></small>
+                            <small id="passwordMatchSuccess" class="text-success d-none">Passwords match</small>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- QR CODE MODAL -->
 <div class="modal fade" id="qrCodeModal" tabindex="-1">
@@ -505,7 +542,31 @@
 
 
 
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Password Update</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to update your password? You will be logged out of the system after the update.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmPasswordChange">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 
 <script>
 let qr; // global QR object
@@ -541,12 +602,170 @@ function loadQRCode() {
 
 function downloadQRCode() {
     if (!qr) return;
-
     const link = document.createElement("a");
     link.download = "membership_qr.png";
     link.href = qr.toDataURL("image/png");
     link.click();
 }
+
+</script>
+
+<script>
+    const submitBtn = $("#submitBtn");
+
+    function validatePassword() {
+        debugger;
+        const pwd = $("#new_password").val();
+        const repeatPwd = $("#retype_password").val();
+        const pwdError = $("#passwordError");
+        const repeatError = $("#repeatPasswordError");
+        const successMsg = $("#passwordMatchSuccess");
+
+        // 8–16 chars, uppercase, lowercase, digit, special char
+        const pwdRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
+
+        let valid = true;
+
+        // PASSWORD RULE CHECK
+        if (!pwdRegex.test(pwd)) {
+            pwdError
+                .text("Password must be 8–16 chars with uppercase, lowercase, number & special character.")
+                .removeClass("d-none");
+            valid = false;
+        } else {
+            pwdError.addClass("d-none");
+        }
+
+        // MATCH CHECK
+        if (pwd !== repeatPwd || repeatPwd === "") {
+            repeatError.text("Passwords do not match").removeClass("d-none");
+            successMsg.addClass("d-none");
+            valid = false;
+        } else {
+            repeatError.addClass("d-none");
+            successMsg.removeClass("d-none");
+        }
+
+        submitBtn.prop("disabled", !valid);
+        return valid;
+    }
+
+// LIVE VALIDATION
+    $("#new_password, #retype_password").on("keyup blur", validatePassword);
+
+</script>
+
+<script>
+$("#old_password").on("change", function () {
+
+    let oldPassword = $(this).val();
+
+    if (oldPassword.length < 3) return;
+
+    $.ajax({
+        url: "{% url 'L01:check_old_password' %}",
+        type: "POST",
+        data: {
+            old_password: oldPassword,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+        },
+        success: function (response) {
+
+            if (response.status === "success") {
+
+                // ✅ show success
+                $("#oldPasswordSuccess").removeClass("d-none");
+                $("#oldPasswordError").addClass("d-none");
+
+                // ✅ enable fields
+                $("#new_password").prop("disabled", false);
+                $("#retype_password").prop("disabled", false);
+
+            } else {
+
+                // ❌ show error
+                $("#oldPasswordError").removeClass("d-none");
+                $("#oldPasswordSuccess").addClass("d-none");
+
+                // ❌ disable everything
+                $("#new_password").prop("disabled", true);
+                $("#retype_password").prop("disabled", true);
+                $("#submitBtn").prop("disabled", true);
+            }
+        }
+    });
+});
+
+</script>
+
+<script>
+
+    // Trigger confirmation modal on submit
+    $("#submitBtn").click(function () {
+        // Show confirmation modal
+        $("#confirmationModal").modal("show");
+    });
+
+    // On confirmation click, submit the form
+    $("#confirmPasswordChange").click(function () {
+        $("#changePasswordForm").submit();
+        $("#confirmationModal").modal("hide");
+    });
+
+
+  $(".toggle-password").click(function () {
+    const targetId = $(this).data("target");
+    const input = $("#" + targetId);
+    const icon = $(this).find("i");
+
+    if (input.attr("type") === "password") {
+        input.attr("type", "text");
+        icon.removeClass("fa-eye").addClass("fa-eye-slash");
+    } else {
+        input.attr("type", "password");
+        icon.removeClass("fa-eye-slash").addClass("fa-eye");
+    }
+});
+
+$("#old_password, #new_password, #retype_password").on("keyup blur", function () {
+    const oldPassword = $("#old_password").val();
+    const newPassword = $("#new_password").val();
+    const repeatPassword = $("#retype_password").val();
+
+    // Check if new password is same as old password
+    if (newPassword === oldPassword) {
+        $("#samePasswordError").removeClass("d-none");
+        $("#submitBtn").prop("disabled", true);
+    } else {
+        $("#samePasswordError").addClass("d-none");
+
+        // Enable Submit if passwords match
+        if (newPassword === repeatPassword && newPassword.length >= 8) {
+            $("#submitBtn").prop("disabled", false);
+        } else {
+            $("#submitBtn").prop("disabled", true);
+        }
+    }
+});
+
+// Validate password match
+$("#new_password, #retype_password").on("keyup blur", function () {
+    const newPassword = $("#new_password").val();
+    const repeatPassword = $("#retype_password").val();
+
+    if (newPassword !== repeatPassword) {
+        $("#repeatPasswordError").removeClass("d-none");
+        $("#passwordMatchSuccess").addClass("d-none");
+        $("#submitBtn").prop("disabled", true);
+    } else {
+        $("#repeatPasswordError").addClass("d-none");
+        $("#passwordMatchSuccess").removeClass("d-none");
+        $("#submitBtn").prop("disabled", false);
+    }
+});
+
+
 </script>
 
 

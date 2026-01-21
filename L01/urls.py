@@ -149,6 +149,9 @@ urlpatterns = [
     path('search-books/',search_books, name='search_books'),
     path('upload-excel/', upload_excel, name='upload_excel'),
 
+    path('check-old-password/',check_old_password, name='check_old_password'),
+    path('change-password/', change_password, name='change_password'),
+
 
 
 ]

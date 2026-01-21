@@ -5551,8 +5551,82 @@ def get_member_detail(request, membership_code):
     except Exception as e:
         return JsonResponse({"error": "An unexpected error occurred.", "details": str(e)}, status=500)
 
-@login_required
+# @login_required
+# def membership_dashboard(request):
+#     # Get username from session
+#     username = request.session.get('username')
+    
+#     try:
+#         breadcrumb = request.POST.get("breadcrumb")
+#         if not breadcrumb:
+#             breadcrumb = 0
+#         member_id = get_object_or_404(MembershipDetails, user_id =  username)
+#         today = timezone.now().date()
+        
+#         # Calculate due soon threshold (2 days from now)
+#         due_soon_threshold = today + timedelta(days=2)
+#         currently_borrowed = CirculationTransaction.objects.using('L01').filter(
+#             member=member_id,
+#             return_date__isnull=True
+#         ).count()
+        
+#         # Get due soon books (due date within 2 days and not returned)
+#         due_soon = CirculationTransaction.objects.using('L01').filter(
+#             member=member_id,
+#             due_date__lte=due_soon_threshold,
+#             due_date__gte=today,
+#             return_date__isnull=True
+#         ).count()
+        
+#         # Get overdue books (due date passed and not returned)
+#         overdue = CirculationTransaction.objects.using('L01').filter(
+#             member=member_id,
+#             due_date__lt=today,
+#             return_date__isnull=True
+#         ).count()
+        
+#         # Get latest 3 borrowed books with catalog details
+#         latest_books = []
+#         transactions = CirculationTransaction.objects.filter(
+#             member=member_id,
+#             return_date__isnull=True
+#         ).select_related('catalog').order_by('-issue_date')[:3]
+#         pending_action = request.session.get("pending_action")
+#         sweet_alert = request.session.get("sweet_alert")
+#         for transaction in transactions:
+#             book_data = {
+#                 'transaction': transaction,
+#                 'title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
+#                 'author': transaction.catalog.author if transaction.catalog and transaction.catalog.author else 'Unknown Author',
+#                 'issue_date': transaction.issue_date,
+#                 'due_date': transaction.due_date,
+#                 'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None
+#             }
+#             latest_books.append(book_data)
+#         request.session.pop("sweet_alert", None)
+#         context = {
+#             'username': username,
+#             # 'membership_code': membership_code,
+#             'currently_borrowed': currently_borrowed,
+#             'due_soon': due_soon,
+#             'overdue': overdue,
+#             'latest_books': latest_books,
+#             'today': today,
+#             'pending_action': pending_action,    # send to template
+#             'sweet_alert': sweet_alert,
+#             'breadcrumb':breadcrumb
+#         }
+        
+#         return render(request, 'L01/Dashboard/member_dashboard.html', context)
+        
+#     except Exception as e:
+#         return render(request, 'error.html', {'error': str(e)})
+#     except Exception as e:
+#         return render(request, 'error.html', {'error': str(e)})
+
 def membership_dashboard(request):
+    # Generate or retrieve your key (ensure it's secure and private)
+
     # Get username from session
     username = request.session.get('username')
     
@@ -5560,38 +5634,11 @@ def membership_dashboard(request):
         breadcrumb = request.POST.get("breadcrumb")
         if not breadcrumb:
             breadcrumb = 0
-        # Get membership details
-        # membership = MembershipDetails.objects.get(user_id=username)
-        member_id = get_object_or_404(MembershipDetails, user_id =  username)
-        # membership_code = membership.membership_code
-        # member_id = get_object_or_404(MembershipDetails, membership_code =  membership_code)
-        
-        # Current date for calculations
+        member_id = get_object_or_404(MembershipDetails, user_id = username)
         today = timezone.now().date()
         
         # Calculate due soon threshold (2 days from now)
         due_soon_threshold = today + timedelta(days=2)
-        
-        # Get currently borrowed books (return_date is null)
-        currently_borrowed = CirculationTransaction.objects.using('L01').filter(
-            member=member_id,
-            return_date__isnull=True
-        ).count()
-        
-        # Get due soon books (due date within 2 days and not returned)
-        due_soon = CirculationTransaction.objects.using('L01').filter(
-            member=member_id,
-            due_date__lte=due_soon_threshold,
-            due_date__gte=today,
-            return_date__isnull=True
-        ).count()
-        
-        # Get overdue books (due date passed and not returned)
-        overdue = CirculationTransaction.objects.using('L01').filter(
-            member=member_id,
-            due_date__lt=today,
-            return_date__isnull=True
-        ).count()
         
         # Get latest 3 borrowed books with catalog details
         latest_books = []
@@ -5599,54 +5646,54 @@ def membership_dashboard(request):
             member=member_id,
             return_date__isnull=True
         ).select_related('catalog').order_by('-issue_date')[:3]
-        pending_action = request.session.get("pending_action")
-        sweet_alert = request.session.get("sweet_alert")
+        
         for transaction in transactions:
+            # Encrypt the cat_ref_num (catalog reference number)
+            cat_ref_num = str(transaction.catalog.cat_ref_num)
+            encrypted_cat_ref_num = enc(cat_ref_num)  # Encrypt and convert to string
+
             book_data = {
                 'transaction': transaction,
                 'title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
                 'author': transaction.catalog.author if transaction.catalog and transaction.catalog.author else 'Unknown Author',
                 'issue_date': transaction.issue_date,
                 'due_date': transaction.due_date,
-                'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None
+                'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None,
+                'encrypted_cat_ref_num': encrypted_cat_ref_num  # Send the encrypted value to the template
             }
             latest_books.append(book_data)
-        request.session.pop("sweet_alert", None)
+        
         context = {
             'username': username,
-            # 'membership_code': membership_code,
-            'currently_borrowed': currently_borrowed,
-            'due_soon': due_soon,
-            'overdue': overdue,
             'latest_books': latest_books,
             'today': today,
-            'pending_action': pending_action,    # send to template
-            'sweet_alert': sweet_alert,
-            'breadcrumb':breadcrumb
+            'breadcrumb': breadcrumb
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)
         
-    except MembershipDetails.DoesNotExist:
-        return render(request, 'error.html', {'error': 'Membership not found'})
     except Exception as e:
         return render(request, 'error.html', {'error': str(e)})
 
 def get_book_cover(catalog):
-    """Get book cover image path from BookCatalog"""
+    """
+    Returns front page image URL using file_storage_service if available
+    or falls back to default media handling.
+    """
     try:
         if catalog and catalog.front_page_photo:
-            # Use the front_page_photo field directly
-            file_path = Path(settings.MEDIA_ROOT) / Path(catalog.front_page_photo.replace("\\", "/"))
-            if file_path.exists():
-                return f"{settings.MEDIA_URL}{catalog.front_page_photo.replace('\\', '/')}"
-        
-        # Return default book cover if no image found
-        return "{% static 'images/default-book-cover.jpg' %}"
+            # Assuming file_storage_service is defined correctly
+            if hasattr(file_storage_service, 'get_file_url'):
+                return file_storage_service.get_file_url(catalog.front_page_photo)
+
+            # Fallback to default Django file storage
+            file_path = default_storage.url(catalog.front_page_photo)
+            return file_path
+
+        # Return default image if no cover found
+
     except Exception as e:
-        print(f"Error getting book cover: {e}")
-        # Return default book cover if any error occurs
-        return "{% static 'images/default-book-cover.jpg' %}"
+        print("Error fetching book cover:", e)
     
 @login_required
 def get_borrowing_history(request):
@@ -12335,3 +12382,40 @@ def upload_excel(request):
     
     return JsonResponse({'error': 'No file uploaded'}, status=400)
 
+    
+@login_required
+def check_old_password(request):
+    if request.method == "POST":
+        old_password = request.POST.get("old_password")
+        user = request.user
+
+        if user.check_password(old_password):
+            return JsonResponse({"status": "success"})
+        else:
+            return JsonResponse({"status": "error"})
+
+from django.contrib.auth import update_session_auth_hash
+
+@login_required
+def change_password(request):
+    if request.method == "POST":
+
+        old_password = request.POST.get("old_password")
+        new_password = request.POST.get("new_password")
+
+        user = request.user
+
+        # Check if the old password is correct
+        if not user.check_password(old_password):
+            messages.error(request, "Old password is incorrect")
+            return redirect(request.META.get("HTTP_REFERER"))
+
+        # Hash the new password using make_password()
+        user.password = make_password(new_password)
+        user.save()
+
+        # Important: keep the user logged in after password change
+        # update_session_auth_hash(request, user)
+
+        messages.success(request, "Password updated successfully")
+        return redirect("library_list")
