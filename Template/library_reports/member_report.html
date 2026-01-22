@@ -261,6 +261,20 @@
         height: calc(100vh - 420px);
     }
 }
+.input-group-text{
+  border-radius: 10px!important ; 
+  border: 1px solid grey!important ;
+}
+
+.search-input-right {
+    padding-right: 2.5rem; /* space for icon */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='gray' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.868-3.834zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+}
+
+
 </style>
 {% endblock %}
 
@@ -277,16 +291,18 @@
             <!-- Search Box -->
             <div class="mb-3">
                 <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" class="form-control" id="member-search" 
-                           placeholder="Search members...">
-                    <button class="btn btn-outline-secondary" type="button" 
-                            onclick="clearSearch()">
-                        <i class="bi bi-x"></i>
-                    </button>
-                </div>
+    <input type="text"
+           class="form-control search-input-right"
+           id="member-search"
+           placeholder="Search members...">
+    <button class="btn btn-outline-secondary" type="button"
+            onclick="clearSearch()"
+            style="border-radius: 10px!important; border: 1px solid grey!important;">
+        <i class="bi bi-x"></i>
+    </button>
+</div>
+
+
             </div>
             
             <!-- Filters -->
@@ -1050,8 +1066,8 @@ function renderMemberList(members) {
                         </span>
                     </div>
                 </div>
-                <div class="small mt-1">
-                    <span class="badge bg-light text-dark">
+                <div>
+                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:600;">
                         ${member.membership_type}
                     </span>
                 </div>
