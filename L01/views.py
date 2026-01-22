@@ -8351,7 +8351,9 @@ def led_tv_index(request):
         # LIBRARIES
         # ============================================
         libraries = (
-            LibraryMaster.objects.using('default')
+            LibraryMaster.objects
+            .using('default')
+            .select_related('location')  # 🔥 avoids extra queries
             .filter(is_active=1)
             .order_by('id')
         )
@@ -8372,7 +8374,7 @@ def led_tv_index(request):
                 "library_name": lib.library_name,
                 "library_name_mar": lib.library_name_mar,
                 "description": lib.about_library,
-                "address": lib.location.address,
+                "address": lib.location.address if lib.location else "",
                 "email": lib.contact_email,
                 "phone": lib.contact_phone,
                 "library_image": first_image,
@@ -8380,6 +8382,7 @@ def led_tv_index(request):
                 "opening_hours": lib.opening_hours,
                 "est_year": lib.est_year
             })
+
 
         # ============================================
         # 1️⃣ POPULAR BOOKS
@@ -8502,7 +8505,6 @@ def led_tv_index(request):
             "L01/led_tv_index.html",
             {}
         )
-
 
 def advertisement_index(request):
     # Fetch all ads ordered by newest first
