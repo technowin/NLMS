@@ -10717,23 +10717,20 @@ def get_ebooks_by_subject_kiosk(request):
 
         search = request.GET.get('search', '').strip()
         page = request.GET.get('page', 1)
+        searching = request.GET.get('searching', 'false') == 'true'
 
         print(f"DEBUG: Subject ID encrypted: {subject_id_enc}")
         print(f"DEBUG: Subject ID decrypted: {subject_id}")
         print(f"DEBUG: Search term: {search}")
         print(f"DEBUG: Page: {page}")
+        print(f"DEBUG: Searching mode: {searching}")
 
         # Base queryset
         ebooks = LibraryEbook.objects.all().select_related('eb_subject', 'ebook_type')
         
         print(f"DEBUG: Total ebooks in DB: {ebooks.count()}")
 
-        # Filter by subject if provided
-        if subject_id:
-            ebooks = ebooks.filter(eb_subject_id=subject_id)
-            print(f"DEBUG: After subject filter: {ebooks.count()}")
-
-        # Apply search filter
+        # Apply search filter FIRST (if search is active)
         if search:
             ebooks = ebooks.filter(
                 Q(eb_title__icontains=search) |
@@ -10741,6 +10738,16 @@ def get_ebooks_by_subject_kiosk(request):
                 Q(eb_keywords__icontains=search)
             )
             print(f"DEBUG: After search filter: {ebooks.count()}")
+            
+            # If we're searching, ignore subject filter unless explicitly clicked
+            if not searching and subject_id:
+                ebooks = ebooks.filter(eb_subject_id=subject_id)
+                print(f"DEBUG: After subject filter (non-search): {ebooks.count()}")
+        else:
+            # Only filter by subject if NOT searching
+            if subject_id:
+                ebooks = ebooks.filter(eb_subject_id=subject_id)
+                print(f"DEBUG: After subject filter (no search): {ebooks.count()}")
 
         # Debug first few ebooks
         for i, ebook in enumerate(ebooks[:3]):
@@ -10777,8 +10784,10 @@ def get_ebooks_by_subject_kiosk(request):
             ebooks_page = paginator.page(1)
 
         context = {
-            'ebooks': ebooks_page,  # Make sure it's 'ebooks' not 'ebooks_page'
+            'ebooks': ebooks_page,
             'subject_id_enc': subject_id_enc,
+            'search_term': search,
+            'searching': searching,
             'MEDIA_URL': settings.MEDIA_URL,
         }
 
@@ -10797,7 +10806,6 @@ def get_ebooks_by_subject_kiosk(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
-
 
 @login_required
 def visit_ebook_catalogue(request):
