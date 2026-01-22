@@ -12743,7 +12743,7 @@ def change_password(request):
         return redirect("library_list")
     
 # kiosk competitve Logic    
-
+@login_required
 def kiosk_competitive_exam_type(request):
     """Main entry point for competitive exams"""
     try:
@@ -12791,6 +12791,7 @@ def kiosk_competitive_exam_type(request):
         print("Error in kiosk_competitive_exam_type:", e)
         return redirect('L01:error_page')  # or HttpResponse("Something went wrong", status=500)
 
+@login_required
 def kiosk_competitive_sections(request):
     """Display sections for a competitive exam"""
     competitive_id = request.GET.get('competitive_id')
@@ -12806,6 +12807,7 @@ def kiosk_competitive_sections(request):
     
     return render(request, 'L01/kiosk_competitive_sections.html', context)
 
+@login_required
 def kiosk_competitive_subjects(request):
     """Display subjects for a specific section"""
     competitive_id = request.GET.get('competitive_id')
@@ -12827,6 +12829,7 @@ def kiosk_competitive_subjects(request):
     
     return render(request, 'L01/kiosk_competitive_subjects.html', context)
 
+@login_required
 def kiosk_competitive_topics(request):
     """Display topics for a specific subject"""
     competitive_id = request.GET.get('competitive_id')
