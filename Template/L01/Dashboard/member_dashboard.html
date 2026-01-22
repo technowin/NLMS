@@ -187,9 +187,14 @@
                                         </div>
                                         
                                         <div class="d-grid">
-                                            <button class="btn btn-outline-primary btn-sm rounded-pill">
-                                                <i class="bi bi-star me-1"></i>Add Review
-                                            </button>
+                                           <form action="{% url 'L01:view_book_detail' %}" method="GET" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="cat_ref_num" value="{{ book.encrypted_cat_ref_num }}">
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill">
+                                                        <i class="bi bi-star me-1"></i>Add Review
+                                                    </button>
+                                                </form>
+
                                         </div>
                                     </div>
                                 </div>

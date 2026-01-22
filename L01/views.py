@@ -5551,8 +5551,82 @@ def get_member_detail(request, membership_code):
     except Exception as e:
         return JsonResponse({"error": "An unexpected error occurred.", "details": str(e)}, status=500)
 
-@login_required
+# @login_required
+# def membership_dashboard(request):
+#     # Get username from session
+#     username = request.session.get('username')
+    
+#     try:
+#         breadcrumb = request.POST.get("breadcrumb")
+#         if not breadcrumb:
+#             breadcrumb = 0
+#         member_id = get_object_or_404(MembershipDetails, user_id =  username)
+#         today = timezone.now().date()
+        
+#         # Calculate due soon threshold (2 days from now)
+#         due_soon_threshold = today + timedelta(days=2)
+#         currently_borrowed = CirculationTransaction.objects.using('L01').filter(
+#             member=member_id,
+#             return_date__isnull=True
+#         ).count()
+        
+#         # Get due soon books (due date within 2 days and not returned)
+#         due_soon = CirculationTransaction.objects.using('L01').filter(
+#             member=member_id,
+#             due_date__lte=due_soon_threshold,
+#             due_date__gte=today,
+#             return_date__isnull=True
+#         ).count()
+        
+#         # Get overdue books (due date passed and not returned)
+#         overdue = CirculationTransaction.objects.using('L01').filter(
+#             member=member_id,
+#             due_date__lt=today,
+#             return_date__isnull=True
+#         ).count()
+        
+#         # Get latest 3 borrowed books with catalog details
+#         latest_books = []
+#         transactions = CirculationTransaction.objects.filter(
+#             member=member_id,
+#             return_date__isnull=True
+#         ).select_related('catalog').order_by('-issue_date')[:3]
+#         pending_action = request.session.get("pending_action")
+#         sweet_alert = request.session.get("sweet_alert")
+#         for transaction in transactions:
+#             book_data = {
+#                 'transaction': transaction,
+#                 'title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
+#                 'author': transaction.catalog.author if transaction.catalog and transaction.catalog.author else 'Unknown Author',
+#                 'issue_date': transaction.issue_date,
+#                 'due_date': transaction.due_date,
+#                 'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None
+#             }
+#             latest_books.append(book_data)
+#         request.session.pop("sweet_alert", None)
+#         context = {
+#             'username': username,
+#             # 'membership_code': membership_code,
+#             'currently_borrowed': currently_borrowed,
+#             'due_soon': due_soon,
+#             'overdue': overdue,
+#             'latest_books': latest_books,
+#             'today': today,
+#             'pending_action': pending_action,    # send to template
+#             'sweet_alert': sweet_alert,
+#             'breadcrumb':breadcrumb
+#         }
+        
+#         return render(request, 'L01/Dashboard/member_dashboard.html', context)
+        
+#     except Exception as e:
+#         return render(request, 'error.html', {'error': str(e)})
+#     except Exception as e:
+#         return render(request, 'error.html', {'error': str(e)})
+
 def membership_dashboard(request):
+    # Generate or retrieve your key (ensure it's secure and private)
+
     # Get username from session
     username = request.session.get('username')
     
@@ -5560,38 +5634,11 @@ def membership_dashboard(request):
         breadcrumb = request.POST.get("breadcrumb")
         if not breadcrumb:
             breadcrumb = 0
-        # Get membership details
-        # membership = MembershipDetails.objects.get(user_id=username)
-        member_id = get_object_or_404(MembershipDetails, user_id =  username)
-        # membership_code = membership.membership_code
-        # member_id = get_object_or_404(MembershipDetails, membership_code =  membership_code)
-        
-        # Current date for calculations
+        member_id = get_object_or_404(MembershipDetails, user_id = username)
         today = timezone.now().date()
         
         # Calculate due soon threshold (2 days from now)
         due_soon_threshold = today + timedelta(days=2)
-        
-        # Get currently borrowed books (return_date is null)
-        currently_borrowed = CirculationTransaction.objects.using('L01').filter(
-            member=member_id,
-            return_date__isnull=True
-        ).count()
-        
-        # Get due soon books (due date within 2 days and not returned)
-        due_soon = CirculationTransaction.objects.using('L01').filter(
-            member=member_id,
-            due_date__lte=due_soon_threshold,
-            due_date__gte=today,
-            return_date__isnull=True
-        ).count()
-        
-        # Get overdue books (due date passed and not returned)
-        overdue = CirculationTransaction.objects.using('L01').filter(
-            member=member_id,
-            due_date__lt=today,
-            return_date__isnull=True
-        ).count()
         
         # Get latest 3 borrowed books with catalog details
         latest_books = []
@@ -5599,54 +5646,54 @@ def membership_dashboard(request):
             member=member_id,
             return_date__isnull=True
         ).select_related('catalog').order_by('-issue_date')[:3]
-        pending_action = request.session.get("pending_action")
-        sweet_alert = request.session.get("sweet_alert")
+        
         for transaction in transactions:
+            # Encrypt the cat_ref_num (catalog reference number)
+            cat_ref_num = str(transaction.catalog.cat_ref_num)
+            encrypted_cat_ref_num = enc(cat_ref_num)  # Encrypt and convert to string
+
             book_data = {
                 'transaction': transaction,
                 'title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
                 'author': transaction.catalog.author if transaction.catalog and transaction.catalog.author else 'Unknown Author',
                 'issue_date': transaction.issue_date,
                 'due_date': transaction.due_date,
-                'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None
+                'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None,
+                'encrypted_cat_ref_num': encrypted_cat_ref_num  # Send the encrypted value to the template
             }
             latest_books.append(book_data)
-        request.session.pop("sweet_alert", None)
+        
         context = {
             'username': username,
-            # 'membership_code': membership_code,
-            'currently_borrowed': currently_borrowed,
-            'due_soon': due_soon,
-            'overdue': overdue,
             'latest_books': latest_books,
             'today': today,
-            'pending_action': pending_action,    # send to template
-            'sweet_alert': sweet_alert,
-            'breadcrumb':breadcrumb
+            'breadcrumb': breadcrumb
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)
         
-    except MembershipDetails.DoesNotExist:
-        return render(request, 'error.html', {'error': 'Membership not found'})
     except Exception as e:
         return render(request, 'error.html', {'error': str(e)})
 
 def get_book_cover(catalog):
-    """Get book cover image path from BookCatalog"""
+    """
+    Returns front page image URL using file_storage_service if available
+    or falls back to default media handling.
+    """
     try:
         if catalog and catalog.front_page_photo:
-            # Use the front_page_photo field directly
-            file_path = Path(settings.MEDIA_ROOT) / Path(catalog.front_page_photo.replace("\\", "/"))
-            if file_path.exists():
-                return f"{settings.MEDIA_URL}{catalog.front_page_photo.replace('\\', '/')}"
-        
-        # Return default book cover if no image found
-        return "{% static 'images/default-book-cover.jpg' %}"
+            # Assuming file_storage_service is defined correctly
+            if hasattr(file_storage_service, 'get_file_url'):
+                return file_storage_service.get_file_url(catalog.front_page_photo)
+
+            # Fallback to default Django file storage
+            file_path = default_storage.url(catalog.front_page_photo)
+            return file_path
+
+        # Return default image if no cover found
+
     except Exception as e:
-        print(f"Error getting book cover: {e}")
-        # Return default book cover if any error occurs
-        return "{% static 'images/default-book-cover.jpg' %}"
+        print("Error fetching book cover:", e)
     
 @login_required
 def get_borrowing_history(request):
@@ -10422,7 +10469,6 @@ def export_catalog_pdf(request):
 
 # For Kiosk Display and Ebook Catalogue
 
-@login_required
 def kiosk_display(request):
     # Get library_code from session
     library_code_from_session = request.session.get('library_db', None)
@@ -10446,7 +10492,6 @@ def kiosk_display(request):
         "MEDIA_URL": settings.MEDIA_URL,
         "library_name": library_name  # Marathi name will go here if present
     })
-    
     
 def set_ebook_image_urls(ebooks):
     for b in ebooks:
@@ -10567,6 +10612,190 @@ def get_ebooks_by_subject(request):
 
     except Exception as e:
         print("Error fetching ebooks:", e)
+        return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
+
+# Ebook Kiosk View
+@login_required
+def visit_library_Cate_ebooks(request):
+    try:
+        # --- SESSION CHECKS ---
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if library_code != 'L01':
+            messages.error(request, "Invalid library access.")
+            request.session.flush()
+            return redirect('library_list')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired or invalid. Please login again.")
+            return render(request, "L01/visit_library_Cate_ebooks.html", {})
+
+        # --- SUBJECTS ---
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))
+            subjects.append(s)
+
+        print(f"DEBUG: Found {len(subjects)} subjects")
+        
+        first_subject = subjects[0] if subjects else None
+        print(f"DEBUG: First subject ID: {first_subject.id if first_subject else 'None'}")
+
+        # --- EBOOKS BY FIRST SUBJECT ---
+        if first_subject:
+            ebooks = LibraryEbook.objects.filter(eb_subject_id=first_subject.id)\
+                                        .select_related('eb_subject', 'ebook_type')
+            print(f"DEBUG: Found {ebooks.count()} ebooks for subject {first_subject.id}")
+        else:
+            ebooks = LibraryEbook.objects.none()
+            print("DEBUG: No first subject, ebooks queryset empty")
+
+        # Debug first few ebooks
+        for i, ebook in enumerate(ebooks[:3]):
+            print(f"DEBUG: Initial ebook {i+1}: {ebook.eb_title}")
+
+        # --- PAGINATION ---
+        paginator = Paginator(ebooks, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        print(f"DEBUG: Paginator count: {paginator.count}")
+        print(f"DEBUG: Page object has {len(page_obj)} items")
+
+        # Process ebooks
+        processed_ebooks = []
+        for ebook in page_obj:
+            ebook.ebookIdEnc = enc(str(ebook.ebook_id)) if 'enc' in globals() else ebook.ebook_id
+            
+            if ebook.eb_front_page_photo:
+                ebook.eb_front_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_front_page_photo.strip()
+                )
+                print(f"DEBUG: Set front page for {ebook.eb_title}")
+            
+            if ebook.eb_last_page_photo:
+                ebook.eb_last_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_last_page_photo.strip()
+                )
+            
+            processed_ebooks.append(ebook)
+
+        # --- CONTEXT ---
+        context = {
+            'subjects': subjects,
+            'ebooks': page_obj,  # This should be 'ebooks'
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        print(f"DEBUG: Final context - ebooks count: {len(context.get('ebooks', []))}")
+
+        return render(
+            request,
+            "L01/visit_library_Cate_ebooks.html",
+            context
+        )
+
+    except Exception as e:
+        print(f"Error in ebooks kiosk: {e}")
+        return render(
+            request,
+            "L01/visit_library_Cate_ebooks.html",
+            {}
+        )
+
+def get_ebooks_by_subject_kiosk(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+        search = request.GET.get('search', '').strip()
+        page = request.GET.get('page', 1)
+
+        print(f"DEBUG: Subject ID encrypted: {subject_id_enc}")
+        print(f"DEBUG: Subject ID decrypted: {subject_id}")
+        print(f"DEBUG: Search term: {search}")
+        print(f"DEBUG: Page: {page}")
+
+        # Base queryset
+        ebooks = LibraryEbook.objects.all().select_related('eb_subject', 'ebook_type')
+        
+        print(f"DEBUG: Total ebooks in DB: {ebooks.count()}")
+
+        # Filter by subject if provided
+        if subject_id:
+            ebooks = ebooks.filter(eb_subject_id=subject_id)
+            print(f"DEBUG: After subject filter: {ebooks.count()}")
+
+        # Apply search filter
+        if search:
+            ebooks = ebooks.filter(
+                Q(eb_title__icontains=search) |
+                Q(eb_author__icontains=search) |
+                Q(eb_keywords__icontains=search)
+            )
+            print(f"DEBUG: After search filter: {ebooks.count()}")
+
+        # Debug first few ebooks
+        for i, ebook in enumerate(ebooks[:3]):
+            print(f"DEBUG: Ebook {i+1}: {ebook.eb_title} | Subject: {ebook.eb_subject_id}")
+
+        # Process ebooks
+        ebooks_list = []
+        for ebook in ebooks:
+            ebook.ebookIdEnc = enc(str(ebook.ebook_id)) if 'enc' in globals() else ebook.ebook_id
+            
+            # Set image URLs
+            if ebook.eb_front_page_photo:
+                ebook.eb_front_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_front_page_photo.strip()
+                )
+            
+            if ebook.eb_last_page_photo:
+                ebook.eb_last_page_photo = file_storage_service.get_file_url(
+                    ebook.eb_last_page_photo.strip()
+                )
+            
+            ebooks_list.append(ebook)
+
+        print(f"DEBUG: Processed {len(ebooks_list)} ebooks")
+
+        # Pagination
+        paginator = Paginator(ebooks_list, 8)
+        try:
+            ebooks_page = paginator.page(page)
+            print(f"DEBUG: Pagination successful. Page {page} of {paginator.num_pages}")
+            print(f"DEBUG: Current page has {len(ebooks_page)} ebooks")
+        except Exception as e:
+            print(f"DEBUG: Pagination error: {e}")
+            ebooks_page = paginator.page(1)
+
+        context = {
+            'ebooks': ebooks_page,  # Make sure it's 'ebooks' not 'ebooks_page'
+            'subject_id_enc': subject_id_enc,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        print(f"DEBUG: Context keys: {context.keys()}")
+        if 'ebooks' in context:
+            print(f"DEBUG: Ebooks in context: {len(context['ebooks'])}")
+
+        return render(
+            request,
+            "L01/ebook_details_kiosk.html",
+            context
+        )
+
+    except Exception as e:
+        print(f"DEBUG: Error in get_ebooks_by_subject_kiosk: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
 
 @login_required
@@ -10845,64 +11074,6 @@ def visit_Library_catalogue_kiosk(request):
             {}
         )
 
-# def get_books_by_subject_kiosk(request):
-#     try:
-#         subject_id_enc = request.GET.get('subject_id')
-#         subject_id = dec(subject_id_enc) if subject_id_enc else None
-
-#         search = request.GET.get('search', '').strip()
-#         searching = request.GET.get('searching', '').strip()
-
-#         # Base queryset
-#         all_books = BookCatalog.objects.all().select_related('subject', 'material')
-
-#         if searching:
-#             # Global search across all subjects
-#             if search:
-#                 all_books = all_books.filter(
-#                     Q(title__icontains=search) |
-#                     Q(author__icontains=search)
-#                 )
-#             elif subject_id:
-#                 all_books = all_books.filter(subject_id=subject_id)
-
-#         else:
-#             # Subject-wise browsing
-#             if subject_id:
-#                 all_books = all_books.filter(subject_id=subject_id)
-
-#             if search:
-#                 all_books = all_books.filter(
-#                     Q(title__icontains=search) |
-#                     Q(author__icontains=search)
-#                 )
-
-#         # Encode book IDs
-#         for b in all_books:
-#             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
-
-#         # Pagination (same as normal view)
-#         paginator = Paginator(all_books, 8)
-#         page_number = request.GET.get('page', 1)
-#         books_page = paginator.get_page(page_number)
-
-#         context = {
-#             'books': books_page,
-#             'MEDIA_URL': settings.MEDIA_URL,
-#             'subject_id_enc': subject_id_enc,
-#             'is_kiosk': True,   # useful in template if needed
-#         }
-
-#         return render(
-#             request,
-#             "L01/book_details_kiosk.html",  # or reuse same partial
-#             context
-#         )
-
-#     except Exception as e:
-#         print("Kiosk error fetching books:", e)
-#         return JsonResponse({'error': 'Failed to fetch books'}, status=500)
-
 def get_books_by_subject_kiosk(request):
     try:
         subject_id_enc = request.GET.get('subject_id')
@@ -10914,18 +11085,23 @@ def get_books_by_subject_kiosk(request):
         # Base queryset
         all_books = BookCatalog.objects.all().select_related('subject', 'material')
 
+        # Check if we're searching globally (searching parameter)
         if searching:
-            # Global search across all subjects
+            # Global search - search across all books regardless of subject
             if search:
                 all_books = all_books.filter(
                     Q(title__icontains=search) |
                     Q(author__icontains=search)
                 )
+            # If no search term but has subject_id, filter by subject
             elif subject_id:
                 all_books = all_books.filter(subject_id=subject_id)
+            # If no search term and no subject_id, show all books
+            else:
+                all_books = all_books.all()
 
         else:
-            # Subject-wise browsing
+            # Regular browsing mode (not global search)
             if subject_id:
                 all_books = all_books.filter(subject_id=subject_id)
 
@@ -10935,8 +11111,7 @@ def get_books_by_subject_kiosk(request):
                     Q(author__icontains=search)
                 )
 
-        # Encode book IDs
-
+        # Encode book IDs and get image URLs
         for b in all_books:
             b.bookIdEnc = enc(str(b.cat_ref_num)) if 'enc' in globals() else b.cat_ref_num
 
@@ -10946,17 +11121,14 @@ def get_books_by_subject_kiosk(request):
                     b.front_page_photo.strip()
                 )
 
-            # -----------------------
-            # LAST PAGE IMAGE
-            # -----------------------
+            # Last page image
             b.back_image_url = ""
             if b.last_page_photo:
                 b.last_page_photo = file_storage_service.get_file_url(
                     b.last_page_photo.strip()
                 )
 
-
-        # Pagination (same as normal view)
+        # Pagination
         paginator = Paginator(all_books, 8)
         page_number = request.GET.get('page', 1)
         books_page = paginator.get_page(page_number)
@@ -10965,12 +11137,12 @@ def get_books_by_subject_kiosk(request):
             'books': books_page,
             'MEDIA_URL': settings.MEDIA_URL,
             'subject_id_enc': subject_id_enc,
-            'is_kiosk': True,   # useful in template if needed
+            'is_kiosk': True,
         }
 
         return render(
             request,
-            "L01/book_details_kiosk.html",  # or reuse same partial
+            "L01/book_details_kiosk.html",
             context
         )
 
@@ -11011,13 +11183,6 @@ def view_book_detail_kiosk(request):
         if book.last_page_photo:
             book.last_page_photo_url = file_storage_service.get_file_url(book.last_page_photo)
             images.append(book.last_page_photo_url)
-
-        # --- IMAGES ---
-        # images = []
-        # if book.front_page_photo:
-        #     images.append(book.front_page_photo)
-        # if book.last_page_photo:
-        #     images.append(book.last_page_photo)
 
         # --- CIRCULATION DETAILS ---
         circulation_qs = CirculationCopyStatus.objects.filter(
@@ -12335,3 +12500,40 @@ def upload_excel(request):
     
     return JsonResponse({'error': 'No file uploaded'}, status=400)
 
+    
+@login_required
+def check_old_password(request):
+    if request.method == "POST":
+        old_password = request.POST.get("old_password")
+        user = request.user
+
+        if user.check_password(old_password):
+            return JsonResponse({"status": "success"})
+        else:
+            return JsonResponse({"status": "error"})
+
+from django.contrib.auth import update_session_auth_hash
+
+@login_required
+def change_password(request):
+    if request.method == "POST":
+
+        old_password = request.POST.get("old_password")
+        new_password = request.POST.get("new_password")
+
+        user = request.user
+
+        # Check if the old password is correct
+        if not user.check_password(old_password):
+            messages.error(request, "Old password is incorrect")
+            return redirect(request.META.get("HTTP_REFERER"))
+
+        # Hash the new password using make_password()
+        user.password = make_password(new_password)
+        user.save()
+
+        # Important: keep the user logged in after password change
+        # update_session_auth_hash(request, user)
+
+        messages.success(request, "Password updated successfully")
+        return redirect("library_list")

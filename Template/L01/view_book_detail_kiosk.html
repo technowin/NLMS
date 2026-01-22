@@ -1,1636 +1,963 @@
-
 {% load static %}
 
-
-
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
-    /* Back to Top Button */
-        .back-to-top {
+    <style>
+        /* Back to Top Button */
+            .back-to-top {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background-color: #4e73df;
+                color: white;
+                text-align: center;
+                line-height: 50px;
+                font-size: 20px;
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+                z-index: 999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .back-to-top:hover {
+                background-color: #2e59d9;
+                transform: translateY(-3px);
+            }
+            
+            .back-to-top.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            .back-to-top i {
+                transition: transform 0.3s ease;
+            }
+            
+            .back-to-top:hover i {
+                transform: translateY(-3px);
+            }
+            
+            /* Dark mode styles */
+            body.dark-mode .back-to-top {
+                background-color: #6c63ff;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+            }
+            
+            body.dark-mode .back-to-top:hover {
+                background-color: #5a52d6;
+            }
+    </style>
+
+    <style>
+
+        .text-muted {
+            color: #cccccc !important;
+        }
+        /* ===== DARK THEME CSS FOR BOOK DETAILS ===== */
+        :root {
+            --dark-bg: #0a0e17;
+            --dark-card: #121826;
+            --dark-card-hover: #1a2235;
+            --dark-text: #e2e8f0;
+            --dark-text-secondary: #94a3b8;
+            --dark-border: #2d3748;
+            --dark-accent: #3b82f6;
+            --dark-accent-hover: #2563eb;
+            --dark-success: #10b981;
+            --dark-warning: #f59e0b;
+            --dark-danger: #ef4444;
+            --dark-purple: #8b5cf6;
+            --dark-gradient: linear-gradient(135deg, #0a0e17 0%, #1a2235 100%);
+        }
+
+        /* Main Container */
+        .book-detail-container {
+            background: var(--dark-bg);
+            color: var(--dark-text);
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Background Pattern */
+        .book-detail-container::before {
+            content: "";
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: #4e73df;
-            color: white;
-            text-align: center;
-            line-height: 50px;
-            font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            visibility: hidden;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 55%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 55%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .book-detail-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header Section */
+        .book-header {
+            background: var(--dark-card);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--dark-accent), var(--dark-purple));
+        }
+
+        .book-header h1 {
+            color: var(--dark-text);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-family: 'Merriweather', serif;
+        }
+
+        .book-category {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--dark-accent);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            backdrop-filter: blur(10px);
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Book Content Layout */
+        .book-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Sidebar */
+        .book-sidebar {
+            background: var(--dark-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+        }
+
+        /* Image Zoom */
+        .zoom-wrapper {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border: 2px solid var(--dark-border);
             transition: all 0.3s ease;
-            z-index: 999;
+            overflow: hidden;
+        }
+
+        .zoom-wrapper:hover {
+            border-color: var(--dark-accent);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .zoom-wrapper img {
+            width: 100%;
+            height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            transition: transform 0.5s ease;
+        }
+
+        .zoom-wrapper:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Thumbnails */
+        .thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .thumbnail:hover {
+            border-color: var(--dark-accent);
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .thumbnail.active {
+            border-color: var(--dark-accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Quick Stats */
+        .book-stats {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--dark-border);
+        }
+
+        .book-stats h6 {
+            color: var(--dark-text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--dark-border);
+            font-family: 'Merriweather', serif;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(45, 55, 72, 0.5);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--dark-text-secondary);
+            font-size: 0.9rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .stat-value {
+            color: var(--dark-text);
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Book Details */
+        .book-details {
+            background: var(--dark-card);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Section Headers */
+        .section-header {
+            color: var(--dark-text);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--dark-accent);
+            display: flex;
+            align-items: center;
+            font-family: 'Merriweather', serif;
+        }
+
+        .section-header i {
+            color: var(--dark-accent);
+            font-size: 1.2em;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid var(--dark-border);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            border-color: var(--dark-accent);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .info-label {
+            display: block;
+            color: var(--dark-text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .info-value {
+            color: var(--dark-text);
+            font-size: 1.1rem;
+            font-weight: 500;
+            line-height: 1.5;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Circulation Section */
+        .circulation-section {
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .circulation-section .section-header {
+            border-bottom-color: var(--dark-success);
+        }
+
+        .circulation-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .circulation-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid var(--dark-border);
+        }
+
+        .circulation-label {
+            color: var(--dark-text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .circulation-value {
+            color: var(--dark-text);
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.35rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Merriweather', serif;
+        }
+
+        .status-available {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--dark-success);
+            border: 1px solid var(--dark-success);
+        }
+
+        .status-unavailable {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--dark-danger);
+            border: 1px solid var(--dark-danger);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--dark-border);
+        }
+
+        .btn-custom {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            font-family: 'Merriweather', serif;
         }
-        
-        .back-to-top:hover {
-            background-color: #2e59d9;
+
+        .btn-borrow {
+            background: linear-gradient(135deg, var(--dark-accent), var(--dark-purple));
+            color: white;
+        }
+
+        .btn-borrow:hover:not(:disabled) {
             transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
         }
-        
-        .back-to-top.active {
+
+        .btn-reserve {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--dark-text);
+            border: 1px solid var(--dark-border);
+        }
+
+        .btn-reserve:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-custom:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Reviews Section - Clean & Simple */
+        .review-section {
+            background: var(--dark-card);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-top: 3rem;
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            font-family: 'Merriweather', serif;
+        }
+
+        .review-section h3 {
+            color: var(--dark-text);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.8rem;
+            font-family: 'Merriweather', serif;
+            border-bottom: 2px solid var(--dark-accent);
+            padding-bottom: 1rem;
+        }
+
+        .review-section h3 i {
+            color: var(--dark-accent);
+            font-size: 1.8rem;
+        }
+
+        .review-section h3 small {
+            font-size: 1rem;
+            color: var(--dark-text-secondary);
+            margin-left: 0.5rem;
+            font-weight: normal;
+        }
+
+        /* Average Rating */
+        .avg-rating {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .stars-display {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .stars-display i {
+            color: var(--dark-warning);
+            font-size: 1.8rem;
+        }
+
+        .avg-rating span {
+            color: var(--dark-text);
+            font-size: 1.8rem;
+            font-weight: 600;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Write Review Card */
+        .write-review {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .write-review h5 {
+            color: var(--dark-text);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .star-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .star-input .star {
+            color: var(--dark-border);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .star-input .star:hover,
+        .star-input .star.active {
+            color: var(--dark-warning);
+            transform: scale(1.1);
+        }
+
+        #reviewText {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--dark-border);
+            color: var(--dark-text);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Merriweather', serif;
+            resize: vertical;
+        }
+
+        #reviewText:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--dark-accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            color: var(--dark-text);
+            outline: none;
+        }
+
+        /* Review Cards - Clean Design */
+        .review-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .review-card:hover {
+            border-color: var(--dark-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .user-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--dark-accent);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-family: 'Merriweather', serif;
+        }
+
+        .review-header .stars-display {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .review-header .stars-display i {
+            font-size: 1.2rem;
+            color: var(--dark-warning);
+        }
+
+        .review-header .stars-display span {
+            margin-left: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--dark-text-secondary);
+        }
+
+        .review-header small {
+            color: var(--dark-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .review-body {
+            color: var(--dark-text);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .review-footer {
+            color: var(--dark-text-secondary);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(45, 55, 72, 0.3);
+        }
+
+        /* Pagination */
+        .review-pagination {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--dark-border);
+        }
+
+        .pagination {
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-link {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dark-border);
+            color: var(--dark-text-secondary);
+            margin: 0 0.25rem;
+            border-radius: 8px !important;
+            transition: all 0.3s ease;
+            font-family: 'Merriweather', serif;
+        }
+
+        .page-link:hover {
+            background: var(--dark-accent);
+            border-color: var(--dark-accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .page-item.active .page-link {
+            background: var(--dark-accent);
+            border-color: var(--dark-accent);
+            color: white;
+        }
+
+        .pagination-info {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--dark-text-secondary);
+            font-size: 0.9rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        .pagination-info .info-item i {
+            color: var(--dark-accent);
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: var(--dark-accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .back-to-top.visible {
             opacity: 1;
             visibility: visible;
         }
-        
-        .back-to-top i {
+
+        .back-to-top:hover {
+            background: var(--dark-accent-hover);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Alert */
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--dark-accent);
+            color: var(--dark-accent);
+            border-radius: 10px;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Empty State */
+        .text-center.py-4 {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 2px dashed var(--dark-border);
+            padding: 3rem 1rem;
+        }
+
+        .text-center.py-4 i {
+            color: var(--dark-text-secondary);
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .text-center.py-4 p {
+            color: var(--dark-text-secondary);
+            font-size: 1.1rem;
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .book-content {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .book-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .book-sidebar {
+                position: static;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .book-detail-container {
+                padding: 1rem;
+            }
+            
+            .book-header h1 {
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .review-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .circulation-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pagination-info {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: center;
+            }
+            
+            .review-section {
+                padding: 1.5rem;
+            }
+            
+            .review-section h3 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Animation for page load */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .book-detail-container > * {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .book-detail-container > *:nth-child(1) { animation-delay: 0.1s; }
+        .book-detail-container > *:nth-child(2) { animation-delay: 0.2s; }
+        .book-detail-container > *:nth-child(3) { animation-delay: 0.3s; }
+
+        /* Go Back Button Styles */
+        .go-back-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .go-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #4a6fa5 0%, #3a5980 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 111, 165, 0.2);
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            font-family: 'Merriweather', serif;
+        }
+
+        .go-back-btn:hover {
+            background: linear-gradient(135deg, #3a5980 0%, #2d4666 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 111, 165, 0.3);
+            color: white;
+        }
+
+        .go-back-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(74, 111, 165, 0.2);
+        }
+
+        .go-back-btn i {
+            font-size: 18px;
             transition: transform 0.3s ease;
         }
-        
-        .back-to-top:hover i {
-            transform: translateY(-3px);
+
+        .go-back-btn:hover i {
+            transform: translateX(-3px);
         }
-        
-        /* Dark mode styles */
-        body.dark-mode .back-to-top {
-            background-color: #6c63ff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+
+        /* Optional: Add a subtle pulse animation */
+        @keyframes gentlePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
         }
-        
-        body.dark-mode .back-to-top:hover {
-            background-color: #5a52d6;
+
+        .go-back-btn {
+            animation: gentlePulse 4s infinite;
         }
-</style>
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .go-back-btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .go-back-btn {
+                padding: 7px 14px;
+                font-size: 13px;
+                gap: 6px;
+            }
+            
+            .go-back-btn i {
+                font-size: 16px;
+            }
+        }
+    </style>
 
 {% endblock %}
 
-
-<style>
-    /* ===== DARK THEME CSS FOR BOOK DETAILS ===== */
-    :root {
-        --dark-bg: #0a0e17;
-        --dark-card: #121826;
-        --dark-card-hover: #1a2235;
-        --dark-text: #e2e8f0;
-        --dark-text-secondary: #94a3b8;
-        --dark-border: #2d3748;
-        --dark-accent: #3b82f6;
-        --dark-accent-hover: #2563eb;
-        --dark-success: #10b981;
-        --dark-warning: #f59e0b;
-        --dark-danger: #ef4444;
-        --dark-purple: #8b5cf6;
-        --dark-gradient: linear-gradient(135deg, #0a0e17 0%, #1a2235 100%);
-    }
-
-    /* Main Container */
-    .book-detail-container {
-        background: var(--dark-bg);
-        color: var(--dark-text);
-        min-height: 100vh;
-        padding: 2rem;
-        position: relative;
-        overflow-x: hidden;
-    }
-
-    /* Background Pattern */
-    .book-detail-container::before {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: 
-            radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 55%),
-            radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 55%);
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    .book-detail-container > * {
-        position: relative;
-        z-index: 1;
-    }
-
-    /* Header Section */
-    .book-header {
-        background: var(--dark-card);
-        padding: 2rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        border: 1px solid var(--dark-border);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .book-header::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 6px;
-        height: 100%;
-        background: linear-gradient(to bottom, var(--dark-accent), var(--dark-purple));
-    }
-
-    .book-header h1 {
-        color: var(--dark-text);
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .book-category {
-        background: rgba(59, 130, 246, 0.15);
-        color: var(--dark-accent);
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        backdrop-filter: blur(10px);
-    }
-
-    /* Book Content Layout */
-    .book-content {
-        display: grid;
-        grid-template-columns: 400px 1fr;
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Sidebar */
-    .book-sidebar {
-        background: var(--dark-card);
-        border-radius: 16px;
-        padding: 1.5rem;
-        border: 1px solid var(--dark-border);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-        position: sticky;
-        top: 2rem;
-        height: fit-content;
-    }
-
-    /* Image Zoom */
-    .zoom-wrapper {
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border: 2px solid var(--dark-border);
-        transition: all 0.3s ease;
-        overflow: hidden;
-    }
-
-    .zoom-wrapper:hover {
-        border-color: var(--dark-accent);
-        box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
-        transform: translateY(-5px);
-    }
-
-    .zoom-wrapper img {
-        width: 100%;
-        height: 400px;
-        object-fit: contain;
-        border-radius: 8px;
-        transition: transform 0.5s ease;
-    }
-
-    .zoom-wrapper:hover img {
-        transform: scale(1.05);
-    }
-
-    /* Thumbnails */
-    .thumbnail-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .thumbnail {
-        width: 100%;
-        aspect-ratio: 1;
-        object-fit: cover;
-        border-radius: 8px;
-        cursor: pointer;
-        border: 2px solid transparent;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .thumbnail:hover {
-        border-color: var(--dark-accent);
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
-    }
-
-    .thumbnail.active {
-        border-color: var(--dark-accent);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-    }
-
-    /* Quick Stats */
-    .book-stats {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-        padding: 1.5rem;
-        border: 1px solid var(--dark-border);
-    }
-
-    .book-stats h6 {
-        color: var(--dark-text-secondary);
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--dark-border);
-    }
-
-    .stat-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid rgba(45, 55, 72, 0.5);
-    }
-
-    .stat-item:last-child {
-        border-bottom: none;
-    }
-
-    .stat-label {
-        color: var(--dark-text-secondary);
-        font-size: 0.9rem;
-    }
-
-    .stat-value {
-        color: var(--dark-text);
-        font-weight: 600;
-        background: rgba(59, 130, 246, 0.1);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-    }
-
-    /* Book Details */
-    .book-details {
-        background: var(--dark-card);
-        border-radius: 16px;
-        padding: 2rem;
-        border: 1px solid var(--dark-border);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Section Headers */
-    .section-header {
-        color: var(--dark-text);
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 3px solid var(--dark-accent);
-        display: flex;
-        align-items: center;
-    }
-
-    .section-header i {
-        color: var(--dark-accent);
-        font-size: 1.2em;
-    }
-
-    /* Info Grid */
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .info-item {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 10px;
-        padding: 1rem;
-        border: 1px solid var(--dark-border);
-        transition: all 0.3s ease;
-    }
-
-    .info-item:hover {
-        border-color: var(--dark-accent);
-        transform: translateX(5px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .info-item.full-width {
-        grid-column: 1 / -1;
-    }
-
-    .info-label {
-        display: block;
-        color: var(--dark-text-secondary);
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 0.5rem;
-    }
-
-    .info-value {
-        color: var(--dark-text);
-        font-size: 1.1rem;
-        font-weight: 500;
-        line-height: 1.5;
-    }
-
-    /* Circulation Section */
-    .circulation-section {
-        background: rgba(16, 185, 129, 0.05);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-        border: 1px solid rgba(16, 185, 129, 0.2);
-    }
-
-    .circulation-section .section-header {
-        border-bottom-color: var(--dark-success);
-    }
-
-    .circulation-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
-    .circulation-item {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 10px;
-        padding: 1rem;
-        border: 1px solid var(--dark-border);
-    }
-
-    .circulation-label {
-        color: var(--dark-text-secondary);
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .circulation-value {
-        color: var(--dark-text);
-        font-size: 1.1rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    /* Status Badges */
-    .status-badge {
-        padding: 0.35rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .status-available {
-        background: rgba(16, 185, 129, 0.2);
-        color: var(--dark-success);
-        border: 1px solid var(--dark-success);
-    }
-
-    .status-unavailable {
-        background: rgba(239, 68, 68, 0.2);
-        color: var(--dark-danger);
-        border: 1px solid var(--dark-danger);
-    }
-
-    /* Action Buttons */
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid var(--dark-border);
-    }
-
-    .btn-custom {
-        flex: 1;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.3s ease;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        font-size: 1rem;
-    }
-
-    .btn-borrow {
-        background: linear-gradient(135deg, var(--dark-accent), var(--dark-purple));
-        color: white;
-    }
-
-    .btn-borrow:hover:not(:disabled) {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
-    }
-
-    .btn-reserve {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--dark-text);
-        border: 1px solid var(--dark-border);
-    }
-
-    .btn-reserve:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.15);
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .btn-custom:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none !important;
-    }
-
-    /* Reviews Section */
-    .review-section {
-        background: var(--dark-card);
-        border-radius: 16px;
-        padding: 2rem;
-        margin-top: 2rem;
-        border: 1px solid var(--dark-border);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .review-section h3 {
-        color: var(--dark-text);
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 1.8rem;
-    }
-
-    .review-section h3 i {
-        color: var(--dark-accent);
-    }
-
-    /* Average Rating */
-    .avg-rating {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-        border: 1px solid var(--dark-border);
-    }
-
-    .stars-display {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .stars-display i {
-        color: var(--dark-warning);
-        font-size: 1.5rem;
-    }
-
-    .avg-rating span {
-        color: var(--dark-text);
-        font-size: 1.5rem;
-        font-weight: 600;
-    }
-
-    /* Write Review Card */
-    .write-review {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid var(--dark-border);
-        border-radius: 12px;
-    }
-
-    .write-review h5 {
-        color: var(--dark-text);
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .star-input {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .star-input .star {
-        color: var(--dark-border);
-        font-size: 1.8rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .star-input .star:hover,
-    .star-input .star.active {
-        color: var(--dark-warning);
-        transform: scale(1.1);
-    }
-
-    #reviewText {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid var(--dark-border);
-        color: var(--dark-text);
-        border-radius: 8px;
-        padding: 1rem;
-    }
-
-    #reviewText:focus {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: var(--dark-accent);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        color: var(--dark-text);
-    }
-
-    /* Review Cards */
-    .review-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid var(--dark-border);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .review-card:hover {
-        border-color: var(--dark-accent);
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .review-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .user-badge {
-        background: rgba(59, 130, 246, 0.15);
-        color: var(--dark-accent);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .review-header small {
-        color: var(--dark-text-secondary);
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .review-body {
-        color: var(--dark-text);
-        line-height: 1.6;
-        margin-bottom: 1rem;
-    }
-
-    .review-footer {
-        color: var(--dark-text-secondary);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    /* Pagination */
-    .review-pagination {
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid var(--dark-border);
-    }
-
-    .pagination {
-        justify-content: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .page-link {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid var(--dark-border);
-        color: var(--dark-text-secondary);
-        margin: 0 0.25rem;
-        border-radius: 8px !important;
-        transition: all 0.3s ease;
-    }
-
-    .page-link:hover {
-        background: var(--dark-accent);
-        border-color: var(--dark-accent);
-        color: white;
-        transform: translateY(-2px);
-    }
-
-    .page-item.active .page-link {
-        background: var(--dark-accent);
-        border-color: var(--dark-accent);
-        color: white;
-    }
-
-    .pagination-info {
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-        flex-wrap: wrap;
-    }
-
-    .info-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--dark-text-secondary);
-        font-size: 0.9rem;
-    }
-
-    .info-item i {
-        color: var(--dark-accent);
-    }
-
-    /* Back to Top Button */
-    .back-to-top {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        width: 50px;
-        height: 50px;
-        background: var(--dark-accent);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
-        transition: all 0.3s ease;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-    }
-
-    .back-to-top.visible {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .back-to-top:hover {
-        background: var(--dark-accent-hover);
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.5);
-    }
-
-    /* Alert */
-    .alert-info {
-        background: rgba(59, 130, 246, 0.1);
-        border: 1px solid var(--dark-accent);
-        color: var(--dark-accent);
-        border-radius: 10px;
-    }
-
-    /* Empty State */
-    .text-center.py-4 {
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 12px;
-        border: 2px dashed var(--dark-border);
-    }
-
-    .text-center.py-4 i {
-        color: var(--dark-text-secondary);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1200px) {
-        .book-content {
-            grid-template-columns: 350px 1fr;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .book-content {
-            grid-template-columns: 1fr;
-        }
-        
-        .book-sidebar {
-            position: static;
-        }
-        
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .book-detail-container {
-            padding: 1rem;
-        }
-        
-        .book-header h1 {
-            font-size: 2rem;
-        }
-        
-        .action-buttons {
-            flex-direction: column;
-        }
-        
-        .review-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-        
-        .circulation-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .pagination-info {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: center;
-        }
-    }
-
-    /* Animation for page load */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .book-detail-container > * {
-        animation: fadeInUp 0.6s ease forwards;
-    }
-
-    .book-detail-container > *:nth-child(1) { animation-delay: 0.1s; }
-    .book-detail-container > *:nth-child(2) { animation-delay: 0.2s; }
-    .book-detail-container > *:nth-child(3) { animation-delay: 0.3s; }
-
-    /* ===== NEON CYBERPUNK REVIEWS SECTION ===== */
-    .review-section {
-        background: 
-            radial-gradient(ellipse at top, rgba(59, 130, 246, 0.05) 0%, transparent 60%),
-            radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.05) 0%, transparent 60%),
-            linear-gradient(180deg, #0a0a1a 0%, #151530 100%);
-        border: 1px solid;
-        border-image: linear-gradient(45deg, 
-            transparent, 
-            rgba(59, 130, 246, 0.5), 
-            rgba(139, 92, 246, 0.8),
-            rgba(59, 130, 246, 0.5), 
-            transparent) 1;
-        border-radius: 0;
-        box-shadow: 
-            0 0 50px rgba(59, 130, 246, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        clip-path: polygon(
-            20px 0, 
-            calc(100% - 20px) 0, 
-            100% 20px, 
-            100% calc(100% - 20px), 
-            calc(100% - 20px) 100%, 
-            20px 100%, 
-            0 calc(100% - 20px), 
-            0 20px
-        );
-        margin-top: 4rem;
-        padding: 3rem;
-        position: relative;
-        z-index: 1;
-    }
-
-    /* Cyber grid overlay */
-    .review-section::before {
-        background-image: 
-            linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-        background-size: 40px 40px;
-        content: '';
-        inset: 0;
-        mask-image: 
-            radial-gradient(ellipse at center, rgba(0, 0, 0, 0.9) 40%, transparent 70%);
-        position: absolute;
-        z-index: -1;
-    }
-
-    /* Scanning line effect */
-    .review-section::after {
-        animation: scan 6s linear infinite;
-        background: linear-gradient(
-            0deg,
-            transparent,
-            rgba(59, 130, 246, 0.2),
-            transparent
-        );
-        content: '';
-        height: 1px;
-        inset: 0;
-        opacity: 0.5;
-        position: absolute;
-        z-index: 2;
-    }
-
-    @keyframes scan {
-        0% { transform: translateY(-100%); }
-        100% { transform: translateY(400%); }
-    }
-
-    /* Main Title */
-    .review-section h3 {
-        align-items: center;
-        background: linear-gradient(90deg, 
-            #fff 0%, 
-            #a5b4fc 50%, 
-            #818cf8 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        display: flex;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 2.5rem;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-        margin-bottom: 3rem;
-        position: relative;
-        text-transform: uppercase;
-    }
-
-    /* Neon icon */
-    .review-section h3 i {
-        animation: neonPulse 2s ease-in-out infinite alternate;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
-        font-size: 3rem;
-        margin-right: 1.2rem;
-        position: relative;
-    }
-
-    .review-section h3 i::after {
-        animation: neonGlow 2s ease-in-out infinite alternate;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        border-radius: 50%;
-        content: '';
-        filter: blur(15px);
-        height: 100%;
-        left: 0;
-        opacity: 0.3;
-        position: absolute;
-        top: 0;
-        width: 100%;
-        z-index: -1;
-    }
-
-    @keyframes neonPulse {
-        from {
-            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
-            transform: scale(1);
-        }
-        to {
-            filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
-            transform: scale(1.05);
-        }
-    }
-
-    @keyframes neonGlow {
-        from {
-            opacity: 0.3;
-            transform: scale(1);
-        }
-        to {
-            opacity: 0.5;
-            transform: scale(1.1);
-        }
-    }
-
-    /* Review Counter */
-    .review-section h3 small {
-        animation: counterFlicker 3s infinite;
-        background: linear-gradient(90deg, 
-            rgba(59, 130, 246, 0.2), 
-            rgba(139, 92, 246, 0.2));
-        border: 1px solid rgba(59, 130, 246, 0.4);
-        border-radius: 20px;
-        color: #a5b4fc;
-        font-family: 'Courier New', monospace;
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin-left: 1.5rem;
-        padding: 0.4rem 1rem;
-        position: relative;
-    }
-
-    .review-section h3 small::before {
-        animation: glitch 5s infinite;
-        background: inherit;
-        border-radius: inherit;
-        content: attr(data-text);
-        height: 100%;
-        left: 0;
-        overflow: hidden;
-        position: absolute;
-        top: 0;
-        width: 100%;
-        z-index: -1;
-    }
-
-    @keyframes counterFlicker {
-        0%, 100% { 
-            opacity: 1; 
-            transform: translateY(0);
-        }
-        50% { 
-            opacity: 0.8; 
-            transform: translateY(-2px);
-        }
-    }
-
-    /* Average Rating Display - Digital Style */
-    .avg-rating {
-        align-items: center;
-        background: rgba(10, 10, 26, 0.8);
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        border-radius: 12px;
-        display: flex;
-        gap: 2rem;
-        margin-bottom: 3rem;
-        padding: 1.8rem 2.5rem;
-        position: relative;
-    }
-
-    .avg-rating::before {
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(59, 130, 246, 0.3), 
-            transparent);
-        content: '';
-        height: 1px;
-        left: 20px;
-        position: absolute;
-        right: 20px;
-        top: 0;
-    }
-
-    .avg-rating::after {
-        animation: typing 3s steps(40, end) infinite;
-        background: #3b82f6;
-        bottom: -1px;
-        content: '';
-        height: 1px;
-        left: 20px;
-        position: absolute;
-        width: 100px;
-    }
-
-    @keyframes typing {
-        0% { width: 0; left: 20px; }
-        50% { width: calc(100% - 40px); }
-        100% { width: 0; left: calc(100% - 20px); }
-    }
-
-    /* Digital Stars */
-    .stars-display {
-        display: flex;
-        gap: 0.3rem;
-    }
-
-    .stars-display i {
-        animation: starFlicker 2s infinite;
-        animation-delay: calc(var(--i) * 0.1s);
-        color: #fbbf24;
-        font-size: 2.2rem;
-        text-shadow: 
-            0 0 5px #fbbf24,
-            0 0 10px rgba(251, 191, 36, 0.5);
-    }
-
-    @keyframes starFlicker {
-        0%, 100% { 
-            opacity: 1;
-            filter: brightness(1);
-        }
-        50% { 
-            opacity: 0.7;
-            filter: brightness(1.5);
-        }
-    }
-
-    .avg-rating span {
-        background: linear-gradient(90deg, #fff, #a5b4fc);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        font-family: 'Courier New', monospace;
-        font-size: 2rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-    }
-
-    /* Write Review Card - Terminal Style */
-    .write-review {
-        background: rgba(15, 15, 35, 0.9);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 8px;
-        margin-bottom: 2.5rem;
-        padding: 2.5rem;
-        position: relative;
-    }
-
-    .write-review::before {
-        background: linear-gradient(90deg, 
-            rgba(59, 130, 246, 0.1), 
-            rgba(139, 92, 246, 0.1));
-        content: '';
-        height: 3px;
-        left: 0;
-        position: absolute;
-        right: 0;
-        top: 0;
-    }
-
-    .write-review h5 {
-        align-items: center;
-        color: #a5b4fc;
-        display: flex;
-        font-family: 'Courier New', monospace;
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-bottom: 1.8rem;
-        text-transform: uppercase;
-    }
-
-    .write-review h5 i {
-        animation: cursorBlink 1s infinite;
-        color: #3b82f6;
-        margin-right: 0.8rem;
-    }
-
-    @keyframes cursorBlink {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0; }
-    }
-
-    /* Terminal-style star input */
-    .star-input {
-        margin-bottom: 1.8rem;
-    }
-
-    .star-input .star {
-        color: #4b5563;
-        cursor: pointer;
-        font-size: 2.5rem;
-        position: relative;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .star-input .star:hover {
-        color: #fbbf24;
-        filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
-        transform: scale(1.1);
-    }
-
-    .star-input .ri-star-fill {
-        animation: starFill 0.3s ease-out;
-        color: #fbbf24;
-        text-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
-    }
-
-    @keyframes starFill {
-        from { 
-            transform: scale(0);
-            opacity: 0;
-        }
-        to { 
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-
-    #ratingValue {
-        color: #fbbf24;
-        font-family: 'Courier New', monospace;
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-left: 1rem;
-        text-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
-    }
-
-    /* Terminal textarea */
-    #reviewText {
-        background: rgba(10, 10, 20, 0.8);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 4px;
-        color: #cbd5e1;
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-        margin-bottom: 1.5rem;
-        min-height: 120px;
-        padding: 1.2rem;
-        resize: vertical;
-        transition: all 0.3s ease;
-    }
-
-    #reviewText:focus {
-        border-color: #3b82f6;
-        box-shadow: 
-            0 0 0 2px rgba(59, 130, 246, 0.1),
-            inset 0 0 20px rgba(59, 130, 246, 0.05);
-        outline: none;
-    }
-
-    #reviewText::placeholder {
-        color: rgba(203, 213, 225, 0.5);
-        font-style: italic;
-    }
-
-    /* Character counter - Digital readout */
-    .text-muted {
-        color: #64748b !important;
-        font-family: 'Courier New', monospace;
-        font-size: 0.85rem;
-    }
-
-    #charCount {
-        animation: countPulse 2s infinite;
-        color: #3b82f6;
-        font-weight: 700;
-    }
-
-    @keyframes countPulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-    }
-
-    /* Submit button - Cyberpunk style */
-    #submitReviewBtn {
-        animation: buttonGlow 3s infinite alternate;
-        background: linear-gradient(90deg, 
-            rgba(59, 130, 246, 0.9), 
-            rgba(139, 92, 246, 0.9));
-        border: none;
-        border-radius: 4px;
-        color: white;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        font-weight: 600;
-        letter-spacing: 1px;
-        padding: 0.9rem 2.2rem;
-        position: relative;
-        text-transform: uppercase;
-        transition: all 0.3s ease;
-    }
-
-    #submitReviewBtn::before {
-        animation: buttonScan 2s linear infinite;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.3),
-            transparent
-        );
-        content: '';
-        height: 100%;
-        left: -100%;
-        position: absolute;
-        top: 0;
-        width: 50%;
-    }
-
-    @keyframes buttonGlow {
-        from {
-            box-shadow: 
-                0 0 20px rgba(59, 130, 246, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        to {
-            box-shadow: 
-                0 0 30px rgba(59, 130, 246, 0.6),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-    }
-
-    @keyframes buttonScan {
-        to {
-            left: 150%;
-        }
-    }
-
-    #submitReviewBtn:disabled {
-        animation: none;
-        background: linear-gradient(90deg, 
-            rgba(75, 85, 99, 0.7), 
-            rgba(107, 114, 128, 0.7));
-        opacity: 0.6;
-    }
-
-    #submitReviewBtn:not(:disabled):hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 
-            0 10px 25px rgba(59, 130, 246, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-
-    #submitReviewBtn i {
-        transition: transform 0.3s ease;
-    }
-
-    #submitReviewBtn:hover:not(:disabled) i {
-        transform: translateX(5px);
-    }
-
-    /* Alert - System notification style */
-    .alert-info {
-        background: linear-gradient(90deg, 
-            rgba(59, 130, 246, 0.1), 
-            rgba(139, 92, 246, 0.1));
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 8px;
-        color: #a5b4fc;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        margin-bottom: 2.5rem;
-        padding: 1.5rem;
-        position: relative;
-    }
-
-    .alert-info::before {
-        animation: alertPulse 2s infinite;
-        background: #3b82f6;
-        border-radius: 50%;
-        content: '';
-        height: 8px;
-        left: 1.5rem;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 8px;
-    }
-
-    @keyframes alertPulse {
-        0%, 100% { 
-            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); 
-        }
-        70% { 
-            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); 
-        }
-    }
-
-    .alert-info i {
-        color: #3b82f6;
-        margin-right: 0.8rem;
-    }
-
-    /* Empty State - Matrix style */
-    .text-center.py-4 {
-        background: 
-            radial-gradient(circle at center, 
-                rgba(59, 130, 246, 0.05) 0%, 
-                transparent 70%),
-            linear-gradient(180deg, 
-                rgba(10, 10, 26, 0.8) 0%, 
-                rgba(15, 15, 35, 0.9) 100%);
-        border: 1px dashed rgba(59, 130, 246, 0.3);
-        border-radius: 12px;
-        margin: 2.5rem 0;
-        padding: 4rem 2rem;
-        position: relative;
-    }
-
-    .text-center.py-4::before {
-        animation: matrixRain 10s linear infinite;
-        background: linear-gradient(180deg, 
-            transparent, 
-            rgba(59, 130, 246, 0.1), 
-            transparent);
-        content: '';
-        height: 200%;
-        left: 50%;
-        position: absolute;
-        top: -50%;
-        transform: translateX(-50%);
-        width: 1px;
-    }
-
-    @keyframes matrixRain {
-        from { transform: translateX(-50%) translateY(-100%); }
-        to { transform: translateX(-50%) translateY(100%); }
-    }
-
-    .text-center.py-4 i {
-        animation: iconFloat 3s ease-in-out infinite;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        display: inline-block;
-        font-size: 4.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    @keyframes iconFloat {
-        0%, 100% { 
-            transform: translateY(0) rotate(0deg); 
-        }
-        50% { 
-            transform: translateY(-20px) rotate(5deg); 
-        }
-    }
-
-    .text-center.py-4 p {
-        color: #94a3b8;
-        font-family: 'Courier New', monospace;
-        font-size: 1.1rem;
-        letter-spacing: 1px;
-    }
-
-    /* Pagination - Futuristic */
-    .review-pagination {
-        border-top: 1px solid rgba(59, 130, 246, 0.2);
-        margin-top: 3rem;
-        padding-top: 2.5rem;
-        position: relative;
-    }
-
-    .review-pagination::before {
-        animation: paginationScan 4s linear infinite;
-        background: linear-gradient(90deg, 
-            transparent, 
-            rgba(59, 130, 246, 0.4), 
-            transparent);
-        content: '';
-        height: 1px;
-        position: absolute;
-        top: -1px;
-        width: 100px;
-    }
-
-    @keyframes paginationScan {
-        0% { left: 0; }
-        100% { left: calc(100% - 100px); }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-        .review-section {
-            padding: 2.5rem;
-        }
-        
-        .review-section h3 {
-            font-size: 2rem;
-        }
-        
-        .review-section h3 i {
-            font-size: 2.5rem;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .review-section {
-            clip-path: polygon(
-                10px 0, 
-                calc(100% - 10px) 0, 
-                100% 10px, 
-                100% calc(100% - 10px), 
-                calc(100% - 10px) 100%, 
-                10px 100%, 
-                0 calc(100% - 10px), 
-                0 10px
-            );
-            margin-top: 3rem;
-            padding: 2rem;
-        }
-        
-        .review-section::before {
-            background-size: 30px 30px;
-        }
-        
-        .review-section h3 {
-            flex-direction: column;
-            align-items: flex-start;
-            font-size: 1.8rem;
-            gap: 0.8rem;
-        }
-        
-        .review-section h3 small {
-            margin-left: 0;
-        }
-        
-        .avg-rating {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1.5rem;
-            padding: 1.5rem;
-        }
-        
-        .stars-display i {
-            font-size: 1.8rem;
-        }
-        
-        .avg-rating span {
-            font-size: 1.8rem;
-        }
-        
-        .write-review {
-            padding: 2rem;
-        }
-        
-        .star-input .star {
-            font-size: 2rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .review-section {
-            padding: 1.5rem;
-        }
-        
-        .review-section h3 {
-            font-size: 1.5rem;
-        }
-        
-        .review-section h3 i {
-            font-size: 2rem;
-        }
-        
-        .write-review {
-            padding: 1.5rem;
-        }
-    }
-
-    /* Performance optimizations */
-    @media (prefers-reduced-motion: reduce) {
-        * {
-            animation: none !important;
-            transition: none !important;
-        }
-    }
-
-    /* Dark mode enhancements */
-    @media (prefers-color-scheme: dark) {
-        .review-section {
-            background: 
-                radial-gradient(ellipse at top, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
-                radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
-                linear-gradient(180deg, #0a0a0a 0%, #151520 100%);
-        }
-        
-        .write-review {
-            background: rgba(20, 20, 35, 0.95);
-        }
-    }
-
-    /* High contrast mode */
-    @media (prefers-contrast: high) {
-        .review-section {
-            border: 2px solid #3b82f6;
-        }
-        
-        .review-section h3 {
-            color: #fff;
-            background: none;
-            -webkit-text-fill-color: #fff;
-        }
-        
-        .avg-rating span {
-            color: #fff;
-            background: none;
-            -webkit-text-fill-color: #fff;
-        }
-    }
-
-    /* Print styles */
-    @media print {
-        .review-section {
-            background: white !important;
-            border: 1px solid #ddd !important;
-            box-shadow: none !important;
-            color: black !important;
-        }
-        
-        .review-section::before,
-        .review-section::after {
-            display: none !important;
-        }
-        
-        .review-section h3 {
-            color: black !important;
-            -webkit-text-fill-color: black !important;
-        }
-    }
-
-    /* Go Back Button Styles */
-    .go-back-container {
-        position: relative;
-        margin-bottom: 20px;
-    }
-
-    .go-back-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 20px;
-        background: linear-gradient(135deg, #4a6fa5 0%, #3a5980 100%);
-        color: white;
-        border: none;
-        border-radius: 50px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(74, 111, 165, 0.2);
-        text-decoration: none;
-        position: relative;
-        overflow: hidden;
-        z-index: 1;
-    }
-
-    .go-back-btn:hover {
-        background: linear-gradient(135deg, #3a5980 0%, #2d4666 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(74, 111, 165, 0.3);
-        color: white;
-    }
-
-    .go-back-btn:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 10px rgba(74, 111, 165, 0.2);
-    }
-
-    .go-back-btn i {
-        font-size: 18px;
-        transition: transform 0.3s ease;
-    }
-
-    .go-back-btn:hover i {
-        transform: translateX(-3px);
-    }
-
-    /* Optional: Add a subtle pulse animation */
-    @keyframes gentlePulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.9; }
-    }
-
-    .go-back-btn {
-        animation: gentlePulse 4s infinite;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .go-back-btn {
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .go-back-btn {
-            padding: 7px 14px;
-            font-size: 13px;
-            gap: 6px;
-        }
-        
-        .go-back-btn i {
-            font-size: 16px;
-        }
-    }
-</style>
 {% block content %}
 
 <div class="book-detail-container">
@@ -1704,63 +1031,67 @@
             </h3>
             
             <div class="info-grid">
+                {% if book.author and book.author != "None" and book.author != "" %}
                 <div class="info-item">
                     <span class="info-label">लेखक</span>
-                    <span class="info-value">{{ book.author|default:"-" }}</span>
+                    <span class="info-value">{{ book.author }}</span>
                 </div>
+                {% endif %}
                 
+                {% if book.publisher and book.publisher != "None" and book.publisher != "" %}
                 <div class="info-item">
                     <span class="info-label">प्रकाशक</span>
-                    <span class="info-value">{{ book.publisher|default:"-" }}</span>
+                    <span class="info-value">{{ book.publisher }}</span>
                 </div>
+                {% endif %}
                 
+                {% if book.edition and book.edition != "None" and book.edition != "" %}
                 <div class="info-item">
                     <span class="info-label">आवृत्ती</span>
-                    <span class="info-value">{{ book.edition|default:"-" }}</span>
+                    <span class="info-value">{{ book.edition }}</span>
                 </div>
+                {% endif %}
                 
+                {% if book.year_of_publication and book.year_of_publication != "None" and book.year_of_publication != "" %}
                 <div class="info-item">
                     <span class="info-label">प्रकाशन वर्ष</span>
-                    <span class="info-value">{{ book.year_of_publication|default:"-" }}</span>
+                    <span class="info-value">{{ book.year_of_publication }}</span>
                 </div>
+                {% endif %}
                 
+                {% if book.publication_place and book.publication_place != "None" and book.publication_place != "" %}
                 <div class="info-item">
                     <span class="info-label">प्रकाशन स्थळ</span>
-                    <span class="info-value">{{ book.publication_place|default:"-" }}</span>
+                    <span class="info-value">{{ book.publication_place }}</span>
                 </div>
+                {% endif %}
                 
+                {% if book.subject %}
                 <div class="info-item">
                     <span class="info-label">विषय</span>
                     <span class="info-value">{{ book.subject.subjectNameMarathi|default:book.subject.subjectNameEnglish }}</span>
                 </div>
+                {% endif %}
                 
-                {% if book.other_authors %}
+                {% if book.other_authors and book.other_authors != "None" and book.other_authors != "" %}
                 <div class="info-item">
                     <span class="info-label">इतर लेखक</span>
                     <span class="info-value">{{ book.other_authors }}</span>
                 </div>
                 {% endif %}
-                
-                {% if book.keywords %}
-                <div class="info-item full-width">
-                    <span class="info-label">Keywords</span>
-                    <span class="info-value">{{ book.keywords }}</span>
-                </div>
-                {% endif %}
             </div>
 
             <!-- Additional Information -->
-            {% if book.description or book.remarks %}
-            
+            {% if book.description and book.description != "None" and book.description != "" or book.remarks and book.remarks != "None" and book.remarks != "" %}
             <div class="info-grid">
-                {% if book.description %}
+                {% if book.description and book.description != "None" and book.description != "" %}
                 <div class="info-item full-width">
                     <span class="info-label">विवरण</span>
                     <span class="info-value">{{ book.description }}</span>
                 </div>
                 {% endif %}
                 
-                {% if book.remarks %}
+                {% if book.remarks and book.remarks != "None" and book.remarks != "" %}
                 <div class="info-item full-width">
                     <span class="info-label">टिप्पणी</span>
                     <span class="info-value">{{ book.remarks }}</span>
@@ -1777,15 +1108,22 @@
                 </h3>
 
                 <div class="circulation-grid">
-                    <!-- Current Status (first available status) -->
+                    <!-- Current Status -->
                     <div class="circulation-item">
                         <div class="circulation-label">सद्यस्थिती</div>
                         <div class="circulation-value">
-                            {% if current_status_display != "Not Available" %}
-                                <span class="status-badge status-available">{{ current_status_display }}</span>
-                                <span>{{ availability_text }}</span>
+                            {% if current_status_display == "Available" %}
+                                <span class="status-badge status-available">उपलब्ध</span>
+                                <span>ही पुस्तक उपलब्ध आहे</span>
+                            {% elif current_status_display == "Borrowed" %}
+                                <span class="status-badge status-unavailable">कर्जात</span>
+                                <span>ही पुस्तक सध्या कर्जात आहे</span>
+                            {% elif current_status_display == "Reserved" %}
+                                <span class="status-badge status-unavailable">राखीव</span>
+                                <span>ही पुस्तक राखीव केलेली आहे</span>
                             {% else %}
-                                <span class="status-badge status-unavailable">{{ current_status_display }}</span>
+                                <span class="status-badge status-unavailable">उपलब्ध नाही</span>
+                                <span>ही पुस्तक सध्या उपलब्ध नाही</span>
                             {% endif %}
                         </div>
                     </div>
@@ -1794,28 +1132,16 @@
                     <div class="circulation-item">
                         <div class="circulation-label">स्थान</div>
                         <div class="circulation-value">
-                            {% if location_display != "Unknown" %}
+                            {% if location_display and location_display != "Unknown" and location_display != "None" %}
                                 {{ location_display }}
                             {% else %}
-                                <span class="status-badge status-unavailable">Not on Shelf</span>
+                                <span class="status-badge status-unavailable">शेल्फवर नाही</span>
+                                <span>ही पुस्तक शेल्फवर उपलब्ध नाही</span>
                             {% endif %}
                         </div>
                     </div>
 
                 </div>
-            </div>
-
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <button class="btn btn-custom btn-borrow" disabled>
-                    <i class="ri-book-borrow-line"></i>
-                    पुस्तक मागवा
-                </button>
-                <button class="btn btn-custom btn-reserve" disabled>
-                    <i class="ri-bookmark-line"></i>
-                    राखून ठेवा
-                </button>
             </div>
 
         </div>
@@ -1830,7 +1156,7 @@
     <div class="review-section">
         <h3>
             <i class="ri-chat-3-line"></i>
-            Reviews
+            पुनरावलोकने
             <small class="text-muted">({{ total_reviews }})</small>
         </h3>
         
@@ -1899,10 +1225,10 @@
                                     {% elif review.user_obj.username %}
                                         {{ review.user_obj.username }}
                                     {% else %}
-                                        User #{{ review.user_id }}
+                                        वापरकर्ता #{{ review.user_id }}
                                     {% endif %}
                                 {% else %}
-                                    User #{{ review.user_id }}
+                                    वापरकर्ता #{{ review.user_id }}
                                 {% endif %}
                             </div>
                             
@@ -1928,7 +1254,7 @@
                     </div>
                     
                     <!-- Library Code (if exists) -->
-                    {% if review.library_code %}
+                    {% if review.library_code and review.library_code != "None" and review.library_code != "" %}
                     <div class="review-footer">
                         <small><i class="ri-building-line me-1"></i>{{ review.library_code }}</small>
                     </div>
@@ -1937,7 +1263,7 @@
             {% empty %}
                 <div class="text-center py-4">
                     <i class="ri-chat-3-line display-6 text-muted"></i>
-                    <p class="text-muted mb-0 mt-2">No reviews yet. Be the first!</p>
+                    <p class="text-muted mb-0 mt-2">अद्याप कोणतीही पुनरावलोकने नाहीत.</p>
                 </div>
             {% endfor %}
         </div>
@@ -1955,7 +1281,7 @@
                             href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page=1&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
                             aria-label="First">
                                 <i class="ri-skip-left-line"></i>
-                                <span class="d-none d-md-inline ms-1">First</span>
+                                <span class="d-none d-md-inline ms-1">पहिले</span>
                             </a>
                         </li>
                         {% endif %}
@@ -1967,7 +1293,7 @@
                             href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.previous_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
                             aria-label="Previous">
                                 <i class="ri-arrow-left-line"></i>
-                                <span class="d-none d-md-inline ms-1">Prev</span>
+                                <span class="d-none d-md-inline ms-1">मागे</span>
                             </a>
                         </li>
                         {% endif %}
@@ -2000,7 +1326,7 @@
                             <a class="page-link" 
                             href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.next_page_number }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
                             aria-label="Next">
-                                <span class="d-none d-md-inline me-1">Next</span>
+                                <span class="d-none d-md-inline me-1">पुढे</span>
                                 <i class="ri-arrow-right-line"></i>
                             </a>
                         </li>
@@ -2012,7 +1338,7 @@
                             <a class="page-link" 
                             href="?{% if current_params %}{{ current_params.urlencode }}&{% endif %}page={{ reviews.paginator.num_pages }}&cat_ref_num={{ cat_ref_num_enc }}#reviews" 
                             aria-label="Last">
-                                <span class="d-none d-md-inline me-1">Last</span>
+                                <span class="d-none d-md-inline me-1">शेवटचे</span>
                                 <i class="ri-skip-right-line"></i>
                             </a>
                         </li>
@@ -2024,17 +1350,17 @@
                 <div class="pagination-info">
                     <div class="info-item">
                         <i class="ri-file-list-line"></i>
-                        <span>Page {{ reviews.number }} of {{ reviews.paginator.num_pages }}</span>
+                        <span>पृष्ठ {{ reviews.number }} / {{ reviews.paginator.num_pages }}</span>
                     </div>
                     
                     <div class="info-item">
                         <i class="ri-chat-3-line"></i>
-                        <span>{{ reviews.start_index }}-{{ reviews.end_index }} of {{ total_reviews }} reviews</span>
+                        <span>{{ reviews.start_index }}-{{ reviews.end_index }} / {{ total_reviews }} पुनरावलोकने</span>
                     </div>
                     
                     <div class="info-item">
                         <i class="ri-star-line"></i>
-                        <span>Avg: {{ avg_rating|floatformat:1 }}/5</span>
+                        <span>सरासरी: {{ avg_rating|floatformat:1 }}/5</span>
                     </div>
                 </div>
             </div>
@@ -2043,7 +1369,7 @@
             <div class="no-pagination-message text-center mt-4">
                 <div class="d-inline-flex align-items-center gap-2 p-3 rounded">
                     <i class="ri-checkbox-circle-line text-success"></i>
-                    <span class="text-muted">Showing all {{ total_reviews }} reviews</span>
+                    <span class="text-muted" style="color:#ffffff">सर्व {{ total_reviews }} पुनरावलोकने दाखवत आहे</span>
                 </div>
             </div>
         {% endif %}
@@ -2145,428 +1471,6 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const stars = document.querySelectorAll('.star');
-            const ratingValue = document.getElementById('ratingValue');
-            const reviewText = document.getElementById('reviewText');
-            const charCount = document.getElementById('charCount');
-            const submitBtn = document.getElementById('submitReviewBtn');
-            let selectedRating = 0;
-
-            // Star rating interaction
-            stars.forEach(star => {
-                star.addEventListener('mouseover', function() {
-                    const value = parseInt(this.getAttribute('data-value'));
-                    highlightStars(value);
-                });
-
-                star.addEventListener('click', function() {
-                    selectedRating = parseInt(this.getAttribute('data-value'));
-                    highlightStars(selectedRating);
-                    ratingValue.textContent = `${selectedRating}/5`;
-                    updateSubmitButton();
-                });
-            });
-
-            // Character counter for review text
-            reviewText.addEventListener('input', function() {
-                const length = this.value.length;
-                charCount.textContent = length;
-                charCount.style.color = length > 900 ? '#dc3545' : '#6c757d';
-                updateSubmitButton();
-            });
-
-            // Star highlighting function
-            function highlightStars(upTo) {
-                stars.forEach((star, index) => {
-                    if (index < upTo) {
-                        star.classList.remove('ri-star-line');
-                        star.classList.add('ri-star-fill');
-                        star.style.color = '#ffc107';
-                    } else {
-                        star.classList.remove('ri-star-fill');
-                        star.classList.add('ri-star-line');
-                        star.style.color = '#ddd';
-                    }
-                });
-            }
-
-            // Update submit button state
-            function updateSubmitButton() {
-                const hasRating = selectedRating > 0;
-                const hasText = reviewText.value.trim().length >= 10; // Minimum 10 characters
-                
-                if (hasRating && hasText) {
-                    submitBtn.disabled = false;
-                    submitBtn.style.opacity = '1';
-                } else {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.6';
-                }
-            }
-
-            // Submit review via AJAX
-            if (submitBtn) {
-                debugger;
-                submitBtn.addEventListener('click', function() {
-                    const bookId = this.getAttribute('data-book-id');
-                    const review = reviewText.value.trim();
-                    
-                    // Validate
-                    if (!selectedRating) {
-                        showNotification('Please select a rating', 'error');
-                        return;
-                    }
-                    
-                    if (review.length < 10) {
-                        showNotification('Review must be at least 10 characters', 'error');
-                        return;
-                    }
-                    
-                    // Show loading state
-                    const originalBtnHTML = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<i class="ri-loader-4-line animate-spin me-2"></i> Submitting...';
-                    submitBtn.disabled = true;
-                    
-                    // Prepare data
-                    const data = {
-                        book_id: bookId,
-                        rating: selectedRating,
-                        review: review
-                    };
-                    debugger;
-                    // Send AJAX request
-                    fetch('{% url "L01:submit_review" %}', {  // Use Django URL tag
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': getCookie('csrftoken')
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            // Show success message
-                            showNotification(data.message || 'Review submitted successfully!', 'success');
-                            
-                            // Update reviews section
-                            updateReviewsSection(data);
-                            
-                            // Reset form
-                            resetReviewForm();
-                        } else {
-                            showNotification(data.message || 'Failed to submit review', 'error');
-                            submitBtn.innerHTML = originalBtnHTML;
-                            submitBtn.disabled = false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showNotification('Network error. Please try again.', 'error');
-                        submitBtn.innerHTML = originalBtnHTML;
-                        submitBtn.disabled = false;
-                    });
-                });
-            }
-
-            // Function to update reviews section
-            function updateReviewsSection(data) {
-                console.log("Updating reviews with data:", data);
-                
-                // Update average rating
-                const avgRatingElement = document.querySelector('.avg-rating .rating-value');
-                if (avgRatingElement) {
-                    avgRatingElement.textContent = `${data.avg_rating}/5`;
-                }
-                
-                // Update total reviews count
-                const totalReviewsElement = document.querySelector('.review-section h3 small');
-                if (totalReviewsElement) {
-                    totalReviewsElement.textContent = `(${data.total_reviews})`;
-                }
-                
-                // Update reviews list
-                const reviewListContainer = document.getElementById('reviewListContainer') || 
-                                        document.getElementById('reviewList');
-                if (reviewListContainer && data.reviews_html) {
-                    console.log("Updating reviews HTML");
-                    
-                    // Add fade out effect
-                    reviewListContainer.style.opacity = '0.5';
-                    reviewListContainer.style.transition = 'opacity 0.3s';
-                    
-                    setTimeout(() => {
-                        reviewListContainer.innerHTML = data.reviews_html;
-                        reviewListContainer.style.opacity = '1';
-                        
-                        // Highlight the FIRST review (should be the new one)
-                        const reviewCards = reviewListContainer.querySelectorAll('.review-card');
-                        console.log(`Found ${reviewCards.length} review cards`);
-                        
-                        if (reviewCards.length > 0) {
-                            // Add animation to highlight new review
-                            reviewCards[0].classList.add('new-review');
-                            reviewCards[0].style.backgroundColor = '#f8fff8';
-                            
-                            // Add "NEW" badge
-                            const reviewHeader = reviewCards[0].querySelector('.review-header');
-                            if (reviewHeader && !reviewHeader.querySelector('.new-label')) {
-                                const newLabel = document.createElement('span');
-                                newLabel.className = 'new-label ms-2';
-                                newLabel.innerHTML = '<span class="badge bg-success" style="font-size: 0.7rem;">NEW</span>';
-                                reviewHeader.appendChild(newLabel);
-                            }
-                            
-                            // Log the first review's content for debugging
-                            const firstReviewText = reviewCards[0].querySelector('.review-body p');
-                            if (firstReviewText) {
-                                console.log("First review text:", firstReviewText.textContent.substring(0, 50) + "...");
-                            }
-                        }
-                    }, 300);
-                }
-                
-                // Update pagination
-                updatePaginationAfterNewReview(data);
-                
-                // Hide the review form
-                const reviewForm = document.querySelector('.write-review');
-                if (reviewForm) {
-                    reviewForm.style.opacity = '0';
-                    setTimeout(() => {
-                        reviewForm.style.display = 'none';
-                        
-                        // Show success message
-                        const reviewSection = document.querySelector('.review-section');
-                        const existingAlert = reviewSection.querySelector('.alert-success');
-                        if (existingAlert) {
-                            existingAlert.remove();
-                        }
-                        
-                        const alertHTML = `
-                            <div class="alert alert-success fade-in mb-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="ri-checkbox-circle-fill me-2 fs-4"></i>
-                                    <div>
-                                        <strong>Thank you for your review!</strong>
-                                        <div class="small mt-1">Your review has been added successfully and appears at the top.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        
-                        // Insert alert before the reviews
-                        if (reviewListContainer) {
-                            reviewListContainer.insertAdjacentHTML('beforebegin', alertHTML);
-                        } else {
-                            reviewSection.insertAdjacentHTML('afterbegin', alertHTML);
-                        }
-                    }, 300);
-                }
-            }
-
-            // Function to update pagination
-            function updatePaginationAfterNewReview(data) {
-                const paginationContainer = document.getElementById('paginationContainer');
-                
-                if (!paginationContainer) return;
-                
-                // If we now have more than 5 reviews, show/update pagination
-                if (data.total_reviews > 5) {
-                    paginationContainer.style.display = 'block';
-                    
-                    // Update pagination info
-                    const pageInfo = paginationContainer.querySelector('.pagination-info');
-                    if (pageInfo) {
-                        pageInfo.innerHTML = `
-                            <div class="info-item">
-                                <i class="ri-file-list-line"></i>
-                                <span>Page 1 of ${data.total_pages}</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="ri-chat-3-line"></i>
-                                <span>1-5 of ${data.total_reviews} reviews</span>
-                            </div>
-                        `;
-                    }
-                    
-                    // Update pagination links - always go to page 1 after new review
-                    const paginationNav = paginationContainer.querySelector('nav');
-                    if (paginationNav) {
-                        let html = '';
-                        
-                        // Previous button (disabled on page 1)
-                        html += `
-                            <li class="page-item disabled">
-                                <span class="page-link"><i class="ri-arrow-left-line"></i> Prev</span>
-                            </li>
-                        `;
-                        
-                        // Always show page 1 as active
-                        html += `<li class="page-item active"><span class="page-link">1</span></li>`;
-                        
-                        // Show other pages if exist
-                        for (let i = 2; i <= Math.min(data.total_pages, 3); i++) {
-                            html += `
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=${i}&cat_ref_num={{ cat_ref_num_enc }}#reviewsSection">${i}</a>
-                                </li>
-                            `;
-                        }
-                        
-                        // Show last page if there are more than 3 pages
-                        if (data.total_pages > 3) {
-                            html += `
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=${data.total_pages}&cat_ref_num={{ cat_ref_num_enc }}#reviewsSection">${data.total_pages}</a>
-                                </li>
-                            `;
-                        }
-                        
-                        // Next button
-                        if (data.total_pages > 1) {
-                            html += `
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=2&cat_ref_num={{ cat_ref_num_enc }}#reviewsSection">
-                                        Next <i class="ri-arrow-right-line"></i>
-                                    </a>
-                                </li>
-                            `;
-                        }
-                        
-                        paginationNav.querySelector('.pagination').innerHTML = html;
-                    }
-                } else {
-                    // Hide pagination if 5 or fewer reviews
-                    paginationContainer.style.display = 'none';
-                }
-            }
-
-            // Reset review form
-            function resetReviewForm() {
-                selectedRating = 0;
-                reviewText.value = '';
-                charCount.textContent = '0';
-                charCount.style.color = '#6c757d';
-                
-                // Reset stars
-                stars.forEach(star => {
-                    star.classList.remove('ri-star-fill');
-                    star.classList.add('ri-star-line');
-                    star.style.color = '#ddd';
-                });
-                
-                // Reset button
-                if (submitBtn) {
-                    submitBtn.innerHTML = '<i class="ri-send-plane-fill me-2"></i>Submit Review';
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.6';
-                }
-            }
-
-            // Utility function to get CSRF token
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
-
-            // Notification function
-            function showNotification(message, type) {
-                // Check if SweetAlert2 is available
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: type,
-                        title: message,
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true,
-                        background: type === 'success' ? '#d4edda' : 
-                                type === 'error' ? '#f8d7da' : '#d1ecf1',
-                        color: type === 'success' ? '#155724' : 
-                            type === 'error' ? '#721c24' : '#0c5460'
-                    });
-                } else {
-                    // Custom notification
-                    const notification = document.createElement('div');
-                    notification.className = `alert alert-${type} fixed-top m-3 fade show`;
-                    notification.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        z-index: 9999;
-                        min-width: 300px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    `;
-                    notification.innerHTML = `
-                        <div class="d-flex align-items-center">
-                            <i class="ri-${type === 'success' ? 'check' : 'error'}-circle-fill me-2 fs-5"></i>
-                            <span>${message}</span>
-                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
-                    
-                    document.body.appendChild(notification);
-                    
-                    // Auto remove after 3 seconds
-                    setTimeout(() => {
-                        notification.classList.remove('show');
-                        setTimeout(() => notification.remove(), 300);
-                    }, 3000);
-                }
-            }
-
-            // Add CSS for spinner animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                .animate-spin {
-                    animation: spin 1s linear infinite;
-                }
-                .fade-in {
-                    animation: fadeIn 0.5s ease;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .new-review {
-                    animation: highlightReview 0.5s ease;
-                }
-                @keyframes highlightReview {
-                    from { background-color: #f8fff8; }
-                    to { background-color: white; }
-                }
-            `;
-            document.head.appendChild(style);
-        });
-
-    </script>
-
-    <script>
         // Back to Top Button
         const backToTopButton = document.getElementById('backToTop');
         
@@ -2585,6 +1489,158 @@
                 behavior: 'smooth'
             });
         });
+    </script>
+
+    <!-- KIOSK FULLSCREEN WITH AUTO-CLICK SIMULATION -->
+    <script>
+        // KIOSK MODE - FOR ALL KIOSK PAGES
+        
+        console.log('🚀 Kiosk mode activating...');
+        
+        // 1. FULLSCREEN FUNCTION
+        function forceFullscreen() {
+            const elem = document.documentElement;
+            
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                
+                console.log('Entering fullscreen...');
+                
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => {
+                        console.log('Fullscreen error (may need user click):', err);
+                        
+                        // If error is due to lack of user gesture, simulate a click
+                        if (err.name === 'NotAllowedError' || 
+                            err.message.includes('gesture') || 
+                            err.message.includes('user')) {
+                            console.log('Simulating click to bypass restriction...');
+                            simulateUserClick();
+                        }
+                    });
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            }
+        }
+        
+        // 2. SIMULATE USER CLICK TO BYPASS BROWSER RESTRICTION
+        function simulateUserClick() {
+            // Create an invisible button and click it
+            const fakeButton = document.createElement('button');
+            fakeButton.style.position = 'fixed';
+            fakeButton.style.top = '0';
+            fakeButton.style.left = '0';
+            fakeButton.style.width = '1px';
+            fakeButton.style.height = '1px';
+            fakeButton.style.opacity = '0';
+            fakeButton.style.zIndex = '99999';
+            fakeButton.textContent = '';
+            document.body.appendChild(fakeButton);
+            
+            // Click it
+            fakeButton.click();
+            
+            // Remove it
+            setTimeout(() => {
+                if (fakeButton.parentNode) {
+                    fakeButton.parentNode.removeChild(fakeButton);
+                }
+                
+                // Try fullscreen again after simulated click
+                setTimeout(forceFullscreen, 100);
+            }, 50);
+        }
+        
+        // 3. BLOCK RIGHT CLICK
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            console.log('Right click blocked');
+            return false;
+        });
+        
+        // 4. BLOCK DEV TOOLS SHORTCUTS
+        document.addEventListener('keydown', function(e) {
+            // Block F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Block Ctrl+Shift+I/J/C
+            if (e.ctrlKey && e.shiftKey && 
+                (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Block Ctrl+U (View Source)
+            if (e.ctrlKey && e.key === 'U') {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Block Escape key from exiting fullscreen
+            if (e.key === 'Escape' && document.fullscreenElement) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // 5. PREVENT EXITING FULLSCREEN
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                
+                console.log('⚠️ Fullscreen exited - re-entering...');
+                
+                // Re-enter fullscreen immediately
+                setTimeout(forceFullscreen, 100);
+            }
+        });
+        
+        // 6. AUTO FULLSCREEN STRATEGY
+        // Strategy 1: Try immediately
+        setTimeout(forceFullscreen, 100);
+        
+        // Strategy 2: Try after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(forceFullscreen, 500);
+        });
+        
+        // Strategy 3: Keep trying periodically
+        let fullscreenRetry = setInterval(function() {
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                console.log('Retrying fullscreen...');
+                forceFullscreen();
+            } else {
+                clearInterval(fullscreenRetry);
+                console.log('✅ Fullscreen achieved');
+            }
+        }, 3000);
+        
+        // Strategy 4: Try on any user interaction (as fallback)
+        ['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
+            document.addEventListener(event, function() {
+                if (!document.fullscreenElement) {
+                    console.log('User interaction detected, trying fullscreen...');
+                    setTimeout(forceFullscreen, 100);
+                }
+            }, { once: true }); // Only try once per event type
+        });
+        
+        console.log('🎯 Kiosk script loaded');
     </script>
 
 {% endblock %}
