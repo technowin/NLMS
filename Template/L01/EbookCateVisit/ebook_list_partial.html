@@ -1,0 +1,98 @@
+{% load static %}
+<div class="row">
+
+    {% if ebooks and ebooks|length > 0 %}
+
+        {% for book in ebooks %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 shadow-sm book-card">
+
+                    <!-- Image -->
+                    <div class="book-img-box">
+                        {% if book.front_page_url %}
+                            <img src="{{ book.front_page_url }}"
+                                 class="img-fluid"
+                                 alt="{{ book.eb_title|default:'Ebook' }}">
+                        {% else %}
+                            <div class="text-center py-4 text-muted">
+                                📕 प्रतिमा उपलब्ध नाही
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Info -->
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ book.eb_title }}</h6>
+                        {% if book.eb_author %}
+                            <p class="info-line"><b>लेखक:</b> {{ book.eb_author }}</p>
+                        {% endif %}
+                        {% if book.eb_edition %}
+                            <p class="info-line"><b>Edition:</b> {{ book.edition }}</p>
+                        {% endif %}
+                        {% if book.eb_year_of_publication %}
+                            <p class="info-line"><b>वर्ष:</b> {{ book.eb_year_of_publication }}</p>
+                        {% endif %}
+                        {% if book.eb_pdf_url %}
+                            <div class="mt-auto text-center">
+                                <a href="{% url 'L01:read_ebook_secure' %}?token={{ book.ebookEnc }}"
+                                target="_blank"
+                                class="btn btn-primary view-btn">
+                                    📘 ई-पुस्तक वाचा
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="mt-2 text-center text-muted small">
+                                📕 ई-पुस्तक उपलब्ध नाही
+                            </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        <div class="col-12 mt-3 text-end">
+            <nav>
+                <ul class="pagination justify-content-end">
+                    {% if ebooks.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link pagination-link"
+                               href="#"
+                               data-page="{{ ebooks.previous_page_number }}"
+                               data-subject-id="{{ subject_id_enc }}">मागील</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">{{ ebooks.number }}</span>
+                    </li>
+
+                    {% if ebooks.has_next %}
+                        <li class="page-item">
+                            <a class="page-link pagination-link"
+                               href="#"
+                               data-page="{{ ebooks.next_page_number }}"
+                               data-subject-id="{{ subject_id_enc }}">पुढचा</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+
+    {% else %}
+
+        <!-- ✅ NO BOOKS FOUND STATE -->
+        <div class="col-12 text-center my-5">
+            <img src="{% static 'images/no-books.svg' %}"
+                 alt="No ebooks"
+                 style="max-width:180px;"
+                 class="mb-3">
+            <h5 class="text-muted">
+                या विषयासाठी ई-पुस्तके उपलब्ध नाहीत
+            </h5>
+        </div>
+
+    {% endif %}
+
+</div>

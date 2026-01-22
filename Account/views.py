@@ -48,7 +48,7 @@ import requests
 from django.db import models
 from administration.models import *
 from django.views.decorators.csrf import csrf_protect
-from datetime import date
+from datetime import date, timedelta
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -825,3 +825,124 @@ def charts(request):
 
 def tables(request):
     return render(request,'Bootstrap/tables.html')
+
+def forgot_password(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+
+        try:
+            # Fetch the user object based on the provided username (email)
+            user = CustomUser.objects.get(username=username)
+            mobile_no = user.phone  # Assuming you have a phone field on your CustomUser model
+            
+            # Generate 6-digit OTP
+            otp = random.randint(100000, 999999)
+            
+            # Fetch OTP message template (assuming you have a column 'template_message')
+            template = SmsTemplate.objects.using('L01').filter(template_id=1107176880362727316).first()
+            
+            if template:
+                # Replace placeholders in the template with actual values (username and OTP)
+                message = template.template_message.replace('{#var#}', user.username)  # Replace {#var#} with username
+                message = message.replace('@OTP', str(otp))  # Replace @OTP with the generated OTP
+                request.session['otp'] = otp  # Save OTP to the session
+
+                # Send SMS to user's phone
+                # send_sms(mobile_no, message)  # Ensure send_sms is defined elsewhere
+
+                # Save OTP Log
+                otp_log = OTPLog.objects.using('L01').create(
+                    username=username,
+                    otp=str(otp),
+                    is_verified=False,
+                    created_by=request.user  # The user who is creating the OTP
+                )
+
+                # Optionally, you can also log the verification attempt in VerifyLog
+                verify_log = VerifyOtp.objects.using('L01').create(
+                    username=username,
+                    otp=str(otp),
+                    is_verified=False,
+                    created_by=request.user  # The user who is creating the OTP
+                )
+
+                # Return success response
+                return JsonResponse({'status': 'otp_sent','username': username})
+            else:
+                # If no template is found
+                return JsonResponse({'status': 'template_not_found'}, status=400)
+
+        except CustomUser.DoesNotExist:
+            # If the user is not found
+            return JsonResponse({'status': 'user_not_found'}, status=400)
+
+    else:
+        return render(request, 'Bootstrap/account/forgot_password.html')
+        
+def update_password(request):
+    if request.method == 'POST':
+        otp = request.POST.get('otp')
+        new_password = request.POST.get('new_password')
+        
+        # Verify OTP
+        if otp == str(request.session.get('otp')):
+            user = User.objects.get(username=request.user.username)
+            user.password = make_password(new_password)
+            user.save()
+            return JsonResponse({'status': 'success'})
+        
+        return JsonResponse({'status': 'otp_invalid'}, status=400)
+    
+def verify_otp(request):
+    if request.method == "POST":
+        username = request.POST.get("username")  # Get the username (email or phone)
+        entered_otp = request.POST.get("otp")  # The OTP entered by the user
+
+        # Retrieve the most recent OTP log for the given username
+        try:
+            latest_otp_log = OTPLog.objects.filter(username=username).order_by('-created_at').first()
+            
+            if not latest_otp_log:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "No OTP found for this username"
+                })
+
+            # Check OTP expiry (2 minutes expiry from created_at)
+            if timezone.now() > latest_otp_log.created_at + timedelta(minutes=2):
+                return JsonResponse({
+                    "status": "expired",
+                    "message": "OTP expired"
+                })
+
+            # Check if the entered OTP matches the latest OTP in the database
+            if str(entered_otp) != str(latest_otp_log.otp):
+                return JsonResponse({
+                    "status": "invalid",
+                    "message": "Invalid OTP"
+                })
+
+            # OTP is verified, mark it as verified in OTPLog
+            latest_otp_log.is_verified = True
+            latest_otp_log.save()
+
+            # Log the verification attempt in VerifyLog
+            verify_log = VerifyOtp.objects.create(
+                otp_log=latest_otp_log,
+                is_verified=True,
+                verified_by=request.user  # Assuming the logged-in user is verifying
+            )
+
+            # OTP verified successfully
+            return JsonResponse({
+                "status": "otp_verified",
+                "message": "OTP successfully verified"
+            })
+
+        except OTPLog.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "No OTP record found"
+            })
+
+    return JsonResponse({"status": "error", "message": "Invalid request"})

@@ -1,6 +1,5 @@
 {% load static %}
 
-
 {% block extra_css %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,56 +11,232 @@
     <link href="{% static 'css/Administrative/visit_Library_catalogue_kiosk.css' %}" rel="stylesheet">
     
     <style>
+        /* Main Layout */
+        .library-layout-wrapper {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1a2e 100%);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            position: relative;
+        }
+        
+        /* Fixed Left Sidebar */
+        .section-sidebar {
+            width: 320px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.98));
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 8px 0 25px rgba(0, 0, 0, 0.4);
+            padding: 1.5rem;
+            overflow-y: auto;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Main Content Area */
+        .subjects-main-content {
+            flex: 1;
+            margin-left: 320px;
+            padding: 1.5rem 2.5rem;
+            min-height: 100vh;
+            width: calc(100% - 320px);
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-top: 5%;
+        }
+        
+        /* Section Header in Sidebar */
+        .section-header-sidebar {
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .section-title-sidebar {
+            color: #ffffff;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+        
+        .section-number-sidebar {
+            color: #3a86ff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(58, 134, 255, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid #3a86ff;
+        }
+        
+        .section-description-sidebar {
+            color: #cbd5e1;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Section Stats */
+        .section-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            background: rgba(58, 134, 255, 0.1);
+            border-color: rgba(58, 134, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #3a86ff;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        
+        /* Navigation Links in Sidebar */
+        .sidebar-navigation {
+            margin-top: 1.5rem;
+        }
+        
+        .nav-link-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link-item:hover {
+            background: rgba(58, 134, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(58, 134, 255, 0.3);
+            transform: translateX(5px);
+        }
+        
+        .nav-link-item i {
+            font-size: 1.1rem;
+            color: #3a86ff;
+        }
+        
+        /* Subjects Grid Layout */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        /* Updated Subject Card */
         .subject-card {
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            height: 100%;
             overflow: hidden;
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
         
         .subject-card:hover {
             transform: translateY(-8px);
-            border-color: rgba(58, 134, 255, 0.3);
-            box-shadow: 0 20px 40px rgba(58, 134, 255, 0.3);
+            border-color: rgba(58, 134, 255, 0.4);
+            box-shadow: 0 20px 40px rgba(58, 134, 255, 0.2);
         }
         
-        .subject-icon-wrapper {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #3a86ff, #8338ec);
-            border-radius: 12px;
+        /* Subject Icon Container */
+        .subject-icon-container {
+            height: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 1.5rem auto 1rem;
+            background: linear-gradient(135deg, rgba(58, 134, 255, 0.1), rgba(131, 56, 236, 0.05));
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .subject-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #3a86ff, #8338ec);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .subject-card:hover .subject-icon-wrapper {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 10px 25px rgba(58, 134, 255, 0.4);
         }
         
         .subject-icon-wrapper i {
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: white;
         }
         
+        /* Subject Content */
         .subject-content {
             padding: 1.5rem;
-            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
         
         .subject-title {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: #ffffff;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+            text-align: center;
         }
         
         .subject-description {
-            font-size: 0.9rem;
             color: #94a3b8;
-            line-height: 1.5;
+            font-size: 0.95rem;
+            line-height: 1.6;
             margin-bottom: 1.5rem;
-            min-height: 60px;
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        .subject-action {
+            text-align: center;
         }
         
         .btn-view-topics {
@@ -73,7 +248,11 @@
             font-weight: 600;
             transition: all 0.3s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            justify-content: center;
         }
         
         .btn-view-topics:hover {
@@ -83,6 +262,47 @@
             color: white;
         }
         
+        /* Go Back Button */
+        .go-back-container {
+            position: fixed;
+            top: 20px;
+            left: 340px;
+            z-index: 1050;
+        }
+        
+        .go-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4a6fa5 0%, #3a5980 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(74, 111, 165, 0.3);
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .go-back-btn svg {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+        }
+        
+        .go-back-btn:hover {
+            background: linear-gradient(135deg, #3a5980 0%, #2d4666 100%);
+            transform: translateX(-5px);
+            box-shadow: 0 6px 20px rgba(74, 111, 165, 0.4);
+        }
+        
+        /* Breadcrumb */
         .breadcrumb-nav {
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.9));
             border-radius: 12px;
@@ -109,6 +329,104 @@
         .breadcrumb-item a:hover {
             color: #3a86ff;
         }
+        
+        /* No Subjects Message */
+        .no-subjects-message {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            grid-column: 1 / -1;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .section-sidebar {
+                transform: translateX(-100%);
+                width: 300px;
+                z-index: 1001;
+            }
+            
+            .section-sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .subjects-main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 1.5rem;
+                padding-top: 4rem;
+            }
+            
+            .go-back-container {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 15px;
+                padding-left: 15px;
+            }
+            
+            .subjects-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .subjects-main-content {
+                padding: 1.25rem;
+                padding-top: 4rem;
+            }
+            
+            .subjects-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .section-title-sidebar {
+                font-size: 1.5rem;
+            }
+            
+            .subject-icon-container {
+                height: 150px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .subjects-main-content {
+                padding: 1rem;
+                padding-top: 4rem;
+            }
+            
+            .subjects-grid {
+                gap: 1rem;
+            }
+            
+            .subject-content {
+                padding: 1.25rem;
+            }
+            
+            .subject-title {
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Scrollbar Styling */
+        .section-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .section-sidebar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.2);
+            border-radius: 10px;
+        }
+        
+        .section-sidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3a86ff, #8338ec);
+            border-radius: 10px;
+        }
     </style>
 {% endblock %}
 
@@ -124,8 +442,47 @@
             </button>
         </div>
 
-        <!-- Main Content -->
-        <div class="library-main-content">
+        <!-- Fixed Left Sidebar -->
+        <div class="section-sidebar">
+            <div class="section-header-sidebar">
+                <h1 class="section-title-sidebar">{{ section.section_name }}</h1>
+                <div class="section-number-sidebar">Section {{ section.section_no }}</div>
+                {% if section.section_description %}
+                    <p class="section-description-sidebar">{{ section.section_description }}</p>
+                {% endif %}
+                
+                <!-- Section Stats -->
+                <div class="section-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">{{ subjects|length }}</span>
+                        <span class="stat-label">Total Subjects</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ exam.short_form }}</span>
+                        <span class="stat-label">Exam Code</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="sidebar-navigation">
+                <a href="{% url 'L01:kiosk_competitive_exam_type' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
+                    <i class="ri-home-line"></i>
+                    <span>Back to {{ exam.short_form }}</span>
+                </a>
+                <a href="{% url 'L01:kiosk_competitive_sections' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
+                    <i class="ri-folder-2-line"></i>
+                    <span>View All Sections</span>
+                </a>
+                <a href="{% url 'L01:kiosk_competitive_exam_type' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
+                    <i class="ri-book-2-line"></i>
+                    <span>Exam Home</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content Area with Subjects -->
+        <div class="subjects-main-content">
             <!-- Breadcrumb Navigation -->
             <nav aria-label="breadcrumb" class="breadcrumb-nav">
                 <ol class="breadcrumb mb-0">
@@ -134,35 +491,38 @@
                             {{ exam.short_form }}
                         </a>
                     </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'L01:kiosk_competitive_sections' %}?competitive_id={{ exam.competitive_id }}">
+                            Sections
+                        </a>
+                    </li>
                     <li class="breadcrumb-item active" aria-current="page">
                         Section {{ section.section_no }}: {{ section.section_name }}
                     </li>
                 </ol>
             </nav>
 
-            <!-- Section Header -->
-            <div class="exam-header" style="margin-bottom: 2rem;">
-                <h1 class="exam-title">{{ section.section_name }}</h1>
-                <div class="exam-short">Section {{ section.section_no }}</div>
-                {% if section.section_description %}
-                    <p class="exam-description">{{ section.section_description }}</p>
-                {% endif %}
-            </div>
-
             <!-- Subjects Grid -->
-            <div class="row g-4">
+            <div class="subjects-grid">
                 {% if subjects %}
                     {% for subject in subjects %}
-                        <div class="col-md-4 col-lg-3">
-                            <div class="subject-card">
+                        <div class="subject-card">
+                            <!-- Icon at Top -->
+                            <div class="subject-icon-container">
                                 <div class="subject-icon-wrapper">
                                     <i class="ri-book-2-line"></i>
                                 </div>
-                                <div class="subject-content">
-                                    <h3 class="subject-title">{{ subject.subject_name }}</h3>
-                                    {% if subject.subject_description %}
-                                        <p class="subject-description">{{ subject.subject_description|truncatechars:100 }}</p>
-                                    {% endif %}
+                            </div>
+                            
+                            <!-- Content Below -->
+                            <div class="subject-content">
+                                <h3 class="subject-title">{{ subject.subject_name }}</h3>
+                                
+                                {% if subject.subject_description %}
+                                    <p class="subject-description">{{ subject.subject_description|truncatechars:120 }}</p>
+                                {% endif %}
+                                
+                                <div class="subject-action">
                                     <a href="{% url 'L01:kiosk_competitive_topics' %}?competitive_id={{ exam.competitive_id }}&subject_id={{ subject.subject_id }}"
                                        class="btn-view-topics">
                                         <i class="ri-list-check"></i> View Topics
@@ -172,12 +532,10 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="col-12">
-                        <div class="no-sections-message">
-                            <i class="ri-book-line" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                            <h3>No Subjects Available</h3>
-                            <p>No subjects have been added for this section yet.</p>
-                        </div>
+                    <div class="no-subjects-message">
+                        <i class="ri-book-line" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h3>No Subjects Available</h3>
+                        <p>No subjects have been added for this section yet.</p>
                     </div>
                 {% endif %}
             </div>
@@ -189,8 +547,187 @@
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
     <!-- Include the same KIOSK FULLSCREEN script from above -->
     <script>
-        // Same KIOSK FULLSCREEN script as in previous template
         console.log('🚀 Subjects Kiosk mode activating...');
-        // ... [Include the same fullscreen script as above] ...
+        
+        // Mobile sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.innerWidth <= 992) {
+                // Create toggle button for mobile
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'sidebar-toggle';
+                toggleBtn.innerHTML = '<i class="ri-menu-line"></i>';
+                toggleBtn.style.cssText = `
+                    position: fixed;
+                    top: 15px;
+                    left: 15px;
+                    width: 42px;
+                    height: 42px;
+                    background: linear-gradient(135deg, #3a86ff, #8338ec);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 1.2rem;
+                    cursor: pointer;
+                    z-index: 1002;
+                    box-shadow: 0 4px 12px rgba(58, 134, 255, 0.4);
+                    border: none;
+                    transition: all 0.3s ease;
+                `;
+                
+                document.querySelector('.library-layout-wrapper').appendChild(toggleBtn);
+                
+                // Create overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'sidebar-overlay';
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.75);
+                    z-index: 1000;
+                    display: none;
+                    backdrop-filter: blur(5px);
+                `;
+                
+                document.body.appendChild(overlay);
+                
+                // Toggle sidebar
+                toggleBtn.addEventListener('click', function() {
+                    document.querySelector('.section-sidebar').classList.toggle('active');
+                    overlay.style.display = 'block';
+                });
+                
+                // Close sidebar when clicking overlay
+                overlay.addEventListener('click', function() {
+                    document.querySelector('.section-sidebar').classList.remove('active');
+                    this.style.display = 'none';
+                });
+                
+                // Close sidebar when clicking a link
+                document.querySelectorAll('.nav-link-item').forEach(link => {
+                    link.addEventListener('click', function() {
+                        document.querySelector('.section-sidebar').classList.remove('active');
+                        overlay.style.display = 'none';
+                    });
+                });
+            }
+        });
+        
+        // KIOSK FULLSCREEN SCRIPT (same as before)
+        function forceFullscreen() {
+            const elem = document.documentElement;
+            
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => {
+                        if (err.name === 'NotAllowedError' || 
+                            err.message.includes('gesture') || 
+                            err.message.includes('user')) {
+                            simulateUserClick();
+                        }
+                    });
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestfullscreen();
+                }
+            }
+        }
+        
+        function simulateUserClick() {
+            const fakeButton = document.createElement('button');
+            fakeButton.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 1px;
+                height: 1px;
+                opacity: 0;
+                z-index: 99999;
+            `;
+            document.body.appendChild(fakeButton);
+            
+            fakeButton.click();
+            
+            setTimeout(() => {
+                if (fakeButton.parentNode) {
+                    fakeButton.parentNode.removeChild(fakeButton);
+                }
+                setTimeout(forceFullscreen, 100);
+            }, 50);
+        }
+        
+        // Fullscreen logic
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            
+            if (e.ctrlKey && e.shiftKey && 
+                (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            if (e.ctrlKey && e.key === 'U') {
+                e.preventDefault();
+                return false;
+            }
+            
+            if (e.key === 'Escape' && document.fullscreenElement) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                setTimeout(forceFullscreen, 100);
+            }
+        });
+        
+        // Auto fullscreen
+        setTimeout(forceFullscreen, 100);
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(forceFullscreen, 500);
+        });
+        
+        let fullscreenRetry = setInterval(function() {
+            if (!document.fullscreenElement && 
+                !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && 
+                !document.msFullscreenElement) {
+                forceFullscreen();
+            } else {
+                clearInterval(fullscreenRetry);
+            }
+        }, 3000);
+        
+        ['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
+            document.addEventListener(event, function() {
+                if (!document.fullscreenElement) {
+                    setTimeout(forceFullscreen, 100);
+                }
+            }, { once: true });
+        });
     </script>
 {% endblock %}

@@ -1590,7 +1590,7 @@ def membership_form_view(request):
                         payment = PaymentDetails.objects.create(
                             membership=membership,
                             payment_mode="Offline",
-                            payment_type="Membership Renewal",
+                            payment_type="Membership Renewed",
                             payment_method="Cash/Cheque/Other",
                             
                             # Amounts from MembershipDetails table
@@ -10798,6 +10798,193 @@ def get_ebooks_by_subject_kiosk(request):
         traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
 
+
+@login_required
+def visit_ebook_catalogue(request):
+    try:
+        # --- SESSION CHECKS ---
+        library_code = request.session.get('library_db')
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        role_id = request.session.get('role_id')
+
+        if library_code != 'L01':
+            messages.error(request, "Invalid library access.")
+            request.session.flush()
+            return redirect('library_list')
+
+        if not all([library_code, username, user_id, role_id]):
+            messages.warning(request, "Session expired. Please login again.")
+            return render(request, "L01/EbookCateVisit/visit_ebook_catalogue.html", {})
+
+        # --- SUBJECTS ---
+        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        subjects = []
+        for s in subjects_qs:
+            s.id_enc = enc(str(s.id))
+            subjects.append(s)
+
+        first_subject = subjects[0] if subjects else None
+
+        # --- EBOOKS BY SUBJECT ---
+        if first_subject:
+            ebooks = (
+                LibraryEbook.objects
+                .filter(eb_subject_id=first_subject.id)
+                .select_related('eb_subject', 'ebook_type')
+            )
+        else:
+            ebooks = LibraryEbook.objects.none()
+
+        # --- ADD FILE URLs ---
+        for eb in ebooks:
+            eb.ebookEnc = enc(str(eb.ebook_id))
+
+            if eb.eb_front_page_photo:
+                eb.front_page_url = file_storage_service.get_file_url(
+                    eb.eb_front_page_photo
+                )
+            else:
+                eb.front_page_url = None
+
+        # --- PAGINATION ---
+        paginator = Paginator(ebooks, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        # --- LATEST EBOOKS ---
+        latest_created_at = LibraryEbook.objects.aggregate(
+            latest=Max('created_at')
+        )['latest']
+
+        recent_ebooks = (
+            LibraryEbook.objects.filter(created_at=latest_created_at)
+            if latest_created_at else LibraryEbook.objects.none()
+        )
+
+        remaining = 10 - recent_ebooks.count()
+        fallback = (
+            LibraryEbook.objects.exclude(
+                ebook_id__in=recent_ebooks.values_list('ebook_id', flat=True)
+            ).order_by('-ebook_id')[:remaining]
+            if remaining > 0 else LibraryEbook.objects.none()
+        )
+
+        new_ebooks = list(recent_ebooks) + list(fallback)
+
+        for eb in new_ebooks:
+            eb.ebookEnc = enc(str(eb.ebook_id))
+            eb.front_page_url = (
+                file_storage_service.get_file_url(eb.eb_front_page_photo)
+                if eb.eb_front_page_photo else None
+            )
+
+        # --- CONTEXT ---
+        context = {
+            'subjects': subjects,
+            'ebooks': page_obj,
+            'paginator': paginator,
+            'page_number': int(page_number),
+            'first_subject_id_enc': first_subject.id_enc if first_subject else None,
+            'new_ebooks': new_ebooks,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        return render(
+            request,
+            "L01/EbookCateVisit/visit_ebook_catalogue.html",
+            context
+        )
+
+    except Exception as e:
+        print("EBOOK CATALOG ERROR:", e)
+        return render(
+            request,
+            "L01/EbookCateVisit/visit_ebook_catalogue.html",
+            {}
+        )
+
+def get_ebooks_by_subject(request):
+    try:
+        subject_id_enc = request.GET.get('subject_id')
+        subject_id = dec(subject_id_enc) if subject_id_enc else None
+
+        search = request.GET.get('search', '').strip()
+        searching = request.GET.get('searching', '').strip()
+
+        # ===============================
+        # GLOBAL SEARCH MODE
+        # ===============================
+        if searching:
+            ebooks_qs = LibraryEbook.objects.all().select_related(
+                'eb_subject'
+            )
+
+            if search:
+                ebooks_qs = ebooks_qs.filter(
+                    Q(eb_title__icontains=search) |
+                    Q(eb_author__icontains=search)
+                )
+            elif subject_id:
+                ebooks_qs = ebooks_qs.filter(eb_subject_id=subject_id)
+
+        # ===============================
+        # SUBJECT FILTER MODE
+        # ===============================
+        else:
+            if not subject_id:
+                return JsonResponse({'error': 'Subject ID required'}, status=400)
+
+            ebooks_qs = LibraryEbook.objects.filter(
+                eb_subject_id=subject_id
+            ).select_related('eb_subject')
+
+            if search:
+                ebooks_qs = ebooks_qs.filter(
+                    Q(eb_title__icontains=search) |
+                    Q(eb_author__icontains=search)
+                )
+
+        # ===============================
+        # ADD FILE URLS + ENCRYPT IDS
+        # ===============================
+        for eb in ebooks_qs:
+            eb.ebookEnc = enc(str(eb.ebook_id)) if 'enc' in globals() else eb.ebook_id
+
+            if eb.eb_front_page_photo:
+                eb.front_page_url = file_storage_service.get_file_url(
+                    eb.eb_front_page_photo
+                )
+            else:
+                eb.front_page_url = None
+
+        # ===============================
+        # PAGINATION
+        # ===============================
+        paginator = Paginator(ebooks_qs, 8)
+        page_number = request.GET.get('page', 1)
+        ebooks_page = paginator.get_page(page_number)
+
+        context = {
+            'ebooks': ebooks_page,
+            'subject_id_enc': subject_id_enc,
+            'MEDIA_URL': settings.MEDIA_URL,  # safe to keep
+        }
+
+        return render(
+            request,
+            "L01/EbookCateVisit/ebook_list_partial.html",
+            context
+        )
+
+    except Exception as e:
+        print("Error fetching ebooks for subject:", e)
+        import traceback
+        traceback.print_exc()
+        return JsonResponse(
+            {'error': 'Failed to fetch ebooks'},
+            status=500
+        )
 @login_required
 def view_ebook_detail(request):
     try:
@@ -10811,7 +10998,7 @@ def view_ebook_detail(request):
 
         if not all([library_code, username, user_id, role_id]):
             messages.warning(request, "Session expired or invalid. Please login again.")
-            return render(request, "L01/LibraryCateVisit/visit_library_Cate_ebooks.html", {})
+            return render(request, "L01/EbookCateVisit/visit_ebook_catalogue.html", {})
 
         # -----------------------
         # EBOOK ID VALIDATION
@@ -10931,6 +11118,21 @@ def view_ebook_detail(request):
         messages.error(request, "Unable to load ebook details.")
         return redirect("visit_Library_ebook_catalogue")
 
+def kiosk_competitive_exam_type(request, competitive_id=None):
+    if competitive_id:
+        # Show exam details
+        exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+        return render(request, "L01/competitive_exam_details.html", {
+            "MEDIA_URL": settings.MEDIA_URL,
+            "exam": exam
+        })
+    
+    # Show exam list
+    competitive_exams = CompetitiveExamMaster.objects.all().order_by('full_name')
+    return render(request, "L01/kiosk_competitive_exam_type.html", {
+        "MEDIA_URL": settings.MEDIA_URL,
+        "competitive_exams": competitive_exams
+    })
 # def kiosk_competitive_exam_type(request):
     
 #     competitive_id = request.GET.get('competitive_id', None)
@@ -11964,8 +12166,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any, List
 
-
-
 def flatten_json(data: Dict[str, Any], parent_key: str = '', separator: str = '_') -> Dict[str, str]:
     """
     Flatten a nested dictionary for storage in key-value pairs.
@@ -12002,7 +12202,6 @@ def flatten_json(data: Dict[str, Any], parent_key: str = '', separator: str = '_
     
     _flatten(data, parent_key)
     return items
-
 
 def flatten_json_iterative(data: Dict[str, Any], separator: str = '_') -> Dict[str, str]:
     """
@@ -12086,7 +12285,6 @@ def validate_isbn(isbn: str) -> str:
     
     return None
 
-
 def save_google_book_data(isbn: str, book_data: Dict[str, Any]) -> bool:
     """Save Google Books data to database using flattened JSON"""
     try:
@@ -12168,8 +12366,6 @@ def save_google_book_data(isbn: str, book_data: Dict[str, Any]) -> bool:
         logger.error(f"Error saving Google book data for ISBN {isbn}: {str(e)}")
         return False
 
-
-
 def save_loc_book_data(isbn: str, loc_data: Dict[str, Any]) -> bool:
     """Save LOC data to database"""
     try:
@@ -12231,7 +12427,6 @@ def save_loc_book_data(isbn: str, loc_data: Dict[str, Any]) -> bool:
     except Exception as e:
         logger.error(f"Error saving LOC book data for ISBN {isbn}: {str(e)}")
         return False
-
 
 def search_book_by_isbn(isbn: str) -> Dict[str, Any]:
     """Search for a book by ISBN in LOC first, then Google"""
@@ -12360,7 +12555,6 @@ def search_book_by_isbn(isbn: str) -> Dict[str, Any]:
     
     return results
 
-
 @csrf_exempt
 def search_books(request):
     """Handle ISBN search from frontend"""
@@ -12435,7 +12629,6 @@ def search_books(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-
 @csrf_exempt
 def upload_excel(request):
     """Handle Excel file upload"""
@@ -12502,7 +12695,6 @@ def upload_excel(request):
             }, status=400)
     
     return JsonResponse({'error': 'No file uploaded'}, status=400)
-
     
 @login_required
 def check_old_password(request):
@@ -12622,10 +12814,10 @@ def kiosk_competitive_subjects(request):
     exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
     section = get_object_or_404(Sections, section_no=section_no, competitive_id=competitive_id)
     
-    # Get subjects for this section
+    # Since section_no is a ForeignKey, we can filter by the section object
     subjects = Subjects.objects.filter(
-        Q(section_no=section_no) | Q(competitive_id=competitive_id)
-    ).distinct().order_by('subject_name')
+        section_no=section  # Use the section object, not just section_no
+    ).order_by('subject_name')
     
     context = {
         'exam': exam,
@@ -12648,10 +12840,32 @@ def kiosk_competitive_topics(request):
         subject_id=subject_id
     ).order_by('topic_name')
     
+    processed_topics = []
+    for topic in topics:
+        topic_dict = {
+            'topic_id': topic.topic_id,
+            'topic_name': topic.topic_name,
+            'topic_reference': topic.topic_reference,
+            # Process image URL
+            'topic_image_url': None,
+        }
+        
+        # If topic has an image path, get the full URL
+        if topic.topic_image_url:
+            try:
+                # Use your file_storage_service to get the proper URL
+                topic_dict['topic_image_url'] = file_storage_service.get_file_url(topic.topic_image_url)
+            except Exception as e:
+                print(f"Error getting image URL for topic {topic.topic_id}: {str(e)}")
+                # Optionally, you could log this error
+        
+        processed_topics.append(topic_dict)
+    
     context = {
         'exam': exam,
         'subject': subject,
-        'topics': topics,
+        'topics': processed_topics,  # Use processed topics
+        'MEDIA_URL': settings.MEDIA_URL,
     }
     
     return render(request, 'L01/kiosk_competitive_topics.html', context)
