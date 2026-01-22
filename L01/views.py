@@ -8329,129 +8329,181 @@ def set_book_image_urls(books):
         else:
             b.last_page_photo = ""
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.contrib import messages
+from django.conf import settings
+from django.db.models import Avg, Count
+import traceback
 
 @login_required
 def led_tv_index(request):
-    
-    libraries = (
-        LibraryMaster.objects.using('default')
-        .filter(is_active=1)
-        .order_by('id')
-    )
+    # ----------------------------------
+    # DB connection + session values
+    # ----------------------------------
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    library_code = request.session.get('library_db', None)
 
-    library_list = []
+    try:
+        # ============================================
+        # LIBRARIES
+        # ============================================
+        libraries = (
+            LibraryMaster.objects.using('default')
+            .filter(is_active=1)
+            .order_by('id')
+        )
 
-    for lib in libraries:
-        first_image = ""
+        library_list = []
 
-        if lib.image_url:
-            image_array = lib.image_url.split(",")
-            if image_array:
-                first_image = file_storage_service.get_file_url(image_array[0].strip())
+        for lib in libraries:
+            first_image = ""
 
-        library_list.append({
-            "library_name": lib.library_name,
-            "library_name_mar": lib.library_name_mar,
-            "description": lib.about_library,
-            "address": lib.location.address,
-            "email": lib.contact_email,
-            "phone": lib.contact_phone,
-            "library_image": first_image,
-            "location_url": lib.location_url,
-            "opening_hours": lib.opening_hours,
-            "est_year": lib.est_year
+            if lib.image_url:
+                image_array = lib.image_url.split(",")
+                if image_array:
+                    first_image = file_storage_service.get_file_url(
+                        image_array[0].strip()
+                    )
+
+            library_list.append({
+                "library_name": lib.library_name,
+                "library_name_mar": lib.library_name_mar,
+                "description": lib.about_library,
+                "address": lib.location.address,
+                "email": lib.contact_email,
+                "phone": lib.contact_phone,
+                "library_image": first_image,
+                "location_url": lib.location_url,
+                "opening_hours": lib.opening_hours,
+                "est_year": lib.est_year
+            })
+
+        # ============================================
+        # 1️⃣ POPULAR BOOKS
+        # ============================================
+        popular_books = (
+            BookCatalog.objects
+            .annotate(
+                avg_rating=Avg('cat_ref_id_reviews__rating'),
+                review_count=Count('cat_ref_id_reviews')
+            )
+            .filter(avg_rating__isnull=False)
+            .order_by('-avg_rating', '-created_at')[:10]
+        )
+
+        # ============================================
+        # 2️⃣ NEW ARRIVALS
+        # ============================================
+        new_arrivals = (
+            BookCatalog.objects
+            .annotate(
+                avg_rating=Avg('cat_ref_id_reviews__rating'),
+                review_count=Count('cat_ref_id_reviews')
+            )
+            .filter(transactions__isnull=False)
+            .order_by('-avg_rating')[:10]
+        )
+
+        # ============================================
+        # 3️⃣ UPCOMING BOOKS
+        # ============================================
+        upcoming_books = (
+            BookCatalog.objects
+            .annotate(
+                avg_rating=Avg('cat_ref_id_reviews__rating'),
+                review_count=Count('cat_ref_id_reviews')
+            )
+            .filter(transactions__isnull=True)
+            .order_by('-avg_rating')[:10]
+        )
+
+        set_book_image_urls(popular_books)
+        set_book_image_urls(new_arrivals)
+        set_book_image_urls(upcoming_books)
+
+        # ============================================
+        # ADS
+        # ============================================
+        advertisements = Advertisement.objects.filter(
+            status=1
+        ).order_by('-created_at')[:5]
+
+        for ad in advertisements:
+            if ad.video_path:
+                ad.video_path = (
+                    settings.MEDIA_URL +
+                    ad.video_path.replace("\\", "/")
+                )
+
+        # ============================================
+        # EVENTS
+        # ============================================
+        events = EventAnnouncement.objects.filter(
+            status=1
+        ).order_by('-event_from_date')[:10]
+
+        # ============================================
+        # USER REVIEWS
+        # ============================================
+        user_ids = set()
+
+        for book_list in [popular_books, new_arrivals, upcoming_books]:
+            for book in book_list:
+                reviews_for_book = BookReview.objects.filter(
+                    book__cat_ref_num=book.cat_ref_num
+                ).order_by('-created_at')[:2]
+
+                for review in reviews_for_book:
+                    user_ids.add(review.user_id)
+
+                book.recent_reviews = list(reviews_for_book)
+
+        users = CustomUser.objects.filter(id__in=user_ids)
+        user_dict = {user.id: user.username for user in users}
+
+        for book_list in [popular_books, new_arrivals, upcoming_books]:
+            for book in book_list:
+                for review in getattr(book, 'recent_reviews', []):
+                    review.username = user_dict.get(
+                        review.user_id, "Unknown"
+                    )
+
+        return render(request, "L01/led_tv_index.html", {
+            "popular_books": popular_books,
+            "new_arrivals": new_arrivals,
+            "upcoming_books": upcoming_books,
+            "advertisements": advertisements,
+            "events": events,
+            "libraries": library_list,
         })
 
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "led_tv_index"
 
-    # ============================================
-    # 1️⃣ POPULAR BOOKS (with rating and reviews)
-    # ============================================
-    popular_books = (
-        BookCatalog.objects
-        .annotate(
-            avg_rating=Avg('cat_ref_id_reviews__rating'),
-            review_count=Count('cat_ref_id_reviews')
+        try:
+            cursor.callproc(
+                "stp_error_log",
+                [fun, str(e), library_code]
+            )
+        except Exception:
+            pass  # prevent cascading failure
+
+        messages.error(
+            request,
+            "Oops...! Something went wrong!"
         )
-        .filter(avg_rating__isnull=False)
-        .order_by('-avg_rating', '-created_at')[:10]
-    )
 
-    # ============================================
-    # 2️⃣ NEW ARRIVALS
-    # ============================================
-    new_arrivals = (
-        BookCatalog.objects
-        .annotate(
-            avg_rating=Avg('cat_ref_id_reviews__rating'),
-            review_count=Count('cat_ref_id_reviews')
+        return render(
+            request,
+            "L01/led_tv_index.html",
+            {}
         )
-        .filter(transactions__isnull=False)
-        .order_by('-avg_rating')[:10]
-    )
 
-    # ============================================
-    # 3️⃣ UPCOMING BOOKS
-    # ============================================
-    upcoming_books = (
-        BookCatalog.objects
-        .annotate(
-            avg_rating=Avg('cat_ref_id_reviews__rating'),
-            review_count=Count('cat_ref_id_reviews')
-        )
-        .filter(transactions__isnull=True)
-        .order_by('-avg_rating')[:10]
-    )
-    
-    set_book_image_urls(popular_books)
-    set_book_image_urls(new_arrivals)
-    set_book_image_urls(upcoming_books)
 
-    # ============================================
-    # ADS + EVENTS (only status=1)
-    # ============================================
-    advertisements = Advertisement.objects.filter(status=1).order_by('-created_at')[:5]
-
-    # ============================================
-    # FIX video_path → add MEDIA_URL
-    # ============================================
-    for ad in advertisements:
-        if ad.video_path:
-            ad.video_path = settings.MEDIA_URL + ad.video_path.replace("\\", "/")
-
-    events = EventAnnouncement.objects.filter(status=1).order_by('-event_from_date')[:10]
-
-    # ============================================
-    # USER REVIEWS HANDLING
-    # ============================================
-    user_ids = set()
-    for book_list in [popular_books, new_arrivals, upcoming_books]:
-        for book in book_list:
-            reviews_for_book = BookReview.objects.filter(
-                book__cat_ref_num=book.cat_ref_num
-            ).order_by('-created_at')[:2]
-
-            for review in reviews_for_book:
-                user_ids.add(review.user_id)
-
-            book.recent_reviews = list(reviews_for_book)
-
-    users = CustomUser.objects.filter(id__in=user_ids)
-    user_dict = {user.id: user.username for user in users}
-
-    for book_list in [popular_books, new_arrivals, upcoming_books]:
-        for book in book_list:
-            for review in getattr(book, 'recent_reviews', []):
-                review.username = user_dict.get(review.user_id, "Unknown")
-
-    return render(request, "L01/led_tv_index.html", {
-        "popular_books": popular_books,
-        "new_arrivals": new_arrivals,
-        "upcoming_books": upcoming_books,
-        "advertisements": advertisements,
-        "events": events,
-        "libraries": library_list, 
-    })
-    
 def advertisement_index(request):
     # Fetch all ads ordered by newest first
         advertisements = Advertisement.objects.all().order_by('-created_at')
