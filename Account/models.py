@@ -179,6 +179,7 @@ class OTPLog(models.Model):
         
         
 class VerifyOtp(models.Model):
+    otp_log = models.ForeignKey(OTPLog, on_delete=models.CASCADE,null=True,blank=True,related_name='otp_log_verify')
     username = models.CharField(max_length=255)  # or use email, based on your system
     otp = models.CharField(max_length=6)  # Store OTP
     is_verified = models.BooleanField(default=False)  # Whether OTP is verified or not

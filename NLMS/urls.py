@@ -221,6 +221,11 @@ urlpatterns = [
     # NEW PUBLIC ROUTES (no login required)
     path('public-book-catalogue/', public_library_catalogue, name='public_book_catalogue'),
     path('public-get-books/', public_get_books_by_subject, name='public_get_books'),
+    
+    path('forgot_password/', forgot_password, name='forgot_password'),
+    path('verify_otp/', verify_otp, name='verify_otp'),
+    path('update_password/', update_password, name='update_password'),
+
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

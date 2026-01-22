@@ -28,7 +28,8 @@ urlpatterns = [
     
     path("kiosk_display/", kiosk_display, name="kiosk_display"),
     path("visit_Library_ebook_catalogue/", visit_Library_ebook_catalogue, name="visit_library_Cate_ebooks"),
-    path('visit_library_Cate_ebooks/', visit_library_Cate_ebooks, name='visit_library_Cate_ebooks'),
+    # path('visit_library_Cate_ebooks/', visit_library_Cate_ebooks, name='visit_library_Cate_ebooks'),
+    path('visit_ebook_catalogue/', visit_ebook_catalogue, name='visit_ebook_catalogue'),
     path('get_ebooks_by_subject_kiosk/', get_ebooks_by_subject_kiosk, name='get_ebooks_by_subject_kiosk'),
     
     path("view_ebook_detail/", view_ebook_detail, name="view_ebook_detail"),

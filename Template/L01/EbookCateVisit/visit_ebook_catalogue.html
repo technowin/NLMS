@@ -1,0 +1,503 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block title %}ई-पुस्तक सूची{% endblock title %}
+
+{% block extra_css %}
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/Master/visitLibraryCate.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* ===============================
+        VISUAL STYLES (KEEP OLD)
+        ================================ */
+
+        /* Discovery colors */
+        .discovery-upcoming {
+            background-color: #eef3ff;
+            border-left: 4px solid #4e73df;
+        }
+        .discovery-upcoming h6 { color: #4e73df; }
+
+        .discovery-reviewed {
+            background-color: #fff8e6;
+            border-left: 4px solid #D4AF37;
+        }
+        .discovery-reviewed h6 { color: #b8962e; }
+
+        .discovery-new {
+            background-color: #eefaf3;
+            border-left: 4px solid #28a745;
+        }
+        .discovery-new h6 { color: #1e7e34; }
+
+        /* Discovery links */
+        .discovery-link {
+            text-decoration: none;
+            color: #4e73df;
+            display: block;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        .discovery-link:hover {
+            color: #D4AF37;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .discovery-link span {
+            font-size: 0.75rem;
+        }
+
+        /* Sidebar buttons */
+        #subject-sidebar .nav-link {
+            display: block;
+            padding: 0.6rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            background-color: #727CF5;
+            color: #ffffff;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            font-size: 0.95rem;
+            width: 100%;
+            text-align: center;
+            white-space: nowrap;
+        }
+        #subject-sidebar .nav-link:hover {
+            background-color: transparent;
+            color: #727CF5;
+            border-color: #727CF5;
+            transform: translateX(3px);
+        }
+        #subject-sidebar .nav-link.active {
+            background-color: #727CF5;
+            color: #ffffff;
+            font-weight: 600;
+            border-color: #727CF5;
+            font-size: 1rem;
+        }
+
+        /* Discovery sections */
+        #discovery-column .discovery-section {
+            padding: 0.5rem 0.8rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+        }
+        #discovery-column .discovery-section h6 {
+            font-weight: 600;
+            color: #4e73df;
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        #discovery-column .discovery-section h6::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 0;
+            height: 2px;
+            background-color: #4e73df;
+            transition: width 0.3s ease;
+        }
+        #discovery-column .discovery-section h6:hover::after {
+            width: 100%;
+        }
+        #discovery-column .book-item {
+            padding: 0.2rem 0.5rem;
+            border-bottom: 1px dashed #ccc;
+            font-size: 0.95rem;
+        }
+        .book-item { font-size: 0.9rem; padding-left: 0.3rem; }
+
+        /* Books column */
+        #books-column {
+            background-color: #ffffff;
+            padding: 0rem;
+            height: auto;
+            overflow: visible;
+            overscroll-behavior: auto;
+            border-radius: 0;
+        }
+        :root[data-bs-theme="dark"] #books-column {
+            background-color: #313A46;
+        }
+        #books-column::-webkit-scrollbar {
+            width: 0;
+        }
+        #books-column { scrollbar-width: none; -ms-overflow-style: none; }
+
+        /* Back to top button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4e73df;
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .back-to-top:hover {
+            background-color: #2e59d9;
+            transform: translateY(-3px);
+        }
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ===============================
+        PAGE WIDE LAYOUT + SPACING
+        ================================ */
+        .library-wide-layout {
+            width: 100vw;
+            max-width: 100%;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+        .library-wide-layout .row {
+            margin-left: 0;
+            margin-right: 0;
+            gap: 1.5rem; /* modern spacing between columns */
+        }
+        @media (min-width: 1400px) {
+            html[data-layout="topnav"] .library-wide-layout.container-fluid {
+                max-width: 100% !important;
+                padding-left: 4rem;
+                padding-right: 4rem;
+            }
+            .library-wide-layout .row {
+                gap: 2rem;
+            }
+        }
+
+        /* ===============================
+        LAYOUT BEHAVIOR (RESPONSIVE)
+        ================================ */
+
+        /* Desktop sticky sidebars + discovery scroll */
+        @media (min-width: 992px) {
+            {% comment %} #subject-sidebar {
+                position: sticky;
+                top: 80px;
+                height: calc(100vh - 100px);
+                overflow-y: auto;
+                scrollbar-width: none;
+            } {% endcomment %}
+            /* =========================
+            ATTRACTIVE LEFT SIDEBAR
+            ========================= */
+
+            #subject-sidebar {
+                padding: 1rem 0.5rem;
+            }
+
+            #subject-sidebar .nav-link {
+                display: block;
+                margin-bottom: 0.5rem;
+                padding: 0.5rem 1rem;
+                border-radius: 50px; /* pill shape */
+                background-color: #f4f6f9;
+                color: #333399;
+                font-weight: 500;
+                font-size: 1rem;
+                text-align: center;
+                text-decoration: none;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            }
+
+            :root[data-bs-theme="dark"] #subject-sidebar .nav-link {
+                background-color: #313A46;
+                color: #a3b0d9;
+            }
+
+            #subject-sidebar .nav-link:hover {
+                transform: scale(1.05);
+            }
+
+            #subject-sidebar .nav-link:hover {
+                background: linear-gradient(90deg, #727CF5, #4e73df);
+                color: #ffffff;
+                transform: translateX(3px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            #subject-sidebar .nav-link.active {
+                background: linear-gradient(90deg, #333399, #333399);
+                color: #fff;
+                font-weight: 600;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+
+            #discovery-column {
+                position: sticky;
+                top: 80px;
+                height: calc(100vh - 100px);
+                overflow: hidden; /* keep hidden so animation scrolls inside */
+            }
+
+            #discovery-column .discovery-wrapper {
+                position: absolute;
+                top: 0;
+                width: 100%;
+                animation: scrollDiscovery 30s linear infinite;
+            }
+
+            #discovery-column:hover .discovery-wrapper {
+                animation-play-state: paused;
+            }
+
+            
+
+            @keyframes scrollDiscovery {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-50%); }
+            }
+        }
+
+        /* Mobile/tablet adjustments */
+        @media (max-width: 991px) {
+            #subject-sidebar,
+            #discovery-column {
+                position: sticky;
+                top: 80px;
+                height: calc(100vh - 100px);
+                overflow: hidden; /* keep hidden so animation scrolls inside */
+            }
+
+            #discovery-column .discovery-wrapper {
+                position: absolute;
+                top: 0;
+                width: 100%;
+                animation: scrollDiscovery 30s linear infinite;
+            }
+
+            #discovery-column:hover .discovery-wrapper {
+                animation-play-state: paused;
+            }
+
+            @keyframes scrollDiscovery {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-50%); }
+            }
+
+            .discovery-upcoming{
+                padding:1rem;
+            }
+
+            .discovery-reviewed{
+                padding:1rem;
+            }
+
+            .discovery-new{
+                padding:1rem;
+            }
+        }
+
+        /* Discovery scroll animation */
+        @keyframes scrollDiscovery {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+    {% include "bootstrap/partials/page-title.html" with page_title='ग्रंथालय सेवा' sub_title='ई-पुस्तक सूची' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row g-3">
+
+    <!-- 📱 MOBILE SUBJECT DROPDOWN -->
+    <div class="col-12 d-md-none">
+        <select id="mobileSubjectSelect" class="form-select">
+            {% for subject in subjects %}
+            <option value="{{ subject.id_enc }}">
+                {{ subject.subjectNameMarathi }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- LEFT: SUBJECT SIDEBAR -->
+    <div class="col-lg-2 col-md-3 d-none d-md-block" id="subject-sidebar">
+        <ul class="nav flex-column">
+            {% for subject in subjects %}
+            <li class="nav-item">
+                <a class="nav-link {% if forloop.first %}active{% endif %}"
+                   data-subject-id="{{ subject.id_enc }}">
+                    {{ subject.subjectNameMarathi }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- RIGHT: EBOOK RESULTS (FULL WIDTH) -->
+    <div class="col-lg-10 col-md-9 col-12" id="books-column">
+
+        <!-- Search -->
+        <div class="input-group mb-3">
+            <span class="input-group-text">🔍</span>
+            <input type="text"
+                   id="ebookSearch"
+                   class="form-control"
+                   placeholder="ई-पुस्तक शोधा…">
+        </div>
+
+        <!-- Ebooks -->
+        <div id="books-container">
+            {% include "L01/EbookCateVisit/ebook_list_partial.html" %}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_javascript %}
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            // Sidebar subject click
+            $('#subject-sidebar').on('click', '.nav-link', function () {
+                $('#subject-sidebar .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                loadBooks($(this).data('subject-id'));
+            });
+
+            // Mobile dropdown
+            $('#mobileSubjectSelect').on('change', function () {
+                loadBooks($(this).val());
+            });
+
+            // SEARCH KEYUP
+            $(document).on("keyup", "#ebookSearch", function() {
+                let search = $(this).val().trim();
+                let subjectId = $("#subject-sidebar .nav-link.active").data("subject-id");
+                $('#loaderOverlay').addClass('active');
+
+                $.ajax({
+                    url: "{% url 'L01:get_ebooks_by_subject' %}",
+                    type: "GET",
+                    data: {
+                        subject_id: subjectId,
+                        search: search,
+                        searching: 'Searching'
+                    },
+                    success: function(html) {
+                        $("#books-container").html(html);
+                    },
+                    complete: function() {
+                        $('#loaderOverlay').removeClass('active');
+                    }
+                });
+            });
+
+            function loadBooks(subjectId, search='') {
+                $.ajax({
+                    url: "{% url 'L01:get_ebooks_by_subject' %}",
+                    data: {
+                        subject_id: subjectId,
+                        search: search
+                    },
+                    success: function (html) {
+                        $('#books-container').html(html);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            }
+
+        });
+    </script>
+
+    <script>
+        // PAGINATION CLICK
+        $(document).on('click', '.pagination-link', function(e) {
+            debugger;
+            e.preventDefault(); // prevent default <a> behavior
+
+            let page = $(this).data('page'); // page number
+            let subjectId = $(this).data('subject-id'); // active subject
+            let search = $('#ebookSearch').val().trim(); // get current search term if any
+
+            $('#loaderOverlay').addClass('active'); // optional loader
+
+            $.ajax({
+                url: "{% url 'L01:get_ebooks_by_subject' %}",
+                type: "GET",
+                data: {
+                    subject_id: subjectId,
+                    page: page,
+                    search: search,
+                    searching: search ? 'Searching' : ''
+                },
+                success: function(html) {
+                    $('#books-container').html(html);
+                },
+                complete: function() {
+                    $('#loaderOverlay').removeClass('active');
+                }
+            });
+        });
+
+    </script>
+
+    {% comment %} <!-- Back to Top Button -->
+    <script>
+        const backToTopButton = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) backToTopButton.classList.add('active');
+            else backToTopButton.classList.remove('active');
+        });
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script> {% endcomment %}
+
+    <script>
+        const sidebar = document.getElementById('subject-sidebar');
+        const booksCol = document.getElementById('books-column');
+
+        booksCol.addEventListener('scroll', () => {
+            sidebar.scrollTop = booksCol.scrollTop;
+        });
+
+    </script>
+
+{% endblock %}

@@ -70,6 +70,10 @@ class="authentication-bg position-relative"
                             <div class="mb-3 mb-0 text-center">
                                 <button class="btn btn-primary" style="background-color:#015296;color:white;" type="submit"> Log In </button>
                             </div>
+
+                             <p class="text-center">
+                                <a href="{% url 'forgot_password' %}" class="btn btn-link">Forgot your password?</a>
+                            </p>
                         </form>
                         {% if library_code != 'default' %}
                             <div class="text-center mt-4">
