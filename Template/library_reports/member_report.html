@@ -33,9 +33,10 @@
 <link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css" >
 <link href="{% static 'css/library_reports.css' %}" rel="stylesheet" type="text/css" >
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.6.2/css/select.dataTables.min.css">
+<!-- Load DataTables CSS BEFORE your custom CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.6.2/css/select.bootstrap5.min.css">
 <style>
 :root {
     --sidebar-width: 350px;
@@ -51,26 +52,27 @@
 
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--bs-light);
-    border-right: 1px solid var(--bs-border-color);
+    background: var(--ct-light);
+    border-right: 1px solid var(--ct-border-color);
     overflow-y: auto;
 }
 
 .main-content {
     flex: 1;
     overflow-y: auto;
-    background: var(--bs-body-bg);
+    background: var(--ct-body-bg);
+    z-index:1;
 }
 
 .member-list-item {
     padding: 10px 15px;
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--ct-border-color);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .member-list-item:hover {
-    background-color: var(--bs-gray-200);
+    background-color: var(--ct-gray-200);
 }
 
 .member-list-item.selected {
@@ -109,12 +111,12 @@
 }
 
 .report-tabs {
-    border-bottom: 2px solid var(--bs-border-color);
+    border-bottom: 2px solid var(--ct-border-color);
 }
 
 .report-tabs .nav-link {
     border: none;
-    color: var(--bs-secondary);
+    color: var(--ct-secondary);
     font-weight: 500;
     padding: 12px 20px;
     border-radius: 0;
@@ -145,9 +147,9 @@
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: var(--bs-body-bg);
+    background: var(--ct-body-bg);
     padding: 15px 0;
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--ct-border-color);
 }
 
 .modal-xl {
@@ -157,7 +159,7 @@
 .filter-group {
     margin-bottom: 20px;
     padding: 15px;
-    background: var(--bs-light);
+    background: var(--ct-light);
     border-radius: 8px;
     border-left: 4px solid var(--accent-color);
 }
@@ -185,7 +187,7 @@
 }
 
 .bulk-actions {
-    background: var(--bs-warning-bg-subtle);
+    background: var(--ct-warning-bg-subtle);
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 15px;
@@ -263,7 +265,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid report-container d-flex">
+<div class="report-container d-flex">
     <!-- Left Sidebar - Member List -->
     <div class="sidebar">
         <div class="p-3 border-bottom">
@@ -321,7 +323,7 @@
                     <button class="btn btn-sm btn-primary" onclick="applyFilters()">
                         <i class="bi bi-filter me-1"></i>Apply Filters
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()">
+                    <button class="btn btn-sm btn-secondary" onclick="clearFilters()">
                         <i class="bi bi-arrow-clockwise me-1"></i>Clear
                     </button>
                 </div>
@@ -335,10 +337,10 @@
                         <span class="selection-count" id="selected-members-count">0</span> selected
                     </span>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                        <button class="btn btn-sm btn-primary" onclick="selectAll()">
                             Select All
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deselectAll()">
+                        <button class="btn btn-sm btn-danger" onclick="deselectAll()">
                             Clear
                         </button>
                     </div>
@@ -388,10 +390,10 @@
                     </small>
                 </div>
                 <div class="export-btn-group">
-                    <button class="btn btn-outline-primary" onclick="saveReportSession()">
+                    <button class="btn btn-primary" onclick="saveReportSession()">
                         <i class="bi bi-save me-1"></i>Save
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="loadReportSession()">
+                    <button class="btn btn-secondary" onclick="loadReportSession()">
                         <i class="bi bi-folder2-open me-1"></i>Load
                     </button>
                     <button class="btn btn-success" onclick="exportCurrentTab()">
@@ -465,12 +467,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Member Details</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#memberDetailsFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="member-details-filter-count">0</span>
+                                  id="member-details-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('member-details')">
@@ -508,12 +510,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Membership Details</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#membershipDetailsFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="membership-details-filter-count">0</span>
+                                  id="membership-details-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('membership-details')">
@@ -554,12 +556,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Loan Transactions</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#loanFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="loan-filter-count">0</span>
+                                  id="loan-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('loan')">
@@ -599,12 +601,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>All Transactions</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#transactionFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="transactions-filter-count">0</span>
+                                  id="transactions-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('transactions')">
@@ -645,12 +647,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Physical Visits</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#physicalVisitFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="physical-visit-filter-count">0</span>
+                                  id="physical-visit-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('physical-visit')">
@@ -686,12 +688,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Virtual Usage</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#virtualUsageFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="virtual-usage-filter-count">0</span>
+                                  id="virtual-usage-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('virtual-usage')">
@@ -728,12 +730,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Payment Details</h5>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" 
+                        <button class="btn btn-sm btn-primary" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#paymentFilterModal">
                             <i class="bi bi-sliders me-1"></i>Filters
                             <span class="badge bg-primary filter-badge" 
-                                  id="payments-filter-count">0</span>
+                                  id="payments-filter-count"></span>
                         </button>
                         <button class="btn btn-sm btn-success" 
                                 onclick="exportTabData('payments')">
@@ -880,7 +882,7 @@
                         data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" 
                         onclick="applyMemberDetailsFilters()">Apply Filters</button>
-                <button type="button" class="btn btn-outline-danger" 
+                <button type="button" class="btn btn-danger" 
                         onclick="clearMemberDetailsFilters()">Clear All</button>
             </div>
         </div>
@@ -888,37 +890,32 @@
 </div>
 
 <!-- Other filter modals for different tabs -->
+<!-- Include Modals -->
 
+{% include 'library_reports/modals/loan_filters.html' %}
+{% include 'library_reports/modals/membership_details_filters.html' %}
+{% include 'library_reports/modals/payment_filters.html' %}
+{% include 'library_reports/modals/physical_visit_filters.html' %}
+{% include 'library_reports/modals/transaction_filters.html' %}
+{% include 'library_reports/modals/virtual_usage_filters.html' %}
+
+<!-- 1. jQuery (FULL version, not slim) -->
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<!-- Add these DataTables scripts in the right order at the end of your script section -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/select/1.6.2/js/dataTables.select.min.js"></script>
+
+<!-- Also add these if you need export functionality -->
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-{% if messages %}
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-      {% for message in messages %}
-        Swal.fire({
-          title: "{{ message.tags|title }}",
-          text: "{{ message|escapejs }}",
-          icon: "{{ message.tags }}", // valid: success, error, warning, info, question
-          confirmButtonText: "OK",
-          background: theme === 'dark' ? '#343a40' : '#ffffff',
-          color: theme === 'dark' ? '#f8f9fa' : '#212529',
-          confirmButtonColor: theme === 'dark' ? '#0d6efd' : '#0d6efd',
-          customClass: {
-            popup: 'rounded-4 shadow',
-            confirmButton: 'btn btn-primary px-4 py-2'
-          }
-        });
-      {% endfor %}
-    });
-  </script>
-{% endif %}
 
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/select/1.6.2/js/dataTables.select.min.js"></script>
 <script>
 // Global variables
 let selectedMembers = new Set();
@@ -1139,6 +1136,27 @@ function clearSearch() {
 }
 
 function initDataTables() {
+    // Simple initialization without DataTables if it's not available
+    const tables = [
+        'member-details-table',
+        'membership-details-table', 
+        'loan-table',
+        'transactions-table',
+        'physical-visit-table',
+        'virtual-usage-table',
+        'payments-table'
+    ];
+    
+    tables.forEach(tableId => {
+        const table = document.getElementById(tableId);
+        if (table) {
+            // Just add basic Bootstrap classes if DataTables isn't available
+            table.classList.add('table', 'table-hover', 'table-striped');
+        }
+    });
+}
+{% comment %} 
+function initDataTables() {
     const tabConfigs = {
         'member-details': {
             columns: [
@@ -1153,7 +1171,7 @@ function initDataTables() {
                 { 
                     data: null,
                     render: function(data, type, row) {
-                        return `<button class="btn btn-sm btn-outline-primary" onclick="viewDocuments(${row.id})">
+                        return `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${row.id})">
                                     <i class="bi bi-files"></i>
                                 </button>`;
                     }
@@ -1326,8 +1344,11 @@ function initDataTables() {
             ]
         }
     };
-    
+
+
+
     Object.keys(tabConfigs).forEach(tabId => {
+        debugger;
         const tableId = `#${tabId}-table`;
         if ($(tableId).length) {
             dataTables[tabId] = $(tableId).DataTable({
@@ -1355,7 +1376,7 @@ function initDataTables() {
             });
         }
     });
-}
+} {% endcomment %}
 
 
 function loadCurrentTabData() {
@@ -1391,8 +1412,9 @@ function loadTabData(tabName) {
         }
     });
 }
-
+{% comment %} 
 function populateTabData(tabName, data) {
+    debugger;
     const table = dataTables[tabName];
     if (!table) return;
     
@@ -1408,7 +1430,40 @@ function populateTabData(tabName, data) {
     // Update record count
     const recordCount = data.length;
     $(`#${tabName}-table_info`).html(`Showing ${recordCount} records`);
+} {% endcomment %}
+
+function populateTabData(tabName, data) {
+    const table = document.getElementById(`${tabName}-table`);
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    
+    // Clear existing rows
+    tbody.innerHTML = '';
+    
+    // Add new rows
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Create cells based on tab type
+        const cells = convertToTableRow(tabName, item);
+        cells.forEach(cellContent => {
+            const cell = document.createElement('td');
+            cell.innerHTML = cellContent;
+            row.appendChild(cell);
+        });
+        
+        tbody.appendChild(row);
+    });
+    
+    // Update record count
+    const infoElement = document.querySelector(`#${tabName}-table_info`);
+    if (infoElement) {
+        infoElement.textContent = `Showing ${data.length} records`;
+    }
 }
+
 // Filter application functions for all tabs
 function applyPhysicalVisitFilters() {
     const formData = $('#physicalVisitFilterForm').serializeArray();
@@ -1525,7 +1580,7 @@ function convertToTableRow(tabName, item) {
                 item.email || '',
                 item.mobile_no || '',
                 item.status || '',
-                `<button class="btn btn-sm btn-outline-primary" onclick="viewDocuments(${item.id})">
+                `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${item.id})">
                     <i class="bi bi-files"></i>
                 </button>`
             ];
@@ -2046,10 +2101,10 @@ function viewDocuments(memberId) {
                                                     <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 3rem;"></i>
                                                     <h6 class="mt-2">${doc.document_name}</h6>
                                                     <p class="text-muted small">Uploaded: ${doc.uploaded_at}</p>
-                                                    <button class="btn btn-sm btn-outline-primary" onclick="viewDocument('${doc.file_path}')">
+                                                    <button class="btn btn-sm btn-primary" onclick="viewDocument('${doc.file_path}')">
                                                         <i class="bi bi-eye me-1"></i>View
                                                     </button>
-                                                    <a href="${doc.file_path}" class="btn btn-sm btn-outline-success" download>
+                                                    <a href="${doc.file_path}" class="btn btn-sm btn-success" download>
                                                         <i class="bi bi-download me-1"></i>Download
                                                     </a>
                                                 </div>
@@ -2527,14 +2582,6 @@ $(document).ready(function() {
 });
 
 </script>
-
-<!-- Select2 for better multi-select -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<!-- Datepicker -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 
 {% endblock %}
 

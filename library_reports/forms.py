@@ -2,7 +2,7 @@
 from django import forms
 from django.utils import timezone
 import datetime
-from Masters.models import para_master
+from L01.models import parameter_master_L01
 
 class MemberListFilterForm(forms.Form):
     search = forms.CharField(required=False, widget=forms.TextInput(attrs={
@@ -93,7 +93,7 @@ class MemberDetailsFilterForm(forms.Form):
     )
     
     member_type = forms.ModelMultipleChoiceField(
-        queryset=para_master.objects.all(),
+        queryset=parameter_master_L01.objects.filter(isactive=1),
         required=False,
         widget=forms.SelectMultiple(attrs={'class': 'form-select'})
     )
@@ -406,7 +406,7 @@ class CompleteMemberDetailsFilterForm(MemberDetailsFilterForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add dynamic choices for member types
-        self.fields['member_type'].queryset = para_master.objects.all()
+        self.fields['member_type'].queryset = parameter_master_L01.objects.filter(isactive=1)
 
 class MembershipDetailsFilterForm(forms.Form):
     """Complete membership details filter form"""

@@ -146,7 +146,7 @@ class MemberListDataView(ReportBaseView):
             
             # Pagination
             page = int(request.GET.get('page', 1))
-            per_page = int(request.GET.get('per_page', 20))
+            per_page = int(request.GET.get('per_page', 10))
             paginator = Paginator(members_qs, per_page)
             
             try:
@@ -237,7 +237,7 @@ class TabDataView(ReportBaseView):
                 'last_name_mar': member.last_name_mar,
                 'middle_name_mar': member.middle_name_mar,
                 'membershipmaster_id': member.membership.id if member.membership else '',
-                'member_type': member.member_type.name if member.member_type else '',
+                'member_type': member.member_type.parameter_name if member.member_type else '',
                 'membership_code': member.membership_code,
                 'membership_date': member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
                 'renewal_from_date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
@@ -603,21 +603,78 @@ class ExportReportView(ReportBaseView):
         
         return response
     
-    def export_all_tabs(self, workbook, db, member_ids, filters, tab_filters, 
-                       header_format, cell_format):
+    def export_all_tabs(self, workbook, db, member_ids, filters, tab_filters, header_format, cell_format):
         """Export all tabs to different sheets"""
-        
+
         # Sheet 1: Member Details
-        self.create_member_details_sheet(workbook, db, member_ids, 
-                                       tab_filters.get('member-details', {}),
-                                       header_format, cell_format)
-        
-        # Sheet 2: Membership Details
-        self.create_membership_details_sheet(workbook, db, member_ids,
-                                           tab_filters.get('membership-details', {}),
+        if self.should_export_tab('member-details', tab_filters):
+            self.create_member_details_sheet(workbook, db, member_ids, 
+                                           tab_filters.get('member-details', {}),
                                            header_format, cell_format)
-        
-        # Add more sheets for other tabs...
+
+        # Sheet 2: Membership Details
+        if self.should_export_tab('membership-details', tab_filters):
+            self.create_membership_details_sheet(workbook, db, member_ids,
+                                               tab_filters.get('membership-details', {}),
+                                               header_format, cell_format)
+
+        # Sheet 3: Loan
+        if self.should_export_tab('loan', tab_filters):
+            self.create_loan_sheet(workbook, db, member_ids,
+                                 tab_filters.get('loan', {}),
+                                 header_format, cell_format)
+
+        # Sheet 4: Transactions
+        if self.should_export_tab('transactions', tab_filters):
+            self.create_transactions_sheet(workbook, db, member_ids,
+                                         tab_filters.get('transactions', {}),
+                                         header_format, cell_format)
+
+        # Sheet 5: Physical Visits
+        if self.should_export_tab('physical-visit', tab_filters):
+            self.create_physical_visits_sheet(workbook, db, member_ids,
+                                            tab_filters.get('physical-visit', {}),
+                                            header_format, cell_format)
+
+        # Sheet 6: Virtual Usage
+        if self.should_export_tab('virtual-usage', tab_filters):
+            self.create_virtual_usage_sheet(workbook, db, member_ids,
+                                          tab_filters.get('virtual-usage', {}),
+                                          header_format, cell_format)
+
+        # Sheet 7: Payments
+        if self.should_export_tab('payments', tab_filters):
+            self.create_payments_sheet(workbook, db, member_ids,
+                                     tab_filters.get('payments', {}),
+                                     header_format, cell_format)
+
+    def should_export_tab(self, tab_name, tab_filters):
+        """Check if a tab should be exported based on filters"""
+        # If tab_filters contains the tab, check if it's marked for export
+        # You might want to add a parameter to track which tabs to export
+        return True  # For now, export all tabs
+    
+    def export_single_tab(self, workbook, export_type, db, member_ids, filters, header_format, cell_format):
+        """Export a single tab to Excel sheet"""
+        if export_type == 'member-details':
+            self.export_member_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        elif export_type == 'membership-details':
+            self.export_membership_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        elif export_type == 'loan':
+            self.export_loan_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        elif export_type == 'transactions':
+            self.export_transactions_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        elif export_type == 'physical-visit':
+            self.export_physical_visits_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        elif export_type == 'virtual-usage':
+            self.export_virtual_usage_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        elif export_type == 'payments':
+            self.export_payments_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+        else:
+            # Create a placeholder sheet if tab type is unknown
+            worksheet = workbook.add_worksheet(export_type.replace('-', ' ').title())
+            worksheet.write(0, 0, 'No data available for this tab', header_format)
+            # Add more sheets for other tabs...
     
     def create_member_details_sheet(self, workbook, db, member_ids, filters, 
                                    header_format, cell_format):
@@ -666,7 +723,36 @@ class ExportReportView(ReportBaseView):
         # ... apply other filters
         
         return qs
+
+    def create_membership_details_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create membership details sheet for export_all_tabs method"""
+        # This method should use the same logic as export_membership_details_to_excel
+        self.export_membership_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+    # reports/views.py - Add these methods to ExportAllDataView class
+
+    def create_member_details_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create member details sheet for export_all_tabs method"""
+        self.export_member_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
     
+    def create_loan_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create loan sheet for export_all_tabs method"""
+        self.export_loan_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+    
+    def create_transactions_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create transactions sheet for export_all_tabs method"""
+        self.export_transactions_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+    
+    def create_payments_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create payments sheet for export_all_tabs method"""
+        self.export_payments_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+    
+    def create_physical_visits_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create physical visits sheet for export_all_tabs method"""
+        self.export_physical_visits_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
+    
+    def create_virtual_usage_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
+        """Create virtual usage sheet for export_all_tabs method"""
+        self.export_virtual_usage_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
 # reports/views.py - ADD THESE MISSING VIEWS
 
 from django.contrib import messages
@@ -743,7 +829,7 @@ class GetMemberOptionsView(ReportBaseView):
         # Get member types
         member_types = parameter_master_L01.objects.using(db).filter(
             isactive=1
-        ).values('id', 'name')
+        ).values('parameter_id', 'parameter_name')
         
         # Get unique wards
         wards = MembershipDetails.objects.using(db).exclude(
@@ -1025,54 +1111,57 @@ class ExportAllDataView(ReportBaseView):
                 os.unlink(output_path)
             return JsonResponse({'error': str(e)}, status=500)
     
-    def export_member_details_to_excel(self, writer, db, member_ids, filters):
-        """Export member details to Excel sheet"""
-        qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-        qs = self.apply_member_details_filters(qs, filters)
-        
-        data = []
-        for member in qs.select_related('membership', 'status', 'member_type'):
-            data.append({
-                'First Name': member.first_name,
-                'Middle Name': member.middle_name,
-                'Last Name': member.last_name,
-                'First Name (Mar)': member.first_name_mar,
-                'Last Name (Mar)': member.last_name_mar,
-                'Middle Name (Mar)': member.middle_name_mar,
-                'Membership Type': member.membership.membership_type if member.membership else '',
-                'Member Type': member.member_type.name if member.member_type else '',
-                'Membership Code': member.membership_code,
-                'Membership Date': member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
-                'Renewal From Date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
-                'Renewal To Date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
-                'User ID': member.user_id,
-                'Ward': member.ward,
-                'Pincode': member.pincode,
-                'Local Address': member.local_address,
-                'Mobile No': member.mobile_no,
-                'Email': member.email,
-                'Occupation': member.occupation,
-                'Office Phone': member.office_phone,
-                'Education': member.education,
-                'Institute Name': member.institute_name,
-                'Recommender Details': member.recommender_details,
-                'Date of Birth': member.dob.strftime('%Y-%m-%d') if member.dob else '',
-                'Aadhar No': member.aadhar_no,
-                'Address Same as Aadhar': 'Yes' if member.address_same_as_aadhar == 1 else 'No',
-                'Resident of NMMC': 'Yes' if member.is_resident_of_nmmc == 1 else 'No',
-                'Status': 'Active' if member.isactive == 1 else 'Inactive',
-                'Created At': member.created_at.strftime('%Y-%m-%d %H:%M') if member.created_at else '',
-                'Created By': member.created_by,
-                'Updated At': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
-                'Updated By': member.updated_by,
-                'Approved By': member.reviewed,
-                'Approved Date': member.reviewed_at.strftime('%Y-%m-%d %H:%M') if member.reviewed_at else '',
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Member Details', index=False)
-        
-        # Auto-adjust column widths
+    # reports/views.py - Complete this method
+
+def export_member_details_to_excel(self, writer, db, member_ids, filters, header_format=None, cell_format=None):
+    """Export member details to Excel sheet"""
+    qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+    qs = self.apply_member_details_filters(qs, filters)
+    
+    data = []
+    for member in qs.select_related('membership', 'status', 'member_type'):
+        data.append({
+            'First Name': member.first_name or '',
+            'Middle Name': member.middle_name or '',
+            'Last Name': member.last_name or '',
+            'First Name (Marathi)': member.first_name_mar or '',
+            'Last Name (Marathi)': member.last_name_mar or '',
+            'Middle Name (Marathi)': member.middle_name_mar or '',
+            'Membership Type': member.membership.membership_type if member.membership else '',
+            'Member Type': member.member_type.name if member.member_type else '',
+            'Membership Code': member.membership_code or '',
+            'Membership Date': member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
+            'Renewal From Date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
+            'Renewal To Date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
+            'User ID': member.user_id or '',
+            'Ward': member.ward or '',
+            'Pincode': member.pincode or '',
+            'Local Address': member.local_address or '',
+            'Mobile No': member.mobile_no or '',
+            'Email': member.email or '',
+            'Occupation': member.occupation or '',
+            'Office Phone': member.office_phone or '',
+            'Education': member.education or '',
+            'Institute Name': member.institute_name or '',
+            'Recommender Details': member.recommender_details or '',
+            'Date of Birth': member.dob.strftime('%Y-%m-%d') if member.dob else '',
+            'Aadhar No': member.aadhar_no or '',
+            'Address Same as Aadhar': 'Yes' if member.address_same_as_aadhar == 1 else 'No',
+            'Resident of NMMC': 'Yes' if member.is_resident_of_nmmc == 1 else 'No',
+            'Status': 'Active' if member.isactive == 1 else 'Inactive',
+            'Created At': member.created_at.strftime('%Y-%m-%d %H:%M') if member.created_at else '',
+            'Created By': member.created_by or '',
+            'Updated At': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
+            'Updated By': member.updated_by or '',
+            'Approved By': member.reviewed or '',
+            'Approved Date': member.reviewed_at.strftime('%Y-%m-%d %H:%M') if member.reviewed_at else '',
+        })
+    
+    df = pd.DataFrame(data)
+    df.to_excel(writer, sheet_name='Member Details', index=False)
+    
+    # Auto-adjust column widths
+    if 'Member Details' in writer.sheets:
         worksheet = writer.sheets['Member Details']
         for column in df:
             column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
