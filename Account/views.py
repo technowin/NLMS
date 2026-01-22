@@ -1,6 +1,8 @@
 import json
 import random
 import string
+from L01.views import send_sms
+from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render,redirect
@@ -508,10 +510,10 @@ def librarianLogin(request):
                     user.last_login.isoformat() if user.last_login else ''
                 )
 
-                messages.success(
-                    request,
-                    f'Login successful. Welcome, {user.full_name or user.username}.'
-                )
+                # messages.success(
+                #     request,
+                #     f'Login successful. Welcome, {user.full_name or user.username}.'
+                # )
                 return redirect('L01:dashboard')
 
             # 🔒 Generic failure message (no role / user leakage)

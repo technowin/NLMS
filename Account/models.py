@@ -166,3 +166,24 @@ class SmsTemplate(models.Model):
     
     def __str__(self):
         return self.template_name
+    
+class OTPLog(models.Model):
+    username = models.CharField(max_length=255)  # or use email, based on your system
+    otp = models.CharField(max_length=6)  # Store OTP
+    is_verified = models.BooleanField(default=False)  # Whether OTP is verified or not
+    created_by = models.TextField()  # Assuming the OTP is created by an admin
+    created_at = models.DateTimeField(auto_now_add=True)  # Automatically add the timestamp when created
+
+    class Meta:
+        db_table = 'tbl_otp_log'
+        
+        
+class VerifyOtp(models.Model):
+    username = models.CharField(max_length=255)  # or use email, based on your system
+    otp = models.CharField(max_length=6)  # Store OTP
+    is_verified = models.BooleanField(default=False)  # Whether OTP is verified or not
+    created_by = models.TextField()  # Assuming the OTP is created by an admin
+    created_at = models.DateTimeField(auto_now_add=True)  # Automatically add the timestamp when created
+
+    class Meta:
+        db_table = 'tbl_verify_log'
