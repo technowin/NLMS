@@ -659,6 +659,7 @@ class LibraryEbook(models.Model):
 
         def __str__(self):
             return f"{self.ebook_id} - {self.title}"
+        
 class EODLog(models.Model):
     date = models.DateField()
     is_eod_done = models.BooleanField(default=False)

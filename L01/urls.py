@@ -31,12 +31,12 @@ urlpatterns = [
     path('visit_library_Cate_ebooks/', visit_library_Cate_ebooks, name='visit_library_Cate_ebooks'),
     path('get_ebooks_by_subject_kiosk/', get_ebooks_by_subject_kiosk, name='get_ebooks_by_subject_kiosk'),
     
-     path("view_ebook_detail/", view_ebook_detail, name="view_ebook_detail"),
+    path("view_ebook_detail/", view_ebook_detail, name="view_ebook_detail"),
      # Both URLs use the same function
     path('kiosk_competitive_exam_type/', kiosk_competitive_exam_type, name='kiosk_competitive_exam_type'),
     
     # For detail view (with argument)
-    path('kiosk_competitive_exam_type/<int:competitive_id>/', kiosk_competitive_exam_type, name='kiosk_competitive_exam_type_detail'),
+    # path('kiosk_competitive_exam_type/<int:competitive_id>/', kiosk_competitive_exam_type, name='kiosk_competitive_exam_type_detail'),
     
     # membership approval
     path("membership_approval", membership_approval, name="membership_approval"),
@@ -153,7 +153,16 @@ urlpatterns = [
 
     path('check-old-password/',check_old_password, name='check_old_password'),
     path('change-password/', change_password, name='change_password'),
+    
+    # kiosk competitive exam paths
 
-
+    path('kiosk_competitive_sections/',  kiosk_competitive_sections, name='kiosk_competitive_sections'),
+    path('kiosk_competitive_subjects/',  kiosk_competitive_subjects, name='kiosk_competitive_subjects'),
+    path('kiosk_competitive_topics/',  kiosk_competitive_topics, name='kiosk_competitive_topics'),
+    
+    # AJAX endpoints
+    path('get_competitive_sections/',  get_competitive_sections, name='get_competitive_sections'),
+    path('get_competitive_subjects/',  get_competitive_subjects, name='get_competitive_subjects'),
+    path('get_competitive_topics/',  get_competitive_topics, name='get_competitive_topics'),
 
 ]

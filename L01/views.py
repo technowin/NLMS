@@ -8353,12 +8353,13 @@ def led_tv_index(request):
             "library_name": lib.library_name,
             "library_name_mar": lib.library_name_mar,
             "description": lib.about_library,
-            "capacity": lib.capacity,
+            "address": lib.location.address,
             "email": lib.contact_email,
             "phone": lib.contact_phone,
             "library_image": first_image,
             "location_url": lib.location_url,
             "opening_hours": lib.opening_hours,
+            "est_year": lib.est_year
         })
 
 
@@ -10615,7 +10616,6 @@ def get_ebooks_by_subject(request):
         return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
 
 # Ebook Kiosk View
-@login_required
 def visit_library_Cate_ebooks(request):
     try:
         # --- SESSION CHECKS ---
@@ -10931,21 +10931,24 @@ def view_ebook_detail(request):
         messages.error(request, "Unable to load ebook details.")
         return redirect("visit_Library_ebook_catalogue")
 
-def kiosk_competitive_exam_type(request, competitive_id=None):
-    if competitive_id:
-        # Show exam details
-        exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
-        return render(request, "L01/competitive_exam_details.html", {
-            "MEDIA_URL": settings.MEDIA_URL,
-            "exam": exam
-        })
+# def kiosk_competitive_exam_type(request):
     
-    # Show exam list
-    competitive_exams = CompetitiveExamMaster.objects.all().order_by('full_name')
-    return render(request, "L01/kiosk_competitive_exam_type.html", {
-        "MEDIA_URL": settings.MEDIA_URL,
-        "competitive_exams": competitive_exams
-    })
+#     competitive_id = request.GET.get('competitive_id', None)
+    
+#     if competitive_id:
+#         # Show exam details
+#         exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+#         return render(request, "L01/competitive_exam_details.html", {
+#             "MEDIA_URL": settings.MEDIA_URL,
+#             "exam": exam
+#         })
+    
+#     # Show exam list
+#     competitive_exams = CompetitiveExamMaster.objects.all().order_by('full_name')
+#     return render(request, "L01/kiosk_competitive_exam_type.html", {
+#         "MEDIA_URL": settings.MEDIA_URL,
+#         "competitive_exams": competitive_exams
+#     })
     
 @login_required
 def visit_Library_catalogue_kiosk(request):
@@ -12527,6 +12530,15 @@ def change_password(request):
         if not user.check_password(old_password):
             messages.error(request, "Old password is incorrect")
             return redirect(request.META.get("HTTP_REFERER"))
+        
+        try:
+
+            password = password_storage.objects.using('L01').get(user_id=user.id)
+            password.passwordText = new_password # Hash the new password
+            password.save()
+        
+        except Exception as e:
+            logger.error(f"Error processing Excel file: {str(e)}")
 
         # Hash the new password using make_password()
         user.password = make_password(new_password)
@@ -12537,3 +12549,145 @@ def change_password(request):
 
         messages.success(request, "Password updated successfully")
         return redirect("library_list")
+    
+# kiosk competitve Logic    
+
+def kiosk_competitive_exam_type(request):
+    """Main entry point for competitive exams"""
+    try:
+        competitive_id = request.GET.get('competitive_id')
+
+        if competitive_id in ['1', '2']:
+            # For UPSC (1) and MPSC (2), use existing pages
+            if competitive_id == '1':
+                return redirect('L01:upsc_index_logged')
+            elif competitive_id == '2':
+                return redirect('L01:mpsc_index_logged')
+        else:
+            # For other exams, fetch and show sections
+            if competitive_id:
+                exam = get_object_or_404(
+                    CompetitiveExamMaster,
+                    competitive_id=competitive_id
+                )
+                sections = Sections.objects.filter(
+                    competitive_id=competitive_id
+                ).order_by('section_no')
+
+                context = {
+                    'exam': exam,
+                    'sections': sections,
+                }
+                return render(
+                    request,
+                    'L01/kiosk_competitive_sections.html',
+                    context
+                )
+            else:
+                competitive_exams = CompetitiveExamMaster.objects.all().order_by('full_name')
+                return render(
+                    request,
+                    "L01/kiosk_competitive_exam_type.html",
+                    {
+                        "MEDIA_URL": settings.MEDIA_URL,
+                        "competitive_exams": competitive_exams
+                    }
+                )
+
+    except Exception as e:
+        # Optional: log this properly later
+        print("Error in kiosk_competitive_exam_type:", e)
+        return redirect('L01:error_page')  # or HttpResponse("Something went wrong", status=500)
+
+def kiosk_competitive_sections(request):
+    """Display sections for a competitive exam"""
+    competitive_id = request.GET.get('competitive_id')
+    exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+    
+    # Get all sections for this exam
+    sections = Sections.objects.filter(competitive_id=competitive_id).order_by('section_no')
+    
+    context = {
+        'exam': exam,
+        'sections': sections,
+    }
+    
+    return render(request, 'L01/kiosk_competitive_sections.html', context)
+
+def kiosk_competitive_subjects(request):
+    """Display subjects for a specific section"""
+    competitive_id = request.GET.get('competitive_id')
+    section_no = request.GET.get('section_no')
+    
+    exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+    section = get_object_or_404(Sections, section_no=section_no, competitive_id=competitive_id)
+    
+    # Get subjects for this section
+    subjects = Subjects.objects.filter(
+        Q(section_no=section_no) | Q(competitive_id=competitive_id)
+    ).distinct().order_by('subject_name')
+    
+    context = {
+        'exam': exam,
+        'section': section,
+        'subjects': subjects,
+    }
+    
+    return render(request, 'L01/kiosk_competitive_subjects.html', context)
+
+def kiosk_competitive_topics(request):
+    """Display topics for a specific subject"""
+    competitive_id = request.GET.get('competitive_id')
+    subject_id = request.GET.get('subject_id')
+    
+    exam = get_object_or_404(CompetitiveExamMaster, competitive_id=competitive_id)
+    subject = get_object_or_404(Subjects, subject_id=subject_id)
+    
+    # Get topics for this subject
+    topics = Topics.objects.filter(
+        subject_id=subject_id
+    ).order_by('topic_name')
+    
+    context = {
+        'exam': exam,
+        'subject': subject,
+        'topics': topics,
+    }
+    
+    return render(request, 'L01/kiosk_competitive_topics.html', context)
+
+# AJAX Functions for dynamic loading
+def get_competitive_sections(request):
+    """AJAX endpoint to get sections"""
+    competitive_id = request.GET.get('competitive_id')
+    
+    sections = Sections.objects.filter(
+        competitive_id=competitive_id
+    ).order_by('section_no').values('section_no', 'section_name', 'section_description')
+    
+    return JsonResponse(list(sections), safe=False)
+
+def get_competitive_subjects(request):
+    """AJAX endpoint to get subjects"""
+    competitive_id = request.GET.get('competitive_id')
+    section_no = request.GET.get('section_no')
+    
+    subjects = Subjects.objects.filter(
+        section_no=section_no,
+        competitive_id=competitive_id
+    ).order_by('subject_name').values('subject_id', 'subject_name', 'subject_description')
+    
+    return JsonResponse(list(subjects), safe=False)
+
+def get_competitive_topics(request):
+    """AJAX endpoint to get topics"""
+    subject_id = request.GET.get('subject_id')
+    
+    topics = Topics.objects.filter(
+        subject_id=subject_id
+    ).order_by('topic_name').values(
+        'topic_id', 'topic_name', 'topic_description', 
+        'topic_reference', 'topic_image_url'
+    )
+    
+    return JsonResponse(list(topics), safe=False)
