@@ -775,10 +775,11 @@
     <div class="catalogue-right">
 
        <!-- Advertisement -->
-<div class="advertisement">
-    <h3>Advertisement</h3>
+
 
     {% for ad in advertisements %}
+    <div class="advertisement">
+        <h3>Advertisement</h3>
         <div class="ad-item">
             {% if ad.video_path %}
                 <video 
@@ -796,6 +797,7 @@
                 <p class="ad-org">{{ ad.organization_name }}</p>
             {% endif %}
         </div>
+     </div>
 
     {% empty %}
         {% comment %} <!-- PLACEHOLDER AD -->
@@ -819,33 +821,31 @@
        <!-- ============================= -->
 <!-- EVENTS / ANNOUNCEMENTS       -->
 <!-- ============================= -->
-<div class="events">
-    <h3>Events / Announcements</h3>
+
 
     {% for e in events %}
-    <div class="event-item">
-        <h4 class="event-title">{{ e.event_title }}</h4>
+    <div class="events">
+        <h3>Events / Announcements</h3>
+        <div class="event-item">
+            <h4 class="event-title">{{ e.event_title }}</h4>
 
-        <p class="event-date">
-            {% if e.event_from_date %}
-                {{ e.event_from_date|date:"M d, Y" }}
-            {% endif %}
-            {% if e.event_to_date %}
-                - {{ e.event_to_date|date:"M d, Y" }}
-            {% endif %}
-        </p>
+            <p class="event-date">
+                {% if e.event_from_date %}
+                    {{ e.event_from_date|date:"M d, Y" }}
+                {% endif %}
+                {% if e.event_to_date %}
+                    - {{ e.event_to_date|date:"M d, Y" }}
+                {% endif %}
+            </p>
 
-        <p class="event-desc">
-            {{ e.description }}
-        </p>
+            <p class="event-desc">
+                {{ e.description }}
+            </p>
+        </div>
+        {% empty %}
     </div>
-    {% empty %}
 
     {% endfor %}
-</div>
-
-    </div>
-
 </div>
 
 
@@ -918,10 +918,10 @@ document.addEventListener("DOMContentLoaded", function () {
  <script>
 document.addEventListener("DOMContentLoaded", () => {
    const sections = [
-        { title: "Libraries", lastIdx: 0, duration: 1 * 60 * 1000 }, // ✅ FIRST
-        { title: "Popular Books", lastIdx: 0, duration: 1 * 60 * 1000 },
-        { title: "New Arrivals", lastIdx: 0, duration: 1 * 60 * 1000 },
-        { title: "Upcoming Books", lastIdx: 0, duration: 1 * 60 * 1000 },
+        { title: "Libraries", lastIdx: 0, duration: 1 * 60 * 2000 }, // ✅ FIRST
+        { title: "Popular Books", lastIdx: 0, duration: 1 * 60 * 2000 },
+        { title: "New Arrivals", lastIdx: 0, duration: 1 * 60 * 2000 },
+        { title: "Upcoming Books", lastIdx: 0, duration: 1 * 60 * 2000 },
     ];
 
 
