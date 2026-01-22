@@ -466,17 +466,13 @@
 
             <!-- Navigation Links -->
             <div class="sidebar-navigation">
-                <a href="{% url 'L01:kiosk_competitive_exam_type' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
+                <a href="{% url 'L01:kiosk_competitive_exam_type' %}" class="nav-link-item">
                     <i class="ri-home-line"></i>
                     <span>Back to {{ exam.short_form }}</span>
                 </a>
                 <a href="{% url 'L01:kiosk_competitive_sections' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
                     <i class="ri-folder-2-line"></i>
                     <span>View All Sections</span>
-                </a>
-                <a href="{% url 'L01:kiosk_competitive_exam_type' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
-                    <i class="ri-book-2-line"></i>
-                    <span>Exam Home</span>
                 </a>
             </div>
         </div>
