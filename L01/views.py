@@ -94,6 +94,7 @@ import boto3
 from botocore.exceptions import ClientError
 from django.http import HttpResponse, Http404, StreamingHttpResponse
 import mimetypes
+from django.db.models import Subquery, OuterRef
 # Part First While Filling Membership Form
 
 def index(request):
@@ -9925,20 +9926,32 @@ def library_dashboard_data(request):
                     {"Book Title": row['catalog__title'], "Issue Date": row['issue_date']}
                     for row in qs
                 ]
-                
+
             elif drill_type == 'rating':
                 try:
                     numeric_rating = int(''.join(filter(str.isdigit, drill_value)))
                 except ValueError:
                     numeric_rating = 0
 
-                qs = BookReview.objects.filter(rating=numeric_rating).values(
-                    'user_id', 'book__title', 'rating', 'review', 'created_at'
+                # Subquery to get user full name
+                user_subquery = CustomUser.objects.filter(
+                    id=OuterRef('user_id')
+                ).values('full_name')[:1]
+
+                # Main query with annotation
+                qs = BookReview.objects.filter(rating=numeric_rating).annotate(
+                    user_full_name=Subquery(user_subquery)
+                ).select_related('book').values(
+                    'user_full_name', 
+                    'book__title', 
+                    'rating', 
+                    'review', 
+                    'created_at'
                 )[:50]
 
                 drill_data = [
                     {
-                        "User ID": row['user_id'],
+                        "User Name": row['user_full_name'] or f"User {row.get('user_id', '')}",
                         "Book Title": row['book__title'],
                         "Rating": row['rating'],
                         "Review": row['review'],
@@ -9947,7 +9960,7 @@ def library_dashboard_data(request):
                     for row in qs
                 ]
 
-                drill_headers = ["User ID", "Book Title", "Rating", "Review", "Created At"]
+                drill_headers = ["User Name", "Book Title", "Rating", "Review", "Created At"]
 
             elif drill_type == 'month':
                 try:
