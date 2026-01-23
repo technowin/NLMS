@@ -32,6 +32,8 @@
 
 <link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css" >
 <link href="{% static 'css/library_reports.css' %}" rel="stylesheet" type="text/css" >
+<!-- Selectize.js CSS -->
+<link href="{% static 'css/selectize.min.css' %}" rel="stylesheet" type="text/css" >
 
 <!-- Load DataTables CSS BEFORE your custom CSS -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
@@ -275,6 +277,39 @@
 }
 
 
+
+/* IMMEDIATE FIX - Add this to your CSS right now */
+.select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+    min-width: 120px !important;
+    width: auto !important;
+    min-height: 36px !important;
+    padding: 8px 12px !important;
+    margin: 4px !important;
+    font-size: 14px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+.select2-container--bootstrap-5 .select2-search--inline .select2-search__field:focus {
+    background: white !important;
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25) !important;
+    outline: none !important;
+}
+
+.select2-container--bootstrap-5 .select2-search--inline .select2-search__field::placeholder {
+    color: #6c757d !important;
+    font-style: italic !important;
+}
+
+.select2-container .select2-selection--multiple .select2-selection__choice__remove {
+    color:black !important;
+}
+.select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color:white !important;
+}
 </style>
 {% endblock %}
 
@@ -291,18 +326,16 @@
             <!-- Search Box -->
             <div class="mb-3">
                 <div class="input-group">
-    <input type="text"
-           class="form-control search-input-right"
-           id="member-search"
-           placeholder="Search members...">
-    <button class="btn btn-outline-secondary" type="button"
-            onclick="clearSearch()"
-            style="border-radius: 10px!important; border: 1px solid grey!important;">
-        <i class="bi bi-x"></i>
-    </button>
-</div>
-
-
+                    <input type="text"
+                           class="form-control search-input-right"
+                           id="member-search"
+                           placeholder="Search members...">
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="clearSearch()"
+                            style="border-radius: 10px!important; border: 1px solid grey!important;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
             </div>
             
             <!-- Filters -->
@@ -312,17 +345,16 @@
                 <!-- Membership Type Filter -->
                 <div class="mb-3">
                     <label class="form-label small text-muted">Membership Type</label>
-                    <select class="form-select form-select-sm" id="membership-type-filter">
+                    <select class="form-select form-select-sm" id="membership-type-filter" name="membership_type">
                         <option value="">All Types</option>
-                        <option value="book_branch">Book Branch</option>
-                        <option value="children_branch">Children Branch</option>
-                        <option value="book_branch_nmc">Book Branch (NMC)</option>
-                        <option value="children_branch_nmc">Children Branch (NMC)</option>
-                        <option value="lifetime_branch">Lifetime Branch</option>
-                        <option value="patron_branch">Patron Branch</option>
-                        <option value="practitioner_branch">Practitioner Branch</option>
+                        {% for mt in membership_types %}
+                            <option value="{{ mt.id }}">
+                                {{ mt.membership_type_en }}
+                            </option>
+                        {% endfor %}
                     </select>
                 </div>
+
                 
                 <!-- Status Filter -->
                 <div class="mb-3">
@@ -335,7 +367,7 @@
                 </div>
                 
                 <!-- Action Buttons -->
-                <div class="d-grid gap-2">
+                <div class="d-grid gap-2">  
                     <button class="btn btn-sm btn-primary" onclick="applyFilters()">
                         <i class="bi bi-filter me-1"></i>Apply Filters
                     </button>
@@ -406,12 +438,12 @@
                     </small>
                 </div>
                 <div class="export-btn-group">
-                    <button class="btn btn-primary" onclick="saveReportSession()">
+                    {% comment %} <button class="btn btn-primary" onclick="saveReportSession()">
                         <i class="bi bi-save me-1"></i>Save
                     </button>
                     <button class="btn btn-secondary" onclick="loadReportSession()">
                         <i class="bi bi-folder2-open me-1"></i>Load
-                    </button>
+                    </button> {% endcomment %}
                     <button class="btn btn-success" onclick="exportCurrentTab()">
                         <i class="bi bi-download me-1"></i>Export Tab
                     </button>
@@ -819,7 +851,7 @@
 <!-- Filter Modals -->
 <!-- Member Details Filter Modal -->
 <div class="modal fade" id="memberDetailsFilterModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-md">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -850,12 +882,11 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Membership Type</label>
-                                <select class="form-select" name="membership_type" multiple>
+                                <select class="form-select" name="membership_type" >
                                     <option value="book_branch">Book Branch</option>
                                     <option value="children_branch">Children Branch</option>
                                     <!-- Other options -->
                                 </select>
-                                <small class="text-muted">Hold Ctrl to select multiple</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -870,7 +901,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Status</label>
-                                <select class="form-select" name="status" multiple>
+                                <select class="form-select" name="status" >
                                     <option value="1">Active</option>
                                     <option value="0">Inactive</option>
                                 </select>
@@ -887,7 +918,7 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Member Type</label>
-                        <select class="form-select" name="member_type" multiple>
+                        <select class="form-select" name="member_type" >
                             <!-- Options will be populated dynamically -->
                         </select>
                     </div>
@@ -958,6 +989,15 @@ $(document).ready(function() {
     checkSavedSession();
 });
 
+// Reinitialize after AJAX calls (if you use AJAX)
+    $(document).ajaxComplete(function() {
+        $('select[multiple]').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                initSelect2();
+            }
+        });
+    });
+
 function initDatePickers() {
     $('.datepicker').datepicker({
         format: 'yyyy-mm-dd',
@@ -975,11 +1015,37 @@ function initDatePickers() {
 }
 
 function initSelect2() {
-    $('select[multiple]').select2({
-        placeholder: "Select options...",
-        allowClear: true,
-        width: '100%',
-        theme: 'bootstrap-5'
+    $('select[multiple]').each(function() {
+        $(this).select2({
+            theme: 'bootstrap-5',
+            placeholder: $(this).attr('placeholder') || "Select options...",
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : document.body,
+            closeOnSelect: false,
+            selectionCssClass: 'form-select',
+            dropdownCssClass: 'py-0',
+            tags: $(this).data('tags') || false,
+            minimumResultsForSearch: 0, // Always show search even for few items
+            minimumInputLength: 0, // Allow searching from first character
+            
+            // Custom template to enhance search field
+            templateSelection: function(data, container) {
+                return data.text;
+            },
+            templateResult: function(data) {
+                return data.text;
+            }
+        }).on('select2:open', function() {
+            // Focus the search field when dropdown opens
+            document.querySelector('.select2-search__field').focus();
+        }).on('select2:closing', function() {
+            // Store the search term
+            var searchField = $(this).parent().find('.select2-search__field');
+            if (searchField.length) {
+                searchField.css('min-width', '100px');
+            }
+        });
     });
 }
 
@@ -994,6 +1060,7 @@ function checkSavedSession() {
 }
 
 function loadMemberList(page = 1) {
+    debugger;
     const search = $('#member-search').val();
     const membershipType = $('#membership-type-filter').val();
     const membershipStatus = $('#membership-status-filter').val();
@@ -1016,6 +1083,7 @@ function loadMemberList(page = 1) {
             membership_status: membershipStatus
         },
         success: function(response) {
+             debugger;
             renderMemberList(response.members);
             renderPagination(response);
         },
@@ -1055,7 +1123,7 @@ function renderMemberList(members) {
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <div class="member-id">${member.membership_code || 'N/A'}</div>
-                        <div class="member-name">${member.first_name} ${member.last_name}</div>
+                        <div class="member-name" style="color:black;">${member.first_name} ${member.last_name}</div>
                         <div class="member-info small text-muted">
                             ${member.user_id} • ${member.email}
                         </div>
@@ -1067,7 +1135,7 @@ function renderMemberList(members) {
                     </div>
                 </div>
                 <div>
-                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:600;">
+                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:500;">
                         ${member.membership_type}
                     </span>
                 </div>
@@ -2004,10 +2072,37 @@ function setupEventListeners() {
     });
     
     // Initialize select2 for multi-select filters
-    $('select[multiple]').select2({
-        placeholder: "Select options...",
-        allowClear: true,
-        width: '100%'
+    $('select[multiple]').each(function() {
+        $(this).select2({
+            theme: 'bootstrap-5',
+            placeholder: $(this).attr('placeholder') || "Select options...",
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : document.body,
+            closeOnSelect: false,
+            selectionCssClass: 'form-select',
+            dropdownCssClass: 'py-0',
+            tags: $(this).data('tags') || false,
+            minimumResultsForSearch: 0, // Always show search even for few items
+            minimumInputLength: 0, // Allow searching from first character
+            
+            // Custom template to enhance search field
+            templateSelection: function(data, container) {
+                return data.text;
+            },
+            templateResult: function(data) {
+                return data.text;
+            }
+        }).on('select2:open', function() {
+            // Focus the search field when dropdown opens
+            document.querySelector('.select2-search__field').focus();
+        }).on('select2:closing', function() {
+            // Store the search term
+            var searchField = $(this).parent().find('.select2-search__field');
+            if (searchField.length) {
+                searchField.css('min-width', '100px');
+            }
+        });
     });
 }
 
@@ -2071,7 +2166,8 @@ function initFilterModals() {
             const memberTypeSelects = $('select[name="member_type"], select[name="member_type[]"]');
             memberTypeSelects.empty();
             response.member_types.forEach(type => {
-                memberTypeSelects.append(`<option value="${type.id}">${type.name}</option>`);
+                debugger;
+                memberTypeSelects.append(`<option value="${type.parameter_id}">${type.parameter_value}</option>`);
             });
             
             // Populate ward dropdowns
@@ -2086,8 +2182,10 @@ function initFilterModals() {
             // Populate membership type dropdowns
             const membershipTypeSelects = $('select[name="membership_type"], select[name="membership_type[]"]');
             membershipTypeSelects.empty();
+            membershipTypeSelects.append(`<option value="">All Types</option>`);
+
             response.membership_types.forEach(type => {
-                membershipTypeSelects.append(`<option value="${type.id}">${type.membership_type}</option>`);
+                membershipTypeSelects.append(`<option value="${type.id}">${type.membership_type_en}</option>`);
             });
         }
     });
@@ -2620,5 +2718,8 @@ $(document).ready(function() {
 
 <!-- Selectize.js JS -->
 <script src="{% static 'js/selectize.min.js' %}"></script>
+
+<script src="{% static 'js/vendor/select2.min.js' %}"></script>
+
 
 {% endblock %}

@@ -43,16 +43,22 @@ class ReportBaseView(LoginRequiredMixin, View):
         qs = MembershipDetails.objects.using(db).all()
         
         if filters:
-            # Apply filters based on form data
             if filters.get('membership_type'):
-                qs = qs.filter(membership__membership_type__icontains=filters['membership_type'])
-            
-            if filters.get('membership_status') == 'active':
+                qs = qs.filter(membership_id=filters['membership_type'])
+
+            membership_status = filters.get('membership_status')
+
+            if membership_status == 'active':
                 qs = qs.filter(isactive=1)
-            elif filters.get('membership_status') == 'inactive':
+
+            elif membership_status == 'inactive':
                 qs = qs.filter(isactive=0)
-            elif filters.get('membership_status') == 'cancelled':
-                qs = qs.filter(status__status_name__icontains='cancelled')
+
+            elif membership_status == 'cancelled':
+                qs = qs.filter(
+                    isactive=0,
+                    status__status_name__iexact='cancelled'
+                )
             
             if filters.get('search'):
                 search_term = filters['search']
@@ -77,14 +83,14 @@ class MemberReportView(ReportBaseView, TemplateView):
         
         # Get all filter options for forms
         try:
-            member_types = parameter_master_L01.objects.using(db).filter(isactive=1)
-            membership_types = MembershipMaster.objects.using(db).filter(isactive=1)
-            statuses = StatusMaster.objects.using(db).filter(isactive=1)
+            member_types = parameter_master_L01.objects.using(db).filter(isactive=1,parameter_name='MembershipForm').only('parameter_id', 'parameter_name', 'parameter_value')
+            membership_types = MembershipMaster.objects.using(db).filter(isactive=1).values('id', 'membership_type_en')
+
         except:
             member_types = []
             membership_types = []
-            statuses = []
         
+        context['membership_types'] = membership_types
         # Initialize all filter forms with dynamic choices
         context['member_list_form'] = MemberListFilterForm()
         
@@ -168,7 +174,7 @@ class MemberListDataView(ReportBaseView):
                     'membership_code': member.membership_code or '',
                     'first_name': member.first_name or '',
                     'last_name': member.last_name or '',
-                    'membership_type': member.membership.membership_type if member.membership else '',
+                    'membership_type': member.membership.membership_type_en if member.membership else '',
                     'status': 'Active' if member.isactive == 1 else 'Inactive',
                     'user_id': member.user_id or '',
                     'email': member.email or ''
@@ -827,9 +833,7 @@ class GetMemberOptionsView(ReportBaseView):
         db = self.get_library_db()
         
         # Get member types
-        member_types = parameter_master_L01.objects.using(db).filter(
-            isactive=1
-        ).values('parameter_id', 'parameter_name')
+        member_types = parameter_master_L01.objects.using(db).filter(isactive=1,parameter_name='MembershipForm').values('parameter_id', 'parameter_value')
         
         # Get unique wards
         wards = MembershipDetails.objects.using(db).exclude(
@@ -841,7 +845,7 @@ class GetMemberOptionsView(ReportBaseView):
         # Get membership types
         membership_types = MembershipMaster.objects.using(db).filter(
             isactive=1
-        ).values('id', 'membership_type')
+        ).values('id', 'membership_type_en')
         
         return JsonResponse({
             'member_types': list(member_types),
