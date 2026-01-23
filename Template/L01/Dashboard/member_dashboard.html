@@ -21,42 +21,6 @@
     <div class="py-3">
 
         <input type="hidden" id="breadcrumb" value="{{ breadcrumb}}">
-        <!-- Welcome Section -->
-        {% comment %} <div class="row mb-4">
-            <div class="col-12">
-                <div class="card welcome-card shadow-sm border-0 overflow-hidden">
-                    <div class="card-body p-4 position-relative">
-                        <div class="welcome-background"></div>
-                        <div class="row align-items-center position-relative">
-                            <div class="col-md-8">
-                                <h4 class="card-title mb-2 welcome-title fw-bold">Welcome, {{ username }}!</h4>
-
-                                <p class="card-text welcome-subtitle mb-0">
-                                    <i class="bi bi-person-badge me-1"></i>
-                                    Membership Code:
-                                    <strong class="text-decoration-underline">{{ membership_code }}</strong>
-                                </p>
-
-                                <!-- ⭐ New Line Added -->
-                                <p class="mt-2 mb-0">
-                                    If you want to see your membership card,
-                                    <a href="{% url 'L01:membership_card' %}" class="membership-link">
-                                        click here
-                                    </a>.
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                                <div class="d-inline-block bg-light rounded-pill px-3 py-2 shadow-sm">
-                                    <span class="text-primary fw-bold small">
-                                        <i class="bi bi-columns-gap me-1"></i>Library Dashboard
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> {% endcomment %}
 
         <!-- Statistics Cards -->
         <div class="row mb-4 g-3">

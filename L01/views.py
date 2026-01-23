@@ -94,6 +94,8 @@ import boto3
 from botocore.exceptions import ClientError
 from django.http import HttpResponse, Http404, StreamingHttpResponse
 import mimetypes
+from django.db.models import Subquery, OuterRef
+from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
 
 def index(request):
@@ -123,6 +125,9 @@ def index(request):
 
             # ✅ first image (for big preview)
             lilo.main_image = image_urls[0] if image_urls else ""
+            lilo.library_address = ""
+            if lilo.location:
+                lilo.library_address = lilo.location.address or ""
 
             # -------------------------------------------
             # FETCH RECENT 5 BOOKS
@@ -180,6 +185,11 @@ def index(request):
             ]
 
         library = library_details.first()
+        library = library_details.select_related('location').first()
+
+        library_address = ""
+        if library and library.location:
+            library_address = library.location.address or ""
         library_name = library_details.first().library_name if library_details.exists() else ""
         # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
         library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
@@ -249,6 +259,7 @@ def index(request):
         'libraries': library_details,
         'library_name': library_name,
         'library_name_mar':library_name_mar,
+        'library_address': library_address,
         'MEDIA_URL': settings.MEDIA_URL
     })
     
@@ -5591,6 +5602,7 @@ def get_member_detail(request, membership_code):
 #             member=member_id,
 #             return_date__isnull=True
 #         ).select_related('catalog').order_by('-issue_date')[:3]
+        
 #         pending_action = request.session.get("pending_action")
 #         sweet_alert = request.session.get("sweet_alert")
 #         for transaction in transactions:
@@ -5629,6 +5641,9 @@ def membership_dashboard(request):
 
     # Get username from session
     username = request.session.get('username')
+    library_code = request.session.get('library_db', None)
+    pending_action = request.session.get("pending_action", None)
+    sweet_alert = request.session.get("sweet_alert", None)
     
     try:
         breadcrumb = request.POST.get("breadcrumb")
@@ -5667,7 +5682,9 @@ def membership_dashboard(request):
             'username': username,
             'latest_books': latest_books,
             'today': today,
-            'breadcrumb': breadcrumb
+            'breadcrumb': breadcrumb,
+            'pending_action': pending_action, 
+            'sweet_alert': sweet_alert,
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)
@@ -6143,17 +6160,19 @@ def membership_card(request):
                 ).first()
 
                 if document and document.file_path:
-                    file_path_lower = document.file_path.lower()
                     
-                    if file_path_lower.endswith('.pdf'):
-                        # If PDF, set user_image_url to None to use default image
-                        user_image_url = None
-                    else:
-                        # Not a PDF, use the file path
-                        if document.file_path.startswith(settings.MEDIA_URL):
-                            user_image_url = document.file_path
-                        else:
-                            user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
+                    user_image_url = file_storage_service.get_file_url(document.file_path)
+                    # file_path_lower = document.file_path.lower()
+                    
+                    # if file_path_lower.endswith('.pdf'):
+                    #     # If PDF, set user_image_url to None to use default image
+                    #     user_image_url = None
+                    # else:
+                    #     # Not a PDF, use the file path
+                    #     if document.file_path.startswith(settings.MEDIA_URL):
+                    #         user_image_url = document.file_path
+                    #     else:
+                    #         user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
             except Exception:
                 pass
 
@@ -8329,129 +8348,183 @@ def set_book_image_urls(books):
         else:
             b.last_page_photo = ""
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.contrib import messages
+from django.conf import settings
+from django.db.models import Avg, Count
+import traceback
 
 @login_required
 def led_tv_index(request):
-    
-    libraries = (
-        LibraryMaster.objects.using('default')
-        .filter(is_active=1)
-        .order_by('id')
-    )
+    # ----------------------------------
+    # DB connection + session values
+    # ----------------------------------
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    library_code = request.session.get('library_db', None)
 
-    library_list = []
+    try:
+        # ============================================
+        # LIBRARIES
+        # ============================================
+        libraries = (
+            LibraryMaster.objects
+            .using('default')
+            .select_related('location')  # 🔥 avoids extra queries
+            .filter(is_active=1)
+            .order_by('id')
+        )
 
-    for lib in libraries:
-        first_image = ""
+        library_list = []
 
-        if lib.image_url:
-            image_array = lib.image_url.split(",")
-            if image_array:
-                first_image = file_storage_service.get_file_url(image_array[0].strip())
+        for lib in libraries:
+            first_image = ""
 
-        library_list.append({
-            "library_name": lib.library_name,
-            "library_name_mar": lib.library_name_mar,
-            "description": lib.about_library,
-            "address": lib.location.address,
-            "email": lib.contact_email,
-            "phone": lib.contact_phone,
-            "library_image": first_image,
-            "location_url": lib.location_url,
-            "opening_hours": lib.opening_hours,
-            "est_year": lib.est_year
+            if lib.image_url:
+                image_array = lib.image_url.split(",")
+                if image_array:
+                    first_image = file_storage_service.get_file_url(
+                        image_array[0].strip()
+                    )
+
+            library_list.append({
+                "library_name": lib.library_name,
+                "library_name_mar": lib.library_name_mar,
+                "description": lib.about_library,
+                "address": lib.location.address if lib.location else "",
+                "email": lib.contact_email,
+                "phone": lib.contact_phone,
+                "library_image": first_image,
+                "location_url": lib.location_url,
+                "opening_hours": lib.opening_hours,
+                "est_year": lib.est_year
+            })
+
+
+        # ============================================
+        # 1️⃣ POPULAR BOOKS
+        # ============================================
+        popular_books = (
+            BookCatalog.objects
+            .annotate(
+                avg_rating=Avg('cat_ref_id_reviews__rating'),
+                review_count=Count('cat_ref_id_reviews')
+            )
+            .filter(avg_rating__isnull=False)
+            .order_by('-avg_rating', '-created_at')[:10]
+        )
+
+        # ============================================
+        # 2️⃣ NEW ARRIVALS
+        # ============================================
+        new_arrivals = (
+            BookCatalog.objects
+            .annotate(
+                avg_rating=Avg('cat_ref_id_reviews__rating'),
+                review_count=Count('cat_ref_id_reviews')
+            )
+            .filter(transactions__isnull=False)
+            .order_by('-avg_rating')[:10]
+        )
+
+        # ============================================
+        # 3️⃣ UPCOMING BOOKS
+        # ============================================
+        upcoming_books = (
+            BookCatalog.objects
+            .annotate(
+                avg_rating=Avg('cat_ref_id_reviews__rating'),
+                review_count=Count('cat_ref_id_reviews')
+            )
+            .filter(transactions__isnull=True)
+            .order_by('-avg_rating')[:10]
+        )
+
+        set_book_image_urls(popular_books)
+        set_book_image_urls(new_arrivals)
+        set_book_image_urls(upcoming_books)
+
+        # ============================================
+        # ADS
+        # ============================================
+        advertisements = Advertisement.objects.filter(
+            status=1
+        ).order_by('-created_at')[:5]
+
+        for ad in advertisements:
+            if ad.video_path:
+                ad.video_path = (
+                    settings.MEDIA_URL +
+                    ad.video_path.replace("\\", "/")
+                )
+
+        # ============================================
+        # EVENTS
+        # ============================================
+        events = EventAnnouncement.objects.filter(
+            status=1
+        ).order_by('-event_from_date')[:10]
+
+        # ============================================
+        # USER REVIEWS
+        # ============================================
+        user_ids = set()
+
+        for book_list in [popular_books, new_arrivals, upcoming_books]:
+            for book in book_list:
+                reviews_for_book = BookReview.objects.filter(
+                    book__cat_ref_num=book.cat_ref_num
+                ).order_by('-created_at')[:2]
+
+                for review in reviews_for_book:
+                    user_ids.add(review.user_id)
+
+                book.recent_reviews = list(reviews_for_book)
+
+        users = CustomUser.objects.filter(id__in=user_ids)
+        user_dict = {user.id: user.username for user in users}
+
+        for book_list in [popular_books, new_arrivals, upcoming_books]:
+            for book in book_list:
+                for review in getattr(book, 'recent_reviews', []):
+                    review.username = user_dict.get(
+                        review.user_id, "Unknown"
+                    )
+
+        return render(request, "L01/led_tv_index.html", {
+            "popular_books": popular_books,
+            "new_arrivals": new_arrivals,
+            "upcoming_books": upcoming_books,
+            "advertisements": advertisements,
+            "events": events,
+            "libraries": library_list,
         })
 
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else "led_tv_index"
 
-    # ============================================
-    # 1️⃣ POPULAR BOOKS (with rating and reviews)
-    # ============================================
-    popular_books = (
-        BookCatalog.objects
-        .annotate(
-            avg_rating=Avg('cat_ref_id_reviews__rating'),
-            review_count=Count('cat_ref_id_reviews')
+        try:
+            cursor.callproc(
+                "stp_error_log",
+                [fun, str(e), library_code]
+            )
+        except Exception:
+            pass  # prevent cascading failure
+
+        messages.error(
+            request,
+            "Oops...! Something went wrong!"
         )
-        .filter(avg_rating__isnull=False)
-        .order_by('-avg_rating', '-created_at')[:10]
-    )
 
-    # ============================================
-    # 2️⃣ NEW ARRIVALS
-    # ============================================
-    new_arrivals = (
-        BookCatalog.objects
-        .annotate(
-            avg_rating=Avg('cat_ref_id_reviews__rating'),
-            review_count=Count('cat_ref_id_reviews')
+        return render(
+            request,
+            "L01/led_tv_index.html",
+            {}
         )
-        .filter(transactions__isnull=False)
-        .order_by('-avg_rating')[:10]
-    )
 
-    # ============================================
-    # 3️⃣ UPCOMING BOOKS
-    # ============================================
-    upcoming_books = (
-        BookCatalog.objects
-        .annotate(
-            avg_rating=Avg('cat_ref_id_reviews__rating'),
-            review_count=Count('cat_ref_id_reviews')
-        )
-        .filter(transactions__isnull=True)
-        .order_by('-avg_rating')[:10]
-    )
-    
-    set_book_image_urls(popular_books)
-    set_book_image_urls(new_arrivals)
-    set_book_image_urls(upcoming_books)
-
-    # ============================================
-    # ADS + EVENTS (only status=1)
-    # ============================================
-    advertisements = Advertisement.objects.filter(status=1).order_by('-created_at')[:5]
-
-    # ============================================
-    # FIX video_path → add MEDIA_URL
-    # ============================================
-    for ad in advertisements:
-        if ad.video_path:
-            ad.video_path = settings.MEDIA_URL + ad.video_path.replace("\\", "/")
-
-    events = EventAnnouncement.objects.filter(status=1).order_by('-event_from_date')[:10]
-
-    # ============================================
-    # USER REVIEWS HANDLING
-    # ============================================
-    user_ids = set()
-    for book_list in [popular_books, new_arrivals, upcoming_books]:
-        for book in book_list:
-            reviews_for_book = BookReview.objects.filter(
-                book__cat_ref_num=book.cat_ref_num
-            ).order_by('-created_at')[:2]
-
-            for review in reviews_for_book:
-                user_ids.add(review.user_id)
-
-            book.recent_reviews = list(reviews_for_book)
-
-    users = CustomUser.objects.filter(id__in=user_ids)
-    user_dict = {user.id: user.username for user in users}
-
-    for book_list in [popular_books, new_arrivals, upcoming_books]:
-        for book in book_list:
-            for review in getattr(book, 'recent_reviews', []):
-                review.username = user_dict.get(review.user_id, "Unknown")
-
-    return render(request, "L01/led_tv_index.html", {
-        "popular_books": popular_books,
-        "new_arrivals": new_arrivals,
-        "upcoming_books": upcoming_books,
-        "advertisements": advertisements,
-        "events": events,
-        "libraries": library_list, 
-    })
-    
 def advertisement_index(request):
     # Fetch all ads ordered by newest first
         advertisements = Advertisement.objects.all().order_by('-created_at')
@@ -9869,20 +9942,32 @@ def library_dashboard_data(request):
                     {"Book Title": row['catalog__title'], "Issue Date": row['issue_date']}
                     for row in qs
                 ]
-                
+
             elif drill_type == 'rating':
                 try:
                     numeric_rating = int(''.join(filter(str.isdigit, drill_value)))
                 except ValueError:
                     numeric_rating = 0
 
-                qs = BookReview.objects.filter(rating=numeric_rating).values(
-                    'user_id', 'book__title', 'rating', 'review', 'created_at'
+                # Subquery to get user full name
+                user_subquery = CustomUser.objects.filter(
+                    id=OuterRef('user_id')
+                ).values('full_name')[:1]
+
+                # Main query with annotation
+                qs = BookReview.objects.filter(rating=numeric_rating).annotate(
+                    user_full_name=Subquery(user_subquery)
+                ).select_related('book').values(
+                    'user_full_name', 
+                    'book__title', 
+                    'rating', 
+                    'review', 
+                    'created_at'
                 )[:50]
 
                 drill_data = [
                     {
-                        "User ID": row['user_id'],
+                        "User Name": row['user_full_name'] or f"User {row.get('user_id', '')}",
                         "Book Title": row['book__title'],
                         "Rating": row['rating'],
                         "Review": row['review'],
@@ -9891,7 +9976,7 @@ def library_dashboard_data(request):
                     for row in qs
                 ]
 
-                drill_headers = ["User ID", "Book Title", "Rating", "Review", "Created At"]
+                drill_headers = ["User Name", "Book Title", "Rating", "Review", "Created At"]
 
             elif drill_type == 'month':
                 try:
@@ -10717,23 +10802,20 @@ def get_ebooks_by_subject_kiosk(request):
 
         search = request.GET.get('search', '').strip()
         page = request.GET.get('page', 1)
+        searching = request.GET.get('searching', 'false') == 'true'
 
         print(f"DEBUG: Subject ID encrypted: {subject_id_enc}")
         print(f"DEBUG: Subject ID decrypted: {subject_id}")
         print(f"DEBUG: Search term: {search}")
         print(f"DEBUG: Page: {page}")
+        print(f"DEBUG: Searching mode: {searching}")
 
         # Base queryset
         ebooks = LibraryEbook.objects.all().select_related('eb_subject', 'ebook_type')
         
         print(f"DEBUG: Total ebooks in DB: {ebooks.count()}")
 
-        # Filter by subject if provided
-        if subject_id:
-            ebooks = ebooks.filter(eb_subject_id=subject_id)
-            print(f"DEBUG: After subject filter: {ebooks.count()}")
-
-        # Apply search filter
+        # Apply search filter FIRST (if search is active)
         if search:
             ebooks = ebooks.filter(
                 Q(eb_title__icontains=search) |
@@ -10741,6 +10823,16 @@ def get_ebooks_by_subject_kiosk(request):
                 Q(eb_keywords__icontains=search)
             )
             print(f"DEBUG: After search filter: {ebooks.count()}")
+            
+            # If we're searching, ignore subject filter unless explicitly clicked
+            if not searching and subject_id:
+                ebooks = ebooks.filter(eb_subject_id=subject_id)
+                print(f"DEBUG: After subject filter (non-search): {ebooks.count()}")
+        else:
+            # Only filter by subject if NOT searching
+            if subject_id:
+                ebooks = ebooks.filter(eb_subject_id=subject_id)
+                print(f"DEBUG: After subject filter (no search): {ebooks.count()}")
 
         # Debug first few ebooks
         for i, ebook in enumerate(ebooks[:3]):
@@ -10777,8 +10869,10 @@ def get_ebooks_by_subject_kiosk(request):
             ebooks_page = paginator.page(1)
 
         context = {
-            'ebooks': ebooks_page,  # Make sure it's 'ebooks' not 'ebooks_page'
+            'ebooks': ebooks_page,
             'subject_id_enc': subject_id_enc,
+            'search_term': search,
+            'searching': searching,
             'MEDIA_URL': settings.MEDIA_URL,
         }
 
@@ -10797,7 +10891,6 @@ def get_ebooks_by_subject_kiosk(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch ebooks'}, status=500)
-
 
 @login_required
 def visit_ebook_catalogue(request):
@@ -12743,7 +12836,7 @@ def change_password(request):
         return redirect("library_list")
     
 # kiosk competitve Logic    
-
+@login_required
 def kiosk_competitive_exam_type(request):
     """Main entry point for competitive exams"""
     try:
@@ -12791,6 +12884,7 @@ def kiosk_competitive_exam_type(request):
         print("Error in kiosk_competitive_exam_type:", e)
         return redirect('L01:error_page')  # or HttpResponse("Something went wrong", status=500)
 
+@login_required
 def kiosk_competitive_sections(request):
     """Display sections for a competitive exam"""
     competitive_id = request.GET.get('competitive_id')
@@ -12806,6 +12900,7 @@ def kiosk_competitive_sections(request):
     
     return render(request, 'L01/kiosk_competitive_sections.html', context)
 
+@login_required
 def kiosk_competitive_subjects(request):
     """Display subjects for a specific section"""
     competitive_id = request.GET.get('competitive_id')
@@ -12827,6 +12922,7 @@ def kiosk_competitive_subjects(request):
     
     return render(request, 'L01/kiosk_competitive_subjects.html', context)
 
+@login_required
 def kiosk_competitive_topics(request):
     """Display topics for a specific subject"""
     competitive_id = request.GET.get('competitive_id')

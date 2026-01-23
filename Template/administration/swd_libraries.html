@@ -9,6 +9,19 @@
 
 {% endblock %}
 
+<style>
+    .timing-hours {
+    display: block;   /* NOT flex */
+}
+
+.time-line {
+    display: flex;    /* icon + text in one line */
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+</style>
+
 {% block content %}
     <div class="swd-libraries-page">
         <div class="container-fluid">
@@ -62,14 +75,14 @@
                                 <div class="stat-item">
                                     <i class="fas fa-book-reader"></i>
                                     <div>
-                                        <h4>31</h4>
+                                        <h4>32</h4>
                                         <p>सुरु ग्रंथालये</p>
                                     </div>
                                 </div>
                                 <div class="stat-item">
                                     <i class="fas fa-plus-circle"></i>
                                     <div>
-                                        <h4>05</h4>
+                                        <h4>04</h4>
                                         <p>प्रस्तावित</p>
                                     </div>
                                 </div>
@@ -109,14 +122,14 @@
                                 <div class="stat-item">
                                     <i class="fas fa-book-reader"></i>
                                     <div>
-                                        <h4>31</h4>
+                                        <h4>32</h4>
                                         <p>Running Libraries</p>
                                     </div>
                                 </div>
                                 <div class="stat-item">
                                     <i class="fas fa-plus-circle"></i>
                                     <div>
-                                        <h4>05</h4>
+                                        <h4>04</h4>
                                         <p>Proposed</p>
                                     </div>
                                 </div>
@@ -165,7 +178,7 @@
                                             <i class="fas fa-check-circle"></i>
                                             <h5>सुरु असलेली</h5>
                                         </div>
-                                        <div class="stat-number">31</div>
+                                        <div class="stat-number">32</div>
                                         <p class="stat-desc">ग्रंथालये व अभ्यासिका</p>
                                     </div>
                                     
@@ -174,7 +187,7 @@
                                             <i class="fas fa-calendar-plus"></i>
                                             <h5>प्रस्तावित</h5>
                                         </div>
-                                        <div class="stat-number">05</div>
+                                        <div class="stat-number">04</div>
                                         <p class="stat-desc">ग्रंथालये व अभ्यासिका</p>
                                     </div>
                                     
@@ -251,7 +264,7 @@
                                             <i class="fas fa-check-circle"></i>
                                             <h5>Running</h5>
                                         </div>
-                                        <div class="stat-number">31</div>
+                                        <div class="stat-number">32</div>
                                         <p class="stat-desc">Libraries & Study Centers</p>
                                     </div>
                                     
@@ -260,7 +273,7 @@
                                             <i class="fas fa-calendar-plus"></i>
                                             <h5>Proposed</h5>
                                         </div>
-                                        <div class="stat-number">05</div>
+                                        <div class="stat-number">04</div>
                                         <p class="stat-desc">Libraries & Study Centers</p>
                                     </div>
                                     
@@ -1629,7 +1642,7 @@
                                     </div>
                                     <div class="info-content">
                                         <h4>महत्वाची सूचना</h4>
-                                        <p>सर्व वर्गणी रक्कम भारतीय रुपयांमध्ये आहे. वर्गणी तपशील बदलू शकतात, कृपया संबंधित ग्रंथालय कार्यालयाशी संपर्क साधा. सदस्यत्वासाठी खालील दस्तऐवज आवश्यक: ओळखपत्र, राहण्याचा पुरावा, फोटो.</p>
+                                        <p>वर्गणी तपशील वेळोवेळी बदलू शकतात. अधिक माहितीसाठी कृपया संबंधित ग्रंथालय कार्यालयाशी थेट संपर्क साधावा.सदस्यत्व घेण्यासाठी ओळखपत्र, राहण्याचा पुरावा आणि अलीकडील फोटो सादर करणे आवश्यक आहे.</p>
                                     </div>
                                 </div>
 
@@ -1725,6 +1738,7 @@
                                 <div class="fees-summary">
                                     <h4><i class="fas fa-calculator"></i> वर्गणी सारांश</h4>
                                     <div class="summary-cards">
+                                        <!-- अभ्यासिका शाखा -->
                                         <div class="summary-card">
                                             <div class="summary-icon">
                                                 <i class="fas fa-rupee-sign"></i>
@@ -1735,37 +1749,52 @@
                                                 <p>अभ्यासिका शाखा</p>
                                             </div>
                                         </div>
-                                        
+
+                                        <!-- पुस्तक शाखा -->
                                         <div class="summary-card">
                                             <div class="summary-icon">
                                                 <i class="fas fa-book-open"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h5>सर्वसामान्य शाखा</h5>
+                                                <h5>&nbsp;</h5> <!-- Blank header for spacing -->
                                                 <div class="summary-amount">175/-</div>
                                                 <p>पुस्तक शाखा</p>
                                             </div>
                                         </div>
-                                        
+
+                                        <!-- आश्रयदाते सभासद -->
                                         <div class="summary-card">
                                             <div class="summary-icon">
                                                 <i class="fas fa-crown"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h5>सर्वोच्च वर्गणी</h5>
+                                                <h5>&nbsp;</h5> <!-- Blank header for spacing -->
                                                 <div class="summary-amount">2,455/-</div>
                                                 <p>आश्रयदाते सभासद</p>
                                             </div>
                                         </div>
+
+                                        <!-- आजीव सभासद -->
+                                        <div class="summary-card">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-medal"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h5>&nbsp;</h5>
+                                                <div class="summary-amount">1,305/-</div>
+                                                <p>आजीव सभासद</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
 
                                 <div class="documents-required">
                                     <h4><i class="fas fa-file-alt"></i> आवश्यक कागदपत्रे</h4>
                                     <div class="documents-list">
                                         <div class="document-item">
                                             <i class="fas fa-id-card"></i>
-                                            <span>ओळखपत्र (आधार कार्ड/पॅन कार्ड/ड्रायव्हिंग लायसन्स)</span>
+                                            <span>ओळखपत्र (आधार कार्ड/कार्यालय ओळखपत्र / शाळा ओळखपत्र/ड्रायव्हिंग लायसन्स)</span>
                                         </div>
                                         <div class="document-item">
                                             <i class="fas fa-home"></i>
@@ -1809,13 +1838,13 @@
                                             <p>मोफत वृत्तपत्र वाचन सुविधा</p>
                                         </div>
                                         
-                                        <div class="benefit-card">
+                                        {% comment %} <div class="benefit-card">
                                             <div class="benefit-icon">
                                                 <i class="fas fa-wifi"></i>
                                             </div>
                                             <h5>इंटरनेट सुविधा</h5>
                                             <p>मर्यादित वेळेसाठी विनामूल्य वाय-फाय</p>
-                                        </div>
+                                        </div> {% endcomment %}
                                     </div>
                                 </div>
 
@@ -1823,7 +1852,7 @@
                                     <h4><i class="fas fa-gavel"></i> नियम व अटी</h4>
                                     <ul class="rules-list">
                                         <li><i class="fas fa-check-circle"></i> पुस्तकांची मुदत १५ दिवसांची असते</li>
-                                        <li><i class="fas fa-check-circle"></i> मुदत ओलांडल्यास दररोज २ रुपये दंड</li>
+                                        <li><i class="fas fa-check-circle"></i> मुदत ओलांडल्यास दररोज 1 रुपये दंड</li>
                                         <li><i class="fas fa-check-circle"></i> पुस्तक हरवल्यास बाजारभावाच्या दुप्पट भरावे लागेल</li>
                                         <li><i class="fas fa-check-circle"></i> सदस्यत्व १ वर्षासाठी वैध</li>
                                         <li><i class="fas fa-check-circle"></i> नूतनीकरण वेळेवर करणे आवश्यक</li>
@@ -1861,7 +1890,7 @@
                                     </div>
                                     <div class="info-content">
                                         <h4>Important Information</h4>
-                                        <p>All fee amounts are in Indian Rupees. Fee structure is subject to change, please contact the respective library office. Required documents for membership: Identity Proof, Address Proof, Photographs.</p>
+                                        <p>Fee details are subject to change from time to time. For more information, please contact the concerned library office directly.To obtain membership, it is mandatory to submit an identity proof, proof of residence, and a recent photograph.</p>
                                     </div>
                                 </div>
 
@@ -1957,6 +1986,7 @@
                                 <div class="fees-summary">
                                     <h4><i class="fas fa-calculator"></i> Fee Summary</h4>
                                     <div class="summary-cards">
+                                        <!-- Study Room Section -->
                                         <div class="summary-card">
                                             <div class="summary-icon">
                                                 <i class="fas fa-rupee-sign"></i>
@@ -1964,40 +1994,55 @@
                                             <div class="summary-content">
                                                 <h5>Minimum Fee</h5>
                                                 <div class="summary-amount">55/-</div>
-                                                <p>Study Room Section</p>
+                                                <p> Study Room Section </p>
                                             </div>
                                         </div>
-                                        
+
+                                        <!-- Book Section -->
                                         <div class="summary-card">
                                             <div class="summary-icon">
                                                 <i class="fas fa-book-open"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h5>Standard Section</h5>
+                                                <h5>&nbsp;</h5> <!-- Blank header for spacing -->
                                                 <div class="summary-amount">175/-</div>
-                                                <p>Book Section</p>
+                                                <p> Book Section </p>
                                             </div>
                                         </div>
-                                        
+
+                                        <!-- Patron Member -->
                                         <div class="summary-card">
                                             <div class="summary-icon">
                                                 <i class="fas fa-crown"></i>
                                             </div>
                                             <div class="summary-content">
-                                                <h5>Premium Fee</h5>
+                                                <h5>&nbsp;</h5> <!-- Blank header for spacing -->
                                                 <div class="summary-amount">2,455/-</div>
-                                                <p>Patron Member</p>
+                                                <p> Patron Member </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Lifetime Membership -->
+                                        <div class="summary-card">
+                                            <div class="summary-icon">
+                                                <i class="fas fa-medal"></i>
+                                            </div>
+                                            <div class="summary-content">
+                                                <h5>&nbsp;</h5>
+                                                <div class="summary-amount">1,305/-</div>
+                                                <p> Lifetime Membership </p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
 
                                 <div class="documents-required">
                                     <h4><i class="fas fa-file-alt"></i> Required Documents</h4>
                                     <div class="documents-list">
                                         <div class="document-item">
                                             <i class="fas fa-id-card"></i>
-                                            <span>Identity Proof (Aadhar Card/PAN Card/Driving License)</span>
+                                            <span>Identity Proof (Aadhar Card/Office ID/School ID/Driving License)</span>
                                         </div>
                                         <div class="document-item">
                                             <i class="fas fa-home"></i>
@@ -2041,13 +2086,13 @@
                                             <p>Free newspaper reading facility</p>
                                         </div>
                                         
-                                        <div class="benefit-card">
+                                        {% comment %} <div class="benefit-card">
                                             <div class="benefit-icon">
                                                 <i class="fas fa-wifi"></i>
                                             </div>
                                             <h5>Internet Access</h5>
                                             <p>Limited free Wi-Fi access</p>
-                                        </div>
+                                        </div> {% endcomment %}
                                     </div>
                                 </div>
 
@@ -2055,7 +2100,7 @@
                                     <h4><i class="fas fa-gavel"></i> Rules & Conditions</h4>
                                     <ul class="rules-list">
                                         <li><i class="fas fa-check-circle"></i> Book return period is 15 days</li>
-                                        <li><i class="fas fa-check-circle"></i> Fine of ₹2 per day for overdue books</li>
+                                        <li><i class="fas fa-check-circle"></i> Fine of ₹1 per day for overdue books</li>
                                         <li><i class="fas fa-check-circle"></i> Lost books must be paid at double market price</li>
                                         <li><i class="fas fa-check-circle"></i> Membership valid for 1 year</li>
                                         <li><i class="fas fa-check-circle"></i> Timely renewal is mandatory</li>
@@ -2117,7 +2162,7 @@
                                             </div>
                                             <div class="timing-break">
                                                 <i class="fas fa-coffee"></i>
-                                                <span>दुपारी विश्रांती: 1:00 ते 1:30</span>
+                                                <span>जेवणाची वेळ : 1:00 ते 1:30</span>
                                             </div>
                                         </div>
                                         <div class="timing-status open">
@@ -2139,9 +2184,15 @@
                                                 <span>सोमवार ते शनिवार</span>
                                             </div>
                                             <div class="timing-hours">
-                                                <i class="fas fa-clock"></i>
-                                                <span class="time-range">सकाळी 10:00 ते सायंकाळी 6:00</span>
-                                                <span class="duration">(8 तास)</span>
+                                                <div class="time-line">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span class="time-range">पुरुष सकाळी ६ ते रात्री १</span>
+                                                </div>
+
+                                                <div class="time-line">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span class="time-range">महिला सकाळी ६ ते रात्री १०</span>
+                                                </div>
                                             </div>
                                             <div class="timing-note">
                                                 <i class="fas fa-info-circle"></i>
@@ -2169,14 +2220,7 @@
                                                 <span class="duration">(19 तास)</span>
                                             </div>
                                             <div class="timing-features">
-                                                <div class="feature">
-                                                    <i class="fas fa-check"></i>
-                                                    <span>सर्व सुट्ट्यांमध्ये खुले</span>
-                                                </div>
-                                                <div class="feature">
-                                                    <i class="fas fa-check"></i>
-                                                    <span>रात्रीच्या शिफ्टसाठी सुरक्षा</span>
-                                                </div>
+                                                
                                             </div>
                                         </div>
                                         <div class="timing-status open">
@@ -2193,7 +2237,7 @@
                                         <h4>सुट्ट्यांचे दिवस</h4>
                                     </div>
                                     <div class="holidays-content">
-                                        <p>प्रत्येक <strong>शनिवार</strong>, <strong>रविवार</strong> व नवी मुंबई महानगरपालिका ने जाहीर केलेल्या सार्वजनिक सुट्टयांच्या दिवशी ग्रंथालये बंद राहतील.</p>
+                                        <p>महाराष्ट्र शासनाच्या राजपत्र आधी सूचना सार्वजनिक सुट्ट्यानुसार तसेच महानगरपालिकेने व ग्रंथालयाने जाहीर केलेल्या सर्वजणी सुट्ट्यांच्या दिवशी ग्रंथालय बंद राहतील.</p>
                                         
                                     </div>
                                 </div>
@@ -2208,7 +2252,7 @@
                                             <i class="fas fa-phone"></i>
                                             <div>
                                                 <h5>दूरध्वनी</h5>
-                                                <p>+91 22 2756 1234</p>
+                                                <p>+९१ ९८२०३४५६७८ </p>
                                             </div>
                                         </div>
                                         
@@ -2216,7 +2260,7 @@
                                             <i class="fas fa-envelope"></i>
                                             <div>
                                                 <h5>ईमेल</h5>
-                                                <p>library@nmmc.gov.in</p>
+                                                <p>nmmclibrary2@gmail.com</p>
                                             </div>
                                         </div>
                                         
@@ -2303,16 +2347,25 @@
                                                 <i class="fas fa-calendar-alt"></i>
                                                 <span>Monday to Saturday</span>
                                             </div>
+
                                             <div class="timing-hours">
-                                                <i class="fas fa-clock"></i>
-                                                <span class="time-range">10:00 AM to 6:00 PM</span>
-                                                <span class="duration">(8 hours)</span>
+                                                <div class="time-line">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span class="time-range">Men: 6:00 AM to 1:00 AM</span>
+                                                </div>
+
+                                                <div class="time-line">
+                                                    <i class="fas fa-clock"></i>
+                                                    <span class="time-range">Women: 6:00 AM to 10:00 PM</span>
+                                                </div>
                                             </div>
+
                                             <div class="timing-note">
                                                 <i class="fas fa-info-circle"></i>
                                                 <span>Closed on Sundays</span>
                                             </div>
                                         </div>
+
                                     </div>
 
                                     <div class="timing-card-Practitioner">
@@ -2334,14 +2387,14 @@
                                                 <span class="duration">(19 hours)</span>
                                             </div>
                                             <div class="timing-features">
-                                                <div class="feature">
+                                                {% comment %} <div class="feature">
                                                     <i class="fas fa-check"></i>
                                                     <span>Open on all holidays</span>
                                                 </div>
                                                 <div class="feature">
                                                     <i class="fas fa-check"></i>
                                                     <span>Security for night shifts</span>
-                                                </div>
+                                                </div> {% endcomment %}
                                             </div>
                                         </div>
                                         <div class="timing-status open">
@@ -2357,7 +2410,7 @@
                                         <h4>Holiday Schedule</h4>
                                     </div>
                                     <div class="holidays-content">
-                                        <p>Libraries remain closed on every <strong>Saturday</strong>, <strong>Sunday</strong> and public holidays declared by Navi Mumbai Municipal Corporation.</p>
+                                        <p>The library will remain closed on all public holidays as per the notification in the Maharashtra Government Gazette and also on all holidays declared by the Municipal Corporation and the library.</p>
                                     </div>
                                 </div>
 
@@ -2371,7 +2424,7 @@
                                             <i class="fas fa-phone"></i>
                                             <div>
                                                 <h5>Telephone</h5>
-                                                <p>+91 22 2756 1234</p>
+                                                <p>+91 9820345678</p>
                                             </div>
                                         </div>
                                         
@@ -2379,7 +2432,7 @@
                                             <i class="fas fa-envelope"></i>
                                             <div>
                                                 <h5>Email</h5>
-                                                <p>library@nmmc.gov.in</p>
+                                                <p>nmmclibrary2@gmail.com</p>
                                             </div>
                                         </div>
                                         

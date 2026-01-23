@@ -665,6 +665,9 @@
             <!-- Content -->
             <div class="oz-library-content">
                 <h1>{{ library.library_name_mar }}</h1>
+                {% if library_address %}
+                    <p class="text-muted">📍 {{ library_address }}</p>
+                {% endif %}
                 {% if library.establishedYear %}
                     <h4>Since {{ library.est_year }}</h4>
                 {% endif %}
@@ -681,7 +684,7 @@
                     </button>
                 </div>
 
-<!-- Rest of your HTML remains the same, just make sure the modal and button sections use the updated classes -->
+                <!-- Rest of your HTML remains the same, just make sure the modal and button sections use the updated classes -->
 
 
                 {% if library.librarian_name %}
@@ -693,7 +696,7 @@
                 {% endif %}
 
                 {% if library.capacity %}
-                    <p><strong>Capacity:</strong> {{ library.capacity }}</p>
+                    <p><strong>No. of Copies:</strong> {{ library.capacity }}</p>
                 {% endif %}
 
                 <!-- Library & Membership Rules Icons -->

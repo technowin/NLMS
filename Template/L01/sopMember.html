@@ -1,0 +1,259 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* SOP Page Specific Styles */
+        .sop-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .sop-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #015296;
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .sop-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .sop-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .sop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .sop-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-left: 5px solid #d9b340;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sop-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .sop-card h3 {
+            color: #015296;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            min-height: 60px;
+        }
+
+        .sop-description {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            flex-grow: 1;
+            font-size: 0.95rem;
+        }
+
+        .sop-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .file-size {
+            background: #f3f4f6;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #d9b340 0%, #c19b2e 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #c19b2e 0%, #a8841f 100%);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(217, 179, 64, 0.3);
+        }
+
+        .download-btn i {
+            font-size: 1.1rem;
+        }
+
+        .sop-note {
+            background: #f8f9fa;
+            border-left: 4px solid #d9b340;
+            padding: 15px 20px;
+            margin-top: 40px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        /* Language specific styles */
+        .sop-card[lang="mr"] {
+            font-family: 'Arial', 'Noto Sans Devanagari', sans-serif;
+        }
+
+        @media (max-width: 768px) {
+            .sop-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sop-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+
+{% endblock %}
+
+{% block page_title %}
+    {% include "bootstrap/partials/page-title.html" with page_title='मार्गदर्शक तत्त्वे' sub_title='' %}
+{% endblock %}
+
+{% block content %}
+    <div class="sop-container">
+        <!-- English Header -->
+        <div class="sop-header" id="sop-header-english" style="display: none;">
+            <h1>Standard Operating Procedures & Guidelines</h1>
+            <p>Download official documents and user guides for library services. All documents are in PDF format and can be viewed or downloaded for reference.</p>
+        </div>
+
+        <!-- Marathi Header -->
+        <div class="sop-header" id="sop-header-marathi">
+            <h1>मानक संचालन प्रक्रिया आणि मार्गदर्शक तत्त्वे</h1>
+            <p>ग्रंथालय सेवांसाठी अधिकृत दस्तऐवज आणि वापरकर्ता मार्गदर्शिका डाउनलोड करा. सर्व दस्तऐवज PDF स्वरूपात आहेत आणि संदर्भासाठी पाहिले किंवा डाउनलोड केले जाऊ शकतात.</p>
+        </div>
+
+        <div class="sop-grid">
+            {% for sop in sop_files %}
+            <!-- English SOP Cards -->
+            <div class="sop-card" id="sop-card-english-{{ sop.id }}" style="display: none;" lang="en">
+                <h3>{{ sop.name_en }}</h3>
+                <div class="sop-description">{{ sop.description_en }}</div>
+                <div class="sop-meta">
+                    <span class="file-size">{{ sop.size }}</span>
+                    <a href="{% url 'download_sop' %}?enc_filename={{ sop.enc_filename }}" class="download-btn" download>
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                    <a href="{% url 'L01:view_book_detail' %}?cat_ref_num={{ book.bookIdEnc }}"
+                        class="discovery-link">
+                        {{ book.title }}{% if book.author %} - {{ book.author }}{% endif %}         
+                    </a>
+                </div>
+            </div>
+
+            <!-- Marathi SOP Cards -->
+            <div class="sop-card" id="sop-card-marathi-{{ sop.id }}" lang="mr">
+                <h3>{{ sop.name_mr }}</h3>
+                <div class="sop-description">{{ sop.description_mr }}</div>
+                <div class="sop-meta">
+                    <span class="file-size">{{ sop.size }}</span>
+                    <a href="{% url 'download_sop' %}?enc_filename={{ sop.enc_filename }}" class="download-btn" download>
+                        <i class="fas fa-download"></i> PDF डाउनलोड करा
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- English Note -->
+        <div class="sop-note" id="sop-note-english" style="display: none;">
+            <strong>Note:</strong> All SOP documents are official guidelines issued by Navi Mumbai Municipal Corporation Library Department. For any clarification, please contact the library administration.
+        </div>
+
+        <!-- Marathi Note -->
+        <div class="sop-note" id="sop-note-marathi">
+            <strong>सूचना:</strong> सर्व SOP दस्तऐवज नवी मुंबई महानगरपालिका ग्रंथालय विभागाद्वारे जारी केलेली अधिकृत मार्गदर्शक तत्त्वे आहेत. कोणत्याही स्पष्टीकरणासाठी कृपया ग्रंथालय प्रशासनाशी संपर्क साधा.
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_javascript %}
+    <script>
+        // Function to toggle SOP page language
+        function toggleSopLanguage() {
+            const isMarathi = document.getElementById('sop-header-marathi').style.display !== 'none';
+            
+            if (isMarathi) {
+                // Switch to English
+                document.getElementById('sop-header-marathi').style.display = 'none';
+                document.getElementById('sop-header-english').style.display = 'block';
+                
+                document.getElementById('sop-note-marathi').style.display = 'none';
+                document.getElementById('sop-note-english').style.display = 'block';
+                
+                {% for sop in sop_files %}
+                document.getElementById('sop-card-marathi-{{ sop.id }}').style.display = 'none';
+                document.getElementById('sop-card-english-{{ sop.id }}').style.display = 'block';
+                {% endfor %}
+            } else {
+                // Switch to Marathi
+                document.getElementById('sop-header-english').style.display = 'none';
+                document.getElementById('sop-header-marathi').style.display = 'block';
+                
+                document.getElementById('sop-note-english').style.display = 'none';
+                document.getElementById('sop-note-marathi').style.display = 'block';
+                
+                {% for sop in sop_files %}
+                document.getElementById('sop-card-english-{{ sop.id }}').style.display = 'none';
+                document.getElementById('sop-card-marathi-{{ sop.id }}').style.display = 'block';
+                {% endfor %}
+            }
+        }
+
+        // Sync with main language toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check current language from main header
+            const isEnglishVisible = document.getElementById('head-english').style.display !== 'none';
+            
+            if (isEnglishVisible) {
+                toggleSopLanguage(); // Show English
+            }
+            // Marathi is already shown by default
+        });
+    </script>
+{% endblock %}

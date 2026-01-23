@@ -1,806 +1,1005 @@
-
 {% load static %}
 
 {% block content %}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-            /* =========================
-            BASE RESET
-            ========================= */
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
+        /* =========================
+            BASE RESET & LAYOUT
+        ========================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-            body {
-                background: linear-gradient(135deg, #1a1a2e, #16213e);
-                color: #fff;
-                padding: 20px;
-            }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
 
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* =========================
+            PAGE TITLE
+        ========================= */
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+            padding-top: 30px;
+        }
+
+        .page-title {
+            font-family: 'Merriweather', serif;
+            font-size: 3.2rem;
+            background: linear-gradient(90deg, #00c3ff, #1e3cff, #8a2387, #e94057);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+            text-shadow: 0 10px 30px rgba(0, 195, 255, 0.2);
+        }
+
+        .page-subtitle {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .title-decorator {
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #00c3ff, #1e3cff);
+            margin: 0 auto;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-decorator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* =========================
+            GRID LAYOUT - 2 CARDS PER ROW
+        ========================= */
+        .exams-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+            padding-bottom: 60px;
+        }
+
+        @media (max-width: 1200px) {
+            .exams-grid {
+                gap: 25px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .exams-grid {
+                grid-template-columns: 1fr;
+                max-width: 600px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .exams-grid {
+                gap: 20px;
+            }
+            
             .page-title {
-                text-align: center;
-                margin-bottom: 50px;
-                position: relative;
+                font-size: 2.5rem;
             }
+        }
 
-            .page-title h1 {
-                font-family: 'Merriweather', serif;
-                font-size: 2.8rem;
-                color: #fff;
-                font-weight: 700;
-                position: relative;
-                display: inline-block;
-                background: linear-gradient(90deg, #00c3ff, #1e3cff);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                transition: transform 0.3s ease, filter 0.3s ease;
-            }
+        /* =========================
+            FLIP CARD CONTAINER
+        ========================= */
+        .flip-card-container {
+            height: 520px;
+            perspective: 1500px;
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+        }
 
-            /* Hover effect for title */
-            .page-title h1:hover {
-                transform: scale(1.05);
-                filter: drop-shadow(0 0 10px #00c3ff);
-            }
+        .flip-card-container:nth-child(1) { animation-delay: 0.1s; }
+        .flip-card-container:nth-child(2) { animation-delay: 0.2s; }
+        .flip-card-container:nth-child(3) { animation-delay: 0.3s; }
+        .flip-card-container:nth-child(4) { animation-delay: 0.4s; }
+        .flip-card-container:nth-child(5) { animation-delay: 0.5s; }
+        .flip-card-container:nth-child(6) { animation-delay: 0.6s; }
 
-            /* Decorative line under the title */
-            .page-title::after {
-                content: "";
-                display: block;
-                width: 80px;
-                height: 4px;
-                margin: 15px auto 0;
-                border-radius: 2px;
-                background: linear-gradient(90deg, #00c3ff, #1e3cff);
-                transition: width 0.4s ease;
-            }
-
-            .page-title:hover::after {
-                width: 120px;
-            }
-
-
-            /* =========================
-            GRID & CONTAINER
-            ========================= */
-            .container {
-                max-width: 1200px;
-                margin: auto;
-            }
-
-            .categories-grid {
-                margin-top: 40px;
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 2rem;
-            }
-
-            /* Card Styling */
-            .category-card {
-                background: #1e1e3f; /* dark background to match your theme */
-                border-radius: 15px;
-                padding: 30px 20px 20px;
-                text-align: center;
-                position: relative;
-                overflow: hidden;
-                transition: transform 0.4s ease, box-shadow 0.4s ease;
-                cursor: pointer;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            /* Hover Effect */
-            .category-card:hover {
-                transform: translateY(-10px) scale(1.03);
-                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-            }
-
-            /* Icon Styling */
-            .category-card .category-icon {
-                width: 80px;
-                height: 80px;
-                margin-bottom: 20px;
-                transition: transform 0.4s ease, box-shadow 0.4s ease;
-                border-radius: 50%;
-                background: radial-gradient(circle, #00c3ff 0%, #1e3cff 100%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            }
-
-            .category-card:hover .category-icon {
-                transform: scale(1.15) rotate(5deg);
-                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            }
-
-            .category-card .category-icon i {
-                font-size: 36px;
-                color: #fff;
-            }
-
-            /* Text Styling */
-            .category-card h3 {
-                font-family: 'Merriweather', serif;
-                font-size: 1.3rem;
-                color: #fff;
-                margin-bottom: 5px;
-                transition: color 0.3s ease;
-            }
-
-            .category-card:hover h3 {
-                color: #00c3ff;
-            }
-
-            .category-card span {
-                color: #f5b700;
-                font-weight: bold;
-                font-size: 0.9rem;
-            }
-
-            /* Flip Button */
-            .category-card .flip-btn {
-                margin-top: auto;
-                padding: 8px 16px;
-                font-size: 0.9rem;
-                border-radius: 50px;
-                border: 1px solid rgba(255,255,255,0.3);
-                background: rgba(255,255,255,0.1);
-                color: #fff;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .category-card .flip-btn:hover {
-                background: #00c3ff;
-                border-color: #00c3ff;
-                color: #fff;
-                transform: translateY(-2px);
-            }
-
-            .flip-card-container {
-                height: 480px;
-                perspective: 1200px;
-                animation: fadeIn 0.6s ease forwards;
+        @keyframes fadeInUp {
+            from {
                 opacity: 0;
+                transform: translateY(30px);
             }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-            /* =========================
+        /* =========================
             FLIP CARD CORE
-            ========================= */
-            .flip-card {
-                width: 100%;
-                height: 100%;
-                position: relative;
-            }
+        ========================= */
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+        }
 
-            .flip-card-inner {
-                width: 100%;
-                height: 100%;
-                transition: transform 0.85s cubic-bezier(0.19, 1, 0.22, 1);
-                transform-style: preserve-3d;
-                position: relative;
-            }
+        .flip-card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.9s cubic-bezier(0.19, 1, 0.22, 1);
+            transform-style: preserve-3d;
+            position: relative;
+        }
 
-            .flip-card.flipped .flip-card-inner {
-                transform: rotateY(180deg);
-            }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
 
-            .flip-card-front,
-            .flip-card-back {
-                position: absolute;
-                inset: 0;
-                backface-visibility: hidden;
-                border-radius: 22px;
-                padding: 30px 30px 120px; /* 🔒 space for button */
-            }
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 24px;
+            padding: 35px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
 
-            /* =========================
-            FRONT
-            ========================= */
-            .flip-card-front {
-                background: linear-gradient(145deg, #1f1f2e, #2c2c54);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
+        /* =========================
+            FRONT SIDE STYLING
+        ========================= */
+        .flip-card-front {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            padding-bottom: 100px; /* Space for flip button */
+        }
 
-            /* =========================
-            BACK
-            ========================= */
-            .flip-card-back {
-                background: linear-gradient(145deg, #1f1f2e, #2c2c54);
-                transform: rotateY(180deg);
-                display: flex;
-                flex-direction: column;
-            }
+        .flip-card-front::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(0, 195, 255, 0.1) 0%, transparent 70%);
+        }
 
-            /* =========================
-            FRONT & BACK HOVER EFFECTS
-            ========================= */
-            .flip-card-front,
-            .flip-card-back {
-                transition: transform 0.5s ease, box-shadow 0.5s ease, filter 0.5s ease, background 0.5s ease;
-                will-change: transform, box-shadow, filter, background;
-            }
+        /* Exam Icon */
+        .exam-icon-front {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(58, 134, 255, 0.9), rgba(131, 56, 236, 0.9));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+            border: 4px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 20px 40px rgba(58, 134, 255, 0.3),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+        }
 
-            /* Front hover effect */
-            .flip-card-front:hover {
-                transform: scale(1.05) translateY(-5px);
-                box-shadow: 0 20px 40px rgba(0, 195, 255, 0.4), 0 0 25px rgba(255, 255, 255, 0.1) inset;
-                filter: brightness(1.1) saturate(1.2);
-                background: linear-gradient(145deg, #1f1f2e 0%, #2c2c70 100%);
-            }
+        .flip-card-front:hover .exam-icon-front {
+            transform: scale(1.08) rotate(5deg);
+            box-shadow: 
+                0 25px 50px rgba(58, 134, 255, 0.4),
+                0 0 60px rgba(58, 134, 255, 0.2),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
 
-            /* Back hover effect */
-            .flip-card-back:hover {
-                transform: scale(1.05) translateY(-5px) rotateY(180deg);
-                box-shadow: 0 20px 40px rgba(26, 208, 206, 0.4), 0 0 30px rgba(255, 255, 255, 0.08) inset;
-                filter: brightness(1.08) saturate(1.15);
-                background: linear-gradient(145deg, #1f1f2e 0%, #2c2c70 100%);
-            }
+        .exam-icon-front i {
+            font-size: 60px;
+            color: white;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
 
-            /* Optional: Add subtle floating glow animation */
-            @keyframes floatingGlow {
-                0% { box-shadow: 0 0 10px rgba(0,195,255,0.3); }
-                50% { box-shadow: 0 0 25px rgba(0,195,255,0.5); }
-                100% { box-shadow: 0 0 10px rgba(0,195,255,0.3); }
-            }
+        /* Front Text - FIXED HEIGHT TO PREVENT OVERLAP */
+        .front-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 0;
+            max-height: 280px;
+            overflow: hidden;
+        }
 
-            .flip-card-front:hover .upsc-cover-icon,
-            .flip-card-back:hover .upsc-cover-icon {
-                animation: floatingGlow 2s ease-in-out infinite alternate;
-            }
+        .exam-title-front {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+            line-height: 1.3;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.6em;
+            max-height: 2.6em;
+        }
 
-            /* =========================
-            ICON (LOCKED)
-            ========================= */
-            .upsc-cover-icon {
-                width: 140px;
-                height: 140px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #1a2980, #26d0ce);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-top: 42px;
-                margin-bottom: 28px;
-                position: relative;
-                overflow: hidden;
-                border: 4px solid rgba(255, 255, 255, 0.25);
-                box-shadow:
-                    0 18px 40px rgba(26, 41, 128, 0.45),
-                    inset 0 0 25px rgba(255, 255, 255, 0.12);
-            }
+        .exam-code-front {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #3a86ff;
+            background: rgba(58, 134, 255, 0.1);
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+            border: 1px solid rgba(58, 134, 255, 0.3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
-            .upsc-cover-icon::before {
-                content: '';
-                position: absolute;
-                inset: -50%;
-                background: radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px);
-                background-size: 20px 20px;
-                animation: upscRotate 22s linear infinite;
-            }
+        /* Flip Button - FIXED POSITION */
+        .flip-btn {
+            position: absolute;
+            bottom: 55px;
+            left: 65%;
+            {% comment %} bottom: 35px;
+            left: 50%; {% endcomment %}
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            white-space: nowrap;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
 
-            .upsc-cover-icon i {
-                font-size: 64px;
-                color: #ffffff;
-                z-index: 1;
-                text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-            }
+        .flip-btnn {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            {% comment %} bottom: 35px;
+            left: 50%; {% endcomment %}
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            white-space: nowrap;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
 
-            /* =========================
-            FRONT TEXT
-            ========================= */
+        .flip-btn:hover {
+            background: linear-gradient(135deg, #3a86ff, #8338ec);
+            box-shadow: 0 15px 30px rgba(58, 134, 255, 0.4);
+            border-color: transparent;
+        }
+
+        .flip-btn i {
+            transition: transform 0.4s ease;
+        }
+
+        .flip-btn:hover i {
+            transform: rotate(180deg);
+        }
+
+        .flip-btnn:hover {
+            background: linear-gradient(135deg, #3a86ff, #8338ec);
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 15px 30px rgba(58, 134, 255, 0.4);
+            border-color: transparent;
+        }
+
+        .flip-btnn i {
+            transition: transform 0.4s ease;
+        }
+
+        .flip-btnn:hover i {
+            transform: rotate(180deg);
+        }
+
+        /* =========================
+            BACK SIDE STYLING
+        ========================= */
+        .flip-card-back {
+            background: linear-gradient(145deg, rgba(20, 30, 48, 0.95), rgba(10, 18, 32, 0.98));
+            border: 1px solid rgba(58, 134, 255, 0.2);
+            transform: rotateY(180deg);
+            padding: 35px;
+            padding-bottom: 100px; /* Space for action buttons */
+        }
+
+        /* Back Header */
+        .exam-header-back {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 80px;
+        }
+
+        .exam-icon-back {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3a86ff, #8338ec);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .exam-icon-back i {
+            font-size: 26px;
+            color: white;
+        }
+
+        .exam-title-back {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .exam-title-back h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 5px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .exam-code-back {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #3a86ff;
+            background: rgba(58, 134, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 15px;
+            display: inline-block;
+            border: 1px solid rgba(58, 134, 255, 0.3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+
+        /* Back Description - SCROLLABLE */
+        .exam-description-back {
+            color: #cbd5e1;
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            min-height: 120px;
+            max-height: 180px;
+        }
+
+        .exam-description-back::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .exam-description-back::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .exam-description-back::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3a86ff, #8338ec);
+            border-radius: 2px;
+        }
+
+        /* Features List */
+        .exam-features-back {
+            list-style: none;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .exam-features-back li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            color: #94a3b8;
+            padding: 8px 0;
+        }
+
+        .exam-features-back li i {
+            color: #22c55e;
+            font-size: 16px;
+            background: rgba(34, 197, 94, 0.1);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Action Buttons Row - FIXED POSITION */
+        .back-action-row {
+            position: absolute;
+            bottom: 35px;
+            left: 35px;
+            right: 35px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .back-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            white-space: nowrap;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .view-materials-btn {
+            flex: 2;
+            background: linear-gradient(135deg, #3a86ff, #8338ec);
+            border: none;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            min-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .view-materials-btn:hover {
+            background: linear-gradient(135deg, #8338ec, #ff006e);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(131, 56, 236, 0.4);
+            color: white;
+        }
+
+        /* Special handling for UPSC/MPSC buttons */
+        .special-exam-btn {
+            background: linear-gradient(135deg, #e94057, #8a2387) !important;
+        }
+
+        .special-exam-btn:hover {
+            background: linear-gradient(135deg, #f27121, #e94057) !important;
+        }
+
+        /* =========================
+            NO EXAMS MESSAGE
+        ========================= */
+        .no-exams-container {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 40px;
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .no-exams-icon {
+            font-size: 4rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        .no-exams-title {
+            font-size: 2rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .no-exams-message {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* =========================
+            GO BACK BUTTON (TOP)
+        ========================= */
+        .global-back-container {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+        }
+
+        .global-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 26px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .global-back-btn:hover {
+            background: linear-gradient(135deg, rgba(58, 134, 255, 0.9), rgba(131, 56, 236, 0.9));
+            border-color: rgba(58, 134, 255, 0.3);
+            transform: translateX(-3px);
+            box-shadow: 0 12px 30px rgba(58, 134, 255, 0.3);
+        }
+
+        .global-back-btn i {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .global-back-btn:hover i {
+            transform: translateX(-3px);
+        }
+
+        /* =========================
+            RESPONSIVE ADJUSTMENTS
+        ========================= */
+        @media (max-width: 1200px) {
+            .exams-grid {
+                gap: 25px;
+            }
+            
+            .flip-card-container {
+                height: 500px;
+            }
+            
             .exam-title-front {
-                min-height: 88px;
-                font-size: 2rem;
-                font-weight: 800;
-                line-height: 1.3;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .exam-short-front {
-                margin-top: 6px;
-                color: #ffd369;
-                font-weight: 700;
-                letter-spacing: 1px;
-            }
-
-            /* =========================
-            BACK CONTENT
-            ========================= */
-            .exam-header-back {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                margin-bottom: 14px;
-            }
-
-            .exam-header-back i {
-                font-size: 26px;
-                color: #ffd369;
-                background: rgba(255,255,255,0.15);
-                padding: 14px;
-                border-radius: 14px;
-            }
-
-            .exam-header-back h3 {
                 font-size: 1.6rem;
-                font-weight: 800;
             }
-
-            .exam-short-back {
-                font-size: 14px;
-                font-weight: 700;
-                color: #ffd369;
+            
+            .exam-title-back h3 {
+                font-size: 1.4rem;
             }
+        }
 
-            .exam-description-back {
-                font-size: 15px;
-                line-height: 1.7;
-                color: #dde0ff;
-                margin-bottom: 16px;
+        @media (max-width: 992px) {
+            .exams-grid {
+                grid-template-columns: 1fr;
+                max-width: 600px;
             }
-
-            .exam-features-back {
-                list-style: none;
-                padding: 0;
-                margin-bottom: 18px;
+            
+            .global-back-container {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 30px;
             }
-
-            .exam-features-back li {
-                display: flex;
-                gap: 12px;
-                align-items: center;
-                margin-bottom: 10px;
-                font-size: 15px;
-            }
-
-            .exam-features-back li i {
-                color: #3ee577;
-                font-size: 16px;
-            }
-
-            /* =========================
-            DETAILS LINK
-            ========================= */
-            .view-details-link {
-                margin-top: auto;
-                display: block;
-                text-align: center;
-                padding: 14px 22px;
-                border-radius: 40px;
-                background: linear-gradient(135deg, #1a2980, #26d0ce);
-                color: #fff;
-                text-decoration: none;
-                font-weight: 700;
-                transition: all 0.3s ease;
-            }
-
-            .view-details-link:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(26,41,128,0.45);
-            }
-
-
-            /* =========================
-            FIXED BACK ACTION ROW
-            ========================= */
-
-            .back-action-row {
-                position: absolute;          /* FIXED INSIDE CARD */
-                bottom: 18px;                /* consistent vertical position */
-                left: 50%;
-                transform: translateX(-50%); /* perfect center */
-
-                display: flex;
-                align-items: center;
+            
+            .global-back-btn {
+                width: 100%;
                 justify-content: center;
-                gap: 16px;
-
-                width: auto;
-                z-index: 5;
-                pointer-events: auto;
             }
-
-            /* IMPORTANT: override absolute flip-btn */
-            .back-action-row .flip-btn.back {
-                position: static !important; /* stops overlap */
-                white-space: nowrap;
+            
+            .flip-card-container {
+                height: 520px;
             }
+        }
 
-            /* View Study Materials button */
-            .back-action-row .view-details-link {
-                position: static;
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 0.9rem;
-                font-weight: 600;
-                text-decoration: none;
-                color: #ffd369;
-                padding: 8px 16px;
-                border-radius: 30px;
-                border: 1px solid rgba(255, 211, 105, 0.4);
-                background: linear-gradient(135deg, #1c7cff, #2fd6b4);
-                white-space: nowrap;
-                transition: all 0.3s ease;
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
             }
-
-            .back-action-row .view-details-link:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            
+            .page-title {
+                font-size: 2.2rem;
             }
-
-
-            /* =========================
-            FLIP / BACK BUTTON (NO OVERLAP)
-            ========================= */
-            .flip-btn {
-                position: absolute;
-                bottom: 28px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(255,255,255,0.18);
-                border: 1px solid rgba(255,255,255,0.35);
-                color: #fff;
-                padding: 12px 28px;
-                border-radius: 30px;
-                font-weight: 700;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
+            
+            .page-subtitle {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+            
+            .flip-card-front,
+            .flip-card-back {
+                padding: 25px;
+                padding-bottom: 90px;
+            }
+            
+            .back-action-row {
+                left: 25px;
+                right: 25px;
+                bottom: 25px;
+            }
+            
+            .exam-icon-front {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .exam-icon-front i {
+                font-size: 50px;
+            }
+            
+            .exam-title-front {
+                font-size: 1.6rem;
+            }
+            
+            .exam-title-back h3 {
+                font-size: 1.4rem;
+            }
+            
+            .back-action-row {
+                flex-direction: column;
                 gap: 10px;
-                cursor: pointer;
-                z-index: 10;
-                transition: all 0.3s ease;
+            }
+            
+            .back-btn,
+            .view-materials-btn {
+                width: 100%;
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.8rem;
+            }
+            
+            .flip-card-container {
+                height: 500px;
+            }
+            
+            .exam-icon-front {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .exam-icon-front i {
+                font-size: 40px;
+            }
+            
+            .exam-title-front {
+                font-size: 1.4rem;
+            }
+            
+            .exam-title-back h3 {
+                font-size: 1.2rem;
+            }
+            
+            .flip-btn {
+                padding: 12px 24px;
+                font-size: 14px;
+                min-width: 120px;
             }
 
-            .flip-btn:hover {
-                background: linear-gradient(135deg, #1a2980, #26d0ce);
-                box-shadow: 0 12px 30px rgba(26,41,128,0.45);
-                transform: translateX(-50%) translateY(-3px);
+            .flip-btnn {
+                padding: 12px 24px;
+                font-size: 14px;
+                min-width: 120px;
             }
-
-            .flip-btn i {
-                transition: transform 0.4s ease;
+            
+            .back-btn,
+            .view-materials-btn {
+                padding: 12px 16px;
+                font-size: 14px;
             }
-
-            .flip-btn:hover i {
-                transform: rotate(180deg);
-            }
-
-            /* Back button – same position */
-            .flip-btn.back {
-                bottom: 28px;
-            }
-
-            /* =========================
-            ANIMATIONS
-            ========================= */
-            @keyframes upscRotate {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(25px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-
-            /* =========================
-            RESPONSIVE
-            ========================= */
-            @media (max-width: 768px) {
-                .upsc-cover-icon {
-                    width: 120px;
-                    height: 120px;
-                }
-                .upsc-cover-icon i {
-                    font-size: 52px;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .upsc-cover-icon {
-                    width: 100px;
-                    height: 100px;
-                }
-                .upsc-cover-icon i {
-                    font-size: 44px;
-                }
-            }
-
-
+        }
     </style>
 
-    <div class="container">
+    <!-- Global Back Button -->
+    <div class="global-back-container">
+        <button class="global-back-btn" onclick="window.history.back()">
+            <i class="fas fa-arrow-left"></i>
+            <span>मागे जा</span>
+        </button>
+    </div>
 
-        
-        <div class="page-title">
-            <h1>Competitive Examinations</h1>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Competitive Examinations</h1>
+            <p class="page-subtitle">
+                Explore comprehensive study materials for various competitive exams. 
+                Click on any exam to flip the card and view detailed information.
+            </p>
+            <div class="title-decorator"></div>
         </div>
 
-        <div class="categories-grid" id="categoriesGrid">
+        <!-- Exams Grid - 2 cards per row -->
+        <div class="exams-grid">
             {% for exam in competitive_exams %}
                 <div class="flip-card-container">
-                    <div class="flip-card upsc-card">
+                    <div class="flip-card">
                         <div class="flip-card-inner">
 
-                            <!-- FRONT -->
+                            <!-- FRONT SIDE -->
                             <div class="flip-card-front">
-                                <div class="upsc-cover-icon">
-                                    <i class="fas fa-landmark"></i>
+                                <div class="front-content">
+                                    <div class="exam-icon-front">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </div>
+
+                                    <h3 class="exam-title-front" title="{{ exam.full_name }}">
+                                        {{ exam.full_name }}
+                                    </h3>
                                     
+                                    {% if exam.short_form %}
+                                        <span class="exam-code-front" title="{{ exam.short_form }}">
+                                            {{ exam.short_form }}
+                                        </span>
+                                    {% endif %}
                                 </div>
 
-                                <h3 class="exam-title-front">{{ exam.full_name }}</h3>
-
-                                {% if exam.short_form %}
-                                <span class="exam-short-front">{{ exam.short_form }}</span>
-                                {% endif %}
-
-                                <!-- FLIP BUTTON -->
-                                <button class="flip-btn" type="button">
-                                    <i class="fas fa-sync-alt"></i> Flip
+                                <!-- Flip Button -->
+                                <button class="flip-btnn" type="button">
+                                    <i class="fas fa-sync-alt"></i> View Details
                                 </button>
                             </div>
 
-                            <!-- BACK -->
+                            <!-- BACK SIDE -->
                             <div class="flip-card-back">
+                                <!-- Exam Header -->
                                 <div class="exam-header-back">
-                                    <i class="fas fa-landmark"></i>
-                                    <h3>
-                                        {{ exam.full_name }}
+                                    <div class="exam-icon-back">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </div>
+                                    <div class="exam-title-back">
+                                        <h3 title="{{ exam.full_name }}">{{ exam.full_name }}</h3>
                                         {% if exam.short_form %}
-                                            <span class="exam-short-back">({{ exam.short_form }})</span>
+                                            <span class="exam-code-back" title="{{ exam.short_form }}">
+                                                {{ exam.short_form }}
+                                            </span>
                                         {% endif %}
-                                    </h3>
+                                    </div>
                                 </div>
 
-                                <!-- Full Description -->
-                                    <p class="exam-description-back">
-                                        {% if exam.competitive_description %}
-                                            {{ exam.competitive_description }}
-                                        {% else %}
-                                            Complete syllabus, PYQs & strategy
-                                        {% endif %}
-                                    </p>
+                                <!-- Exam Description -->
+                                <div class="exam-description-back">
+                                    {% if exam.competitive_description %}
+                                        {{ exam.competitive_description }}
+                                    {% else %}
+                                        Comprehensive study materials including complete syllabus, 
+                                        previous year question papers, recommended books, and 
+                                        strategic preparation guidance for {{ exam.full_name }}.
+                                    {% endif %}
+                                </div>
 
+                                <!-- Features List -->
                                 <ul class="exam-features-back">
-                                    <li><i class="fas fa-check-circle"></i> Complete syllabus</li>
-                                    <li><i class="fas fa-check-circle"></i> Previous year papers</li>
-                                    <li><i class="fas fa-check-circle"></i> Study material</li>
-                                    <li><i class="fas fa-check-circle"></i> Exam strategy</li>
+                                    <li><i class="fas fa-check"></i> Complete Syllabus Coverage</li>
+                                    <li><i class="fas fa-check"></i> Previous Year Papers</li>
+                                    <li><i class="fas fa-check"></i> Recommended Study Materials</li>
+                                    <li><i class="fas fa-check"></i> Preparation Strategy</li>
                                 </ul>
 
-                            <div class="back-action-row">
-                                <!-- BACK FLIP BUTTON -->
-                                <button class="flip-btn back" type="button" onclick="window.history.back()">
-                                    <i class="fas fa-undo"></i> Back
-                                </button>
-
-                                <a href="{% url 'L01:kiosk_competitive_sections' %}?competitive_id={{ exam.competitive_id }}"
-                                    class="view-details-link"
-                                    style="z-index:10; position:relative;">
-                                        <i class="fas fa-external-link-alt"></i>
-                                        View Study Materials
-                                </a>
-                            </div>
-
-                            {% comment %} <div class="back-action-row">
-                                    <!-- BACK FLIP BUTTON -->
-                                    <button class="flip-btn back" type="button">
-                                        <i class="fas fa-undo"></i> Back
+                                <!-- Action Buttons -->
+                                <div class="back-action-row">
+                                    <button class="back-btn flip-btn back" type="button">
+                                        <i class="fas fa-undo"></i> Flip Back
                                     </button>
-
-                                    {% if exam.competitive_id == 1 %}
-                                        <a href="{% url 'L01:upsc_index_logged' %}?competitive_id={{ exam.competitive_id }}"
-                                            class="view-details-link"
-                                            style="z-index:10; position:relative;">
-                                                <i class="fas fa-external-link-alt"></i>
-                                                View Study Materials
-                                        </a>
-                                    {% elif exam.competitive_id == 2 %}
-                                        <a href="{% url 'L01:mpsc_index_logged' %}?competitive_id={{ exam.competitive_id }}"
-                                            class="view-details-link"
-                                            style="z-index:10; position:relative;">
-                                                <i class="fas fa-external-link-alt"></i>
-                                                View Study Materials
+                                    
+                                    {% if exam.competitive_id == 1 or exam.competitive_id == 2 %}
+                                        <a href="{% url 'L01:kiosk_competitive_sections' %}?competitive_id={{ exam.competitive_id }}"
+                                           class="view-materials-btn special-exam-btn">
+                                            <i class="fas fa-book-open"></i> 
+                                            {{ exam.short_form }} Materials
                                         </a>
                                     {% else %}
-                                        <a href="{% url 'L01:kiosk_competitive_exam_type' %}?competitive_id={{ exam.competitive_id }}"
-                                            class="view-details-link"
-                                            style="z-index:10; position:relative;">
-                                                <i class="fas fa-external-link-alt"></i>
-                                                View Study Materials
+                                        <a href="{% url 'L01:kiosk_competitive_sections' %}?competitive_id={{ exam.competitive_id }}"
+                                           class="view-materials-btn">
+                                            <i class="fas fa-book-open"></i> Study Materials
                                         </a>
                                     {% endif %}
-
                                 </div>
-
-                            </div> {% endcomment %}
+                            </div>
 
                         </div>
                     </div>
                 </div>
             {% empty %}
-                <div class="no-exams">
-                    <p>No competitive exams available.</p>
+                <!-- No Exams Message -->
+                <div class="no-exams-container">
+                    <div class="no-exams-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3 class="no-exams-title">No Exams Available</h3>
+                    <p class="no-exams-message">
+                        There are currently no competitive exams available for viewing. 
+                        Please check back later or contact the administrator.
+                    </p>
                 </div>
             {% endfor %}
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const optionCards = document.querySelectorAll('.option-card');
-            const selectButtons = document.querySelectorAll('.select-btn');
-            const proceedButton = document.getElementById('proceedButton');
-            
-            let selectedOption = 'physical';
-            
-            // Initially select physical book
-            selectOption('physical');
-            
-            // Function to select an option
-            function selectOption(option) {
-                // Remove selected class from all cards
-                optionCards.forEach(card => {
-                    card.classList.remove('selected');
-                });
-                
-                // Add selected class to the clicked option
-                const selectedCard = document.querySelector(`.option-card[data-option="${option}"]`);
-                selectedCard.classList.add('selected');
-                
-                // Update selected option
-                selectedOption = option;
-                
-                // Add a special animation to the selected card
-                selectedCard.style.animation = 'float 6s ease-in-out infinite, pulseGlow 1s ease-out';
-                
-                // Create and add the pulseGlow animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes pulseGlow {
-                        0% { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3); }
-                        50% { box-shadow: 0 0 60px rgba(255, 255, 255, 0.5); }
-                        100% { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3); }
-                    }
-                `;
-                document.head.appendChild(style);
-                
-                setTimeout(() => {
-                    selectedCard.style.animation = 'float 6s ease-in-out infinite';
-                }, 1000);
-            }
-            
-            // Add click events to option cards
-            optionCards.forEach(card => {
-                card.addEventListener('click', function() {
-                    const option = this.getAttribute('data-option');
-                    selectOption(option);
-                });
-            });
-            
-            // Add click events to select buttons
-            selectButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const option = this.getAttribute('data-option');
-                    selectOption(option);
-                });
-            });
-            
-            // Proceed button click event
-            proceedButton.addEventListener('click', function() {
-                // Button click animation
-                proceedButton.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    proceedButton.style.transform = '';
-                }, 200);
-                
-                // Show loading state
-                const originalText = proceedButton.innerHTML;
-                proceedButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> REDIRECTING...';
-                proceedButton.disabled = true;
-                
-                // Create a page transition effect
-                const transitionOverlay = document.createElement('div');
-                transitionOverlay.style.position = 'fixed';
-                transitionOverlay.style.top = '0';
-                transitionOverlay.style.left = '0';
-                transitionOverlay.style.width = '100%';
-                transitionOverlay.style.height = '100%';
-                transitionOverlay.style.backgroundColor = '#0f3460';
-                transitionOverlay.style.zIndex = '1000';
-                transitionOverlay.style.display = 'flex';
-                transitionOverlay.style.justifyContent = 'center';
-                transitionOverlay.style.alignItems = 'center';
-                transitionOverlay.style.opacity = '0';
-                transitionOverlay.style.transition = 'opacity 0.5s ease';
-                
-                // Add content to overlay
-                const optionNames = {
-                    'physical': 'PHYSICAL BOOK',
-                    'ebook': 'E-BOOK',
-                    'audiobook': 'AUDIOBOOK'
-                };
-                
-                const selectedName = optionNames[selectedOption];
-                
-                transitionOverlay.innerHTML = `
-                    <div style="text-align: center; color: white;">
-                        <h1 style="font-size: 4rem; margin-bottom: 30px;">${selectedName}</h1>
-                        <p style="font-size: 1.8rem; margin-bottom: 40px;">Experience loading...</p>
-                        <div style="width: 100px; height: 100px; border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    </div>
-                `;
-                
-                document.body.appendChild(transitionOverlay);
-                
-                // Fade in the overlay
-                setTimeout(() => {
-                    transitionOverlay.style.opacity = '1';
-                }, 10);
-                
-                // Simulate loading delay
-                setTimeout(() => {
-                    // In a real implementation, you would redirect here
-                    // window.location.href = `/${selectedOption}.html`;
-                    
-                    // For demo, show a message and reset
-                    transitionOverlay.innerHTML = `
-                        <div style="text-align: center; color: white;">
-                            <h1 style="font-size: 4rem; margin-bottom: 30px;">${selectedName} SELECTED!</h1>
-                            <p style="font-size: 1.8rem; margin-bottom: 40px;">You would now be redirected to the ${selectedName.toLowerCase()} experience.</p>
-                            <button id="closeOverlay" style="background: #ff6b6b; color: white; border: none; padding: 15px 40px; font-size: 1.3rem; border-radius: 50px; cursor: pointer; margin-top: 20px;">
-                                Back to Selection
-                            </button>
-                        </div>
-                    `;
-                    
-                    // Add spin animation
-                    const spinStyle = document.createElement('style');
-                    spinStyle.textContent = `
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                    `;
-                    document.head.appendChild(spinStyle);
-                    
-                    // Add event listener to close button
-                    document.getElementById('closeOverlay').addEventListener('click', function() {
-                        document.body.removeChild(transitionOverlay);
-                        proceedButton.innerHTML = originalText;
-                        proceedButton.disabled = false;
-                    });
-                    
-                }, 3000);
-            });
-        });
-    </script>
-
-    <script>
+        // Card Flip Functionality
         document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll(".flip-btn").forEach(btn => {
+            // Flip buttons on front side
+            document.querySelectorAll(".flip-btnn:not(.back)").forEach(btn => {
                 btn.addEventListener("click", function (e) {
                     e.stopPropagation();
                     const card = this.closest(".flip-card");
-                    card.classList.toggle("flipped");
+                    card.classList.add("flipped");
+                    
+                    // Add click animation
+                    this.style.transform = 'translateX(-50%) scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = 'translateX(-50%)';
+                    }, 200);
                 });
+            });
+
+            // Back buttons on back side
+            document.querySelectorAll(".flip-btn.back").forEach(btn => {
+                btn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    const card = this.closest(".flip-card");
+                    card.classList.remove("flipped");
+                    
+                    // Add click animation
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+
+            // Add click animation to all buttons
+            document.querySelectorAll(".back-btn, .view-materials-btn").forEach(btn => {
+                btn.addEventListener("click", function(e) {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+
+            // Add hover effect to cards
+            document.querySelectorAll(".flip-card").forEach(card => {
+                card.addEventListener("mouseenter", function() {
+                    if (!this.classList.contains("flipped")) {
+                        const icon = this.querySelector(".exam-icon-front");
+                        if (icon) {
+                            icon.style.transform = "scale(1.05) rotate(3deg)";
+                        }
+                    }
+                });
+                
+                card.addEventListener("mouseleave", function() {
+                    if (!this.classList.contains("flipped")) {
+                        const icon = this.querySelector(".exam-icon-front");
+                        if (icon) {
+                            icon.style.transform = "scale(1) rotate(0deg)";
+                        }
+                    }
+                });
+            });
+
+            // Global back button animation
+            const globalBackBtn = document.querySelector(".global-back-btn");
+            if (globalBackBtn) {
+                globalBackBtn.addEventListener("click", function() {
+                    this.style.transform = "translateX(-5px) scale(0.95)";
+                    setTimeout(() => {
+                        this.style.transform = "";
+                    }, 300);
+                });
+            }
+        });
+
+        // Animate cards on load
+        window.addEventListener("load", function() {
+            const cards = document.querySelectorAll(".flip-card-container");
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = "1";
+                    card.style.transform = "translateY(0)";
+                }, 100 * index);
             });
         });
     </script>
@@ -808,7 +1007,6 @@
 {% endblock %}
 
 {% block extra_javascript %}
-
     {% include "bootstrap/partials/syntax-highlight.html" %}
 
     <!-- Third party js -->
@@ -827,5 +1025,4 @@
     <!-- Selectize.js JS -->
     <script src="{% static 'js/selectize.min.js' %}"></script>
     <script src="{% static 'js/vendor/select2.min.js' %}"></script>
-
 {% endblock %}

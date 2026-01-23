@@ -441,11 +441,17 @@
                     </a>
 
                     {% if request.session.role_id == '3' %}
-                    <a href="javascript:void(0)" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#qrCodeModal" onclick="loadQRCode()">
-                        <i class="mdi mdi-logout me-1"></i>
-                        <span>QR Code</span>
-                    </a>
+                        <a href="javascript:void(0)" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#qrCodeModal" onclick="loadQRCode()">
+                            <i class="mdi mdi-logout me-1"></i>
+                            <span>QR Code</span>
+                        </a>
                     {% endif %} 
+
+                    <a href="{% url 'sop' %}" class="dropdown-item">
+                        <i class="mdi mdi-logout me-1"></i>
+                        <span>SOP / Guidelines</span>
+                    </a>
+                    
                 </div>
             </li>
         </ul>

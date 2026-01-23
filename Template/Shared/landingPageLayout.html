@@ -62,7 +62,7 @@
             }
 
         </style>
-          <style>
+        <style>
 
             .member-login-btn {
                 background: #d9b340; /* Primary blue */
@@ -315,7 +315,7 @@
                                 <li class="nav-item">
                                     <a href="{% url 'public_book_catalogue' %}">पुस्तक सूची</a>
                                 </li>
-                            {% endif %}
+                            {% endif %} 
 
                             <!-- Add 'ms-auto' to shift login button towards right but not at the extreme end -->
                             {% if request.session.library_db and request.path != '/' and membership_page_link %}
@@ -348,12 +348,15 @@
                     <div class="footer-section">
                         <h4 class="footer-heading">त्वरित लिंक</h4>
                         <ul class="footer-links">
+                            
                             <li><a href="#">मुख्य पृष्ठ</a></li>
-                            {% comment %} <li><a href="#">आमच्याबद्दल</a></li> {% endcomment %}
-                            {% comment %} <li><a href="#">सेवा</a></li> {% endcomment %}
+                            
                             <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC तयारी</a></li>
+                            
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC तयारी</a></li>
+                            
                             <li><a href="{% url 'vision_mission' %}">दृष्टिकोन आणि ध्येय</a></li>
+                            
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item">
                                     <a href="{% url 'L01:view_ebook_catalogue' %}">पुस्तके शोधा</a>
@@ -365,11 +368,19 @@
                                     <a href="{% url 'public_book_catalogue' %}">पुस्तक सूची</a>
                                 </li>
                             {% endif %}
-                            {% comment %} <li><a href="#">संपर्क</a></li> {% endcomment %}
+                            
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                                <li class="nav-item">
+                                    <a href="{% url 'sop' %}">मार्गदर्शक</a>
+                                </li>
+                            {% endif %}
+                            
                             <li><a href="{% url 'adminLogin' %}">प्रशासकीय लॉगिन</a></li>
+                            
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li><a href="{% url 'librarianLogin' %}">ग्रंथालय कर्मचारी लॉगिन</a></li>
                             {% endif %}
+
                         </ul>
                     </div>
                     
@@ -382,11 +393,11 @@
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-phone"></i>
-                                <span>+९१ २२ २७५६ १२३४</span>
+                                <span>+९१ ९८२०३४५६७८ </span>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-envelope"></i>
-                                <span>contact@nmmc.gov.in</span>
+                                <span>nmmclibrary2@gmail.com</span>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-clock"></i>
@@ -402,8 +413,6 @@
                             <li><a href="https://mahait.org/" target="_blank">महाराष्ट्र IT पोर्टल</a></li>
                             <li><a href="https://www.mpsc.gov.in/" target="_blank">MPSC अधिकृत वेबसाइट</a></li>
                             <li><a href="https://upsc.gov.in/" target="_blank">UPSC अधिकृत वेबसाइट</a></li>
-                            {% comment %} <li><a href="#">सूचना कायदा</a></li>
-                            <li><a href="#">गोपनीयता धोरण</a></li> {% endcomment %}
                         </ul>
                     </div>
                 </div>
@@ -470,13 +479,15 @@
                     <div class="footer-section">
                         <h4 class="footer-heading">Quick Links</h4>
                         <ul class="footer-links">
+                            
                             <li><a href="#">Home</a></li>
-                            {% comment %} <li><a href="#">About Us</a></li>
-                            <li><a href="#">Services</a></li> {% endcomment %}
+                            
                             <li><a href="{% url 'L01:mpsc_ebooks_index' %}">MPSC Preparation</a></li>
+                            
                             <li><a href="{% url 'L01:upsc_ebook_index' %}">UPSC Preparation</a></li>
+                            
                             <li><a href="{% url 'vision_mission' %}">Vision and Mission</a></li>
-                            {% comment %} <li><a href="#">Contact</a></li> {% endcomment %}
+                            
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item">
                                     <a href="{% url 'L01:view_ebook_catalogue' %}">Search Books</a>
@@ -488,10 +499,19 @@
                                     <a href="{% url 'public_book_catalogue' %}">Book Catalogue</a>
                                 </li>
                             {% endif %}
+
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                                <li class="nav-item">
+                                    <a href="{% url 'sop' %}">SOP / Guidelines</a>
+                                </li>
+                            {% endif %}
+
                             <li><a href="{% url 'adminLogin' %}">Administrative Login</a></li>
+                            
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li><a href="{% url 'librarianLogin' %}">Librarian Staff Login</a></li>
                             {% endif %}
+
                         </ul>
                     </div>
                     
@@ -504,11 +524,11 @@
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-phone"></i>
-                                <span>+91 22 2756 1234</span>
+                                <span>+91 9820345678</span>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-envelope"></i>
-                                <span>contact@nmmc.gov.in</span>
+                                <span>nmmclibrary2@gmail.com</span>
                             </div>
                             <div class="contact-item">
                                 <i class="fas fa-clock"></i>

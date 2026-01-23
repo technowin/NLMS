@@ -166,21 +166,27 @@
         
         /* Topic Image Container */
         .topic-image-container {
-            height: 200px;
+            height: 280px; /* Increased from 200px */
+            min-height: 280px; /* Ensure minimum height */
             overflow: hidden;
             position: relative;
             background: linear-gradient(135deg, #141e30, #243b55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .topic-image {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain; /* Changed from 'cover' to 'contain' to show full image */
             transition: transform 0.6s ease;
+            background: linear-gradient(135deg, #1a1d28, #242837); /* Background for transparent images */
+            padding: 10px; /* Add some padding for better display */
         }
         
         .topic-card:hover .topic-image {
-            transform: scale(1.05);
+            transform: scale(1.08); /* Slightly reduced from 1.05 for smoother effect */
         }
         
         .image-placeholder {
@@ -194,27 +200,79 @@
         }
         
         .image-placeholder i {
-            font-size: 3rem;
+            font-size: 4rem; /* Increased from 3rem */
         }
         
-        /* Topic Content */
+        /* Alternative: Use fixed aspect ratio for images */
+        .topic-image-container.aspect-ratio {
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
+            position: relative;
+        }
+        
+        .topic-image-container.aspect-ratio .topic-image,
+        .topic-image-container.aspect-ratio .image-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .topic-image-container {
+                height: 240px;
+                min-height: 240px;
+            }
+            
+            .image-placeholder i {
+                font-size: 3.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .topic-image-container {
+                height: 220px;
+                min-height: 220px;
+            }
+            
+            .image-placeholder i {
+                font-size: 3rem;
+            }
+        }
+        
+        /* Make the topic card height consistent */
+        .topic-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 500px; /* Fixed height for consistency */
+        }
+        
         .topic-content {
             padding: 1.5rem;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-        }
-        
-        .topic-header {
-            margin-bottom: 1rem;
+            min-height: 220px; /* Minimum content height */
         }
         
         .topic-name {
             font-size: 1.3rem;
             font-weight: 600;
             color: #ffffff;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.8em;
         }
         
         .topic-description {
@@ -223,15 +281,41 @@
             line-height: 1.6;
             margin-bottom: 1rem;
             flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 4.8em;
         }
         
-        .topic-reference {
-            background: rgba(34, 197, 94, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: auto;
-            border-left: 3px solid #22c55e;
+        /* Alternative design with image as background */
+        .topic-card.with-bg-image {
+            position: relative;
+            overflow: hidden;
         }
+        
+        .topic-card.with-bg-image .topic-image-container {
+            height: 200px;
+            position: relative;
+        }
+        
+        .topic-card.with-bg-image .topic-image {
+            object-fit: cover;
+            filter: brightness(0.8);
+        }
+        
+        .topic-card.with-bg-image .topic-content {
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.7));
+            backdrop-filter: blur(5px);
+            position: relative;
+            z-index: 2;
+            margin-top: -40px;
+            border-radius: 16px 16px 0 0;
+            padding-top: 50px;
+        }
+        
+        /* Topic Content */
+        
         
         .reference-title {
             color: #22c55e;
@@ -404,6 +488,7 @@
             border-radius: 10px;
         }
     </style>
+
 {% endblock %}
 
 {% block content %}
@@ -441,7 +526,7 @@
 
             <!-- Navigation Links -->
             <div class="sidebar-navigation">
-                <a href="{% url 'L01:kiosk_competitive_exam_type' %}?competitive_id={{ exam.competitive_id }}" class="nav-link-item">
+                <a href="{% url 'L01:kiosk_competitive_exam_type' %}" class="nav-link-item">
                     <i class="ri-home-line"></i>
                     <span>Back to {{ exam.short_form }}</span>
                 </a>
@@ -486,8 +571,9 @@
             <div class="topics-grid">
                 {% if topics %}
                     {% for topic in topics %}
+                        <!-- Update the Topic Card section with better image display -->
                         <div class="topic-card">
-                            <!-- Image at Top -->
+                            <!-- Image at Top - Increased Height -->
                             <div class="topic-image-container">
                                 {% if topic.topic_image_url %}
                                     <img src="{{ topic.topic_image_url }}" alt="{{ topic.topic_name }}" class="topic-image">
@@ -607,7 +693,7 @@
         });
         
         // KIOSK FULLSCREEN SCRIPT
-        function forceFullscreen() {
+        {% comment %} function forceFullscreen() {
             const elem = document.documentElement;
             
             if (!document.fullscreenElement && 
@@ -717,6 +803,6 @@
                     setTimeout(forceFullscreen, 100);
                 }
             }, { once: true });
-        });
+        }); {% endcomment %}
     </script>
 {% endblock %}

@@ -1,0 +1,284 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <style>
+        /* SOP Page Specific Styles */
+        .sop-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .sop-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #015296;
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .sop-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .sop-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .sop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .sop-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-left: 5px solid #d9b340;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sop-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .sop-card h3 {
+            color: #015296;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            min-height: 60px;
+        }
+
+        .sop-description {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            flex-grow: 1;
+            font-size: 0.95rem;
+        }
+
+        .sop-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .file-size {
+            background: #f3f4f6;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #d9b340 0%, #c19b2e 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #c19b2e 0%, #a8841f 100%);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(217, 179, 64, 0.3);
+        }
+
+        .download-btn i {
+            font-size: 1.1rem;
+        }
+
+        .sop-note {
+            background: #f8f9fa;
+            border-left: 4px solid #d9b340;
+            padding: 15px 20px;
+            margin-top: 40px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        /* Language specific styles */
+        .sop-card[lang="mr"] {
+            font-family: 'Arial', 'Noto Sans Devanagari', sans-serif;
+        }
+
+        @media (max-width: 768px) {
+            .sop-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sop-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="sop-container">
+        <!-- Header - Two versions -->
+        <div class="sop-header">
+            <div id="sop-header-marathi">
+                <h1>मानक संचालन प्रक्रिया आणि मार्गदर्शक तत्त्वे</h1>
+                <p>ग्रंथालय सेवांसाठी अधिकृत दस्तऐवज आणि वापरकर्ता मार्गदर्शिका डाउनलोड करा. सर्व दस्तऐवज PDF स्वरूपात आहेत आणि संदर्भासाठी पाहिले किंवा डाउनलोड केले जाऊ शकतात.</p>
+            </div>
+            <div id="sop-header-english" style="display: none;">
+                <h1>Standard Operating Procedures & Guidelines</h1>
+                <p>Download official documents and user guides for library services. All documents are in PDF format and can be viewed or downloaded for reference.</p>
+            </div>
+        </div>
+
+        <div class="sop-grid">
+            {% for sop in sop_files %}
+            <!-- Marathi SOP Cards -->
+            <div class="sop-card" id="sop-card-marathi-{{ sop.id }}" lang="mr">
+                <h3>{{ sop.name_mr }}</h3>
+                <div class="sop-description">{{ sop.description_mr }}</div>
+                <div class="sop-meta">
+                    <span class="file-size">{{ sop.size }}</span>
+                    <a href="{% url 'download_sop' %}?enc_filename={{ sop.enc_filename }}" class="download-btn" download>
+                        <i class="fas fa-download"></i> PDF डाउनलोड करा
+                    </a>
+                </div>
+            </div>
+
+            <!-- English SOP Cards -->
+            <div class="sop-card" id="sop-card-english-{{ sop.id }}" style="display: none;" lang="en">
+                <h3>{{ sop.name_en }}</h3>
+                <div class="sop-description">{{ sop.description_en }}</div>
+                <div class="sop-meta">
+                    <span class="file-size">{{ sop.size }}</span>
+                    <a href="{% url 'download_sop' %}?enc_filename={{ sop.enc_filename }}" class="download-btn" download>
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Note Section -->
+        <div class="sop-note">
+            <div id="sop-note-marathi">
+                <strong>सूचना:</strong> सर्व SOP दस्तऐवज नवी मुंबई महानगरपालिका ग्रंथालय विभागाद्वारे जारी केलेली अधिकृत मार्गदर्शक तत्त्वे आहेत. कोणत्याही स्पष्टीकरणासाठी कृपया ग्रंथालय प्रशासनाशी संपर्क साधा.
+            </div>
+            <div id="sop-note-english" style="display: none;">
+                <strong>Note:</strong> All SOP documents are official guidelines issued by Navi Mumbai Municipal Corporation Library Department. For any clarification, please contact the library administration.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to sync SOP page with layout language
+        function syncSopWithLayout() {
+            // Check layout language by looking at head-english
+            const headEnglish = document.getElementById('head-english');
+            const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+            
+            console.log("Syncing SOP page. English:", isEnglish);
+            
+            // Get all SOP elements
+            const marathiElements = [
+                'sop-header-marathi',
+                'sop-note-marathi'
+            ];
+            
+            const englishElements = [
+                'sop-header-english',
+                'sop-note-english'
+            ];
+            
+            if (isEnglish) {
+                // Show English, hide Marathi
+                marathiElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                englishElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+                
+                // Show English cards, hide Marathi cards
+                {% for sop in sop_files %}
+                const marathiCard = document.getElementById('sop-card-marathi-{{ sop.id }}');
+                const englishCard = document.getElementById('sop-card-english-{{ sop.id }}');
+                if (marathiCard) marathiCard.style.display = 'none';
+                if (englishCard) englishCard.style.display = 'block';
+                {% endfor %}
+            } else {
+                // Show Marathi, hide English
+                marathiElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+                englishElements.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                
+                // Show Marathi cards, hide English cards
+                {% for sop in sop_files %}
+                const marathiCard = document.getElementById('sop-card-marathi-{{ sop.id }}');
+                const englishCard = document.getElementById('sop-card-english-{{ sop.id }}');
+                if (marathiCard) marathiCard.style.display = 'block';
+                if (englishCard) englishCard.style.display = 'none';
+                {% endfor %}
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("SOP page loaded - setting up language sync");
+            
+            // Initial sync
+            syncSopWithLayout();
+            
+            // Listen for language change events from layout
+            window.addEventListener('languageChanged', function(event) {
+                console.log("Language change event received:", event.detail);
+                syncSopWithLayout();
+            });
+            
+            // Also check periodically for changes (fallback)
+            let lastLanguageState = null;
+            setInterval(function() {
+                const headEnglish = document.getElementById('head-english');
+                const currentState = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+                
+                if (lastLanguageState !== currentState) {
+                    lastLanguageState = currentState;
+                    console.log("Language state changed (interval check):", currentState);
+                    syncSopWithLayout();
+                }
+            }, 500);
+        });
+    </script>
+
+{% endblock %}

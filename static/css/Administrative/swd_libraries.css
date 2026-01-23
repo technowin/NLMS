@@ -1377,7 +1377,7 @@
 }
 
 .timing-days, .timing-hours, .timing-break, .timing-note {
-    display: flex;
+    /* display: flex; */
     align-items: center;
     gap: 10px;
     margin-bottom: 12px;

@@ -225,6 +225,10 @@ urlpatterns = [
     path('forgot_password/', forgot_password, name='forgot_password'),
     path('verify_otp/', verify_otp, name='verify_otp'),
     path('update_password/', update_password, name='update_password'),
+    
+    # Donwload SOP files
+    path('sop/', sop_view, name='sop'),
+    path('download-sop/', download_sop, name='download_sop'),
 
 
     # Media files
