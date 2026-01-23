@@ -14,6 +14,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count, Sum, Q, F, Avg
 from L01.models import *
 from django.db.models import Max, Count, Avg, Exists, OuterRef
+import os
+from django.http import FileResponse, Http404
 
 def library_list(request):
     Db.closeConnection()
@@ -481,3 +483,231 @@ def public_get_books_by_subject(request):
     except Exception as e:
         print(f"Error in public AJAX: {e}")
         return JsonResponse({'error': 'Something went wrong'}, status=500)
+
+def sop_view(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    
+    try:
+        
+        role_id = request.session.get("role_id")
+        library_code = request.session.get('library_db', None)
+        
+        # Librarian Staff SOPs
+        if library_code and role_id != '3' and role_id is not None:
+            sop_files = [
+                {
+                    'id': 4,
+                    'name_en': 'Book Issue/Return SOP for Librarian',
+                    'name_mr': 'ग्रंथपालासाठी पुस्तक जारी/परतावा',
+                    'filename': 'Book IssueReturn SOP for Librarian.pdf',
+                    'description_en': 'Standard operating procedure for book issue and return by librarians',
+                    'description_mr': 'ग्रंथपालांद्वारे पुस्तक जारी आणि परताव्यासाठी मानक संचालन प्रक्रिया',
+                    'size': '1.1 MB'
+                },
+                {
+                    'id': 5,
+                    'name_en': 'Cancellation SOP for Librarian',
+                    'name_mr': 'ग्रंथपालासाठी रद्दीकरण',
+                    'filename': 'Cancellation SOP for Librarian.pdf',
+                    'description_en': 'Standard operating procedure for cancellation by librarians',
+                    'description_mr': 'ग्रंथपालांद्वारे रद्दीकरणासाठी मानक संचालन प्रक्रिया',
+                    'size': '726 KB'
+                },
+                {
+                    'id': 6,
+                    'name_en': 'Registration SOP for Librarian',
+                    'name_mr': 'ग्रंथपालासाठी नोंदणी',
+                    'filename': 'Registration SOP for Librarian.pdf',
+                    'description_en': 'Standard operating procedure for registration by librarians',
+                    'description_mr': 'ग्रंथपालांद्वारे नोंदणीसाठी मानक संचालन प्रक्रिया',
+                    'size': '986 KB'
+                },
+                {
+                    'id': 7,
+                    'name_en': 'Renewal SOP for Librarian',
+                    'name_mr': 'ग्रंथपालासाठी नूतनीकरण',
+                    'filename': 'Renewal SOP for Librarian.pdf',
+                    'description_en': 'Standard operating procedure for renewal by librarians',
+                    'description_mr': 'ग्रंथपालांद्वारे नूतनीकरणासाठी मानक संचालन प्रक्रिया',
+                    'size': '936 KB'
+                }
+            ]
+        
+        # member sops
+        elif library_code and role_id == '3' and role_id is not None:
+            sop_files = [
+                {
+                    'id': 1,
+                    'name_en': 'Cancellation SOP for Member',
+                    'name_mr': 'सदस्यासाठी रद्दीकरण ',
+                    'filename': 'Cancellation SOP for Member.pdf',
+                    'description_en': 'Standard operating procedure for member cancellation',
+                    'description_mr': 'सदस्य रद्दीकरणासाठी मानक संचालन प्रक्रिया',
+                    'size': '581 KB'
+                },
+                {
+                    'id': 2,
+                    'name_en': 'Registration SOP for Member',
+                    'name_mr': 'सदस्यासाठी नोंदणी ',
+                    'filename': 'Registration SOP for Member.pdf',
+                    'description_en': 'Standard operating procedure for member registration',
+                    'description_mr': 'सदस्य नोंदणीसाठी मानक संचालन प्रक्रिया',
+                    'size': '1.1 MB'
+                },
+                {
+                    'id': 3,
+                    'name_en': 'Renewal SOP for Member',
+                    'name_mr': 'सदस्यासाठी नूतनीकरण ',
+                    'filename': 'Renewal SOP for Member.pdf',
+                    'description_en': 'Standard operating procedure for member renewal',
+                    'description_mr': 'सदस्य नूतनीकरणासाठी मानक संचालन प्रक्रिया',
+                    'size': '732 KB'
+                }
+            ]
+        
+        # to show on landing page
+        else:
+            sop_files = [
+            {
+                'id': 1,
+                'name_en': 'Cancellation SOP for Member',
+                'name_mr': 'सदस्यासाठी रद्दीकरण ',
+                'filename': 'Cancellation SOP for Member.pdf',
+                'description_en': 'Standard operating procedure for member cancellation',
+                'description_mr': 'सदस्य रद्दीकरणासाठी मानक संचालन प्रक्रिया',
+                'size': '581 KB'
+            },
+            {
+                'id': 2,
+                'name_en': 'Registration SOP for Member',
+                'name_mr': 'सदस्यासाठी नोंदणी ',
+                'filename': 'Registration SOP for Member.pdf',
+                'description_en': 'Standard operating procedure for member registration',
+                'description_mr': 'सदस्य नोंदणीसाठी मानक संचालन प्रक्रिया',
+                'size': '1.1 MB'
+            },
+            {
+                'id': 3,
+                'name_en': 'Renewal SOP for Member',
+                'name_mr': 'सदस्यासाठी नूतनीकरण ',
+                'filename': 'Renewal SOP for Member.pdf',
+                'description_en': 'Standard operating procedure for member renewal',
+                'description_mr': 'सदस्य नूतनीकरणासाठी मानक संचालन प्रक्रिया',
+                'size': '732 KB'
+            },
+            {
+                'id': 4,
+                'name_en': 'Book Issue/Return SOP for Librarian',
+                'name_mr': 'ग्रंथपालासाठी पुस्तक जारी/परतावा ',
+                'filename': 'Book IssueReturn SOP for Librarian.pdf',
+                'description_en': 'Standard operating procedure for book issue and return by librarians',
+                'description_mr': 'ग्रंथपालांद्वारे पुस्तक जारी आणि परताव्यासाठी मानक संचालन प्रक्रिया',
+                'size': '1.1 MB'
+            },
+            {
+                'id': 5,
+                'name_en': 'Cancellation SOP for Librarian',
+                'name_mr': 'ग्रंथपालासाठी रद्दीकरण ',
+                'filename': 'Cancellation SOP for Librarian.pdf',
+                'description_en': 'Standard operating procedure for cancellation by librarians',
+                'description_mr': 'ग्रंथपालांद्वारे रद्दीकरणासाठी मानक संचालन प्रक्रिया',
+                'size': '726 KB'
+            },
+            {
+                'id': 6,
+                'name_en': 'Registration SOP for Librarian',
+                'name_mr': 'ग्रंथपालासाठी नोंदणी ',
+                'filename': 'Registration SOP for Librarian.pdf',
+                'description_en': 'Standard operating procedure for registration by librarians',
+                'description_mr': 'ग्रंथपालांद्वारे नोंदणीसाठी मानक संचालन प्रक्रिया',
+                'size': '986 KB'
+            },
+            {
+                'id': 7,
+                'name_en': 'Renewal SOP for Librarian',
+                'name_mr': 'ग्रंथपालासाठी नूतनीकरण ',
+                'filename': 'Renewal SOP for Librarian.pdf',
+                'description_en': 'Standard operating procedure for renewal by librarians',
+                'description_mr': 'ग्रंथपालांद्वारे नूतनीकरणासाठी मानक संचालन प्रक्रिया',
+                'size': '936 KB'
+            }
+        ]
+        
+        # Optional: Dynamically verify file sizes
+        for sop in sop_files:
+            sop['enc_filename'] = enc(sop['filename'])
+            file_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'PDF', 'Library SOP', sop['filename'])
+            if os.path.exists(file_path):
+                size_bytes = os.path.getsize(file_path)
+                size_kb = size_bytes / 1024
+                
+                # Format size nicely
+                if size_kb < 1024:
+                    actual_size = f"{size_kb:.0f} KB"
+                else:
+                    size_mb = size_kb / 1024
+                    actual_size = f"{size_mb:.1f} MB"
+                
+                # You can compare with hardcoded size if needed
+                # print(f"File: {sop['filename']}, Expected: {sop['size']}, Actual: {actual_size}")
+                
+        context = {
+            'sop_files': sop_files,
+        }
+        
+        if library_code and role_id != '3' and role_id is not None:
+            return render(request, 'L01/sopLibrarian.html', context)
+        elif library_code and role_id == '3' and role_id is not None:
+            return render(request, 'L01/sopMember.html', context)
+        else:
+            return render(request, 'L01/sop.html', context)
+        
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("library_list")
+
+def download_sop(request):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    
+    try:
+        
+        # Secure the filename
+        enc_filename = request.GET.get('enc_filename')
+        decrypted_filename = dec(enc_filename)
+        filename = os.path.basename(decrypted_filename)
+        file_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'PDF', 'Library SOP', filename)
+        
+        if os.path.exists(file_path):
+            
+            return FileResponse(
+                open(file_path, 'rb'), 
+                content_type='application/pdf',
+                as_attachment=True,
+                filename=filename
+            )
+        else:
+            raise Http404(f"File '{filename}' not found")
+            
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("library_list")
