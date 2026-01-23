@@ -95,6 +95,7 @@ from botocore.exceptions import ClientError
 from django.http import HttpResponse, Http404, StreamingHttpResponse
 import mimetypes
 from django.db.models import Subquery, OuterRef
+from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
 
 def index(request):
@@ -124,6 +125,9 @@ def index(request):
 
             # ✅ first image (for big preview)
             lilo.main_image = image_urls[0] if image_urls else ""
+            lilo.library_address = ""
+            if lilo.location:
+                lilo.library_address = lilo.location.address or ""
 
             # -------------------------------------------
             # FETCH RECENT 5 BOOKS
@@ -181,6 +185,11 @@ def index(request):
             ]
 
         library = library_details.first()
+        library = library_details.select_related('location').first()
+
+        library_address = ""
+        if library and library.location:
+            library_address = library.location.address or ""
         library_name = library_details.first().library_name if library_details.exists() else ""
         # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
         library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
@@ -250,6 +259,7 @@ def index(request):
         'libraries': library_details,
         'library_name': library_name,
         'library_name_mar':library_name_mar,
+        'library_address': library_address,
         'MEDIA_URL': settings.MEDIA_URL
     })
     
@@ -5592,6 +5602,7 @@ def get_member_detail(request, membership_code):
 #             member=member_id,
 #             return_date__isnull=True
 #         ).select_related('catalog').order_by('-issue_date')[:3]
+        
 #         pending_action = request.session.get("pending_action")
 #         sweet_alert = request.session.get("sweet_alert")
 #         for transaction in transactions:
@@ -5630,6 +5641,9 @@ def membership_dashboard(request):
 
     # Get username from session
     username = request.session.get('username')
+    library_code = request.session.get('library_db', None)
+    pending_action = request.session.get("pending_action", None)
+    sweet_alert = request.session.get("sweet_alert", None)
     
     try:
         breadcrumb = request.POST.get("breadcrumb")
@@ -5668,7 +5682,9 @@ def membership_dashboard(request):
             'username': username,
             'latest_books': latest_books,
             'today': today,
-            'breadcrumb': breadcrumb
+            'breadcrumb': breadcrumb,
+            'pending_action': pending_action, 
+            'sweet_alert': sweet_alert,
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)

@@ -200,6 +200,19 @@ def Login(request):
         
         else:
             
+            params = {}
+
+            if encrypted_cat_ref_num and encrypted_cat_ref_num.strip():
+                params['cat_ref_num'] = encrypted_cat_ref_num.strip()
+
+            if encrypted_ebook_id:
+                params['ebook_id'] = encrypted_ebook_id
+
+            if encrypted_pdf_url:
+                params['pdf_url'] = encrypted_pdf_url
+                
+            login_url = reverse('Login')
+            
             print("Library code:", library_code)
             
             db_alias = "L01"
@@ -213,6 +226,15 @@ def Login(request):
 
             if user is None:
                 messages.error(request, 'Login unsuccessful. Please verify your credentials.')
+                
+                if next_url and next_url.strip():
+                    return redirect(f"{reverse('Login')}?next={next_url}")
+                
+                if params:
+                    from urllib.parse import urlencode
+                    login_url = f"{reverse('Login')}?{urlencode(params)}"
+                    return redirect(login_url)
+                
                 return redirect("Login")
 
             # 🔒 ROLE GATE — ONLY MEMBERS ALLOWED
@@ -221,6 +243,15 @@ def Login(request):
                     request,
                     'Access denied. This portal is available to registered members only.'
                 )
+                
+                if next_url and next_url.strip():
+                    return redirect(f"{reverse('Login')}?next={next_url}")
+                
+                if params:
+                    from urllib.parse import urlencode
+                    login_url = f"{reverse('Login')}?{urlencode(params)}"
+                    return redirect(login_url)
+                
                 return redirect("Login")
 
             # ------------------------------------------
@@ -231,6 +262,7 @@ def Login(request):
             request.session["full_name"] = str(user.full_name)
             request.session["user_id"] = str(user.id)
             request.session["role_id"] = str(user.role_id)
+            request.session['library_db'] = db_alias
 
             # ------------------------------------------
             # Get membership info
