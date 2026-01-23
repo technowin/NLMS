@@ -6143,17 +6143,19 @@ def membership_card(request):
                 ).first()
 
                 if document and document.file_path:
-                    file_path_lower = document.file_path.lower()
                     
-                    if file_path_lower.endswith('.pdf'):
-                        # If PDF, set user_image_url to None to use default image
-                        user_image_url = None
-                    else:
-                        # Not a PDF, use the file path
-                        if document.file_path.startswith(settings.MEDIA_URL):
-                            user_image_url = document.file_path
-                        else:
-                            user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
+                    user_image_url = file_storage_service.get_file_url(document.file_path)
+                    # file_path_lower = document.file_path.lower()
+                    
+                    # if file_path_lower.endswith('.pdf'):
+                    #     # If PDF, set user_image_url to None to use default image
+                    #     user_image_url = None
+                    # else:
+                    #     # Not a PDF, use the file path
+                    #     if document.file_path.startswith(settings.MEDIA_URL):
+                    #         user_image_url = document.file_path
+                    #     else:
+                    #         user_image_url = f"{settings.MEDIA_URL}{document.file_path}"
             except Exception:
                 pass
 
