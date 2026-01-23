@@ -16,6 +16,7 @@ from L01.models import *
 from django.db.models import Max, Count, Avg, Exists, OuterRef
 import os
 from django.http import FileResponse, Http404
+from NLMS.access_control import no_direct_access
 
 def library_list(request):
     Db.closeConnection()
@@ -484,6 +485,7 @@ def public_get_books_by_subject(request):
         print(f"Error in public AJAX: {e}")
         return JsonResponse({'error': 'Something went wrong'}, status=500)
 
+@no_direct_access
 def sop_view(request):
     Db.closeConnection()
     m = Db.get_connection()

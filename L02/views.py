@@ -4,9 +4,10 @@ from django.http import HttpResponse
 from L02.models import *
 from administration.models import *
 from django.conf import settings
-
+from NLMS.access_control import no_direct_access
 from services.file_storage_service import file_storage_service
 
+@no_direct_access
 def index(request):
     # Get the library code from session
     library_code = request.session.get('library_db', None)
