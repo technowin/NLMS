@@ -859,74 +859,84 @@ def tables(request):
     return render(request,'Bootstrap/tables.html')
 
 def forgot_password(request, member):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-    
-        try:
-            # Fetch the user object based on the provided username (email)
-            user = CustomUser.objects.get(username=username)
-            if int(member) == 1:
-                # member portal → only role 3 allowed
-                if user.role_id != 3:
-                    return JsonResponse({
-                        "status": "invalid_role",
-                        "message": "You are not a valid library member"
-                    })
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            username = request.POST.get('username')
+        
+            try:
+                # Fetch the user object based on the provided username (email)
+                user = CustomUser.objects.get(username=username)
+                if int(member) == 1:
+                    # member portal → only role 3 allowed
+                    if user.role_id != 3:
+                        return JsonResponse({
+                            "status": "invalid_role",
+                            "message": "You are not a valid library member"
+                        })
 
-            else:
-                # admin/staff portal → role 3 not allowed
-                if user.role_id == 3:
-                    return JsonResponse({
-                        "status": "invalid_role",
-                        "message": "Library members cannot reset password here"
-                    })
-            mobile_no = user.phone  # Assuming you have a phone field on your CustomUser model
-            
-            # Generate 6-digit OTP
-            otp = random.randint(100000, 999999)
-            
-            # Fetch OTP message template (assuming you have a column 'template_message')
-            template = SmsTemplate.objects.using('L01').filter(template_id=1107176880362727316).first()
-            
-            if template:
-                # Replace placeholders in the template with actual values (username and OTP)
-                message = template.template_message.replace('{#var#}', user.username)  # Replace {#var#} with username
-                message = message.replace('@OTP', str(otp))  # Replace @OTP with the generated OTP
-                request.session['otp'] = otp  # Save OTP to the session
+                else:
+                    # admin/staff portal → role 3 not allowed
+                    if user.role_id == 3:
+                        return JsonResponse({
+                            "status": "invalid_role",
+                            "message": "Library members cannot reset password here"
+                        })
+                mobile_no = user.phone  # Assuming you have a phone field on your CustomUser model
+                
+                # Generate 6-digit OTP
+                otp = random.randint(100000, 999999)
+                
+                # Fetch OTP message template (assuming you have a column 'template_message')
+                template = SmsTemplate.objects.using('L01').filter(template_id=1107176880362727316).first()
+                
+                if template:
+                    # Replace placeholders in the template with actual values (username and OTP)
+                    message = template.template_message.replace('{#var#}', user.username)  # Replace {#var#} with username
+                    message = message.replace('@OTP', str(otp))  # Replace @OTP with the generated OTP
+                    request.session['otp'] = otp  # Save OTP to the session
 
-                # Send SMS to user's phone
-                send_sms(mobile_no, message)  # Ensure send_sms is defined elsewhere
+                    # Send SMS to user's phone
+                    send_sms(mobile_no, message)  # Ensure send_sms is defined elsewhere
 
-                # Save OTP Log
-                otp_log = OTPLog.objects.using('L01').create(
-                    username=username,
-                    otp=str(otp),
-                    is_verified=False,
-                    created_by=request.user  # The user who is creating the OTP
-                )
-                otp_id = otp_log.id
+                    # Save OTP Log
+                    otp_log = OTPLog.objects.using('L01').create(
+                        username=username,
+                        otp=str(otp),
+                        is_verified=False,
+                        created_by=request.user  # The user who is creating the OTP
+                    )
+                    otp_id = otp_log.id
 
-                # Optionally, you can also log the verification attempt in VerifyLog
-                verify_log = VerifyOtp.objects.using('L01').create(
-                    otp_log = otp_log,
-                    username=username,
-                    otp=str(otp),
-                    is_verified=False,
-                    created_by=request.user  # The user who is creating the OTP
-                )
+                    # Optionally, you can also log the verification attempt in VerifyLog
+                    verify_log = VerifyOtp.objects.using('L01').create(
+                        otp_log = otp_log,
+                        username=username,
+                        otp=str(otp),
+                        is_verified=False,
+                        created_by=request.user  # The user who is creating the OTP
+                    )
 
-                # Return success response
-                return JsonResponse({'status': 'otp_sent','username': username,'otp_id':otp_id,'member': member })
-            else:
-                # If no template is found
-                return JsonResponse({'status': 'template_not_found'}, status=400)
+                    # Return success response
+                    return JsonResponse({'status': 'otp_sent','username': username,'otp_id':otp_id,'member': member })
+                else:
+                    # If no template is found
+                    return JsonResponse({'status': 'template_not_found'}, status=400)
 
-        except CustomUser.DoesNotExist:
-            # If the user is not found
-            return JsonResponse({'status': 'user_not_found'}, status=400)
+            except CustomUser.DoesNotExist:
+                # If the user is not found
+                return JsonResponse({'status': 'user_not_found'}, status=400)
 
-    else:
-        return render( request, 'Bootstrap/account/forgot_password.html', {'member': member})
+        else:
+            return render( request, 'Bootstrap/account/forgot_password.html', {'member': member})
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
 
         
 def update_password(request):
