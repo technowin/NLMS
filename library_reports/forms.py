@@ -1,8 +1,10 @@
 # reports/forms.py
 from django import forms
+from django.conf import settings
 from django.utils import timezone
 import datetime
-from L01.models import parameter_master_L01
+from L01.models import parameter_master_L01, MembershipMaster
+
 
 class MemberListFilterForm(forms.Form):
     search = forms.CharField(required=False, widget=forms.TextInput(attrs={
@@ -10,30 +12,27 @@ class MemberListFilterForm(forms.Form):
         'placeholder': 'Search members...'
     }))
     
-    membership_type = forms.ChoiceField(
+    membership_type = forms.MultipleChoiceField(
         required=False,
-        choices=[
-            ('', 'All Membership Types'),
-            ('book_branch', 'Book Branch'),
-            ('children_branch', 'Children Branch'),
-            ('book_branch_nmc', 'Book Branch (NMC)'),
-            ('children_branch_nmc', 'Children Branch (NMC)'),
-            ('lifetime_branch', 'Lifetime Branch'),
-            ('patron_branch', 'Patron Branch'),
-            ('practitioner_branch', 'Practitioner Branch'),
-        ],
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.SelectMultiple(attrs={'class': 'form-select'})
     )
     
-    membership_status = forms.ChoiceField(
+    membership_status = forms.MultipleChoiceField(
         required=False,
         choices=[
             ('active', 'Active'),
             ('inactive', 'Inactive'),
             ('cancelled', 'Cancelled'),
         ],
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.SelectMultiple(attrs={'class': 'form-select'})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['membership_type'].choices = [
+            (m.id, m.membership_type_en)
+            for m in MembershipMaster.objects.using('L01').filter(isactive=1)
+        ]
 
 class MemberDetailsFilterForm(forms.Form):
     membership_month_from = forms.DateField(

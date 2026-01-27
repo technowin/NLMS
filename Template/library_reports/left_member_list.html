@@ -1,0 +1,115 @@
+<!-- Left Sidebar - Member List -->
+    <div class="sidebar">
+        <div class="p-2 border-bottom">
+            <h5 class="mb-2">
+                <i class="bi bi-people-fill me-2"></i>Member List
+                <span class="badge bg-primary ms-2" id="selected-count">0</span>
+            </h5>
+            
+            <!-- Search Box -->
+            <div class="mb-2">
+                <div class="input-group">
+                    <input type="text"
+                           class="form-control search-input-right"
+                           id="member-search"
+                           placeholder="Search members...">
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="clearSearch()"
+                            style="border-radius: 10px!important; border: 1px solid grey!important;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filter-group">
+                <div class="d-flex justify-content-between align-items-center ">
+                    <h6><i class="bi bi-funnel"></i>Filters </h6>
+                    <button class="btn btn-success btn-sm " onclick="exportAllTabs()">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Export All Data
+                    </button>
+                </div>
+
+                <!-- Membership Type Filter -->
+                <div class="mb-2 selectize-sm">
+                    <label class="form-label small ">Membership Type</label>
+                    <select class="form-control form-control-sm"
+                            id="membership-type-filter"
+                            multiple>
+                    <option value="">--Select Types--</option>
+                    {% for mt in membership_types %}
+                    <option value="{{ mt.id }}">{{ mt.membership_type_en }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="mb-2 selectize-sm">
+                    <label class="form-label small ">Membership Status</label>
+                    <select class="form-control form-control-sm"
+                            id="membership-status-filter"
+                            multiple>
+                        <option value="">--Select Status--</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="btn-group justify-content-center d-flex gap-2">  
+                    <button class="btn btn-sm btn-primary" onclick="applyLeftFilters()">
+                        <i class="bi bi-filter me-1"></i>Apply Filters
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="clearLeftFilters()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bulk Actions -->
+            <div class="bulk-actions" id="bulk-actions">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-check2-circle me-2"></i>
+                        <span class="selection-count" id="selected-members-count">0</span> selected
+                    </span>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary" onclick="selectAll()">
+                            Select All
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-danger" onclick="deselectAll()">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Export Button -->
+            {% comment %} <div class="mt-2 justify-content-center d-flex">
+                <button class="btn btn-success btn-sm " onclick="exportAllTabs()">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Export All Data
+                </button>
+            </div> {% endcomment %}
+        </div>
+        
+        <!-- Member List Container -->
+        <div id="member-list-container" style="height: calc(100vh - 400px); overflow-y: auto;">
+            <!-- Member list will be loaded here dynamically -->
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading members...</p>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="p-3 border-top">
+            <nav aria-label="Member list pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="pagination">
+                    <!-- Pagination will be loaded here -->
+                </ul>
+            </nav>
+        </div>
+    </div>

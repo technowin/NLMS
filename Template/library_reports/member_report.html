@@ -29,765 +29,16 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-<link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css" >
 <link href="{% static 'css/library_reports.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/selectize.min.css' %}" rel="stylesheet" type="text/css" >
+<link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css" >
 
-<!-- Load DataTables CSS BEFORE your custom CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.6.2/css/select.bootstrap5.min.css">
-<style>
-:root {
-    --sidebar-width: 350px;
-    --primary-color: #4a6fa5;
-    --secondary-color: #166088;
-    --accent-color: #4CAF50;
-}
-
-.report-container {
-    height: calc(100vh - 120px);
-    overflow: hidden;
-}
-
-.sidebar {
-    width: var(--sidebar-width);
-    background: var(--ct-light);
-    border-right: 1px solid var(--ct-border-color);
-    overflow-y: auto;
-}
-
-.main-content {
-    flex: 1;
-    overflow-y: auto;
-    background: var(--ct-body-bg);
-    z-index:1;
-}
-
-.member-list-item {
-    padding: 10px 15px;
-    border-bottom: 1px solid var(--ct-border-color);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.member-list-item:hover {
-    background-color: var(--ct-gray-200);
-}
-
-.member-list-item.selected {
-    background-color: #e3f2fd;
-    border-left: 4px solid var(--primary-color);
-}
-
-.member-list-item .member-info {
-    font-size: 0.9rem;
-}
-
-.member-list-item .member-id {
-    font-weight: bold;
-    color: var(--secondary-color);
-}
-
-.member-list-item .member-status {
-    font-size: 0.8rem;
-    padding: 2px 8px;
-    border-radius: 12px;
-}
-
-.member-list-item .status-active {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.member-list-item .status-inactive {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.highlight {
-    background-color: yellow;
-    font-weight: bold;
-}
-
-.report-tabs {
-    border-bottom: 2px solid var(--ct-border-color);
-}
-
-.report-tabs .nav-link {
-    border: none;
-    color: var(--ct-secondary);
-    font-weight: 500;
-    padding: 12px 20px;
-    border-radius: 0;
-}
-
-.report-tabs .nav-link.active {
-    color: var(--primary-color);
-    border-bottom: 3px solid var(--primary-color);
-    background: transparent;
-}
-
-.filter-badge {
-    font-size: 0.7rem;
-    vertical-align: top;
-    margin-left: 5px;
-}
-
-.table-responsive {
-    max-height: 500px;
-    overflow-y: auto;
-}
-
-.dataTables_wrapper {
-    padding: 10px;
-}
-
-.action-buttons {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background: var(--ct-body-bg);
-    padding: 15px 0;
-    border-bottom: 1px solid var(--ct-border-color);
-}
-
-.modal-xl {
-    max-width: 90%;
-}
-
-.filter-group {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: var(--ct-light);
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-color);
-}
-
-.filter-group h6 {
-    color: var(--secondary-color);
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-group h6 i {
-    color: var(--accent-color);
-}
-
-.export-btn-group {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.export-btn-group .btn {
-    min-width: 120px;
-}
-
-.bulk-actions {
-    background: var(--ct-warning-bg-subtle);
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    display: none;
-}
-
-.bulk-actions.show {
-    display: block;
-}
-
-.selection-count {
-    font-weight: bold;
-    color: var(--primary-color);
-}
-
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-}
-
-.scroll-indicator {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--primary-color);
-    color: white;
-    padding: 10px;
-    border-radius: 50%;
-    display: none;
-    cursor: pointer;
-    z-index: 1000;
-}
-
-.scroll-indicator.show {
-    display: block;
-}
-
-.tab-content-section {
-    animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 768px) {
-    .report-container {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        height: 300px;
-    }
-    
-    .main-content {
-        height: calc(100vh - 420px);
-    }
-}
-.input-group-text{
-  border-radius: 10px!important ; 
-  border: 1px solid grey!important ;
-}
-
-.search-input-right {
-    padding-right: 2.5rem; /* space for icon */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='gray' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.868-3.834zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 1rem;
-}
-
-
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="report-container d-flex">
-    <!-- Left Sidebar - Member List -->
-    <div class="sidebar">
-        <div class="p-3 border-bottom">
-            <h5 class="mb-3">
-                <i class="bi bi-people-fill me-2"></i>Member List
-                <span class="badge bg-primary ms-2" id="selected-count">0</span>
-            </h5>
-            
-            <!-- Search Box -->
-            <div class="mb-3">
-                <div class="input-group">
-    <input type="text"
-           class="form-control search-input-right"
-           id="member-search"
-           placeholder="Search members...">
-    <button class="btn btn-outline-secondary" type="button"
-            onclick="clearSearch()"
-            style="border-radius: 10px!important; border: 1px solid grey!important;">
-        <i class="bi bi-x"></i>
-    </button>
-</div>
-
-
-            </div>
-            
-            <!-- Filters -->
-            <div class="filter-group">
-                <h6><i class="bi bi-funnel"></i>Filters</h6>
-                
-                <!-- Membership Type Filter -->
-                <div class="mb-3">
-                    <label class="form-label small text-muted">Membership Type</label>
-                    <select class="form-select form-select-sm" id="membership-type-filter">
-                        <option value="">All Types</option>
-                        <option value="book_branch">Book Branch</option>
-                        <option value="children_branch">Children Branch</option>
-                        <option value="book_branch_nmc">Book Branch (NMC)</option>
-                        <option value="children_branch_nmc">Children Branch (NMC)</option>
-                        <option value="lifetime_branch">Lifetime Branch</option>
-                        <option value="patron_branch">Patron Branch</option>
-                        <option value="practitioner_branch">Practitioner Branch</option>
-                    </select>
-                </div>
-                
-                <!-- Status Filter -->
-                <div class="mb-3">
-                    <label class="form-label small text-muted">Membership Status</label>
-                    <select class="form-select form-select-sm" id="membership-status-filter">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="d-grid gap-2">
-                    <button class="btn btn-sm btn-primary" onclick="applyFilters()">
-                        <i class="bi bi-filter me-1"></i>Apply Filters
-                    </button>
-                    <button class="btn btn-sm btn-secondary" onclick="clearFilters()">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Clear
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Bulk Actions -->
-            <div class="bulk-actions" id="bulk-actions">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span>
-                        <i class="bi bi-check2-circle me-2"></i>
-                        <span class="selection-count" id="selected-members-count">0</span> selected
-                    </span>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" onclick="selectAll()">
-                            Select All
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-danger" onclick="deselectAll()">
-                            Clear
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Export Button -->
-            <div class="mt-3">
-                <button class="btn btn-success w-100" onclick="exportAllTabs()">
-                    <i class="bi bi-file-earmark-excel me-2"></i>Export All Data
-                </button>
-            </div>
-        </div>
-        
-        <!-- Member List Container -->
-        <div id="member-list-container" style="height: calc(100vh - 400px); overflow-y: auto;">
-            <!-- Member list will be loaded here dynamically -->
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 text-muted">Loading members...</p>
-            </div>
-        </div>
-        
-        <!-- Pagination -->
-        <div class="p-3 border-top">
-            <nav aria-label="Member list pagination">
-                <ul class="pagination pagination-sm justify-content-center mb-0" id="pagination">
-                    <!-- Pagination will be loaded here -->
-                </ul>
-            </nav>
-        </div>
-    </div>
-    
-    <!-- Main Content Area -->
-    <div class="main-content">
-        <!-- Action Buttons Bar -->
-        <div class="action-buttons px-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0">
-                        <i class="bi bi-file-text me-2"></i>Member Report
-                    </h4>
-                    <small class="text-muted" id="report-summary">
-                        Select members from the left panel to view details
-                    </small>
-                </div>
-                <div class="export-btn-group">
-                    <button class="btn btn-primary" onclick="saveReportSession()">
-                        <i class="bi bi-save me-1"></i>Save
-                    </button>
-                    <button class="btn btn-secondary" onclick="loadReportSession()">
-                        <i class="bi bi-folder2-open me-1"></i>Load
-                    </button>
-                    <button class="btn btn-success" onclick="exportCurrentTab()">
-                        <i class="bi bi-download me-1"></i>Export Tab
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tabs Navigation -->
-        <div class="px-4">
-            <ul class="nav report-tabs" id="reportTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="member-details-tab" 
-                            data-bs-toggle="tab" data-bs-target="#member-details"
-                            type="button" role="tab">
-                        <i class="bi bi-person-vcard me-2"></i>Member Details
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="membership-details-tab" 
-                            data-bs-toggle="tab" data-bs-target="#membership-details"
-                            type="button" role="tab">
-                        <i class="bi bi-card-checklist me-2"></i>Membership Details
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="loan-tab" 
-                            data-bs-toggle="tab" data-bs-target="#loan"
-                            type="button" role="tab">
-                        <i class="bi bi-book me-2"></i>Loan
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="transactions-tab" 
-                            data-bs-toggle="tab" data-bs-target="#transactions"
-                            type="button" role="tab">
-                        <i class="bi bi-arrow-left-right me-2"></i>Transactions
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="physical-visit-tab" 
-                            data-bs-toggle="tab" data-bs-target="#physical-visit"
-                            type="button" role="tab">
-                        <i class="bi bi-door-open me-2"></i>Physical Visit
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="virtual-usage-tab" 
-                            data-bs-toggle="tab" data-bs-target="#virtual-usage"
-                            type="button" role="tab">
-                        <i class="bi bi-laptop me-2"></i>Virtual Usage
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="payments-tab" 
-                            data-bs-toggle="tab" data-bs-target="#payments"
-                            type="button" role="tab">
-                        <i class="bi bi-credit-card me-2"></i>Payments
-                    </button>
-                </li>
-            </ul>
-        </div>
-        
-        <!-- Tab Content -->
-        <div class="tab-content p-4" id="reportTabContent">
-            
-            <!-- Member Details Tab -->
-            <div class="tab-pane fade show active tab-content-section" 
-                 id="member-details" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Member Details</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#memberDetailsFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="member-details-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('member-details')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="member-details-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>First Name</th>
-                                <th>Middle Name</th>
-                                <th>Last Name</th>
-                                <th>Membership Code</th>
-                                <th>User ID</th>
-                                <th>Email</th>
-                                <th>Mobile</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Membership Details Tab -->
-            <div class="tab-pane fade tab-content-section" id="membership-details" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Membership Details</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#membershipDetailsFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="membership-details-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('membership-details')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="membership-details-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Membership Code</th>
-                                <th>Action Performed</th>
-                                <th>From Date</th>
-                                <th>To Date</th>
-                                <th>Deposit</th>
-                                <th>Entry Fees</th>
-                                <th>Subscription</th>
-                                <th>Gap Months</th>
-                                <th>Changed At</th>
-                                <th>Changed By</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Loan Tab -->
-            <div class="tab-pane fade tab-content-section" id="loan" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Loan Transactions</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#loanFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="loan-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('loan')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="loan-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Membership Code</th>
-                                <th>Barcode</th>
-                                <th>Accession ID</th>
-                                <th>Issue Date</th>
-                                <th>Due Date</th>
-                                <th>Return Date</th>
-                                <th>Days Overdue</th>
-                                <th>Fine Amount</th>
-                                <th>Issued By</th>
-                                <th>Remarks</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Transactions Tab -->
-            <div class="tab-pane fade tab-content-section" id="transactions" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>All Transactions</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#transactionFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="transactions-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('transactions')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="transactions-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Member Name</th>
-                                <th>Membership Code</th>
-                                <th>Barcode</th>
-                                <th>Transaction Type</th>
-                                <th>Issue Date</th>
-                                <th>Due Date</th>
-                                <th>Return Date</th>
-                                <th>Days Overdue</th>
-                                <th>Fine Amount</th>
-                                <th>Status</th>
-                                <th>Issued By</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Physical Visit Tab -->
-            <div class="tab-pane fade tab-content-section" id="physical-visit" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Physical Visits</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#physicalVisitFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="physical-visit-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('physical-visit')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="physical-visit-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Member Name</th>
-                                <th>Membership Code</th>
-                                <th>Entry Time</th>
-                                <th>Exit Time</th>
-                                <th>Duration</th>
-                                <th>Remark</th>
-                                <th>Recorded At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Virtual Usage Tab -->
-            <div class="tab-pane fade tab-content-section" id="virtual-usage" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Virtual Usage</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#virtualUsageFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="virtual-usage-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('virtual-usage')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="virtual-usage-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Member Name</th>
-                                <th>Membership Code</th>
-                                <th>Activity Type</th>
-                                <th>Screen/Page</th>
-                                <th>Visited At</th>
-                                <th>Duration</th>
-                                <th>IP Address</th>
-                                <th>Device Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Payments Tab -->
-            <div class="tab-pane fade tab-content-section" id="payments" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Payment Details</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#paymentFilterModal">
-                            <i class="bi bi-sliders me-1"></i>Filters
-                            <span class="badge bg-primary filter-badge" 
-                                  id="payments-filter-count"></span>
-                        </button> &nbsp;&nbsp;&nbsp;
-                        <button class="btn btn-sm btn-success" 
-                                onclick="exportTabData('payments')">
-                            <i class="bi bi-file-excel me-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-
-                <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
-                           id="payments-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Payment Mode</th>
-                                <th>Payment Type</th>
-                                <th>Payment Method</th>
-                                <th>Deposit Amount</th>
-                                <th>Entry Fee</th>
-                                <th>Subscription</th>
-                                <th>Total Amount</th>
-                                <th>Transaction ID</th>
-                                <th>Payment Date</th>
-                                <th>Membership Code</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-        </div>
-    </div>
+    {% include 'library_reports/left_member_list.html' %}
+    {% include 'library_reports/right_report_tabs.html' %}
 </div>
 
 <!-- Loading Overlay -->
@@ -817,120 +68,17 @@
 </div>
 
 <!-- Filter Modals -->
-<!-- Member Details Filter Modal -->
-<div class="modal fade" id="memberDetailsFilterModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-sliders me-2"></i>Member Details Filters
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="memberDetailsFilterForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Membership Month From</label>
-                                <input type="month" class="form-control" 
-                                       name="membership_month_from">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Membership Month To</label>
-                                <input type="month" class="form-control" 
-                                       name="membership_month_to">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Membership Type</label>
-                                <select class="form-select" name="membership_type" multiple>
-                                    <option value="book_branch">Book Branch</option>
-                                    <option value="children_branch">Children Branch</option>
-                                    <!-- Other options -->
-                                </select>
-                                <small class="text-muted">Hold Ctrl to select multiple</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Ward</label>
-                                <input type="text" class="form-control" name="ward">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" name="status" multiple>
-                                    <option value="1">Active</option>
-                                    <option value="0">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Renewal Due Month</label>
-                                <input type="month" class="form-control" 
-                                       name="renewal_due_month">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Member Type</label>
-                        <select class="form-select" name="member_type" multiple>
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" 
-                        data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" 
-                        onclick="applyMemberDetailsFilters()">Apply Filters</button>
-                <button type="button" class="btn btn-danger" 
-                        onclick="clearMemberDetailsFilters()">Clear All</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Other filter modals for different tabs -->
-<!-- Include Modals -->
-
-{% include 'library_reports/modals/loan_filters.html' %}
+{% include 'library_reports/modals/member_details_filters.html' %}
 {% include 'library_reports/modals/membership_details_filters.html' %}
+{% include 'library_reports/modals/loan_filters.html' %}
 {% include 'library_reports/modals/payment_filters.html' %}
 {% include 'library_reports/modals/physical_visit_filters.html' %}
 {% include 'library_reports/modals/transaction_filters.html' %}
 {% include 'library_reports/modals/virtual_usage_filters.html' %}
 
-<!-- 1. jQuery (FULL version, not slim) -->
 <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-<!-- Add these DataTables scripts in the right order at the end of your script section -->
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/select/1.6.2/js/dataTables.select.min.js"></script>
-
-<!-- Also add these if you need export functionality -->
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-
+<script src="{% static 'js/selectize.min.js' %}"></script>
 
 <script>
 // Global variables
@@ -942,44 +90,45 @@ let dataTables = {};
 $(document).ready(function() {
     // Load initial data
     loadMemberList();
-    
-    // Initialize components
     initDataTables();
     initFilterModals();
     setupEventListeners();
-    
-    // Initialize date pickers
     initDatePickers();
-    
-    // Initialize select2
     initSelect2();
-    
-    // Check for saved session
     checkSavedSession();
+    includeModals();
 });
 
 function initDatePickers() {
-    $('.datepicker').datepicker({
-        format: 'yyyy-mm-dd',
-        autoclose: true,
-        todayHighlight: true,
-        orientation: 'bottom auto'
-    });
+    //$('.datepicker').datepicker({
+    //    format: 'yyyy-mm-dd',
+    //    autoclose: true,
+    //    todayHighlight: true,
+    //    orientation: 'bottom auto'
+    //});
     
-    $('input[type="month"]').datepicker({
-        format: 'yyyy-mm',
-        minViewMode: 'months',
-        autoclose: true,
-        orientation: 'bottom auto'
-    });
+    //$('input[type="month"]').datepicker({
+    //    format: 'yyyy-mm',
+    //    minViewMode: 'months',
+    //    autoclose: true,
+    //    orientation: 'bottom auto'
+    //});
 }
 
 function initSelect2() {
-    $('select[multiple]').select2({
-        placeholder: "Select options...",
-        allowClear: true,
-        width: '100%',
-        theme: 'bootstrap-5'
+    $('select[multiple]').each(function() {
+        $(this).selectize({
+            plugins: ['remove_button'],
+            delimiter: ',',
+            persist: false,
+            create: false, // Prevents creating new items
+            //selectOnTab: false, // Disables item creation on tab
+            //maxItems: null,
+            onInitialize: function() {
+                var control = this;
+                control.clear();
+            }
+        });
     });
 }
 
@@ -994,9 +143,10 @@ function checkSavedSession() {
 }
 
 function loadMemberList(page = 1) {
+    debugger;
     const search = $('#member-search').val();
-    const membershipType = $('#membership-type-filter').val();
-    const membershipStatus = $('#membership-status-filter').val();
+    const membershipType = $('#membership-type-filter').val() || [];
+    const membershipStatus = $('#membership-status-filter').val() || [];
     
     $('#member-list-container').html(`
         <div class="text-center py-5">
@@ -1009,6 +159,7 @@ function loadMemberList(page = 1) {
     
     $.ajax({
         url: '{% url "member_list_data" %}',
+        traditional: true,
         data: {
             page: page,
             search: search,
@@ -1016,6 +167,7 @@ function loadMemberList(page = 1) {
             membership_status: membershipStatus
         },
         success: function(response) {
+             
             renderMemberList(response.members);
             renderPagination(response);
         },
@@ -1055,7 +207,7 @@ function renderMemberList(members) {
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <div class="member-id">${member.membership_code || 'N/A'}</div>
-                        <div class="member-name">${member.first_name} ${member.last_name}</div>
+                        <div class="member-name" style="color:black;">${member.first_name} ${member.last_name}</div>
                         <div class="member-info small text-muted">
                             ${member.user_id} • ${member.email}
                         </div>
@@ -1067,7 +219,7 @@ function renderMemberList(members) {
                     </div>
                 </div>
                 <div>
-                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:600;">
+                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:500;">
                         ${member.membership_type}
                     </span>
                 </div>
@@ -1135,11 +287,11 @@ function updateSelectionCount() {
     }
 }
 
-function applyFilters() {
+function applyLeftFilters() {
     loadMemberList(1);
 }
 
-function clearFilters() {
+function clearLeftFilters() {
     $('#member-search').val('');
     $('#membership-type-filter').val('');
     $('#membership-status-filter').val('active');
@@ -1364,7 +516,7 @@ function initDataTables() {
 
 
     Object.keys(tabConfigs).forEach(tabId => {
-        debugger;
+        
         const tableId = `#${tabId}-table`;
         if ($(tableId).length) {
             dataTables[tabId] = $(tableId).DataTable({
@@ -1411,7 +563,7 @@ function loadTabData(tabName) {
     showLoading();
     
     const filters = tabFilters[tabName] || {};
-    
+    debugger;
     $.ajax({
         url: `/reports/tab-data/${tabName}/`,
         data: {
@@ -1430,7 +582,7 @@ function loadTabData(tabName) {
 }
 {% comment %} 
 function populateTabData(tabName, data) {
-    debugger;
+    
     const table = dataTables[tabName];
     if (!table) return;
     
@@ -1457,7 +609,7 @@ function populateTabData(tabName, data) {
     
     // Clear existing rows
     tbody.innerHTML = '';
-    
+    debugger;
     // Add new rows
     data.forEach(item => {
         const row = document.createElement('tr');
@@ -1478,6 +630,45 @@ function populateTabData(tabName, data) {
     if (infoElement) {
         infoElement.textContent = `Showing ${data.length} records`;
     }
+}
+
+
+// Filter application functions for all tab
+function applyRightFilters(tab, form) {
+    debugger;
+    const formData = $('#' + form + 'Form').serializeArray();
+    const filters = {};
+    debugger;
+    formData.forEach(item => {
+        if (item.value) {
+            if (item.name.endsWith('[]')) {
+                const name = item.name.replace('[]', '');
+                if (!filters[name]) filters[name] = [];
+                filters[name].push(item.value);
+            } else {
+                filters[item.name] = item.value;
+            }
+        }
+    });
+    
+    tabFilters[tab] = filters;
+    updateFilterBadge(tab, Object.keys(filters).length);
+    
+    $('#' + form + 'Modal').modal('hide');
+    loadTabData(tab);
+}
+
+function clearRightFilters(tab, form) {
+    $('#' + form + 'Form')[0].reset();
+    $('#' + form + 'Form' + ' select[multiple]').each(function () {
+        if (this.selectize) {
+            this.selectize.clear(true);
+        }
+    });
+    delete tabFilters[tab];
+    $('#' + tab + '-filter-count').text('0');
+    $('#' + form + 'Modal').modal('hide');
+    loadTabData(tab);
 }
 
 // Filter application functions for all tabs
@@ -1707,29 +898,6 @@ function convertToTableRow(tabName, item) {
         default:
             return [];
     }
-}
-
-function applyMemberDetailsFilters() {
-    const formData = $('#memberDetailsFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            if (item.name.endsWith('[]')) {
-                const name = item.name.replace('[]', '');
-                if (!filters[name]) filters[name] = [];
-                filters[name].push(item.value);
-            } else {
-                filters[item.name] = item.value;
-            }
-        }
-    });
-    
-    tabFilters['member-details'] = filters;
-    updateFilterBadge('member-details', Object.keys(filters).length);
-    
-    $('#memberDetailsFilterModal').modal('hide');
-    loadTabData('member-details');
 }
 
 function exportAllTabs() {
@@ -1990,24 +1158,33 @@ function setupEventListeners() {
     });
     
     // Initialize date pickers
-    $('.datepicker').datepicker({
-        format: 'yyyy-mm-dd',
-        autoclose: true,
-        todayHighlight: true
-    });
+    //$('.datepicker').datepicker({
+    //    format: 'yyyy-mm-dd',
+    //    autoclose: true,
+    //    todayHighlight: true
+    //});
     
     // Initialize month pickers
-    $('input[type="month"]').datepicker({
-        format: 'yyyy-mm',
-        minViewMode: 'months',
-        autoclose: true
-    });
+    //$('input[type="month"]').datepicker({
+    //    format: 'yyyy-mm',
+    //    minViewMode: 'months',
+    //    autoclose: true
+    //});
     
     // Initialize select2 for multi-select filters
-    $('select[multiple]').select2({
-        placeholder: "Select options...",
-        allowClear: true,
-        width: '100%'
+    $('select[multiple]').each(function() {
+        $(this).selectize({
+            plugins: ['remove_button'],
+            delimiter: ',',
+            persist: false,
+            create: false, // Prevents creating new items
+            //selectOnTab: false, // Disables item creation on tab
+            //maxItems: null,
+            onInitialize: function() {
+                var control = this;
+                control.clear();
+            }
+        });
     });
 }
 
@@ -2063,31 +1240,47 @@ jQuery.fn.removeHighlight = function() {
 
 // Initialize all filter modals
 function initFilterModals() {
+    
     // Load filter options dynamically
     $.ajax({
         url: '{% url "get_member_options" %}',
         success: function(response) {
+            
             // Populate member type dropdowns
             const memberTypeSelects = $('select[name="member_type"], select[name="member_type[]"]');
             memberTypeSelects.empty();
+            memberTypeSelects.append(`<option value="">--Select Types--</option>`);
             response.member_types.forEach(type => {
-                memberTypeSelects.append(`<option value="${type.id}">${type.name}</option>`);
+                
+                memberTypeSelects.append(`<option value="${type.parameter_id}">${type.parameter_value}</option>`);
             });
             
             // Populate ward dropdowns
             const wardSelects = $('select[name="ward"], input[name="ward"]');
             if (wardSelects.is('select')) {
-                wardSelects.empty().append('<option value="">All Wards</option>');
+                wardSelects.empty().append('<option value="">--Select Wards--</option>');
                 response.wards.forEach(ward => {
-                    wardSelects.append(`<option value="${ward}">${ward}</option>`);
+                    wardSelects.append(`<option value="${ward.ward_name}">${ward.ward_name}</option>`);
                 });
             }
             
             // Populate membership type dropdowns
             const membershipTypeSelects = $('select[name="membership_type"], select[name="membership_type[]"]');
             membershipTypeSelects.empty();
+            membershipTypeSelects.append(`<option value="">--Select Types--</option>`);
+
             response.membership_types.forEach(type => {
-                membershipTypeSelects.append(`<option value="${type.id}">${type.membership_type}</option>`);
+                membershipTypeSelects.append(`<option value="${type.id}">${type.membership_type_en}</option>`);
+            });
+            
+            
+            // Populate action performed dropdowns
+            const actionPerformedSelects = $('select[name="action_performed"], select[name="action_performed[]"]');
+            actionPerformedSelects.empty();
+            actionPerformedSelects.append(`<option value="">--Select Action--</option>`);
+
+            response.actionperformed_list.forEach(type => {
+                actionPerformedSelects.append(`<option value="${type.actionperformed}">${type.actionperformed}</option>`);
             });
         }
     });
@@ -2391,11 +1584,11 @@ function handleAjaxError(xhr, status, error) {
 // Add toast container to body
 $('body').append('<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090;"></div>');
 
-// Filter application functions for each tab
-function applyMemberDetailsFilters() {
+
+{% comment %} function applyMemberDetailsFilters() {
     const formData = $('#memberDetailsFilterForm').serializeArray();
     const filters = {};
-    
+    debugger;
     formData.forEach(item => {
         if (item.value) {
             if (item.name.endsWith('[]')) {
@@ -2409,10 +1602,10 @@ function applyMemberDetailsFilters() {
     });
     
     tabFilters['member-details'] = filters;
-    
+    debugger;
     // Update filter count badge
     $.ajax({
-        url: '{% url "get_filter_counts" %}',
+        url: `/reports/get-filter-counts/`,
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -2421,21 +1614,15 @@ function applyMemberDetailsFilters() {
             member_ids: Array.from(selectedMembers)
         }),
         success: function(response) {
+            debugger;
             $('#member-details-filter-count').text(response.count);
         }
     });
     
     $('#memberDetailsFilterModal').modal('hide');
     loadTabData('member-details');
-}
+} {% endcomment %}
 
-function clearMemberDetailsFilters() {
-    $('#memberDetailsFilterForm')[0].reset();
-    delete tabFilters['member-details'];
-    $('#member-details-filter-count').text('0');
-    $('#memberDetailsFilterModal').modal('hide');
-    loadTabData('member-details');
-}
 
 // Membership Details Filters
 function applyMembershipDetailsFilters() {
@@ -2453,7 +1640,7 @@ function applyMembershipDetailsFilters() {
             }
         }
     });
-    
+    debugger;
     tabFilters['membership-details'] = filters;
     updateFilterCount('membership-details', Object.keys(filters).length);
     $('#membershipDetailsFilterModal').modal('hide');
@@ -2584,17 +1771,7 @@ $(document).keydown(function(e) {
 
 // Initialize everything when page loads
 $(document).ready(function() {
-    loadMemberList();
-    initDataTables();
-    initFilterModals();
-    includeModals();
-    setupEventListeners();
-    
-    // Set up tab change event
-    $('#reportTabs button').on('shown.bs.tab', function(e) {
-        const tabName = $(e.target).attr('id').replace('-tab', '');
-        loadTabData(tabName);
-    });
+
 });
 
 </script>
@@ -2620,5 +1797,8 @@ $(document).ready(function() {
 
 <!-- Selectize.js JS -->
 <script src="{% static 'js/selectize.min.js' %}"></script>
+
+<script src="{% static 'js/vendor/select2.min.js' %}"></script>
+
 
 {% endblock %}

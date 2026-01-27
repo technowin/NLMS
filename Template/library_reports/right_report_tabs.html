@@ -1,0 +1,415 @@
+<!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Action Buttons Bar -->
+        <div class="action-buttons px-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>Member Report
+                    </h4>
+                    <small class="text-muted" id="report-summary">
+                        Select members from the left panel to view details
+                    </small>
+                </div>
+                <div class="export-btn-group">
+                    {% comment %} <button class="btn btn-primary" onclick="saveReportSession()">
+                        <i class="bi bi-save me-1"></i>Save
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadReportSession()">
+                        <i class="bi bi-folder2-open me-1"></i>Load
+                    </button> {% endcomment %}
+                    <button class="btn btn-success btn-sm" onclick="exportCurrentTab()">
+                        <i class="bi bi-download me-1"></i>Export Tab
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs Navigation -->
+        <div class="px-4">
+            <ul class="nav report-tabs" id="reportTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="member-details-tab" 
+                            data-bs-toggle="tab" data-bs-target="#member-details"
+                            type="button" role="tab">
+                        <i class="bi bi-person-vcard me-2"></i>Member Details
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="membership-details-tab" 
+                            data-bs-toggle="tab" data-bs-target="#membership-details"
+                            type="button" role="tab">
+                        <i class="bi bi-card-checklist me-2"></i>Membership Details
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="loan-tab" 
+                            data-bs-toggle="tab" data-bs-target="#loan"
+                            type="button" role="tab">
+                        <i class="bi bi-book me-2"></i>Loan
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="transactions-tab" 
+                            data-bs-toggle="tab" data-bs-target="#transactions"
+                            type="button" role="tab">
+                        <i class="bi bi-arrow-left-right me-2"></i>Transactions
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="physical-visit-tab" 
+                            data-bs-toggle="tab" data-bs-target="#physical-visit"
+                            type="button" role="tab">
+                        <i class="bi bi-door-open me-2"></i>Physical Visit
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="virtual-usage-tab" 
+                            data-bs-toggle="tab" data-bs-target="#virtual-usage"
+                            type="button" role="tab">
+                        <i class="bi bi-laptop me-2"></i>Virtual Usage
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="payments-tab" 
+                            data-bs-toggle="tab" data-bs-target="#payments"
+                            type="button" role="tab">
+                        <i class="bi bi-credit-card me-2"></i>Payments
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="tab-content py-2 mx-4" id="reportTabContent">
+            
+            <!-- Member Details Tab -->
+            <div class="tab-pane fade show active tab-content-section" 
+                 id="member-details" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5>Member Details</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#memberDetailsFilterModal">
+
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
+                        
+                            <span class="badge rounded-pill bg-light text-primary filter-badge"
+                                  id="member-details-filter-count">
+                                0
+                            </span>
+                        </button>
+                        &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('member-details')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="member-details-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Middle Name</th>
+                                <th>Last Name</th>
+                                <th>Membership Code</th>
+                                <th>User ID</th>
+                                <th>Email</th>
+                                <th>Mobile</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Membership Details Tab -->
+            <div class="tab-pane fade tab-content-section" id="membership-details" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Membership Details</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#membershipDetailsFilterModal">
+                             <span class="d-inline-flex align-items-center">
+                                 <i class="bi bi-sliders me-1"></i> Filters
+                             </span>
+                            <span class="badge rounded-pill bg-light text-primary filter-badge"
+                                  id="membership-details-filter-count">0</span>
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('membership-details')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="membership-details-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Membership Code</th>
+                                <th>Action Performed</th>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Deposit</th>
+                                <th>Entry Fees</th>
+                                <th>Subscription</th>
+                                <th>Gap Months</th>
+                                <th>Changed At</th>
+                                <th>Changed By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Loan Tab -->
+            <div class="tab-pane fade tab-content-section" id="loan" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Loan Transactions</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#loanFilterModal">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
+                            <span class="badge rounded-pill bg-light text-primary filter-badge" 
+                                  id="loan-filter-count">0</span>
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('loan')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="loan-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Membership Code</th>
+                                <th>Barcode</th>
+                                <th>Accession ID</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Return Date</th>
+                                <th>Days Overdue</th>
+                                <th>Fine Amount</th>
+                                <th>Issued By</th>
+                                <th>Remarks</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div class="tab-pane fade tab-content-section" id="transactions" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>All Transactions</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#transactionFilterModal">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
+                            <span class="badge rounded-pill bg-light text-primary filter-badge" 
+                                  id="transactions-filter-count">0</span>
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('transactions')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="transactions-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Member Name</th>
+                                <th>Membership Code</th>
+                                <th>Barcode</th>
+                                <th>Transaction Type</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Return Date</th>
+                                <th>Days Overdue</th>
+                                <th>Fine Amount</th>
+                                <th>Status</th>
+                                <th>Issued By</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Physical Visit Tab -->
+            <div class="tab-pane fade tab-content-section" id="physical-visit" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Physical Visits</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#physicalVisitFilterModal">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
+                            <span class="badge rounded-pill bg-light text-primary filter-badge" 
+                                  id="physical-visit-filter-count">0</span>
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('physical-visit')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="physical-visit-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Member Name</th>
+                                <th>Membership Code</th>
+                                <th>Entry Time</th>
+                                <th>Exit Time</th>
+                                <th>Duration</th>
+                                <th>Remark</th>
+                                <th>Recorded At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Virtual Usage Tab -->
+            <div class="tab-pane fade tab-content-section" id="virtual-usage" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Virtual Usage</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#virtualUsageFilterModal">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
+                            <span class="badge rounded-pill bg-light text-primary filter-badge" 
+                                  id="virtual-usage-filter-count">0</span>
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('virtual-usage')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="virtual-usage-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Member Name</th>
+                                <th>Membership Code</th>
+                                <th>Activity Type</th>
+                                <th>Screen/Page</th>
+                                <th>Visited At</th>
+                                <th>Duration</th>
+                                <th>IP Address</th>
+                                <th>Device Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payments Tab -->
+            <div class="tab-pane fade tab-content-section" id="payments" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Payment Details</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#paymentFilterModal">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
+                            <span class="badge rounded-pill bg-light text-primary filter-badge" 
+                                  id="payments-filter-count">0</span>
+                        </button> &nbsp;&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-success" 
+                                onclick="exportTabData('payments')">
+                            <i class="bi bi-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DataTable Container -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" 
+                           id="payments-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Payment Mode</th>
+                                <th>Payment Type</th>
+                                <th>Payment Method</th>
+                                <th>Deposit Amount</th>
+                                <th>Entry Fee</th>
+                                <th>Subscription</th>
+                                <th>Total Amount</th>
+                                <th>Transaction ID</th>
+                                <th>Payment Date</th>
+                                <th>Membership Code</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+    </div>
