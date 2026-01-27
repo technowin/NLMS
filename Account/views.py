@@ -886,7 +886,7 @@ def forgot_password(request, member):
                 return JsonResponse({'status': 'user_not_found'}, status=400)
 
         else:
-            return render(request, 'Bootstrap/account/forgot_password.html', {'member': member})
+            return render(request, 'bootstrap/account/forgot_password.html', {'member': member})
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
@@ -898,8 +898,6 @@ def forgot_password(request, member):
         else:
             messages.error(request, 'Oops...! Something went wrong!')
             return render(request, 'Bootstrap/account/forgot_password.html', {'member': member})
-
-
         
 def update_password(request):
     if request.method == "POST":
