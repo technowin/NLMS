@@ -2284,7 +2284,7 @@ def membership_paymentreceipt_download(request):
             # Get RENEWAL payments only
             payments = PaymentDetails.objects.filter(
                 membership=membership,
-                payment_type='Membership Renewal'
+                payment_type='Membership Renewed'
             ).order_by('-id')[:1] 
         else:
             # Get INITIAL membership payments only (default)
@@ -3539,6 +3539,7 @@ def issue_return_book_create(request):
                         # trans_obj.updated_by = user_id
                         # trans_obj.save()
                         
+                        final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
                         trans_obj.return_date = timezone.now().date()
                         trans_obj.return_condition = new_copy_status
                         trans_obj.fine_amount = fine_amount

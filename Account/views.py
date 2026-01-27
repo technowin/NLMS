@@ -897,7 +897,7 @@ def forgot_password(request, member):
             return JsonResponse({'status': 'error', 'message': 'Oops...! Something went wrong!'}, status=500)
         else:
             messages.error(request, 'Oops...! Something went wrong!')
-            return render(request, 'Bootstrap/account/forgot_password.html', {'member': member})
+            return render(request, 'bootstrap/account/forgot_password.html', {'member': member})
         
 def update_password(request):
     if request.method == "POST":

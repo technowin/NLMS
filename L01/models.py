@@ -588,6 +588,7 @@ class Chapters(models.Model):
 
 class MemberEntryExit(models.Model):
     membership_code = models.CharField(max_length=100)
+    member = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE,db_column="member_id",related_name="ember_entry",null=True)
     entry_time = models.DateTimeField(null=True, blank=True)
     exit_time = models.DateTimeField(null=True, blank=True)
     role_id = models.IntegerField(null=True, blank=True)
