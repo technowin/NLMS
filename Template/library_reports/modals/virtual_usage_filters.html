@@ -9,64 +9,56 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="virtualUsageFilterForm">
+                <form id="virtualUsageFilterForm" method="post">                                
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">From Date</label>
-                                <input type="date" class="form-control datepicker" name="from_date">
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">From Date</label>
+                            <input type="date" class="form-control" name="from_date">
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">To Date</label>
-                                <input type="date" class="form-control datepicker" name="to_date">
-                            </div>
+                    
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">To Date</label>
+                            <input type="date" class="form-control" name="to_date">
                         </div>
                     </div>
-                    
+                
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Membership Type</label>
-                                <select class="form-control" name="membership_type" multiple>
-                                    <option value="">--Select Types--</option>
-                                    {% for mt in membership_types %}
-                                        <option value="{{ mt.id }}">
-                                            {{ mt.membership_type_en }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Membership Type</label>
+                            <select class="form-control" name="membership_type[]" multiple>
+                                <option value="">--Select Types--</option>
+                                {% for mt in membership_types %}
+                                    <option value="{{ mt.id }}">{{ mt.membership_type_en }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Activity Type</label>
-                                <select class="form-select" name="activity_type">
-                                    <option value="">All Activities</option>
-                                    <option value="login">Login Sessions Only</option>
-                                    <option value="screen">Screen Activities Only</option>
-                                </select>
-                            </div>
+                    
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Activity Type</label>
+                            <select class="form-select" name="activity_type">
+                                <option value="">All</option>
+                                <option value="login">Login Only</option>
+                                <option value="screen">Screen Only</option>
+                            </select>
                         </div>
                     </div>
-                    
+                
                     <div class="mb-3">
-                        <label class="form-label">Screen Name Contains</label>
-                        <input type="text" class="form-control" name="screen_name" 
-                               placeholder="Enter screen name...">
+                        <label class="form-label">Screen Name</label>
+                        <input type="text" class="form-control" name="screen_name">
                     </div>
-                    
+                
                     <div class="mb-3">
                         <label class="form-label">Device Type</label>
                         <select class="form-select" name="device_type">
-                            <option value="">All Devices</option>
+                            <option value="">All</option>
                             <option value="desktop">Desktop</option>
                             <option value="mobile">Mobile</option>
                             <option value="tablet">Tablet</option>
                         </select>
                     </div>
                 </form>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
