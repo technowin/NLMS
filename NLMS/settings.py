@@ -68,10 +68,11 @@ ENVIRONMENT = detect_environment()
 print(f"=== Environment detected: {ENVIRONMENT} ===")
 
 # Set DEBUG based on environment
-if ENVIRONMENT == 'local':
-    DEBUG = True
-else:
-    DEBUG = False
+# if ENVIRONMENT == 'local':
+#     DEBUG = True
+# else:
+#     DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', 'www.nmmclibrary.in']
 
@@ -132,7 +133,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ========== MEDIA & FILE STORAGE SETTINGS ==========
 if ENVIRONMENT == 'local':
     # For local development (Windows)
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Project/Documents/')
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'D:/Python Projects/Documents/')
 elif ENVIRONMENT == 'test':
     # For test server (Ubuntu)
     MEDIA_ROOT = '/home/ubuntu/Documents/'

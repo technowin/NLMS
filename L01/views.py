@@ -97,6 +97,7 @@ import mimetypes
 from django.db.models import Subquery, OuterRef
 from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
+from NLMS.access_control import no_direct_access
 
 def index(request):
     # Get the library code from session
@@ -376,7 +377,8 @@ def get_membership_details(request):
                 "success": False,
                 "error": str(e)
             })
-            
+
+@no_direct_access
 def registration(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -1286,7 +1288,8 @@ def secure_document_view(request, doc_id_enc):
         import traceback
         traceback.print_exc()
         raise Http404("Document not found")
-    
+
+@no_direct_access    
 @login_required
 def membership_form_view(request):
     Db.closeConnection()
@@ -1462,7 +1465,7 @@ def membership_form_view(request):
                             user_name = membership.first_name if membership.first_name else user.full_name
                             
                             # Create the comprehensive message with ALL details
-                            user_details = f"{user.username} and {user_password} and Membership Code: {new_membership_code}"
+                            user_details = f"{user.username} and {user_password}"
                             
                             # Replace the {#var#} placeholder with all details
                             # The template has only one placeholder, so include everything there
@@ -2281,7 +2284,7 @@ def membership_paymentreceipt_download(request):
             # Get RENEWAL payments only
             payments = PaymentDetails.objects.filter(
                 membership=membership,
-                payment_type='Membership Renewal'
+                payment_type='Membership Renewed'
             ).order_by('-id')[:1] 
         else:
             # Get INITIAL membership payments only (default)
@@ -3518,17 +3521,43 @@ def issue_return_book_create(request):
                     with db_transaction.atomic():
                         # Update CirculationTransaction
                         
-                        final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
+                        # final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
                         
+                        # trans_obj.return_date = timezone.now().date()
+                        # trans_obj.return_condition = new_copy_status
+                        # trans_obj.fine_amount = fine_amount
+                        # trans_obj.adjusted_fine = adjusted_fine  # <-- save adjusted fine
+                        # trans_obj.book_fine_amount = book_price_amount
+                        # trans_obj.total_fine = total_amount
+                        # trans_obj.days_overdue_count = fine_Breakdown
+                        # trans_obj.fine_status = "Paid" if fine_amount > 0 else "None"
+                        # trans_obj.fine_paid_date = timezone.now().date()
+                        # trans_obj.transaction_status = "Success"
+                        # trans_obj.transaction_type = "Offline"
+                        # trans_obj.received_by = user_id
+                        # trans_obj.remarks = notes
+                        # trans_obj.updated_by = user_id
+                        # trans_obj.save()
+                        
+                        final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
                         trans_obj.return_date = timezone.now().date()
                         trans_obj.return_condition = new_copy_status
                         trans_obj.fine_amount = fine_amount
-                        trans_obj.adjusted_fine = adjusted_fine  # <-- save adjusted fine
+                        trans_obj.adjusted_fine = adjusted_fine
                         trans_obj.book_fine_amount = book_price_amount
                         trans_obj.total_fine = total_amount
                         trans_obj.days_overdue_count = fine_Breakdown
-                        trans_obj.fine_status = "Paid" if fine_amount > 0 else "None"
-                        trans_obj.fine_paid_date = timezone.now().date()
+
+                        if adjusted_fine > 0:
+                            trans_obj.fine_status = "Adjusted"
+                            trans_obj.fine_paid_date = timezone.now().date()
+                        elif fine_amount > 0:
+                            trans_obj.fine_status = "Paid"
+                            trans_obj.fine_paid_date = timezone.now().date()
+                        else:
+                            trans_obj.fine_status = None
+                            trans_obj.fine_paid_date = None
+
                         trans_obj.transaction_status = "Success"
                         trans_obj.transaction_type = "Offline"
                         trans_obj.received_by = user_id
@@ -8980,6 +9009,7 @@ def event_announcement_edit(request, encrypted_id):
         return redirect('L01:event_announcement_index')
 
 # Librarian Dashboard
+@no_direct_access
 @login_required
 def dashboard_view(request):
     """

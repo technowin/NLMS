@@ -723,27 +723,6 @@ def register_new_user(request):
     elif request.method == "POST":
         return redirect('/masters?entity=user&type=i')  
 
-def forgot_password(request):
-    try:
-        if request.method =="GET":
-            type = request.GET.get('type')
-            return render(request,'Account/forgot-password.html',{'type':type}) 
-        if request.method == "POST":
-            email = request.POST.get('email')
-            if CustomUser.objects.filter(email=email).exists():
-                messages.success(request, 'User id valid...Please update your password')
-                type = 'pass'
-            else:
-                messages.error(request, 'User does not exist.Please Enter Correct Email.')
-                type='email'
-            return render(request,'Account/forgot-password.html',{'type':type,'email':email}) 
-
-    except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name
-        callproc("stp_error_log", [fun, str(e), request.user.id])
-        messages.error(request, 'Oops...! Something went wrong!')
-
 def home(request):
     return render(request,'Account/home.html') 
 
@@ -858,123 +837,158 @@ def charts(request):
 def tables(request):
     return render(request,'Bootstrap/tables.html')
 
-def forgot_password(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
+def forgot_password(request, member):
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            try:
+                user = CustomUser.objects.get(username=username)
+                # Role checks
+                if int(member) == 1 and user.role_id != 3:
+                    return JsonResponse({"status": "invalid_role", "message": "You are not a valid library member"})
+                elif int(member) != 1 and user.role_id == 3:
+                    return JsonResponse({"status": "invalid_role", "message": "Library members cannot reset password here"})
 
-        try:
-            # Fetch the user object based on the provided username (email)
-            user = CustomUser.objects.get(username=username)
-            mobile_no = user.phone  # Assuming you have a phone field on your CustomUser model
-            
-            # Generate 6-digit OTP
-            otp = random.randint(100000, 999999)
-            
-            # Fetch OTP message template (assuming you have a column 'template_message')
-            template = SmsTemplate.objects.using('L01').filter(template_id=1107176880362727316).first()
-            
-            if template:
-                # Replace placeholders in the template with actual values (username and OTP)
-                message = template.template_message.replace('{#var#}', user.username)  # Replace {#var#} with username
-                message = message.replace('@OTP', str(otp))  # Replace @OTP with the generated OTP
-                request.session['otp'] = otp  # Save OTP to the session
+                mobile_no = user.phone
+                otp = random.randint(100000, 999999)
+                template = SmsTemplate.objects.using('L01').filter(template_id=1107176880362727316).first()
 
-                # Send SMS to user's phone
-                # send_sms(mobile_no, message)  # Ensure send_sms is defined elsewhere
+                if template:
+                    message = template.template_message.replace('{#var#}', user.username)
+                    message = message.replace('@OTP', str(otp))
+                    request.session['otp'] = otp
+                    send_sms(mobile_no, message)
 
-                # Save OTP Log
-                otp_log = OTPLog.objects.using('L01').create(
-                    username=username,
-                    otp=str(otp),
-                    is_verified=False,
-                    created_by=request.user  # The user who is creating the OTP
-                )
+                    otp_log = OTPLog.objects.using('L01').create(
+                        username=username,
+                        otp=str(otp),
+                        is_verified=False,
+                        created_by=request.user
+                    )
+                    otp_id = otp_log.id
 
-                # Optionally, you can also log the verification attempt in VerifyLog
-                verify_log = VerifyOtp.objects.using('L01').create(
-                    username=username,
-                    otp=str(otp),
-                    is_verified=False,
-                    created_by=request.user  # The user who is creating the OTP
-                )
+                    verify_log = VerifyOtp.objects.using('L01').create(
+                        otp_log=otp_log,
+                        username=username,
+                        otp=str(otp),
+                        is_verified=False,
+                        created_by=request.user
+                    )
 
-                # Return success response
-                return JsonResponse({'status': 'otp_sent','username': username})
-            else:
-                # If no template is found
-                return JsonResponse({'status': 'template_not_found'}, status=400)
+                    return JsonResponse({'status': 'otp_sent','username': username,'otp_id':otp_id,'member': member })
+                else:
+                    return JsonResponse({'status': 'template_not_found'}, status=400)
 
-        except CustomUser.DoesNotExist:
-            # If the user is not found
-            return JsonResponse({'status': 'user_not_found'}, status=400)
+            except CustomUser.DoesNotExist:
+                return JsonResponse({'status': 'user_not_found'}, status=400)
 
-    else:
-        return render(request, 'Bootstrap/account/forgot_password.html')
+        else:
+            return render(request, 'bootstrap/account/forgot_password.html', {'member': member})
+
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        if request.method == 'POST':
+            return JsonResponse({'status': 'error', 'message': 'Oops...! Something went wrong!'}, status=500)
+        else:
+            messages.error(request, 'Oops...! Something went wrong!')
+            return render(request, 'bootstrap/account/forgot_password.html', {'member': member})
         
 def update_password(request):
-    if request.method == 'POST':
-        otp = request.POST.get('otp')
-        new_password = request.POST.get('new_password')
-        
-        # Verify OTP
-        if otp == str(request.session.get('otp')):
-            user = User.objects.get(username=request.user.username)
-            user.password = make_password(new_password)
-            user.save()
-            return JsonResponse({'status': 'success'})
-        
-        return JsonResponse({'status': 'otp_invalid'}, status=400)
+    if request.method == "POST":
+        username = request.POST.get("username")
+        new_password = request.POST.get("new_password")
+        if not username or not new_password:
+            return JsonResponse({
+                "status": "error",
+                "message": "Missing data"
+            }, status=400)
+
+        try:
+            user = CustomUser.objects.get(username=username)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "User not found"
+            }, status=404)
+
+        # ✅ update encrypted password
+        user.password = make_password(new_password)
+        user.save()
+
+        # ✅ store raw password separately
+        password_storage.objects.using('L01').filter(user=user).update(
+            passwordText=new_password
+        )
+
+        mobile_no = user.phone
+
+        template = SmsTemplate.objects.using('L01').filter(
+            template_id=1107176880391914288
+        ).first()
+
+        if template:
+            message = template.template_message
+            message = message.replace('{#var#}', user.full_name, 1)
+            message = message.replace(
+                '{#var#}',
+                f"{user.username} and {new_password}",
+                1
+            )
+
+            send_sms(mobile_no, message)
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Password updated successfully"
+        })
     
 def verify_otp(request):
     if request.method == "POST":
-        username = request.POST.get("username")  # Get the username (email or phone)
-        entered_otp = request.POST.get("otp")  # The OTP entered by the user
 
-        # Retrieve the most recent OTP log for the given username
+        verify_id = request.POST.get("otp_id")
+        entered_otp = request.POST.get("otp")
+
         try:
-            latest_otp_log = OTPLog.objects.filter(username=username).order_by('-created_at').first()
-            
-            if not latest_otp_log:
-                return JsonResponse({
-                    "status": "error",
-                    "message": "No OTP found for this username"
-                })
-
-            # Check OTP expiry (2 minutes expiry from created_at)
-            if timezone.now() > latest_otp_log.created_at + timedelta(minutes=2):
-                return JsonResponse({
-                    "status": "expired",
-                    "message": "OTP expired"
-                })
-
-            # Check if the entered OTP matches the latest OTP in the database
-            if str(entered_otp) != str(latest_otp_log.otp):
-                return JsonResponse({
-                    "status": "invalid",
-                    "message": "Invalid OTP"
-                })
-
-            # OTP is verified, mark it as verified in OTPLog
-            latest_otp_log.is_verified = True
-            latest_otp_log.save()
-
-            # Log the verification attempt in VerifyLog
-            verify_log = VerifyOtp.objects.create(
-                otp_log=latest_otp_log,
-                is_verified=True,
-                verified_by=request.user  # Assuming the logged-in user is verifying
+            verify_row = VerifyOtp.objects.using('L01').get(
+                otp_log=verify_id
             )
-
-            # OTP verified successfully
-            return JsonResponse({
-                "status": "otp_verified",
-                "message": "OTP successfully verified"
-            })
-
-        except OTPLog.DoesNotExist:
+        except Exception as e:
             return JsonResponse({
                 "status": "error",
-                "message": "No OTP record found"
+                "message": "Invalid or expired OTP"
             })
 
-    return JsonResponse({"status": "error", "message": "Invalid request"})
+        otp_log = verify_row.otp_log
+
+        # expiry check
+        if timezone.now() > otp_log.created_at + timedelta(minutes=2):
+            verify_row.delete()
+            return JsonResponse({
+                "status": "expired",
+                "message": "OTP expired"
+            })
+
+        # OTP mismatch
+        if entered_otp != verify_row.otp:
+            return JsonResponse({
+                "status": "invalid",
+                "message": "Invalid OTP"
+            })
+
+        # ✅ SUCCESS
+        otp_log.is_verified = True
+        otp_log.save()
+
+        # delete verify row
+        verify_row.delete()
+
+        return JsonResponse({
+            "status": "otp_verified",
+            "message": "OTP verified successfully"
+        })
