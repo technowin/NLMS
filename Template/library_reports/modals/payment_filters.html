@@ -29,8 +29,13 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Membership Type</label>
-                                <select class="form-select" name="membership_type" >
-                                    <!-- Will be populated dynamically -->
+                                <select class="form-control" name="membership_type" multiple>
+                                    <option value="">--Select Types--</option>
+                                    {% for mt in membership_types %}
+                                        <option value="{{ mt.id }}">
+                                            {{ mt.membership_type_en }}
+                                        </option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
@@ -90,10 +95,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="applyPaymentFilters()">
+                <button type="button" class="btn btn-primary" onclick="applyRightFilters('payments','paymentFilter')">
                     Apply Filters
                 </button>
-                <button type="button" class="btn btn-outline-danger" onclick="clearPaymentFilters()">
+                <button type="button" class="btn btn-outline-danger" onclick="clearRightFilters('payments','paymentFilter')">
                     Clear All
                 </button>
             </div>

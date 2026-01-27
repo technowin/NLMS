@@ -1,3 +1,4 @@
+from warnings import filters
 from django.conf import settings
 from django.shortcuts import render
 
@@ -13,6 +14,7 @@ from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Concat, ExtractMonth
 from django.core.paginator import Paginator
 from django.utils import timezone
+from httpcore import request
 import pandas as pd
 from io import BytesIO
 import xlsxwriter
@@ -21,6 +23,19 @@ from library_reports.models import *
 
 from .forms import *
 from L01.models import *
+from Account.models import CustomUser 
+
+from datetime import date
+import calendar
+
+def parse_month_start(month_str):
+    y, m = map(int, month_str.split('-'))
+    return date(y, m, 1)
+
+def parse_month_end(month_str):
+    y, m = map(int, month_str.split('-'))
+    last_day = calendar.monthrange(y, m)[1]
+    return date(y, m, last_day)
 
 class ReportBaseView(LoginRequiredMixin, View):
     """Base view for handling dynamic database selection"""
@@ -43,22 +58,29 @@ class ReportBaseView(LoginRequiredMixin, View):
         qs = MembershipDetails.objects.using(db).all()
         
         if filters:
-            if filters.get('membership_type'):
-                qs = qs.filter(membership_id=filters['membership_type'])
+            membership_types = filters.get('membership_type')
 
-            membership_status = filters.get('membership_status')
+            if membership_types:
+                qs = qs.filter(membership_id__in=membership_types)
 
-            if membership_status == 'active':
-                qs = qs.filter(isactive=1)
+            membership_statuses = filters.get('membership_status')
 
-            elif membership_status == 'inactive':
-                qs = qs.filter(isactive=0)
+            if membership_statuses:
+                status_q = Q()
 
-            elif membership_status == 'cancelled':
-                qs = qs.filter(
-                    isactive=0,
-                    status__status_name__iexact='cancelled'
-                )
+                if 'active' in membership_statuses:
+                    status_q |= Q(isactive=1)
+
+                if 'inactive' in membership_statuses:
+                    status_q |= Q(isactive=0)
+
+                if 'cancelled' in membership_statuses:
+                    status_q |= Q(
+                        isactive=0,
+                        status__status_name__iexact='cancelled'
+                    )
+
+                qs = qs.filter(status_q)
             
             if filters.get('search'):
                 search_term = filters['search']
@@ -85,18 +107,28 @@ class MemberReportView(ReportBaseView, TemplateView):
         try:
             member_types = parameter_master_L01.objects.using(db).filter(isactive=1,parameter_name='MembershipForm').only('parameter_id', 'parameter_name', 'parameter_value')
             membership_types = MembershipMaster.objects.using(db).filter(isactive=1).values('id', 'membership_type_en')
+            status_list = StatusMaster.objects.using(db).filter(isactive=1).values('id', 'status_name')
+            ward_list = WardMaster.objects.using(db).filter(is_active=1).values('ward_name', 'ward_name')
+            actionperformed_list  = MembershipDetails.objects.using(db).filter(isactive=1).exclude(actionperformed__isnull=True).values('actionperformed').distinct().order_by('actionperformed')
 
         except:
             member_types = []
             membership_types = []
+            status_list = []
+            ward_list = []
+            actionperformed_list = []
         
+        context['member_types'] = member_types
         context['membership_types'] = membership_types
+        context['status_list'] = status_list
+        context['ward_list'] = ward_list
+        context['actionperformed_list'] = actionperformed_list
         # Initialize all filter forms with dynamic choices
         context['member_list_form'] = MemberListFilterForm()
         
         # Member Details Form with dynamic choices
         member_details_form = CompleteMemberDetailsFilterForm()
-        member_details_form.fields['member_type'].queryset = member_types
+        # member_details_form.fields['member_type'].queryset = member_types
         context['member_details_form'] = member_details_form
         
         # Membership Details Form
@@ -145,7 +177,6 @@ class MemberListDataView(ReportBaseView):
     
     def get(self, request):
         form = MemberListFilterForm(request.GET)
-        
         if form.is_valid():
             filters = form.cleaned_data
             members_qs = self.get_membership_queryset(filters)
@@ -222,16 +253,24 @@ class TabDataView(ReportBaseView):
         
         # Apply filters
         if filters.get('membership_month_from'):
-            qs = qs.filter(from_date__gte=filters['membership_month_from'])
+            start_date = parse_month_start(filters['membership_month_from'])
+            qs = qs.filter(from_date__gte=start_date)
         if filters.get('membership_month_to'):
-            qs = qs.filter(from_date__lte=filters['membership_month_to'])
+            end_date = parse_month_end(filters['membership_month_to'])
+            qs = qs.filter(from_date__lte=end_date)
         if filters.get('membership_type'):
-            qs = qs.filter(membership__membership_type__in=filters['membership_type'])
+            qs = qs.filter(membership_id__in=filters['membership_type'])
+        if filters.get('member_type'):
+            qs = qs.filter(member_type_id__in=filters['member_type'])
         if filters.get('ward'):
-            qs = qs.filter(ward__icontains=filters['ward'])
+            qs = qs.filter(ward__in=filters['ward'])
         if filters.get('status'):
-            status_values = [int(s) for s in filters['status']]
-            qs = qs.filter(isactive__in=status_values)
+            qs = qs.filter(status_id__in=filters['status'])
+        if filters.get('renewal_due_month'):
+            start = parse_month_start(filters['renewal_due_month'])
+            end = parse_month_end(filters['renewal_due_month'])
+            qs = qs.filter(to_date__range=(start, end))
+
         
         data = []
         for member in qs:
@@ -303,6 +342,7 @@ class TabDataView(ReportBaseView):
                 'late_fee': float(member.late_fee) if member.late_fee else 0,
                 'changed_at': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
                 'changed_by': member.updated_by,
+                'membership_type_id': member.membership_id,
             })
         
         # Process historical data
@@ -327,20 +367,56 @@ class TabDataView(ReportBaseView):
                 'late_fee': float(history.late_fee) if history.late_fee else 0,
                 'changed_at': history.changed_at.strftime('%Y-%m-%d %H:%M') if history.changed_at else '',
                 'changed_by': history.changed_by,
+                'membership_type_id': history.membership_id,
             })
         
         # Apply filters to combined data
+        # Date filters
         if filters.get('from_date'):
-            data = [d for d in data if d['from_date'] >= filters['from_date']]
+            from_dt = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+            data = [d for d in data if d['from_date'] and d['from_date'] >= from_dt]
+
         if filters.get('to_date'):
-            data = [d for d in data if d['to_date'] <= filters['to_date']]
+            to_dt = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+            data = [d for d in data if d['to_date'] and d['to_date'] <= to_dt]
+
+        # Gap Period
+        gap_filter = filters.get('gap_period')
+        if gap_filter == 'no_gap':
+            data = [d for d in data if d['gap_months'] == 0]
+        elif gap_filter == 'with_gap':
+            data = [d for d in data if d['gap_months'] > 0]
+        elif gap_filter == '1_3':
+            data = [d for d in data if 1 <= d['gap_months'] <= 3]
+        elif gap_filter == '4_6':
+            data = [d for d in data if 4 <= d['gap_months'] <= 6]
+        elif gap_filter == '6_plus':
+            data = [d for d in data if d['gap_months'] > 6]
+
+        # Action Performed
+        if filters.get('actionperformed'):
+            actions = set(filters['actionperformed'])
+            data = [d for d in data if d['actionperformed'] in actions]
+
+        # Membership Type
+        if filters.get('membership_type'):
+            mt_ids = {
+                int(x) for x in filters['membership_type']
+                if str(x).isdigit()
+            }
+            data = [
+                d for d in data
+                if d.get('membership_type_id') in mt_ids
+            ]
+
+
         
         return {'data': data}
     
     def get_loan_data(self, db, member_ids, filters):
         qs = CirculationTransaction.objects.using(db).filter(
             member_id__in=member_ids,
-            transaction_type='issue'
+            transaction_type='Offline'
         ).select_related('catalog', 'accession', 'member')
         
         # Apply filters
@@ -348,24 +424,39 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(issue_date__gte=filters['from_date'])
         if filters.get('to_date'):
             qs = qs.filter(issue_date__lte=filters['to_date'])
+
         if filters.get('overdue') == 'overdue':
             qs = qs.filter(days_overdue_count__gt=0)
         elif filters.get('overdue') == 'not_overdue':
             qs = qs.filter(days_overdue_count=0)
+
+        if filters.get('fine_status') == 'paid':
+            qs = qs.filter(fine_status__iexact='paid')
+        elif filters.get('fine_status') == 'not_paid':
+            qs = qs.filter(
+            Q(fine_status__isnull=True) |
+            Q(fine_status__iexact='not_paid') |
+            Q(fine_amount__gt=0, fine_paid_date__isnull=True)
+        )
         
+        membership_type = filters.get('membership_type')
+        if membership_type:
+            qs = qs.filter(member__member_type_id=membership_type)
+
+        from Account.models import CustomUser 
         data = []
         for transaction in qs:
             data.append({
                 'membership_code': transaction.member.membership_code if transaction.member else '',
                 'barcode': transaction.barcode,
-                'accession_id': transaction.accession.id if transaction.accession else '',
+                'accession_id': transaction.accession.accession_id if transaction.accession else '',
                 'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
                 'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
                 'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
                 'days_overdue_count': transaction.days_overdue_count or 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
-                'issued_by': transaction.issued_by,
+                'issued_by':  CustomUser.objects.using(db).filter(id=transaction.issued_by).only('full_name').first().full_name if transaction.issued_by else '',
                 'remarks': transaction.remarks,
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
             })
@@ -377,17 +468,30 @@ class TabDataView(ReportBaseView):
             member_id__in=member_ids
         ).select_related('catalog', 'accession', 'member')
         
+        if filters.get('from_date'):
+            qs = qs.filter(created_at__date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            qs = qs.filter(created_at__date__lte=filters['to_date'])
+        if filters.get('late_returns') == 'late':
+            qs = qs.filter(days_overdue_count__gt=0)
+        elif filters.get('late_returns') == 'on_time':
+            qs = qs.filter(days_overdue_count=0)
+        if filters.get('fine_status') == 'paid':
+            qs = qs.filter(fine_status='paid')
+        elif filters.get('fine_status') == 'not_paid':
+            qs = qs.filter(fine_status__in=['unpaid', 'pending', None])
+            
         data = []
         for transaction in qs:
             data.append({
                 'member_name': f"{transaction.member.first_name or ''} {transaction.member.last_name or ''}".strip(),
                 'membership_code': transaction.member.membership_code if transaction.member else '',
                 'barcode': transaction.barcode,
-                'accession_id': transaction.accession.id if transaction.accession else '',
+                'accession_id': transaction.accession.accession_id if transaction.accession else '',
                 'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
                 'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
                 'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'issued_by': transaction.issued_by,
+                'issued_by': CustomUser.objects.using(db).filter(id=transaction.issued_by).only('full_name').first().full_name if transaction.issued_by else '',
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
                 'received_by': transaction.received_by,
@@ -424,6 +528,19 @@ class TabDataView(ReportBaseView):
         if filters.get('to_date'):
             qs = qs.filter(entry_time__date__lte=filters['to_date'])
         
+        if filters.get('from_date'):
+            qs = qs.filter(entry_time__date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            qs = qs.filter(entry_time__date__lte=filters['to_date'])
+
+        if filters.get('activity_type') == 'entry':
+            qs = qs.filter(exit_time__isnull=True)
+        elif filters.get('activity_type') == 'exit':
+            qs = qs.filter(exit_time__isnull=False)
+        elif filters.get('activity_type') == 'completed':
+            qs = qs.filter(entry_time__isnull=False, exit_time__isnull=False)
+        if filters.get('remarks_search'):
+            qs = qs.filter(remark__icontains=filters['remarks_search'])
         data = []
         for visit in qs:
             # Find member name
@@ -451,7 +568,31 @@ class TabDataView(ReportBaseView):
         login_sessions = MemberLoginSession.objects.using(db).filter(
             member_id__in=member_ids
         ).select_related('member').order_by('-login_time')
+
+        # Apply filters to login sessions
+        if filters.get('from_date'):
+            qs_login = qs_login.filter(login_time__date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            qs_login = qs_login.filter(login_time__date__lte=filters['to_date'])
+        if filters.get('activity_type') == 'login':
+            count += qs_login.count()
+            return count
+        if filters.get('device_type'):
+            qs_login = qs_login.filter(device_type__icontains=filters['device_type'])
         
+        # Apply filters to screen activities
+        if filters.get('from_date'):
+            qs_activity = qs_activity.filter(visited_at__date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            qs_activity = qs_activity.filter(visited_at__date__lte=filters['to_date'])
+        if filters.get('activity_type') == 'screen':
+            count += qs_activity.count()
+            return count
+        if filters.get('screen_name'):
+            qs_activity = qs_activity.filter(screen_name__icontains=filters['screen_name'])
+        if filters.get('device_type'):
+            qs_activity = qs_activity.filter(session__device_type__icontains=filters['device_type'])
+
         # Apply date filters
         if filters.get('from_date'):
             login_sessions = login_sessions.filter(login_time__date__gte=filters['from_date'])
@@ -518,6 +659,13 @@ class TabDataView(ReportBaseView):
         if filters.get('payment_type'):
             qs = qs.filter(payment_type__icontains=filters['payment_type'])
         
+        if filters.get('from_date'):
+            qs = qs.filter(payment_date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            qs = qs.filter(payment_date__lte=filters['to_date'])
+        if filters.get('payment_type'):
+            qs = qs.filter(payment_type=filters['payment_type'])
+
         data = []
         for payment in qs:
             data.append({
@@ -836,21 +984,20 @@ class GetMemberOptionsView(ReportBaseView):
         member_types = parameter_master_L01.objects.using(db).filter(isactive=1,parameter_name='MembershipForm').values('parameter_id', 'parameter_value')
         
         # Get unique wards
-        wards = MembershipDetails.objects.using(db).exclude(
-            ward__isnull=True
-        ).exclude(
-            ward=''
-        ).order_by('ward').values_list('ward', flat=True).distinct()
+        wards = WardMaster.objects.using(db).filter(is_active=1).values('ward_name', 'ward_name').distinct()
         
         # Get membership types
         membership_types = MembershipMaster.objects.using(db).filter(
             isactive=1
         ).values('id', 'membership_type_en')
         
+        actionperformed_list  = MembershipDetails.objects.using(db).filter(isactive=1).exclude(actionperformed__isnull=True).values('actionperformed').distinct().order_by('actionperformed')
+        
         return JsonResponse({
             'member_types': list(member_types),
             'wards': list(wards),
-            'membership_types': list(membership_types)
+            'membership_types': list(membership_types),
+            'actionperformed_list': list(actionperformed_list)
         })
 
 class GetFilterCountsView(ReportBaseView):
@@ -913,6 +1060,29 @@ class GetFilterCountsView(ReportBaseView):
             return JsonResponse({'count': count})
         except Exception as e:
             return JsonResponse({'count': 0, 'error': str(e)})
+    
+    def apply_member_details_filters(self, qs, filters):
+        """Apply filters to member details data"""
+        if filters.get('membership_month_from'):
+            start_date = parse_month_start(filters['membership_month_from'])
+            qs = qs.filter(from_date__gte=start_date)
+        if filters.get('membership_month_to'):
+            end_date = parse_month_end(filters['membership_month_to'])
+            qs = qs.filter(from_date__lte=end_date)
+        if filters.get('membership_type'):
+            qs = qs.filter(membership_id__in=filters['membership_type'])
+        if filters.get('member_type'):
+            qs = qs.filter(member_type_id__in=filters['member_type'])
+        if filters.get('ward'):
+            qs = qs.filter(ward__in=filters['ward'])
+        if filters.get('status'):
+            qs = qs.filter(status_id__in=filters['status'])
+        if filters.get('renewal_due_month'):
+            start = parse_month_start(filters['renewal_due_month'])
+            end = parse_month_end(filters['renewal_due_month'])
+            qs = qs.filter(to_date__range=(start, end))
+        
+        return qs
     
     def apply_membership_details_filters(self, qs, qs_history, filters):
         """Apply filters to membership details data"""

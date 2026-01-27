@@ -12,24 +12,24 @@ class MemberListFilterForm(forms.Form):
         'placeholder': 'Search members...'
     }))
     
-    membership_type = forms.ChoiceField(
+    membership_type = forms.MultipleChoiceField(
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.SelectMultiple(attrs={'class': 'form-select'})
     )
     
-    membership_status = forms.ChoiceField(
+    membership_status = forms.MultipleChoiceField(
         required=False,
         choices=[
             ('active', 'Active'),
             ('inactive', 'Inactive'),
             ('cancelled', 'Cancelled'),
         ],
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.SelectMultiple(attrs={'class': 'form-select'})
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['membership_type'].choices = [('', 'All')] + [
+        self.fields['membership_type'].choices = [
             (m.id, m.membership_type_en)
             for m in MembershipMaster.objects.using('L01').filter(isactive=1)
         ]
