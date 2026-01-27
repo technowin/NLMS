@@ -202,6 +202,7 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
+    "django_user_agents"
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -253,6 +254,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
     # Your DB middleware should be **AFTER auth and messages**
     'administration.middleware.LibraryDatabaseMiddleware',
     'L01.middleware.MemberActivityMiddleware',

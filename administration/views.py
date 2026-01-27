@@ -239,7 +239,8 @@ def library_list_index(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("library_list_index")
-    
+
+@no_direct_access    
 def commissioner_message(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -261,7 +262,8 @@ def commissioner_message(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("commissioner_message")
-    
+
+@no_direct_access    
 def swd_libraries(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -284,6 +286,7 @@ def swd_libraries(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("swd_libraries")
 
+@no_direct_access
 def vision_mission(request):
     """Display Vision, Mission, Objectives page in both English and Marathi"""
     Db.closeConnection()

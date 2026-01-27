@@ -276,6 +276,19 @@ def Login(request):
                     membership_id = membership.id
                 except MembershipMaster.DoesNotExist:
                     membership_id = None
+                    
+            if str(user.role_id) == '3' and member:
+                try:
+                    login_session = MemberLoginSession.objects.using('L01').create(
+                        member=member,   # ✅ pass MembershipDetails instance
+                        ip_address=request.META.get('REMOTE_ADDR'),
+                        created_by=str(user.id)
+                    )
+
+                    request.session['login_session_id'] = login_session.id
+
+                except Exception as e:
+                    print(f"Error creating MemberLoginSession: {e}")
             # Inactive membership
             if member and member.isactive != 1:
                 request.session["sweet_alert"] = {
@@ -331,19 +344,6 @@ def Login(request):
                     return redirect("L01:membership_dashboard") 
 
                 return redirect("L01:membership_dashboard")
-                
-            if str(user.role_id) == '3' and member:
-                try:
-                    login_session = MemberLoginSession.objects.using('L01').create(
-                        member=member,   # ✅ pass MembershipDetails instance
-                        ip_address=request.META.get('REMOTE_ADDR'),
-                        created_by=str(user.id)
-                    )
-
-                    request.session['login_session_id'] = login_session.id
-
-                except Exception as e:
-                    print(f"Error creating MemberLoginSession: {e}")
 
 
             # ============================================================
