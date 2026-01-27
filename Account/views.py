@@ -723,27 +723,6 @@ def register_new_user(request):
     elif request.method == "POST":
         return redirect('/masters?entity=user&type=i')  
 
-def forgot_password(request):
-    try:
-        if request.method =="GET":
-            type = request.GET.get('type')
-            return render(request,'Account/forgot-password.html',{'type':type}) 
-        if request.method == "POST":
-            email = request.POST.get('email')
-            if CustomUser.objects.filter(email=email).exists():
-                messages.success(request, 'User id valid...Please update your password')
-                type = 'pass'
-            else:
-                messages.error(request, 'User does not exist.Please Enter Correct Email.')
-                type='email'
-            return render(request,'Account/forgot-password.html',{'type':type,'email':email}) 
-
-    except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name
-        callproc("stp_error_log", [fun, str(e), request.user.id])
-        messages.error(request, 'Oops...! Something went wrong!')
-
 def home(request):
     return render(request,'Account/home.html') 
 
