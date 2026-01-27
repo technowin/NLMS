@@ -29,7 +29,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Membership Type</label>
-                                <select class="form-control" name="membership_type" multiple>
+                                <select class="form-control" name="membership_type[]" multiple>
                                     <option value="">--Select Types--</option>
                                     {% for mt in membership_types %}
                                         <option value="{{ mt.id }}">
@@ -44,19 +44,24 @@
                                 <label class="form-label">Late Returns</label>
                                 <select class="form-select" name="late_returns">
                                     <option value="">All</option>
-                                    <option value="late">Late Returns Only</option>
-                                    <option value="on_time">On Time Returns</option>
+                                    <option value="0_3">0–3 Days Late</option>
+                                    <option value="4_7">4–7 Days Late</option>
+                                    <option value="1_month">More than 1 Month</option>
+                                    <option value="3_month">More than 3 Months</option>
+                                    <option value="6_month">More than 6 Months</option>
                                 </select>
                             </div>
+
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Fine Status</label>
                         <select class="form-select" name="fine_status">
-                            <option value="">Both</option>
+                            <option value="">All</option>
                             <option value="paid">Paid</option>
                             <option value="not_paid">Not Paid</option>
+                            <option value="adjusted">Adjusted</option>
                         </select>
                     </div>
                 </form>

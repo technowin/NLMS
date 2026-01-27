@@ -313,14 +313,66 @@ class TabDataView(ReportBaseView):
         
         return {'data': data}
     
+    from django.db.models import Q
+
     def get_membership_details_data(self, db, member_ids, filters):
-        # Combine current and historical data
-        current_qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-        history_qs = MembershipDetailsHistory.objects.using(db).filter(membership_id__in=member_ids)
-        
+
+        base_filter = Q()
+
+        # Date filters
+        if filters.get('from_date'):
+            base_filter &= Q(from_date__gte=filters['from_date'])
+
+        if filters.get('to_date'):
+            base_filter &= Q(to_date__lte=filters['to_date'])
+
+        # Action Performed
+        if filters.get('action_performed'):
+            base_filter &= Q(actionperformed__in=filters['action_performed'])
+
+        # Membership Type
+        if filters.get('membership_type'):
+            mt_ids = [
+                int(x) for x in filters['membership_type']
+                if str(x).isdigit()
+            ]
+            base_filter &= Q(membership_id__in=mt_ids)
+
+        # Gap Period Filter
+        gap_filter = filters.get('gap_period')
+
+        if gap_filter == 'only':
+            # Only members who have gap
+            base_filter &= Q(gap_months__gt=0)
+
+        elif gap_filter == 'exclude':
+            # Don’t include members with gap (i.e., no gap)
+            base_filter &= Q(gap_months=0)
+
+        # Apply filters at DB level
+        current_qs = (
+            MembershipDetails.objects
+            .using(db)
+            .filter(id__in=member_ids)
+            .filter(base_filter)
+        )
+
+        history_qs = (
+            MembershipDetailsHistory.objects
+            .using(db)
+            .filter(membership_id__in=member_ids)
+            .filter(base_filter)
+        )
+
         data = []
-        
-        # Process current memberships
+
+        def fmt_date(d):
+            return d.strftime('%Y-%m-%d') if d else ''
+
+        def fmt_dt(d):
+            return d.strftime('%Y-%m-%d %H:%M') if d else ''
+
+        # Current data
         for member in current_qs:
             data.append({
                 'first_name': member.first_name,
@@ -330,22 +382,22 @@ class TabDataView(ReportBaseView):
                 'middle_name_mar': member.middle_name_mar,
                 'last_name_mar': member.last_name_mar,
                 'actionperformed': member.actionperformed,
-                'from_date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
-                'to_date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
-                'deposit': float(member.deposit) if member.deposit else 0,
-                'entry_fees': float(member.entry_fees) if member.entry_fees else 0,
-                'subscription': float(member.subscription) if member.subscription else 0,
-                'fine_calculated_at': member.fine_calculated_at.strftime('%Y-%m-%d %H:%M') if member.fine_calculated_at else '',
-                'gap_fine_subscription': float(member.gap_fine) if member.gap_fine else 0,
-                'gap_fine_delay': float(member.late_fee) if member.late_fee else 0,
+                'from_date': fmt_date(member.from_date),
+                'to_date': fmt_date(member.to_date),
+                'deposit': float(member.deposit or 0),
+                'entry_fees': float(member.entry_fees or 0),
+                'subscription': float(member.subscription or 0),
+                'fine_calculated_at': fmt_dt(member.fine_calculated_at),
+                'gap_fine_subscription': float(member.gap_fine or 0),
+                'gap_fine_delay': float(member.late_fee or 0),
                 'gap_months': member.gap_months or 0,
-                'late_fee': float(member.late_fee) if member.late_fee else 0,
-                'changed_at': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
+                'late_fee': float(member.late_fee or 0),
+                'changed_at': fmt_dt(member.updated_at),
                 'changed_by': member.updated_by,
                 'membership_type_id': member.membership_id,
             })
-        
-        # Process historical data
+
+        # History data
         for history in history_qs:
             data.append({
                 'first_name': history.first_name,
@@ -355,69 +407,30 @@ class TabDataView(ReportBaseView):
                 'middle_name_mar': history.middle_name_mar,
                 'last_name_mar': history.last_name_mar,
                 'actionperformed': history.actionperformed,
-                'from_date': history.from_date.strftime('%Y-%m-%d') if history.from_date else '',
-                'to_date': history.to_date.strftime('%Y-%m-%d') if history.to_date else '',
-                'deposit': float(history.deposit) if history.deposit else 0,
-                'entry_fees': float(history.entry_fees) if history.entry_fees else 0,
-                'subscription': float(history.subscription) if history.subscription else 0,
-                'fine_calculated_at': history.fine_calculated_at.strftime('%Y-%m-%d %H:%M') if history.fine_calculated_at else '',
-                'gap_fine_subscription': float(history.gap_fine) if history.gap_fine else 0,
-                'gap_fine_delay': float(history.late_fee) if history.late_fee else 0,
+                'from_date': fmt_date(history.from_date),
+                'to_date': fmt_date(history.to_date),
+                'deposit': float(history.deposit or 0),
+                'entry_fees': float(history.entry_fees or 0),
+                'subscription': float(history.subscription or 0),
+                'fine_calculated_at': fmt_dt(history.fine_calculated_at),
+                'gap_fine_subscription': float(history.gap_fine or 0),
+                'gap_fine_delay': float(history.late_fee or 0),
                 'gap_months': history.gap_months or 0,
-                'late_fee': float(history.late_fee) if history.late_fee else 0,
-                'changed_at': history.changed_at.strftime('%Y-%m-%d %H:%M') if history.changed_at else '',
+                'late_fee': float(history.late_fee or 0),
+                'changed_at': fmt_dt(history.changed_at),
                 'changed_by': history.changed_by,
                 'membership_type_id': history.membership_id,
             })
-        
-        # Apply filters to combined data
-        # Date filters
-        if filters.get('from_date'):
-            from_dt = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
-            data = [d for d in data if d['from_date'] and d['from_date'] >= from_dt]
 
-        if filters.get('to_date'):
-            to_dt = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
-            data = [d for d in data if d['to_date'] and d['to_date'] <= to_dt]
-
-        # Gap Period
-        gap_filter = filters.get('gap_period')
-        if gap_filter == 'no_gap':
-            data = [d for d in data if d['gap_months'] == 0]
-        elif gap_filter == 'with_gap':
-            data = [d for d in data if d['gap_months'] > 0]
-        elif gap_filter == '1_3':
-            data = [d for d in data if 1 <= d['gap_months'] <= 3]
-        elif gap_filter == '4_6':
-            data = [d for d in data if 4 <= d['gap_months'] <= 6]
-        elif gap_filter == '6_plus':
-            data = [d for d in data if d['gap_months'] > 6]
-
-        # Action Performed
-        if filters.get('actionperformed'):
-            actions = set(filters['actionperformed'])
-            data = [d for d in data if d['actionperformed'] in actions]
-
-        # Membership Type
-        if filters.get('membership_type'):
-            mt_ids = {
-                int(x) for x in filters['membership_type']
-                if str(x).isdigit()
-            }
-            data = [
-                d for d in data
-                if d.get('membership_type_id') in mt_ids
-            ]
-
-
-        
         return {'data': data}
+
     
     def get_loan_data(self, db, member_ids, filters):
         qs = CirculationTransaction.objects.using(db).filter(
             member_id__in=member_ids,
-            transaction_type='Offline'
+            transaction_type__in=['Offline', 'Online']
         ).select_related('catalog', 'accession', 'member')
+
         
         # Apply filters
         if filters.get('from_date'):
@@ -425,23 +438,39 @@ class TabDataView(ReportBaseView):
         if filters.get('to_date'):
             qs = qs.filter(issue_date__lte=filters['to_date'])
 
-        if filters.get('overdue') == 'overdue':
-            qs = qs.filter(days_overdue_count__gt=0)
-        elif filters.get('overdue') == 'not_overdue':
-            qs = qs.filter(days_overdue_count=0)
+        overdue_filter = filters.get('overdue')
+
+        if overdue_filter == '0_3':
+            qs = qs.filter(days_overdue_count__gte=0, days_overdue_count__lte=3)
+        
+        elif overdue_filter == '4_7':
+            qs = qs.filter(days_overdue_count__gte=4, days_overdue_count__lte=7)
+        
+        elif overdue_filter == '1_month':
+            qs = qs.filter(days_overdue_count__gt=30)
+        
+        elif overdue_filter == '3_month':
+            qs = qs.filter(days_overdue_count__gt=90)
+        
+        elif overdue_filter == '6_month':
+            qs = qs.filter(days_overdue_count__gt=180)
+        
 
         if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status__iexact='paid')
+            qs = qs.filter(fine_status__iexact='Paid')
         elif filters.get('fine_status') == 'not_paid':
             qs = qs.filter(
-            Q(fine_status__isnull=True) |
-            Q(fine_status__iexact='not_paid') |
+            Q(fine_status__iexact='Unpaid') |
             Q(fine_amount__gt=0, fine_paid_date__isnull=True)
         )
         
         membership_type = filters.get('membership_type')
         if membership_type:
-            qs = qs.filter(member__member_type_id=membership_type)
+            if not isinstance(membership_type, (list, tuple)):
+                membership_type = [membership_type]
+
+            qs = qs.filter(member__member_type_id__in=membership_type)
+
 
         from Account.models import CustomUser 
         data = []
@@ -468,19 +497,53 @@ class TabDataView(ReportBaseView):
             member_id__in=member_ids
         ).select_related('catalog', 'accession', 'member')
         
+        # if filters.get('from_date'):
+        #     qs = qs.filter(issue_date__gte=filters['from_date'])
+        # if filters.get('to_date'):
+        #     qs = qs.filter(issue_date__lte=filters['to_date'])
+
         if filters.get('from_date'):
-            qs = qs.filter(created_at__date__gte=filters['from_date'])
+            start_date = parse_month_start(filters['from_date'])
+            qs = qs.filter(issue_date__gte=start_date)
         if filters.get('to_date'):
-            qs = qs.filter(created_at__date__lte=filters['to_date'])
-        if filters.get('late_returns') == 'late':
-            qs = qs.filter(days_overdue_count__gt=0)
-        elif filters.get('late_returns') == 'on_time':
-            qs = qs.filter(days_overdue_count=0)
+            end_date = parse_month_end(filters['to_date'])
+            qs = qs.filter(issue_date__lte=end_date)
+
+        late_filter = filters.get('late_returns')
+
+        if late_filter:
+            # Only returned books should be considered
+            qs = qs.filter(return_date__isnull=False)
+
+            if late_filter == '0_3':
+                qs = qs.filter(days_overdue_count__gte=1, days_overdue_count__lte=3)
+
+            elif late_filter == '4_7':
+                qs = qs.filter(days_overdue_count__gte=4, days_overdue_count__lte=7)
+
+            elif late_filter == '1_month':
+                qs = qs.filter(days_overdue_count__gt=30)
+
+            elif late_filter == '3_month':
+                qs = qs.filter(days_overdue_count__gt=90)
+
+            elif late_filter == '6_month':
+                qs = qs.filter(days_overdue_count__gt=180)
+
         if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status='paid')
+            qs = qs.filter(fine_status='Paid')
         elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(fine_status__in=['unpaid', 'pending', None])
-            
+            qs = qs.filter(fine_status__in=['Unpaid', 'Pending', None])
+        elif filters.get('fine_status') == 'adjusted':
+            qs = qs.filter(fine_status__in=['Adjusted'])
+
+        membership_type = filters.get('membership_type')
+        if membership_type:
+            if not isinstance(membership_type, (list, tuple)):
+                membership_type = [membership_type]
+        
+            qs = qs.filter(member__member_type_id__in=membership_type)
+
         data = []
         for transaction in qs:
             data.append({
@@ -509,162 +572,232 @@ class TabDataView(ReportBaseView):
         return {'data': data}
     
     def get_physical_visit_data(self, db, member_ids, filters):
-        """COMPLETE IMPLEMENTATION"""
-        # Get membership codes first
-        members = MembershipDetails.objects.using(db).filter(
-            id__in=member_ids
-        ).values('id', 'membership_code')
-        
-        member_codes = [m['membership_code'] for m in members if m['membership_code']]
-        
-        # Query MemberEntryExit
-        qs = MemberEntryExit.objects.using(db).filter(
-            membership_code__in=member_codes
-        ).order_by('-entry_time')
-        
-        # Apply filters
-        if filters.get('from_date'):
-            qs = qs.filter(entry_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(entry_time__date__lte=filters['to_date'])
-        
-        if filters.get('from_date'):
-            qs = qs.filter(entry_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(entry_time__date__lte=filters['to_date'])
 
-        if filters.get('activity_type') == 'entry':
-            qs = qs.filter(exit_time__isnull=True)
-        elif filters.get('activity_type') == 'exit':
-            qs = qs.filter(exit_time__isnull=False)
-        elif filters.get('activity_type') == 'completed':
-            qs = qs.filter(entry_time__isnull=False, exit_time__isnull=False)
-        if filters.get('remarks_search'):
-            qs = qs.filter(remark__icontains=filters['remarks_search'])
+        activity = (filters.get('activity_type') or '').lower()
+        membership_type = filters.get('membership_type')
+        from_date = filters.get('from_date')
+        to_date = filters.get('to_date')
+
+        # -------------------------
+        # Filter members first
+        # -------------------------
+        member_qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+
+        if membership_type:
+            if not isinstance(membership_type, (list, tuple)):
+                membership_type = [membership_type]
+
+            member_qs = member_qs.filter(member_type_id__in=membership_type)
+
+
+        members = member_qs.values(
+            'id', 'membership_code', 'first_name', 'last_name'
+        )
+
+        member_ids = [m['id'] for m in members]
+        member_codes = [m['membership_code'] for m in members if m['membership_code']]
+
+        member_map = {
+            m['membership_code']: f"{m['first_name'] or ''} {m['last_name'] or ''}".strip()
+            for m in members
+        }
+
         data = []
-        for visit in qs:
-            # Find member name
-            member = next((m for m in members if m['membership_code'] == visit.membership_code), None)
-            member_name = ""
-            if member:
-                member_obj = MembershipDetails.objects.using(db).filter(id=member['id']).first()
-                if member_obj:
-                    member_name = f"{member_obj.first_name or ''} {member_obj.last_name or ''}".strip()
-            
-            data.append({
-                'member_name': member_name,
-                'membership_code': visit.membership_code,
-                'entry_time': visit.entry_time.strftime('%Y-%m-%d %H:%M:%S') if visit.entry_time else '',
-                'exit_time': visit.exit_time.strftime('%Y-%m-%d %H:%M:%S') if visit.exit_time else '',
-                'remark': visit.remark or '',
-                'created_at': visit.created_at.strftime('%Y-%m-%d %H:%M:%S') if visit.created_at else ''
-            })
-        
+
+        # =========================
+        # 1️⃣ Reading (MemberEntryExit)
+        # =========================
+        if activity in ['', 'reading']:
+
+            visit_qs = MemberEntryExit.objects.using(db).filter(
+                membership_code__in=member_codes
+            )
+
+            if from_date:
+                visit_qs = visit_qs.filter(entry_time__date__gte=from_date)
+            if to_date:
+                visit_qs = visit_qs.filter(entry_time__date__lte=to_date)
+
+            for visit in visit_qs:
+                data.append({
+                    'activity': 'Reading',
+                    'member_name': member_map.get(visit.membership_code, ''),
+                    'membership_code': visit.membership_code,
+                    'entry_time': visit.entry_time.strftime('%Y-%m-%d %H:%M:%S') if visit.entry_time else '',
+                    'exit_time': visit.exit_time.strftime('%Y-%m-%d %H:%M:%S') if visit.exit_time else '',
+                    'remark': visit.remark or '',
+                    'created_at': visit.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
+        # =========================
+        # 2️⃣ Issue / Return (Circulation)
+        # =========================
+        if activity in ['', 'issue', 'return']:
+
+            trans_qs = CirculationTransaction.objects.using(db).filter(
+                member_id__in=member_ids
+            )
+
+            if activity == 'issue':
+                trans_qs = trans_qs.filter(transaction_type='Issue')
+                if from_date:
+                    trans_qs = trans_qs.filter(issue_date__gte=from_date)
+                if to_date:
+                    trans_qs = trans_qs.filter(issue_date__lte=to_date)
+
+            elif activity == 'return':
+                trans_qs = trans_qs.filter(transaction_type='Return')
+                if from_date:
+                    trans_qs = trans_qs.filter(return_date__gte=from_date)
+                if to_date:
+                    trans_qs = trans_qs.filter(return_date__lte=to_date)
+
+            else:
+                # All circulation
+                if from_date:
+                    trans_qs = trans_qs.filter(issue_date__gte=from_date)
+                if to_date:
+                    trans_qs = trans_qs.filter(issue_date__lte=to_date)
+
+            for tr in trans_qs:
+                data.append({
+                    'activity': tr.transaction_type,
+                    'member_name': f"{tr.member.first_name or ''} {tr.member.last_name or ''}".strip(),
+                    'membership_code': tr.membership_code,
+                    'entry_time': tr.issue_date.strftime('%Y-%m-%d') if tr.issue_date else '',
+                    'exit_time': tr.return_date.strftime('%Y-%m-%d') if tr.return_date else '',
+                    'remark': tr.remarks or '',
+                    'created_at': tr.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
         return {'data': data}
+
     
     def get_virtual_usage_data(self, db, member_ids, filters):
-        """COMPLETE IMPLEMENTATION"""
-        # Get login sessions
-        login_sessions = MemberLoginSession.objects.using(db).filter(
-            member_id__in=member_ids
-        ).select_related('member').order_by('-login_time')
-
-        # Apply filters to login sessions
-        if filters.get('from_date'):
-            qs_login = qs_login.filter(login_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs_login = qs_login.filter(login_time__date__lte=filters['to_date'])
-        if filters.get('activity_type') == 'login':
-            count += qs_login.count()
-            return count
-        if filters.get('device_type'):
-            qs_login = qs_login.filter(device_type__icontains=filters['device_type'])
-        
-        # Apply filters to screen activities
-        if filters.get('from_date'):
-            qs_activity = qs_activity.filter(visited_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs_activity = qs_activity.filter(visited_at__date__lte=filters['to_date'])
-        if filters.get('activity_type') == 'screen':
-            count += qs_activity.count()
-            return count
-        if filters.get('screen_name'):
-            qs_activity = qs_activity.filter(screen_name__icontains=filters['screen_name'])
-        if filters.get('device_type'):
-            qs_activity = qs_activity.filter(session__device_type__icontains=filters['device_type'])
-
-        # Apply date filters
-        if filters.get('from_date'):
-            login_sessions = login_sessions.filter(login_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            login_sessions = login_sessions.filter(login_time__date__lte=filters['to_date'])
-        
         data = []
-        for session in login_sessions:
-            data.append({
-                'member_name': f"{session.member.first_name or ''} {session.member.last_name or ''}".strip(),
-                'membership_code': session.member.membership_code if session.member else '',
-                'screen_name': 'Login Session',
-                'screen_route': '/login',
-                'visited_at': session.login_time.strftime('%Y-%m-%d %H:%M:%S'),
-                'ip_address': session.ip_address or '',
-                'device_type': session.device_type or '',
-                'duration': self.calculate_session_duration(session)
-            })
-        
-        # Get screen activities
-        activities = MemberScreenActivity.objects.using(db).filter(
-            session__member_id__in=member_ids
-        ).select_related('session', 'session__member').order_by('-visited_at')
-        
-        # Apply date filters
-        if filters.get('from_date'):
-            activities = activities.filter(visited_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            activities = activities.filter(visited_at__date__lte=filters['to_date'])
-        
-        for activity in activities:
-            data.append({
-                'member_name': f"{activity.session.member.first_name or ''} {activity.session.member.last_name or ''}".strip(),
-                'membership_code': activity.session.member.membership_code if activity.session.member else '',
-                'screen_name': activity.screen_name,
-                'screen_route': activity.screen_route,
-                'visited_at': activity.visited_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'ip_address': activity.session.ip_address or '',
-                'device_type': activity.session.device_type or '',
-                'duration': 'N/A'
-            })
-        
-        return {'data': data}
-    
+
+        # ------------------------------------
+        # MEMBER FILTER (membership type)
+        # ------------------------------------
+        member_qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+
+        if filters.get('membership_type'):
+            member_qs = member_qs.filter(member_type_id__in=filters['membership_type'])
+
+        member_ids = member_qs.values_list('id', flat=True)
+
+        # ------------------------------------
+        # LOGIN SESSIONS
+        # ------------------------------------
+        if filters.get('activity_type') in (None, '', 'login'):
+            login_qs = MemberLoginSession.objects.using(db).filter(
+                member_id__in=member_ids
+            ).select_related('member')
+
+            if filters.get('from_date'):
+                login_qs = login_qs.filter(login_time__date__gte=filters['from_date'])
+            if filters.get('to_date'):
+                login_qs = login_qs.filter(login_time__date__lte=filters['to_date'])
+            if filters.get('device_type'):
+                login_qs = login_qs.filter(device_type__icontains=filters['device_type'])
+
+            for session in login_qs:
+                data.append({
+                    'member_name': f"{session.member.first_name or ''} {session.member.last_name or ''}".strip(),
+                    'membership_code': session.member.membership_code,
+                    'activity': 'Login',
+                    'screen_name': 'Login Session',
+                    'screen_route': '/login',
+                    'visited_at': session.login_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'ip_address': session.ip_address or '',
+                    'device_type': session.device_type or '',
+                    'duration': self.calculate_session_duration(session),
+                })
+
+        # ------------------------------------
+        # SCREEN ACTIVITIES
+        # ------------------------------------
+        if filters.get('activity_type') in (None, '', 'screen'):
+            activity_qs = MemberScreenActivity.objects.using(db).filter(
+                session__member_id__in=member_ids
+            ).select_related('session', 'session__member')
+
+            if filters.get('from_date'):
+                activity_qs = activity_qs.filter(visited_at__date__gte=filters['from_date'])
+            if filters.get('to_date'):
+                activity_qs = activity_qs.filter(visited_at__date__lte=filters['to_date'])
+            if filters.get('screen_name'):
+                activity_qs = activity_qs.filter(screen_name__icontains=filters['screen_name'])
+            if filters.get('device_type'):
+                activity_qs = activity_qs.filter(
+                    session__device_type__icontains=filters['device_type']
+                )
+
+            for act in activity_qs:
+                member = act.session.member
+                data.append({
+                    'member_name': f"{member.first_name or ''} {member.last_name or ''}".strip(),
+                    'membership_code': member.membership_code,
+                    'activity': 'Screen',
+                    'screen_name': act.screen_name,
+                    'screen_route': act.screen_route,
+                    'visited_at': act.visited_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'ip_address': act.session.ip_address or '',
+                    'device_type': act.session.device_type or '',
+                    'duration': 'N/A',
+                })
+
+        return {
+            'total': len(data),
+            'data': sorted(data, key=lambda x: x['visited_at'], reverse=True)
+        }
+
     def calculate_session_duration(self, session):
-        """Calculate session duration in minutes"""
-        if session.login_time and session.logout_time:
-            duration = session.logout_time - session.login_time
-            minutes = duration.total_seconds() / 60
-            return f"{minutes:.1f} minutes"
-        return 'Still active'
-    
+        if session.logout_time:
+            delta = session.logout_time - session.login_time
+            return f"{delta.total_seconds() / 60:.1f} mins"
+        return "Active"
+
+    from django.db.models import Q, F, Value
+    from django.db.models.functions import Coalesce
+
     def get_payment_data(self, db, member_ids, filters):
-        """COMPLETE IMPLEMENTATION"""
         qs = PaymentDetails.objects.using(db).filter(
             membership_id__in=member_ids
-        ).select_related('membership', 'status').order_by('-created_at')
-        
-        # Apply filters
-        if filters.get('from_date'):
-            qs = qs.filter(created_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(created_at__date__lte=filters['to_date'])
-        if filters.get('payment_type'):
-            qs = qs.filter(payment_type__icontains=filters['payment_type'])
-        
+        ).select_related(
+            'membership',
+            'membership__member_type',
+            'status'
+        ).order_by('-payment_date')
+
+        # Date filters
         if filters.get('from_date'):
             qs = qs.filter(payment_date__gte=filters['from_date'])
+
         if filters.get('to_date'):
             qs = qs.filter(payment_date__lte=filters['to_date'])
+
+        # Membership type
+        if filters.get('membership_types'):
+            qs = qs.filter(
+                membership__member_type_id__in=filters['membership_types']
+            )
+
+        # Payment attributes
         if filters.get('payment_type'):
             qs = qs.filter(payment_type=filters['payment_type'])
+
+        if filters.get('payment_mode'):
+            qs = qs.filter(payment_mode=filters['payment_mode'])
+
+        if filters.get('payment_method'):
+            qs = qs.filter(payment_method=filters['payment_method'])
+
+        if filters.get('min_amount'):
+            qs = qs.filter(fine_amount__gte=float(filters['min_amount']))
+
+        if filters.get('max_amount'):
+            qs = qs.filter(fine_amount__lte=float(filters['max_amount']))
 
         data = []
         for payment in qs:

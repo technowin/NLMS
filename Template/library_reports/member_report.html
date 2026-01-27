@@ -33,6 +33,10 @@
 <link href="{% static 'css/selectize.min.css' %}" rel="stylesheet" type="text/css" >
 <link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css" >
 
+<style>
+
+
+</style>
 {% endblock %}
 
 {% block content %}
@@ -252,7 +256,7 @@ function toggleMemberSelection(memberId, event) {
 function selectAll() {
     $('.member-list-item').each(function() {
         const memberId = $(this).data('member-id');
-        selectedMembers.add(memberId);
+        selectedMembers.add(memberId); 
         $(this).addClass('selected');
     });
     updateSelectionCount();
@@ -671,79 +675,6 @@ function clearRightFilters(tab, form) {
     loadTabData(tab);
 }
 
-// Filter application functions for all tabs
-function applyPhysicalVisitFilters() {
-    const formData = $('#physicalVisitFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            filters[item.name] = item.value;
-        }
-    });
-    
-    tabFilters['physical-visit'] = filters;
-    updateFilterCount('physical-visit', Object.keys(filters).length);
-    $('#physicalVisitFilterModal').modal('hide');
-    loadTabData('physical-visit');
-}
-
-function clearPhysicalVisitFilters() {
-    $('#physicalVisitFilterForm')[0].reset();
-    delete tabFilters['physical-visit'];
-    $('#physical-visit-filter-count').text('0');
-    $('#physicalVisitFilterModal').modal('hide');
-    loadTabData('physical-visit');
-}
-
-function applyVirtualUsageFilters() {
-    const formData = $('#virtualUsageFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            filters[item.name] = item.value;
-        }
-    });
-    
-    tabFilters['virtual-usage'] = filters;
-    updateFilterCount('virtual-usage', Object.keys(filters).length);
-    $('#virtualUsageFilterModal').modal('hide');
-    loadTabData('virtual-usage');
-}
-
-function clearVirtualUsageFilters() {
-    $('#virtualUsageFilterForm')[0].reset();
-    delete tabFilters['virtual-usage'];
-    $('#virtual-usage-filter-count').text('0');
-    $('#virtualUsageFilterModal').modal('hide');
-    loadTabData('virtual-usage');
-}
-
-function applyPaymentFilters() {
-    const formData = $('#paymentFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            filters[item.name] = item.value;
-        }
-    });
-    
-    tabFilters['payments'] = filters;
-    updateFilterCount('payments', Object.keys(filters).length);
-    $('#paymentFilterModal').modal('hide');
-    loadTabData('payments');
-}
-
-function clearPaymentFilters() {
-    $('#paymentFilterForm')[0].reset();
-    delete tabFilters['payments'];
-    $('#payments-filter-count').text('0');
-    $('#paymentFilterModal').modal('hide');
-    loadTabData('payments');
-}
-
 function updateFilterCount(tabName, count) {
     $(`#${tabName}-filter-count`).text(count);
 }
@@ -883,17 +814,49 @@ function convertToTableRow(tabName, item) {
         
         case 'payments':
             return [
+                item.payment_date || '',
+                
                 item.payment_mode || '',
                 item.payment_type || '',
                 item.payment_method || '',
-                item.deposit_amount ? '₹' + parseFloat(item.deposit_amount).toFixed(2) : '₹0.00',
-                item.entry_fee_amount ? '₹' + parseFloat(item.entry_fee_amount).toFixed(2) : '₹0.00',
-                item.total_subscription_amount ? '₹' + parseFloat(item.total_subscription_amount).toFixed(2) : '₹0.00',
+                
+                item.deposit_amount
+                    ? '₹' + parseFloat(item.deposit_amount).toFixed(2)
+                    : '₹0.00',
+                
+                item.entry_fee_amount
+                    ? '₹' + parseFloat(item.entry_fee_amount).toFixed(2)
+                    : '₹0.00',
+                
+                item.monthly_subscription_amount
+                    ? '₹' + parseFloat(item.monthly_subscription_amount).toFixed(2)
+                    : '₹0.00',
+                
+                item.total_subscription_amount
+                    ? '₹' + parseFloat(item.total_subscription_amount).toFixed(2)
+                    : '₹0.00',
+                
+                item.book_fine_amount
+                    ? '₹' + parseFloat(item.book_fine_amount).toFixed(2)
+                    : '₹0.00',
+                
+                item.fine_amount
+                    ? '₹' + parseFloat(item.fine_amount).toFixed(2)
+                    : '₹0.00',
+                
+                item.adjusted_amount
+                    ? '₹' + parseFloat(item.adjusted_amount).toFixed(2)
+                    : '₹0.00',
+                
                 item.transaction_id || '',
-                item.payment_date || '',
                 item.membership_code || '',
+                
+                item.subscription_from || '',
+                item.subscription_to || '',
+                
                 item.created_at || ''
             ];
+
         
         default:
             return [];
@@ -1583,127 +1546,6 @@ function handleAjaxError(xhr, status, error) {
 
 // Add toast container to body
 $('body').append('<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090;"></div>');
-
-
-{% comment %} function applyMemberDetailsFilters() {
-    const formData = $('#memberDetailsFilterForm').serializeArray();
-    const filters = {};
-    debugger;
-    formData.forEach(item => {
-        if (item.value) {
-            if (item.name.endsWith('[]')) {
-                const name = item.name.replace('[]', '');
-                if (!filters[name]) filters[name] = [];
-                filters[name].push(item.value);
-            } else {
-                filters[item.name] = item.value;
-            }
-        }
-    });
-    
-    tabFilters['member-details'] = filters;
-    debugger;
-    // Update filter count badge
-    $.ajax({
-        url: `/reports/get-filter-counts/`,
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            tab_name: 'member-details',
-            filters: filters,
-            member_ids: Array.from(selectedMembers)
-        }),
-        success: function(response) {
-            debugger;
-            $('#member-details-filter-count').text(response.count);
-        }
-    });
-    
-    $('#memberDetailsFilterModal').modal('hide');
-    loadTabData('member-details');
-} {% endcomment %}
-
-
-// Membership Details Filters
-function applyMembershipDetailsFilters() {
-    const formData = $('#membershipDetailsFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            if (item.name.endsWith('[]')) {
-                const name = item.name.replace('[]', '');
-                if (!filters[name]) filters[name] = [];
-                filters[name].push(item.value);
-            } else {
-                filters[item.name] = item.value;
-            }
-        }
-    });
-    debugger;
-    tabFilters['membership-details'] = filters;
-    updateFilterCount('membership-details', Object.keys(filters).length);
-    $('#membershipDetailsFilterModal').modal('hide');
-    loadTabData('membership-details');
-}
-
-function clearMembershipDetailsFilters() {
-    $('#membershipDetailsFilterForm')[0].reset();
-    delete tabFilters['membership-details'];
-    $('#membership-details-filter-count').text('0');
-    $('#membershipDetailsFilterModal').modal('hide');
-    loadTabData('membership-details');
-}
-
-// Similar functions for other tabs
-function applyLoanFilters() {
-    const formData = $('#loanFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            filters[item.name] = item.value;
-        }
-    });
-    
-    tabFilters['loan'] = filters;
-    $('#loan-filter-count').text(Object.keys(filters).length);
-    $('#loanFilterModal').modal('hide');
-    loadTabData('loan');
-}
-
-function clearLoanFilters() {
-    $('#loanFilterForm')[0].reset();
-    delete tabFilters['loan'];
-    $('#loan-filter-count').text('0');
-    $('#loanFilterModal').modal('hide');
-    loadTabData('loan');
-}
-
-// Transaction Filters
-function applyTransactionFilters() {
-    const formData = $('#transactionFilterForm').serializeArray();
-    const filters = {};
-    
-    formData.forEach(item => {
-        if (item.value) {
-            filters[item.name] = item.value;
-        }
-    });
-    
-    tabFilters['transactions'] = filters;
-    updateFilterCount('transactions', Object.keys(filters).length);
-    $('#transactionFilterModal').modal('hide');
-    loadTabData('transactions');
-}
-
-function clearTransactionFilters() {
-    $('#transactionFilterForm')[0].reset();
-    delete tabFilters['transactions'];
-    $('#transactions-filter-count').text('0');
-    $('#transactionFilterModal').modal('hide');
-    loadTabData('transactions');
-}
 
 // Pagination rendering
 function renderPagination(data) {
