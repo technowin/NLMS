@@ -68,11 +68,10 @@ ENVIRONMENT = detect_environment()
 print(f"=== Environment detected: {ENVIRONMENT} ===")
 
 # Set DEBUG based on environment
-# if ENVIRONMENT == 'local':
-#     DEBUG = True
-# else:
-#     DEBUG = False
-DEBUG = True
+if ENVIRONMENT == 'local':
+    DEBUG = True
+else:
+    DEBUG = False
 
 ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', 'www.nmmclibrary.in']
 
@@ -202,6 +201,7 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
+    "django_user_agents"
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -253,6 +253,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
     # Your DB middleware should be **AFTER auth and messages**
     'administration.middleware.LibraryDatabaseMiddleware',
     'L01.middleware.MemberActivityMiddleware',

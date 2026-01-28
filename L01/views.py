@@ -99,6 +99,7 @@ from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
 from NLMS.access_control import no_direct_access
 
+@no_direct_access
 def index(request):
     # Get the library code from session
     library_code = request.session.get('library_db', None)
@@ -599,7 +600,7 @@ def registration(request):
 # Part Second After Filling Membership Form Approval by Admin
 
 from collections import defaultdict
-
+@no_direct_access
 def membership_approval(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -688,6 +689,7 @@ def membership_approval(request):
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/membership_approval/membership_approval.html", {})
 
+@no_direct_access
 @login_required
 def membership_form_create(request):
     Db.closeConnection()
@@ -907,6 +909,7 @@ def membership_form_create(request):
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/membership_approval/membership_approval.html", {})
 
+@no_direct_access
 @login_required
 def membership_form_edit(request):
     Db.closeConnection()
@@ -2158,6 +2161,7 @@ def log_sms(user, mobile, message, status, unique_id):
 
 # Membership Management Views by Member
 
+@no_direct_access
 @login_required
 def membership_payment_index(request):
     Db.closeConnection()
@@ -2270,6 +2274,7 @@ def membership_payment_index(request):
         messages.error(request, "Oops...! Something went wrong!")
         return render(request, "L01/Member Payment/member_payment.html", {})
 
+@no_direct_access
 @login_required
 def membership_paymentreceipt_download(request):
     try:
@@ -2476,6 +2481,7 @@ def membership_paymentreceipt_download(request):
         messages.error(request, "Oops! Something went wrong!")
         return render(request, "L01/Member Payment/member_payment.html", {})
 
+@no_direct_access
 @login_required
 def membership_form_renew(request):
     Db.closeConnection()
@@ -2763,6 +2769,7 @@ def membership_form_renew(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:membership_payment_index")
 
+@no_direct_access
 @login_required
 def membership_form_cancellation(request):
     Db.closeConnection()
@@ -3369,6 +3376,7 @@ def generate_barcode(request):
 
 # Issue Book / Return Book
 @login_required
+@no_direct_access
 def issue_return_book_create(request):
     try:
         Db.closeConnection()
@@ -4357,6 +4365,7 @@ def update_user_status(request):
 
 from django.db import transaction
 
+@no_direct_access
 @login_required
 def user_create(request):
     try:
@@ -4597,6 +4606,7 @@ def user_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("L01:user_master_index")
 
+@no_direct_access
 @login_required
 def user_edit(request):
     try:
@@ -4742,7 +4752,7 @@ def view_ebook_catalogue(request):
         "MEDIA_URL": settings.MEDIA_URL
     })
 
-
+@no_direct_access
 @csrf_exempt
 def bookcatalog_search(request):
     try:
@@ -5563,6 +5573,7 @@ def get_member_detail(request, membership_code):
                 # Create new entry record
                 entry_record = MemberEntryExit.objects.using('L01').create(
                     membership_code=membership_code,
+                    member = get_object_or_404(MembershipDetails, membership_code = membership_code),
                     entry_time=current_time,
                     exit_time=None,
                     role_id=getattr(member, 'role_id', None),
@@ -5665,6 +5676,7 @@ def get_member_detail(request, membership_code):
 #     except Exception as e:
 #         return render(request, 'error.html', {'error': str(e)})
 
+@no_direct_access
 def membership_dashboard(request):
     # Generate or retrieve your key (ensure it's secure and private)
 
@@ -5871,6 +5883,7 @@ def save_eod_log(request):
 
 # Cate list notepad view 440
 
+@no_direct_access
 @login_required
 def show_Library_catalogue(request):
     try:
@@ -5908,6 +5921,7 @@ def show_Library_catalogue(request):
         print(f"Error: {e}")
         return render(request, "L01/LibraryCateVisit/show_Library_catalogue.html", {})
 
+@no_direct_access
 @login_required
 def visit_Library_catalogue(request):
     try:
@@ -6150,6 +6164,7 @@ def get_books_by_subject(request):
         traceback.print_exc()
         return JsonResponse({'error': 'Failed to fetch books'}, status=500)
 
+@no_direct_access
 def membership_card(request):
     username = request.session.get('username')
     member_id = None
@@ -8384,6 +8399,7 @@ from django.conf import settings
 from django.db.models import Avg, Count
 import traceback
 
+@no_direct_access
 @login_required
 def led_tv_index(request):
     # ----------------------------------
