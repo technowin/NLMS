@@ -61,6 +61,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from datetime import datetime
 import calendar
+from NLMS.access_control import no_direct_access
 
 # @login_required
 # def payment_report(request):
@@ -437,7 +438,8 @@ import calendar
 #         messages.error(request, 'Oops...! Something went wrong!')
 
 
-@login_required
+@no_direct_access 
+@login_required 
 def payment_report(request):
     try:
         if request.user.is_authenticated ==True:                
@@ -447,6 +449,13 @@ def payment_report(request):
             username = request.session.get('username', None)
             user_id = request.session["user_id"]
             role_id = request.session["role_id"]
+            
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
             
         if request.method == "GET":
             library_name = tbl_librarymasterL01.objects.using(library_code).filter(is_active=True).first()
@@ -830,7 +839,6 @@ def payment_report(request):
         callproc("stp_error_log",[fun,str(e),request.user.id])  
         messages.error(request, 'Oops...! Something went wrong!')
 
-
 # @login_required
 # def get_payment_preview(request):
 #     try:
@@ -963,9 +971,17 @@ def get_payment_preview(request):
         messages.error(request, "Oops...! Something went wrong!")
         return JsonResponse({"error": "Something went wrong. Please try again later."}, status=500)
 
-@login_required
+@no_direct_access 
+@login_required 
 def view_payment_report(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         report_encrypted_id = request.GET.get("report_encrypted_id")
         report_id = dec(report_encrypted_id)
         report = get_object_or_404(PaymentReport, id=report_id)
@@ -987,7 +1003,8 @@ def view_payment_report(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("payment_report")
 
-@login_required
+@no_direct_access 
+@login_required 
 def edit_payment_report(request):
     try:
         
@@ -998,6 +1015,13 @@ def edit_payment_report(request):
             username = request.session.get('username', None)
             user_id = request.session["user_id"]
             role_id = request.session["role_id"]
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
             
         if request.method == "GET":
             

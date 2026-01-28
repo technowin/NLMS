@@ -174,6 +174,30 @@ def Login(request):
             # Authenticate user
             # ------------------------------------------
             user = authenticate_from_db(request, username, password, db_alias)
+            
+            if user.is_logged_in:
+
+                timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
+
+                if user.last_activity and \
+                timezone.now() - user.last_activity < timeout:
+
+                    return render(request, "bootstrap/account/login.html", {
+                        "error": "You are already logged in on another device."
+                    })
+                else:
+                    # expired session cleanup
+                    user.is_logged_in = False
+                    user.session_key = None
+                    user.save()
+
+            session_key = str(uuid.uuid4())
+            request.session["session_key"] = session_key
+
+            user.session_key = session_key
+            user.is_logged_in = True
+            user.last_activity = timezone.now()
+            user.save()
 
             if user is None:
                 messages.error(request, 'Login unsuccessful. Please verify your credentials.')
@@ -222,7 +246,30 @@ def Login(request):
             # ------------------------------------------
             # Authenticate user
             # ------------------------------------------
-            user = authenticate_from_db(request, username, password, db_alias)
+            if user.is_logged_in:
+
+                timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
+
+                if user.last_activity and \
+                timezone.now() - user.last_activity < timeout:
+                    
+                    messages.error(request, 'Login unsuccessful. You are already logged in on another device.')
+
+                    return render(request, "bootstrap/account/login.html")
+                else:
+                    # expired session cleanup
+                    user.is_logged_in = False
+                    user.session_key = None
+                    user.save()
+
+            import uuid
+            session_key = str(uuid.uuid4())
+            request.session["session_key"] = session_key
+
+            user.session_key = session_key
+            user.is_logged_in = True
+            user.last_activity = timezone.now()
+            user.save()
 
             if user is None:
                 messages.error(request, 'Login unsuccessful. Please verify your credentials.')
@@ -568,23 +615,47 @@ def librarianLogin(request):
 
     return render(request, 'bootstrap/account/librarian_login.html')
 
+# def logoutView(request):
+#     library_code = request.session.get('library_db', None)
+
+#     # Flush session
+#     request.session.flush()
+#     from django.contrib.auth import logout as django_logout
+#     django_logout(request)
+#     from django.shortcuts import redirect
+#     from django.contrib.auth.models import AnonymousUser
+#     # Ensure user is set to anonymous
+#     request.user = AnonymousUser()
+
+#     # Redirect based on whether library_code existed
+#     if library_code == 'default':
+#         return redirect("library_list")  
+#     else:
+#         return redirect("library_list")
+
 def logoutView(request):
     library_code = request.session.get('library_db', None)
+    
+    if request.user.is_authenticated:
+        user = request.user
+        user.is_logged_in = False
+        user.session_key = None
+        user.save(update_fields=['is_logged_in', 'session_key'])
+
+    # 🔔 Mark session as expired (IMPORTANT)
+    request.session['_session_expired'] = True
 
     # Flush session
     request.session.flush()
+
     from django.contrib.auth import logout as django_logout
     django_logout(request)
-    from django.shortcuts import redirect
+
     from django.contrib.auth.models import AnonymousUser
-    # Ensure user is set to anonymous
     request.user = AnonymousUser()
 
-    # Redirect based on whether library_code existed
-    if library_code == 'default':
-        return redirect("library_list")  
-    else:
-        return redirect("library_list")
+    return redirect("library_list")
+
 
 def register_new_user(request):
     Db.closeConnection()

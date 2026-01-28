@@ -65,6 +65,7 @@ from django.http import HttpResponse, Http404, StreamingHttpResponse
 import mimetypes
 import uuid
 from datetime import datetime as dt, date
+from NLMS.access_control import no_direct_access
 
 # Part First While Filling Membership Form
 
@@ -274,9 +275,16 @@ def LMS_Dashboard(request):
         messages.error(request, 'Oops...! Something went wrong!')
          
 # Book Catalog Index     
-@login_required
+@no_direct_access 
+@login_required 
 def book_catalog_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         user = request.user.id
         role_id = request.user.role_id
 
@@ -298,9 +306,17 @@ def book_catalog_index(request):
         return render(request, 'Master/book_catalog_index.html', {"catalogs": []})
 
 # Book Catalog Create
-@login_required
+@no_direct_access 
+@login_required 
 def book_catalog_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         # ---------- AJAX endpoints ----------
@@ -578,9 +594,16 @@ def book_catalog_create(request):
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
 
-@login_required
+@no_direct_access 
+@login_required 
 def book_catalog_edit(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if request.method == "GET":
             
@@ -882,9 +905,18 @@ def book_catalog_edit(request):
         return redirect('book_catalog_index')
 
 # Book Accession Index     
-@login_required
+@no_direct_access 
+@login_required 
 def book_accession_index(request):
     try:
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user_id = request.user.id
         role_id = getattr(request.user, 'role_id', None)
 
@@ -911,9 +943,17 @@ def book_accession_index(request):
         return render(request, 'Master/book_accession_index.html', {'accessions': []})
 
 # Book Accession Create
-@login_required
+@no_direct_access 
+@login_required 
 def book_accession_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
         if request.method == "GET":
             # Fetch dropdown data
@@ -1016,9 +1056,16 @@ def book_accession_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
 
 # Book Accession Edit
-@login_required
+@no_direct_access 
+@login_required 
 def book_accession_edit(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         user_id = request.user.id
         
         # Get encrypted_id from URL parameter
@@ -1208,9 +1255,17 @@ def book_accession_edit(request):
         return redirect('book_accession_index')
 
 # Book Accession view
-@login_required
+@no_direct_access 
+@login_required 
 def book_accession_view(request, encrypted_id=None):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user_id = request.user.id
         
         # Get encrypted_id from either URL parameter or query parameter
@@ -1321,9 +1376,17 @@ def transliterate_to_english(text):
         print(f"Error in transliterate_to_english: {e}")
         return text or ""
 
+@no_direct_access 
 @login_required
 def material_type_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
         role_id = request.user.role_id
 
@@ -1367,9 +1430,17 @@ def updatestatus(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def material_type_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -1421,9 +1492,16 @@ def materialtype_list(request):
         print(f"Mat ID: {mat.id}, Encrypted: {mat.encrypted_id}")  # debug
     return render(request, "Master/materialtype_list.html", {"materials": materials})
 
+@no_direct_access 
 @login_required
 def materialtype_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         if request.method == "POST":
             # 🔹 ID comes from hidden field in POST
             enc_id = request.POST.get("id")
@@ -1453,9 +1531,17 @@ def materialtype_view(request):
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("material_type_master_index")
 
+@no_direct_access 
 @login_required
 def materialtype_edit(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.method == "POST":
             # 🔹 Get encrypted id from hidden field
             enc_id = request.POST.get("id")
@@ -1515,9 +1601,19 @@ def materialtype_delete(request):
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+# subject type master index
+
+@no_direct_access 
 @login_required
 def subject_type_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -1543,9 +1639,17 @@ def subject_type_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
 
+@no_direct_access 
 @login_required
 def subject_type_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -1595,9 +1699,17 @@ def subject_type_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect('subject_type_create')
     
+@no_direct_access 
 @login_required
 def subject_type_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("id")  # fetch encrypted id from URL
         if not enc_id:
             messages.error(request, "Missing ID!")
@@ -1625,8 +1737,16 @@ def subject_type_view(request):
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("subject_type_master_index")
 
+@no_direct_access 
 @login_required
 def subject_edit(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+        
     subject = None
 
     if request.method == "POST":
@@ -1753,9 +1873,19 @@ def update_subject_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+# language master index
+
+@no_direct_access 
 @login_required
 def language_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+    
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -1808,9 +1938,17 @@ def update_language_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def language_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -1856,9 +1994,17 @@ def language_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect('language_create')
 
+@no_direct_access 
 @login_required
 def language_edit(request):
     language = None
+    
+    if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
     if request.method == "POST":
         try:
@@ -1941,9 +2087,17 @@ def language_edit(request):
 
         return render(request, "Master/language_edit.html", {"language": language})
 
+@no_direct_access 
 @login_required
 def language_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("id")  # fetch encrypted id from URL
         if not enc_id:
             messages.error(request, "Missing ID!")
@@ -2000,9 +2154,19 @@ def language_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+# supplier master index
+
+@no_direct_access 
 @login_required
 def supplier_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -2031,9 +2195,17 @@ def supplier_master_index(request):
 
 from django.db.models import Max
 
+@no_direct_access 
 @login_required
 def supplier_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -2111,9 +2283,17 @@ def update_supplier_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def supplier_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("id")  # fetch encrypted id from URL
         if not enc_id:
             messages.error(request, "Missing ID!")
@@ -2141,8 +2321,17 @@ def supplier_view(request):
         messages.error(request, "Invalid or corrupted ID!")
         return redirect("supplier_master_index")
 
+@no_direct_access 
 @login_required
 def supplier_edit(request):
+    
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+        
     supplier = None
 
     if request.method == "POST":
@@ -2265,9 +2454,19 @@ def supplier_delete(request):
     messages.error(request, "Invalid request")
     return redirect("supplier_master_index")
 
+# funding source master index
+
+@no_direct_access 
 @login_required
 def fundingsource_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -2324,9 +2523,17 @@ def update_fundingsource_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def fundingsource_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -2381,10 +2588,18 @@ def fundingsource_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("fundingsource_master_index")
 
+@no_direct_access 
 @login_required
 def fundingsource_edit(request):
     funding = None
 
+    if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
     try:
         if request.method == "POST":
             # 🔹 Get encrypted ID from hidden form field
@@ -2469,9 +2684,17 @@ def fundingsource_edit(request):
     # 🔹 Render edit form
     return render(request, "Master/fundingsource_edit.html", {"funding": funding})
 
+@no_direct_access 
 @login_required
 def fundingsource_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("source_id")
         if not enc_id:
             messages.error(request, "Missing Funding Source ID!")
@@ -2526,9 +2749,19 @@ def fundingsource_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+# condition at entry master index
+
+@no_direct_access 
 @login_required
 def conditionatentry_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -2586,9 +2819,17 @@ def update_conditionatentry_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def conditionatentry_edit(request):
     condition = None
+    
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
 
     try:
         if request.method == "POST":
@@ -2666,9 +2907,17 @@ def conditionatentry_edit(request):
     # 🔹 Render edit form
     return render(request, "Master/conditionatentry_edit.html", {"condition": condition})
 
+@no_direct_access 
 @login_required
 def conditionatentry_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+    
         user = request.user.id
 
         if request.method == "POST":
@@ -2723,9 +2972,17 @@ def conditionatentry_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("conditionatentry_master_index")
 
+@no_direct_access 
 @login_required
 def conditionatentry_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("condition_id")
         if not enc_id:
             messages.error(request, "Missing Condition ID!")
@@ -2780,9 +3037,19 @@ def conditionatentry_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+# ward master index
+
+@no_direct_access 
 @login_required
 def ward_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -2809,6 +3076,7 @@ def ward_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("dashboard")  # fallback redirect
 
+@no_direct_access 
 @login_required
 def update_ward_status(request):
     if request.method == "POST":
@@ -2839,9 +3107,17 @@ def update_ward_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def ward_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -2914,9 +3190,17 @@ def ward_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("ward_master_index")
     
+@no_direct_access 
 @login_required
 def ward_master_edit(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user_id = request.user.id
 
         if request.method == "POST":
@@ -3013,9 +3297,17 @@ def ward_master_edit(request):
         messages.error(request, "An unexpected error occurred!")
         return redirect("ward_master_index")
 
+@no_direct_access 
 @login_required
 def ward_master_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("ward_id")
         if not enc_id:
             messages.error(request, "Missing Ward ID!")
@@ -3070,9 +3362,19 @@ def ward_master_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+# location master index
+
+@no_direct_access 
 @login_required
 def location_master_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.user.is_authenticated:                
             global user, role_id
             user = request.user.id    
@@ -3135,9 +3437,17 @@ def update_location_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access 
 @login_required
 def location_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -3199,10 +3509,18 @@ def location_create(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("location_master_index")
 
+@no_direct_access 
 @login_required
 def location_master_edit(request):
     location = None
 
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+        
     try:
         if request.method == "POST":
             # 🔹 Get encrypted ID from hidden form field
@@ -3288,9 +3606,17 @@ def location_master_edit(request):
         "wards": wards
     })
 
+@no_direct_access 
 @login_required
 def location_master_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+    
         enc_id = request.GET.get("location_id")
         if not enc_id:
             messages.error(request, "Missing Location ID!")
@@ -3357,6 +3683,7 @@ def location_master_delete(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+@no_direct_access
 @login_required
 def library_master_index(request):
     try:
@@ -3435,9 +3762,17 @@ def update_library_status(request):
 
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
+@no_direct_access
 @login_required
 def library_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user = request.user.id
 
         if request.method == "POST":
@@ -3644,11 +3979,20 @@ def library_create(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("library_master_index")
 
+@no_direct_access
 @login_required
 def library_master_edit(request):
     library = None
 
     try:
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.method == "POST":
             # 🔹 Get encrypted ID from hidden form
             enc_id = request.POST.get("id")
@@ -3870,10 +4214,19 @@ def library_master_edit(request):
         "locations": active_locations,
         "accounting_codes": active_accounting_codes,
     })
-    
+
+@no_direct_access    
 @login_required
 def library_master_view(request):
     try:
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         enc_id = request.GET.get("id")  # Must match your template link: ?id={{ library.encrypted_id }}
         if not enc_id:
             messages.error(request, "Missing Library ID!")
@@ -3953,14 +4306,22 @@ def library_master_delete(request):
 
 # circulation master
 
-@login_required
+@no_direct_access 
+@login_required   
 def circulation_master_index(request):
     try:
-        if request.user.is_authenticated:                
-            user = request.user.id    
-            role_id = request.user.role_id 
-            library_code = request.session.get('library_db', None)
-            username = request.session.get('username', None)
+            
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
+        user = request.user.id    
+        role_id = request.user.role_id 
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
 
         if request.method == "GET":
             # Fetch circulation data with joins
@@ -4013,14 +4374,22 @@ def circulation_master_index(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("circulation_master_index")
 
-@login_required
+@no_direct_access 
+@login_required 
 def circulation_master_view(request):
     try:
-        if request.user.is_authenticated:                
-            user = request.user.id    
-            role_id = request.user.role_id 
-            library_code = request.session.get('library_db', None)
-            username = request.session.get('username', None)
+            
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
+        user = request.user.id    
+        role_id = request.user.role_id 
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
             
         circulation_id = dec(str(request.GET.get("circulationid")))
         if not circulation_id:
@@ -4067,14 +4436,21 @@ def circulation_master_view(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("circulation_master_index")
     
-@login_required
+@no_direct_access 
+@login_required   
 def circulation_master_edit(request):
     try:
-        if request.user.is_authenticated:                
-            user = request.user.id    
-            role_id = request.user.role_id 
-            library_code = request.session.get('library_db', None)
-            username = request.session.get('username', None)
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
+        user = request.user.id    
+        role_id = request.user.role_id 
+        library_code = request.session.get('library_db', None)
+        username = request.session.get('username', None)
         
         if request.method == "GET":    
             circulation_id = dec(str(request.GET.get("circulationid")))
@@ -4181,9 +4557,16 @@ def circulation_master_edit(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("circulation_master_index")
     
-@login_required
+@no_direct_access 
+@login_required    
 def ebook_catalog_index(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         user = request.user.id
         role_id = request.user.role_id
 
@@ -4209,9 +4592,16 @@ def ebook_catalog_index(request):
         # Always return HttpResponse, even on error
         return render(request, 'Master/ebook_catalog_index.html', {"catalogs": []})
 
-@login_required
+@no_direct_access 
+@login_required   
 def ebook_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         user = request.user.id
 
         # ---------- AJAX endpoints ----------
@@ -4470,9 +4860,16 @@ def ebook_create(request):
         messages.error(request, "Oops! Something went wrong.")
         return redirect("ebook_create")
 
-@login_required
+@no_direct_access 
+@login_required   
 def ebook_edit(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         user = request.user.id
 
         # =========================================================
@@ -5278,8 +5675,15 @@ from django.core.files.storage import default_storage
 from django.db.models import Max, IntegerField
 from django.db.models.functions import Cast
 
-
+@no_direct_access 
+@login_required    
 def create_competitive_book(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
     exams = CompetitiveExamMaster.objects.all().order_by("full_name")
 
     return render(
@@ -5428,11 +5832,20 @@ def save_competitive_book(request):
     except Exception as e:
         messages.error(request, str(e))
         return redirect("competitive_book_index")
-    
+ 
+@no_direct_access 
+@login_required    
 def competitive_book_index(request):
     """
     Index page for Competitive Books (Topics & Chapters)
     """
+    
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
 
     chapters = (
         Chapters.objects
@@ -5461,8 +5874,17 @@ def competitive_book_index(request):
         }
     )
 
-
+@no_direct_access 
+@login_required    
 def edit_competitive_book(request, enc_chapter_no):
+    
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+    
     chapter_no = dec(enc_chapter_no)
 
     chapter = get_object_or_404(Chapters, pk=chapter_no)

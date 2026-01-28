@@ -325,7 +325,8 @@ def public_library_catalogue(request):
         # --- BOOKS BY FIRST SUBJECT ---
         if first_subject:
             books = BookCatalog.objects.filter(subject_id=first_subject.id)\
-                                       .select_related('subject', 'material', 'ebook')
+                           .select_related('subject', 'material', 'ebook')\
+                           .order_by('-cat_ref_num')
         else:
             books = BookCatalog.objects.none()
             
@@ -436,7 +437,7 @@ def public_get_books_by_subject(request):
         
         if searching:
             # Global search mode
-            all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook')
+            all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook').order_by('-cat_ref_num')
 
             if search:
                 all_books = all_books.filter(
@@ -452,7 +453,7 @@ def public_get_books_by_subject(request):
                 return JsonResponse({'error': 'Subject ID required'}, status=400)
                 
             all_books = BookCatalog.objects.filter(subject_id=subject_id)\
-                                           .select_related('subject', 'material', 'ebook')
+                                           .select_related('subject', 'material', 'ebook').order_by('-cat_ref_num')
 
             if search:
                 all_books = all_books.filter(
@@ -501,6 +502,14 @@ def sop_view(request):
         
         # Librarian Staff SOPs
         if library_code and role_id != '3' and role_id is not None:
+            
+            if not request.user.is_authenticated:
+                # Clear any session flags
+                if '_session_expired' in request.session:
+                    request.session.pop('_session_expired')
+                messages.warning(request, "Your session has expired. Please log in again.")
+                return redirect('library_list')
+        
             sop_files = [
                 {
                     'id': 4,
@@ -542,6 +551,14 @@ def sop_view(request):
         
         # member sops
         elif library_code and role_id == '3' and role_id is not None:
+            
+            if not request.user.is_authenticated:
+                # Clear any session flags
+                if '_session_expired' in request.session:
+                    request.session.pop('_session_expired')
+                messages.warning(request, "Your session has expired. Please log in again.")
+                return redirect('library_list')
+            
             sop_files = [
                 {
                     'id': 1,
