@@ -604,17 +604,23 @@ class TabDataView(ReportBaseView):
         
             qs = qs.filter(member__member_type_id__in=membership_type)
 
-        from django.db.models import IntegerField, Func
-        from django.db.models.functions import Now
+        from django.db.models import IntegerField, Func, F
+        from django.db.models.functions import Now, Cast, Coalesce
+        from django.db.models import DateField
+
 
         qs = qs.annotate(
             late_days=Func(
-                F('return_date'),
+                Coalesce(
+                    F('return_date'),
+                    Cast(Now(), DateField())   # today if return_date is NULL
+                ),
                 F('due_date'),
                 function='DATEDIFF',
                 output_field=IntegerField()
             )
         )
+
 
 
         data = []
