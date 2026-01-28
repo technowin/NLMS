@@ -252,7 +252,6 @@ MIDDLEWARE = [
     'middleware.no_cache.NoCacheMiddleware',
     'middleware.session_security.SessionExpiryRedirectMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',  # MUST be first
-    'Account.middleware.SingleSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
