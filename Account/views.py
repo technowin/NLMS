@@ -243,6 +243,8 @@ def Login(request):
             request.session['service'] = db_alias
             request.session['library_db'] = db_alias
 
+            user = authenticate_from_db(request, username, password, db_alias)
+
             # ------------------------------------------
             # Authenticate user
             # ------------------------------------------
