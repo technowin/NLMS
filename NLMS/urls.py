@@ -58,6 +58,7 @@ urlpatterns = [
 
     # Account
     path("", library_list,name='library_list'),
+    path("library_list_login", library_list,name='library_list'),
     # path("", Login,name='Account'),
     path("Login", Login,name='Account'),
     path("Login", Login,name='Login'),
