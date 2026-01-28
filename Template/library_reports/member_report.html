@@ -724,89 +724,159 @@ function includeModals() {
 function convertToTableRow(tabName, item) {
     switch(tabName) {
         case 'member-details':
-            return [
-                item.first_name || '',
-                item.middle_name || '',
-                item.last_name || '',
-                item.membership_code || '',
-                item.user_id || '',
-                item.email || '',
-                item.mobile_no || '',
-                item.status || '',
-                `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${item.id})">
-                    <i class="bi bi-files"></i>
-                </button>`
-            ];
+        return [
+            item.first_name || '',
+            item.middle_name || '',
+            item.last_name || '',
+
+            item.first_name_mar || '',
+            item.middle_name_mar || '',
+            item.last_name_mar || '',
+
+            item.membershipmaster_id || '',
+            item.member_type || '',
+            item.membership_code || '',
+            item.membership_date || '',
+
+            item.renewal_from_date || '',
+            item.renewal_to_date || '',
+
+            item.user_id || '',
+            item.ward || '',
+            item.pincode || '',
+            item.local_address || '',
+
+            item.mobile_no || '',
+            item.email || '',
+            item.occupation || '',
+            item.office_phone || '',
+            item.education || '',
+            item.institute_name || '',
+            item.recommender_details || '',
+
+            item.dob || '',
+            item.aadhar_no || '',
+            item.address_same_as_aadhar || '',
+            item.is_resident_of_nmmc || '',
+
+            item.status || '',
+            item.created_at || '',
+            item.created_by || '',
+            item.updated_at || '',
+            item.updated_by || '',
+            item.approved_by || '',
+            item.approved_date || '',
+
+            `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${item.membershipmaster_id})">
+                <i class="bi bi-files"></i>
+            </button>`
+        ];
+
         
         case 'membership-details':
             return [
                 item.first_name || '',
+                item.middle_name || '',
                 item.last_name || '',
-                item.membership_code || '',
+
+                item.first_name_mar || '',
+                item.middle_name_mar || '',
+                item.last_name_mar || '',
+
                 item.actionperformed || '',
                 item.from_date || '',
                 item.to_date || '',
+
                 item.deposit ? '₹' + parseFloat(item.deposit).toFixed(2) : '₹0.00',
                 item.entry_fees ? '₹' + parseFloat(item.entry_fees).toFixed(2) : '₹0.00',
                 item.subscription ? '₹' + parseFloat(item.subscription).toFixed(2) : '₹0.00',
+
+                item.fine_calculated_at || '',
+                item.gap_fine_subscription ? '₹' + parseFloat(item.gap_fine_subscription).toFixed(2) : '₹0.00',
+                item.gap_fine_delay ? '₹' + parseFloat(item.gap_fine_delay).toFixed(2) : '₹0.00',
                 item.gap_months || 0,
+                item.late_fee ? '₹' + parseFloat(item.late_fee).toFixed(2) : '₹0.00',
+
                 item.changed_at || '',
-                item.changed_by || ''
+                item.changed_by || '',
+                item.membership_type_id || ''
             ];
+
         
         case 'loan':
-            const overdueBadge = item.days_overdue_count > 0 ? 
-                `<span class="badge bg-danger">${item.days_overdue_count} days</span>` :
-                `<span class="badge bg-success">On time</span>`;
-            
+            const overdueBadge = item.days_overdue_count > 0
+                ? `<span class="badge bg-danger">${item.days_overdue_count} days</span>`
+                : `<span class="badge bg-success">On time</span>`;
+
             return [
                 item.membership_code || '',
                 item.barcode || '',
                 item.accession_id || '',
+                item.cat_ref_num || '',
+
                 item.issue_date || '',
                 item.due_date || '',
                 item.return_date || '',
+
                 overdueBadge,
                 item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
                 item.issued_by || '',
                 item.remarks || '',
                 item.created_at || ''
             ];
+
         
         case 'transactions':
-            const transactionOverdue = item.days_overdue_count > 0 ? 
-                `<span class="badge bg-danger">${item.days_overdue_count} days</span>` :
-                `<span class="badge bg-success">On time</span>`;
-            
-            const fineStatusBadge = item.fine_status === 'paid' ? 
-                `<span class="badge bg-success">Paid</span>` :
-                `<span class="badge bg-danger">Unpaid</span>`;
-            
+            const transactionOverdue = item.days_overdue_count > 0
+                ? `<span class="badge bg-danger">${item.days_overdue_count} days</span>`
+                : `<span class="badge bg-success">On time</span>`;
+
+            const fineStatusBadge = item.fine_status === 'paid'
+                ? `<span class="badge bg-success">Paid</span>`
+                : `<span class="badge bg-danger">Unpaid</span>`;
+
             return [
                 item.member_name || '',
                 item.membership_code || '',
                 item.barcode || '',
-                item.transaction_type || '',
+                item.accession_id || '',
+                item.cat_ref_num || '',
+
                 item.issue_date || '',
                 item.due_date || '',
                 item.return_date || '',
-                transactionOverdue,
-                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
-                fineStatusBadge,
+
                 item.issued_by || '',
-                item.created_at || ''
+                item.received_by || '',
+
+                transactionOverdue,
+
+                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
+                item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',
+                item.total_fine ? '₹' + parseFloat(item.total_fine).toFixed(2) : '₹0.00',
+                item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',
+
+                fineStatusBadge,
+                item.fine_paid_date || '',
+
+                item.remarks || '',
+                item.created_at || '',
+                item.updated_at || ''
             ];
+
         
         case 'physical-visit':
             let duration = 'In progress';
+
             if (item.entry_time && item.exit_time) {
                 const entry = new Date(item.entry_time);
                 const exit = new Date(item.exit_time);
                 const hours = (exit - entry) / (1000 * 60 * 60);
                 duration = `${hours.toFixed(2)} hours`;
             }
-            
+        
             return [
+                item.activity || '',
                 item.member_name || '',
                 item.membership_code || '',
                 item.entry_time || '',
@@ -815,61 +885,74 @@ function convertToTableRow(tabName, item) {
                 item.remark || '',
                 item.created_at || ''
             ];
-        
+
         case 'virtual-usage':
             return [
                 item.member_name || '',
                 item.membership_code || '',
+                item.activity || '',
                 item.screen_name || '',
+                item.screen_route || '',
                 item.visited_at || '',
                 item.duration || 'N/A',
                 item.ip_address || '',
                 item.device_type || ''
             ];
+
         
         case 'payments':
             return [
-                item.payment_date || '',
-                
-                item.payment_mode || '',
+                item.membership_code || '',
+                item.member_name || '',
+                item.user_id || '',
+
                 item.payment_type || '',
-                item.payment_method || '',
-                
+                item.payment_date || '',
+                item.subscription_from || '',
+                item.subscription_to || '',
+
                 item.deposit_amount
                     ? '₹' + parseFloat(item.deposit_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.entry_fee_amount
                     ? '₹' + parseFloat(item.entry_fee_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.monthly_subscription_amount
                     ? '₹' + parseFloat(item.monthly_subscription_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.total_subscription_amount
                     ? '₹' + parseFloat(item.total_subscription_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.book_fine_amount
                     ? '₹' + parseFloat(item.book_fine_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.fine_amount
                     ? '₹' + parseFloat(item.fine_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.adjusted_amount
                     ? '₹' + parseFloat(item.adjusted_amount).toFixed(2)
                     : '₹0.00',
-                
+
                 item.transaction_id || '',
-                item.membership_code || '',
-                
-                item.subscription_from || '',
-                item.subscription_to || '',
-                
-                item.created_at || ''
+                item.remarks || '',
+
+                item.payment_mode || '',
+                item.payment_method || '',
+
+                item.created_at || '',
+                item.created_by || '',
+                item.updated_at || '',
+                item.updated_by || '',
+
+                item.membership_id || '',
+                item.status_id || '',
+                item.circulation_transaction_id || ''
             ];
 
         

@@ -365,8 +365,8 @@
 
 .report-tabs .nav-link {
     border: none;
-    color: var(--ct-secondary);
-    font-weight: 500;
+    color: black;
+    font-weight: 600;
     padding: 12px 20px;
     border-radius: 0;
 }

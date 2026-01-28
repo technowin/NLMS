@@ -350,12 +350,12 @@ class TabDataView(ReportBaseView):
             base_filter &= Q(gap_months=0)
 
         # Apply filters at DB level
-        current_qs = (
-            MembershipDetails.objects
-            .using(db)
-            .filter(id__in=member_ids)
-            .filter(base_filter)
-        )
+        # current_qs = (
+        #     MembershipDetails.objects
+        #     .using(db)
+        #     .filter(id__in=member_ids)
+        #     .filter(base_filter)
+        # )
 
         history_qs = (
             MembershipDetailsHistory.objects
@@ -373,29 +373,29 @@ class TabDataView(ReportBaseView):
             return d.strftime('%Y-%m-%d %H:%M') if d else ''
 
         # Current data
-        for member in current_qs:
-            data.append({
-                'first_name': member.first_name,
-                'middle_name': member.middle_name,
-                'last_name': member.last_name,
-                'first_name_mar': member.first_name_mar,
-                'middle_name_mar': member.middle_name_mar,
-                'last_name_mar': member.last_name_mar,
-                'actionperformed': member.actionperformed,
-                'from_date': fmt_date(member.from_date),
-                'to_date': fmt_date(member.to_date),
-                'deposit': float(member.deposit or 0),
-                'entry_fees': float(member.entry_fees or 0),
-                'subscription': float(member.subscription or 0),
-                'fine_calculated_at': fmt_dt(member.fine_calculated_at),
-                'gap_fine_subscription': float(member.gap_fine or 0),
-                'gap_fine_delay': float(member.late_fee or 0),
-                'gap_months': member.gap_months or 0,
-                'late_fee': float(member.late_fee or 0),
-                'changed_at': fmt_dt(member.updated_at),
-                'changed_by': member.updated_by,
-                'membership_type_id': member.membership_id,
-            })
+        # for member in current_qs:
+        #     data.append({
+        #         'first_name': member.first_name,
+        #         'middle_name': member.middle_name,
+        #         'last_name': member.last_name,
+        #         'first_name_mar': member.first_name_mar,
+        #         'middle_name_mar': member.middle_name_mar,
+        #         'last_name_mar': member.last_name_mar,
+        #         'actionperformed': member.actionperformed,
+        #         'from_date': fmt_date(member.from_date),
+        #         'to_date': fmt_date(member.to_date),
+        #         'deposit': float(member.deposit or 0),
+        #         'entry_fees': float(member.entry_fees or 0),
+        #         'subscription': float(member.subscription or 0),
+        #         'fine_calculated_at': fmt_dt(member.fine_calculated_at),
+        #         'gap_fine_subscription': float(member.gap_fine or 0),
+        #         'gap_fine_delay': float(member.late_fee or 0),
+        #         'gap_months': member.gap_months or 0,
+        #         'late_fee': float(member.late_fee or 0),
+        #         'changed_at': fmt_dt(member.updated_at),
+        #         'changed_by': member.updated_by,
+        #         'membership_type_id': member.membership_id,
+        #     })
 
         # History data
         for history in history_qs:
@@ -799,33 +799,44 @@ class TabDataView(ReportBaseView):
         if filters.get('max_amount'):
             qs = qs.filter(fine_amount__lte=float(filters['max_amount']))
 
+        for payment in qs:
+            member = payment.membership
+
+            # ✅ Full member name
+            member_name = " ".join(filter(None, [
+                member.first_name if member else '',
+                member.middle_name if member else '',
+                member.last_name if member else '',
+            ]))
+
         data = []
         for payment in qs:
             data.append({
-                'payment_mode': payment.payment_mode or '',
+                'membership_code': payment.membership_code or '',
+                'member_name': member_name,
+                'user_id': payment.user_id or '',
                 'payment_type': payment.payment_type or '',
-                'payment_method': payment.payment_method or '',
+                'payment_date': payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '',
+                'subscription_from': payment.subscription_from.strftime('%Y-%m-%d') if payment.subscription_from else '',
+                'subscription_to': payment.subscription_to.strftime('%Y-%m-%d') if payment.subscription_to else '',
                 'deposit_amount': float(payment.deposit_amount) if payment.deposit_amount else 0.0,
                 'entry_fee_amount': float(payment.entry_fee_amount) if payment.entry_fee_amount else 0.0,
                 'monthly_subscription_amount': float(payment.monthly_subscription_amount) if payment.monthly_subscription_amount else 0.0,
                 'total_subscription_amount': float(payment.total_subscription_amount) if payment.total_subscription_amount else 0.0,
-                'subscription_from': payment.subscription_from.strftime('%Y-%m-%d') if payment.subscription_from else '',
-                'subscription_to': payment.subscription_to.strftime('%Y-%m-%d') if payment.subscription_to else '',
+                'book_fine_amount': float(payment.book_fine_amount) if payment.book_fine_amount else 0.0,
+                'fine_amount': float(payment.fine_amount) if payment.fine_amount else 0.0,
+                'adjusted_amount': float(payment.adjusted_amount) if payment.adjusted_amount else 0.0,
                 'transaction_id': payment.transaction_id or '',
                 'remarks': payment.remarks or '',
-                'user_id': payment.user_id or '',
-                'membership_code': payment.membership_code or '',
+                'payment_mode': payment.payment_mode or '',
+                'payment_method': payment.payment_method or '',
                 'created_at': payment.created_at.strftime('%Y-%m-%d %H:%M:%S') if payment.created_at else '',
                 'created_by': payment.created_by or '',
                 'updated_at': payment.updated_at.strftime('%Y-%m-%d %H:%M:%S') if payment.updated_at else '',
                 'updated_by': payment.updated_by or '',
                 'membership_id': payment.membership_id,
                 'status_id': payment.status_id,
-                'payment_date': payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '',
                 'circulation_transaction_id': payment.circulation_transaction_id,
-                'book_fine_amount': float(payment.book_fine_amount) if payment.book_fine_amount else 0.0,
-                'fine_amount': float(payment.fine_amount) if payment.fine_amount else 0.0,
-                'adjusted_amount': float(payment.adjusted_amount) if payment.adjusted_amount else 0.0,
             })
         
         return {'data': data}
