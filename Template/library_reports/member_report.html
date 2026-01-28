@@ -147,7 +147,7 @@ function checkSavedSession() {
 }
 
 function loadMemberList(page = 1) {
-    debugger;
+    
     const search = $('#member-search').val();
     const membershipType = $('#membership-type-filter').val() || [];
     const membershipStatus = $('#membership-status-filter').val() || [];
@@ -267,6 +267,20 @@ function deselectAll() {
     selectedMembers.clear();
     $('.member-list-item').removeClass('selected');
     updateSelectionCount();
+    // Clear right-side tab tables (tbody only)
+    const tables = [
+        'member-details-table',
+        'membership-details-table',
+        'loan-table',
+        'transactions-table',
+        'physical-visit-table',
+        'virtual-usage-table',
+        'payments-table'
+    ];
+
+    tables.forEach(tableId => {
+        $('#' + tableId + ' tbody').empty();
+    });
     clearTabData();
 }
 
@@ -299,6 +313,7 @@ function clearLeftFilters() {
     $('#member-search').val('');
     $('#membership-type-filter').val('');
     $('#membership-status-filter').val('active');
+    
     loadMemberList(1);
 }
 
@@ -567,7 +582,7 @@ function loadTabData(tabName) {
     showLoading();
     
     const filters = tabFilters[tabName] || {};
-    debugger;
+    
     $.ajax({
         url: `/reports/tab-data/${tabName}/`,
         data: {
@@ -613,7 +628,7 @@ function populateTabData(tabName, data) {
     
     // Clear existing rows
     tbody.innerHTML = '';
-    debugger;
+    
     // Add new rows
     data.forEach(item => {
         const row = document.createElement('tr');
@@ -639,10 +654,10 @@ function populateTabData(tabName, data) {
 
 // Filter application functions for all tab
 function applyRightFilters(tab, form) {
-    debugger;
+    
     const formData = $('#' + form + 'Form').serializeArray();
     const filters = {};
-    debugger;
+    
     formData.forEach(item => {
         if (item.value) {
             if (item.name.endsWith('[]')) {
