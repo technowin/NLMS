@@ -23,12 +23,26 @@
             
             <!-- Filters -->
             <div class="filter-group">
-                <div class="d-flex justify-content-between align-items-center ">
-                    <h6><i class="bi bi-funnel"></i>Filters </h6>
-                    <button class="btn btn-success btn-sm " onclick="exportAllTabs()">
-                        <i class="bi bi-file-earmark-excel me-2"></i>Export All Data
-                    </button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filters
+                    </h6>
+                
+                    <div class="d-flex gap-2">
+                        <!-- Select All -->
+                        <button class="btn btn-sm btn-primary"
+                                onclick="selectAll()"
+                                title="Select All">
+                            <i class="bi bi-check2-square"></i>
+                        </button>
+                    
+                        <!-- Export -->
+                        <button class="btn btn-success btn-sm" onclick="exportAllTabs()" title="Export All Data">
+                            <i class="bi bi-file-earmark-excel"></i>
+                        </button>
+                    </div>
                 </div>
+
 
                 <!-- Membership Type Filter -->
                 <div class="mb-2 selectize-sm">

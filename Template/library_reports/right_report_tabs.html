@@ -111,22 +111,57 @@
                 </div>
                 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"
                            id="member-details-table" style="width:100%">
                         <thead>
                             <tr>
                                 <th>First Name</th>
                                 <th>Middle Name</th>
                                 <th>Last Name</th>
+                            
+                                <th>First Name (Marathi)</th>
+                                <th>Middle Name (Marathi)</th>
+                                <th>Last Name (Marathi)</th>
+                            
+                                <th>Membership ID</th>
+                                <th>Member Type</th>
                                 <th>Membership Code</th>
+                                <th>Membership Date</th>
+                            
+                                <th>Renewal From Date</th>
+                                <th>Renewal To Date</th>
+                            
                                 <th>User ID</th>
+                                <th>Ward</th>
+                                <th>Pincode</th>
+                                <th>Local Address</th>
+                            
+                                <th>Mobile No</th>
                                 <th>Email</th>
-                                <th>Mobile</th>
+                                <th>Occupation</th>
+                                <th>Office Phone</th>
+                                <th>Education</th>
+                                <th>Institute Name</th>
+                                <th>Recommender Details</th>
+                            
+                                <th>Date of Birth</th>
+                                <th>Aadhar No</th>
+                                <th>Address Same as Aadhar</th>
+                                <th>Resident of NMMC</th>
+                            
                                 <th>Status</th>
+                                <th>Created At</th>
+                                <th>Created By</th>
+                                <th>Updated At</th>
+                                <th>Updated By</th>
+                                <th>Approved By</th>
+                                <th>Approved Date</th>
+                            
                                 <th>Actions</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
@@ -156,25 +191,39 @@
                 </div>
 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"
                            id="membership-details-table" style="width:100%">
                         <thead>
-                            <tr>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Membership Code</th>
-                                <th>Action Performed</th>
-                                <th>From Date</th>
-                                <th>To Date</th>
-                                <th>Deposit</th>
-                                <th>Entry Fees</th>
-                                <th>Subscription</th>
-                                <th>Gap Months</th>
-                                <th>Changed At</th>
-                                <th>Changed By</th>
-                            </tr>
-                        </thead>
+                                <tr>
+                                    <th>First Name</th>
+                                    <th>Middle Name</th>
+                                    <th>Last Name</th>
+                                
+                                    <th>First Name (Marathi)</th>
+                                    <th>Middle Name (Marathi)</th>
+                                    <th>Last Name (Marathi)</th>
+                                
+                                    <th>Action Performed</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                
+                                    <th>Deposit</th>
+                                    <th>Entry Fees</th>
+                                    <th>Subscription</th>
+                                
+                                    <th>Fine Calculated At</th>
+                                    <th>Gap Fine (Subscription)</th>
+                                    <th>Gap Fine (Delay)</th>
+                                    <th>Gap Months</th>
+                                    <th>Late Fee</th>
+                                
+                                    <th>Changed At</th>
+                                    <th>Changed By</th>
+                                    <th>Membership Type</th>
+                                </tr>
+                            </thead>
+
                         <tbody>
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
@@ -204,17 +253,20 @@
                 </div>
 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"
                            id="loan-table" style="width:100%">
                         <thead>
                             <tr>
                                 <th>Membership Code</th>
                                 <th>Barcode</th>
                                 <th>Accession ID</th>
+                                <th>Catalog Ref No</th>
+                            
                                 <th>Issue Date</th>
                                 <th>Due Date</th>
                                 <th>Return Date</th>
+                            
                                 <th>Days Overdue</th>
                                 <th>Fine Amount</th>
                                 <th>Issued By</th>
@@ -222,6 +274,7 @@
                                 <th>Created At</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
@@ -251,25 +304,40 @@
                 </div>
 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"
                            id="transactions-table" style="width:100%">
                         <thead>
                             <tr>
                                 <th>Member Name</th>
                                 <th>Membership Code</th>
                                 <th>Barcode</th>
-                                <th>Transaction Type</th>
+                                <th>Accession ID</th>
+                                <th>Catalog Ref No</th>
+                            
                                 <th>Issue Date</th>
                                 <th>Due Date</th>
                                 <th>Return Date</th>
-                                <th>Days Overdue</th>
-                                <th>Fine Amount</th>
-                                <th>Status</th>
+                            
                                 <th>Issued By</th>
+                                <th>Received By</th>
+                            
+                                <th>Days Overdue</th>
+                            
+                                <th>Fine Amount</th>
+                                <th>Book Fine</th>
+                                <th>Total Fine</th>
+                                <th>Adjusted Fine</th>
+                            
+                                <th>Fine Status</th>
+                                <th>Fine Paid Date</th>
+                            
+                                <th>Remarks</th>
                                 <th>Created At</th>
+                                <th>Updated At</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
@@ -299,11 +367,12 @@
                 </div>
 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"
                            id="physical-visit-table" style="width:100%">
-                        <thead>
+                       <thead>
                             <tr>
+                                <th>Activity</th>
                                 <th>Member Name</th>
                                 <th>Membership Code</th>
                                 <th>Entry Time</th>
@@ -313,6 +382,7 @@
                                 <th>Recorded At</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
@@ -342,21 +412,23 @@
                 </div>
 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" 
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"
                            id="virtual-usage-table" style="width:100%">
                         <thead>
                             <tr>
                                 <th>Member Name</th>
                                 <th>Membership Code</th>
-                                <th>Activity Type</th>
-                                <th>Screen/Page</th>
+                                <th>Activity</th>
+                                <th>Screen Name</th>
+                                <th>Screen Route</th>
                                 <th>Visited At</th>
                                 <th>Duration</th>
                                 <th>IP Address</th>
                                 <th>Device Type</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
@@ -386,33 +458,45 @@
                 </div>
 
                 <!-- DataTable Container -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" id="payments-table" style="width:100%">
+                <div class="table-responsive table-scroll">
+                    <table class="table table-hover table-striped align-middle"id="payments-table" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Payment Date</th>
-                                <th>Payment Mode</th>
-                                <th>Payment Type</th>
-                                <th>Payment Method</th>
-                            
-                                <th>Deposit</th>
-                                <th>Entry Fee</th>
-                                <th>Monthly Sub.</th>
-                                <th>Total Sub.</th>
-                            
-                                <th>Book Fine</th>
-                                <th>Fine</th>
-                                <th>Adjusted</th>
-                            
-                                <th>Transaction ID</th>
                                 <th>Membership Code</th>
+                                <th>Member Name</th>
+                                <th>User ID</th>
                             
+                                <th>Payment Type</th>
+                                <th>Payment Date</th>
                                 <th>Subscription From</th>
                                 <th>Subscription To</th>
                             
+                                <th>Deposit Amount</th>
+                                <th>Entry Fee Amount</th>
+                                <th>Monthly Subscription</th>
+                                <th>Total Subscription</th>
+                            
+                                <th>Book Fine</th>
+                                <th>Fine Amount</th>
+                                <th>Adjusted Amount</th>
+                            
+                                <th>Transaction ID</th>
+                                <th>Remarks</th>
+                            
+                                <th>Payment Mode</th>
+                                <th>Payment Method</th>
+                            
                                 <th>Created At</th>
+                                <th>Created By</th>
+                                <th>Updated At</th>
+                                <th>Updated By</th>
+                            
+                                <th>Membership ID</th>
+                                <th>Status ID</th>
+                                <th>Circulation Transaction ID</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <!-- Loaded via AJAX -->
                         </tbody>
