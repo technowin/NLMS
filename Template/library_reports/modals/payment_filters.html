@@ -56,11 +56,8 @@
                             <label class="form-label">Payment Mode</label>
                             <select class="form-select" name="payment_mode">
                                 <option value="">All</option>
-                                <option value="Cash">Cash</option>
-                                <option value="Cheque">Cheque</option>
                                 <option value="Online">Online</option>
                                 <option value="Offline">Offline</option>
-                                <option value="Card">Card</option>
                             </select>
                         </div>
 
@@ -68,15 +65,13 @@
                             <label class="form-label">Payment Method</label>
                             <select class="form-select" name="payment_method">
                                 <option value="">All</option>
-                                <option value="razorpay">Razorpay</option>
-                                <option value="paytm">Paytm</option>
-                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="Cash/Cheque/Other">Cash/Cheque/Other</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Amount Range -->
-                    <div class="row">
+                    {% comment %} <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Min Amount</label>
                             <input type="number" class="form-control" name="min_amount">
@@ -85,7 +80,7 @@
                             <label class="form-label">Max Amount</label>
                             <input type="number" class="form-control" name="max_amount">
                         </div>
-                    </div>
+                    </div> {% endcomment %}
 
                 </form>
             </div>
