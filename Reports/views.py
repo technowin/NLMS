@@ -1003,7 +1003,6 @@ def view_payment_report(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("payment_report")
 
-@no_direct_access 
 @login_required 
 def edit_payment_report(request):
     try:
@@ -1092,18 +1091,20 @@ def edit_payment_report(request):
                 )
 
                 # Final file name
-                file_name = f"{safe_name}_{receipt_no}{ext}"
+                safe_receipt_no = receipt_no.replace("/", "-")
 
-                # Relative save path (IMPORTANT)
-                save_path = f"{library_code}/Receipts/PaymentReceipts/{receipt_no}/{file_name}"
+                file_name = f"{safe_name}_{safe_receipt_no}{ext}"
 
-                # 🔥 Save using your storage service
+                save_path = (
+                    f"{library_code}/Receipts/PaymentReceipts/"
+                    f"{safe_receipt_no}/{file_name}"
+                )
+
                 normalized_path = file_storage_service.save_file(
                     file=receipt_file,
                     save_path=save_path
                 )
 
-                # ✅ Store ONLY normalized path in DB
                 report.receipt_upload = normalized_path
             
 
