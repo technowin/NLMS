@@ -121,7 +121,7 @@ DATABASES = {
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # safest default
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Strict'
-SESSION_COOKIE_SECURE = False  # True only if HTTPS
+SESSION_COOKIE_SECURE = True  # True only if HTTPS
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
@@ -164,7 +164,7 @@ SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
 SESSION_COOKIE_AGE = 900  # 15 minutes idle timeout
 SESSION_SAVE_EVERY_REQUEST = True
 # Clickjacking Protection
-# X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = 'DENY'
 
 # Security Headers
 SECURE_HSTS_SECONDS = 31536000
@@ -174,7 +174,6 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
-X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'oRVCHTumzesh-E71A-bAnjjEDuIlkceL6dvAYiCShp0=')
 
@@ -268,14 +267,14 @@ MIDDLEWARE = [
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://push3.aclgateway.com',
-    'http://www.nmmclibrary.in',    # ← Add your domain
-    'http://nmmclibrary.in',        # ← Add non-www version
+    'https://www.nmmclibrary.in',    # ← Add your domain
+    'https://nmmclibrary.in',        # ← Add non-www version
 ]
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
     'http://push3.aclgateway.com',
-    'http://www.nmmclibrary.in',    # ← Add your domain
-    'http://nmmclibrary.in',        # ← Add non-www version
+    'https://www.nmmclibrary.in',    # ← Add your domain
+    'https://nmmclibrary.in',        # ← Add non-www version
 ]
 AUTO_LOGOUT = {
     'IDLE_TIME': 900,
@@ -423,13 +422,13 @@ if 'S3_BASE_PATH' not in locals():
     
 # For production with domain (should be True when you have SSL certificate)
 if ENVIRONMENT == 'production':
-    SESSION_COOKIE_SECURE = False    # ← Set to False without SSL
-    CSRF_COOKIE_SECURE = False       # ← Set to False without SSL
-    SECURE_SSL_REDIRECT = False      # ← Set to False without SSL
-    SECURE_PROXY_SSL_HEADER = None   # ← Set to None
+    SESSION_COOKIE_SECURE = True        # ← Set to False without SSL
+    CSRF_COOKIE_SECURE = True           # ← Set to False without SSL
+    SECURE_SSL_REDIRECT = True          # ← Set to False without SSL
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
     # Keep SITE_URL as HTTP for now
-    SITE_URL = "http://www.nmmclibrary.in"
+    SITE_URL = "https://www.nmmclibrary.in"
 else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
