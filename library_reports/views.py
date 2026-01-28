@@ -428,8 +428,15 @@ class TabDataView(ReportBaseView):
     def get_loan_data(self, db, member_ids, filters):
         qs = CirculationTransaction.objects.using(db).filter(
             member_id__in=member_ids,
-            transaction_type__in=['Offline', 'Online']
+            transaction_type__in=['Offline', 'Online'],
+            return_date__isnull=True,   # only not-returned books
+            due_date__isnull=False
         ).select_related('catalog', 'accession', 'member')
+
+        from datetime import date, timedelta
+        from django.db.models import Q
+        
+        today = date.today()
 
         
         # Apply filters
@@ -441,20 +448,31 @@ class TabDataView(ReportBaseView):
         overdue_filter = filters.get('overdue')
 
         if overdue_filter == '0_3':
-            qs = qs.filter(days_overdue_count__gte=0, days_overdue_count__lte=3)
-        
+            qs = qs.filter(
+                due_date__lt=today,
+                due_date__gte=today - timedelta(days=3)
+            )
+
         elif overdue_filter == '4_7':
-            qs = qs.filter(days_overdue_count__gte=4, days_overdue_count__lte=7)
-        
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=3),
+                due_date__gte=today - timedelta(days=7)
+            )
+
         elif overdue_filter == '1_month':
-            qs = qs.filter(days_overdue_count__gt=30)
-        
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=30)
+            )
+
         elif overdue_filter == '3_month':
-            qs = qs.filter(days_overdue_count__gt=90)
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=90)
+            )
         
         elif overdue_filter == '6_month':
-            qs = qs.filter(days_overdue_count__gt=180)
-        
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=180)
+            )
 
         if filters.get('fine_status') == 'paid':
             qs = qs.filter(fine_status__iexact='Paid')
@@ -471,6 +489,17 @@ class TabDataView(ReportBaseView):
 
             qs = qs.filter(member__member_type_id__in=membership_type)
 
+        from django.db.models import IntegerField, Func
+        from django.db.models.functions import Now
+
+        qs = qs.annotate(
+            overdue_days=Func(
+                Now(),
+                F('due_date'),
+                function='DATEDIFF',
+                output_field=IntegerField()
+            )
+        )
 
         from Account.models import CustomUser 
         data = []
@@ -483,7 +512,8 @@ class TabDataView(ReportBaseView):
                 'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
                 'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                'days_overdue_count': transaction.days_overdue_count or 0,
+                # 'days_overdue_count': transaction.days_overdue_count or 0,
+                'days_overdue_count': transaction.overdue_days or 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
                 'issued_by':  CustomUser.objects.using(db).filter(id=transaction.issued_by).only('full_name').first().full_name if transaction.issued_by else '',
                 'remarks': transaction.remarks,
@@ -508,34 +538,64 @@ class TabDataView(ReportBaseView):
         if filters.get('to_date'):
             end_date = parse_month_end(filters['to_date'])
             qs = qs.filter(issue_date__lte=end_date)
+        
+        from datetime import timedelta
+        from django.db.models import F
 
         late_filter = filters.get('late_returns')
 
         if late_filter:
-            # Only returned books should be considered
-            qs = qs.filter(return_date__isnull=False)
+            # Only returned books
+            qs = qs.filter(
+                return_date__isnull=False,
+                due_date__isnull=False
+            )
 
             if late_filter == '0_3':
-                qs = qs.filter(days_overdue_count__gte=1, days_overdue_count__lte=3)
+                qs = qs.filter(
+                    return_date__gt=F('due_date'),
+                    return_date__lte=F('due_date') + timedelta(days=3)
+                )
 
             elif late_filter == '4_7':
-                qs = qs.filter(days_overdue_count__gte=4, days_overdue_count__lte=7)
+                qs = qs.filter(
+                    return_date__gt=F('due_date') + timedelta(days=3),
+                    return_date__lte=F('due_date') + timedelta(days=7)
+                )
 
             elif late_filter == '1_month':
-                qs = qs.filter(days_overdue_count__gt=30)
+                qs = qs.filter(
+                    return_date__gt=F('due_date') + timedelta(days=30)
+                )
 
             elif late_filter == '3_month':
-                qs = qs.filter(days_overdue_count__gt=90)
+                qs = qs.filter(
+                    return_date__gt=F('due_date') + timedelta(days=90)
+                )
 
             elif late_filter == '6_month':
-                qs = qs.filter(days_overdue_count__gt=180)
+                qs = qs.filter(
+                    return_date__gt=F('due_date') + timedelta(days=180)
+                )
+
 
         if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status='Paid')
+            qs = qs.filter(
+                Q(fine_amount__gt=0, fine_status='Paid') |
+                Q(fine_amount__lte=0)
+            )
+
         elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(fine_status__in=['Unpaid', 'Pending', None])
+            qs = qs.filter(
+                Q(fine_amount__gt=0, fine_status__in=['Unpaid', 'Pending']) |
+                Q(fine_amount__lte=0)
+            )
+
         elif filters.get('fine_status') == 'adjusted':
-            qs = qs.filter(fine_status__in=['Adjusted'])
+            qs = qs.filter(
+                Q(fine_amount__gt=0, fine_status='Adjusted') |
+                Q(fine_amount__lte=0)
+            )
 
         membership_type = filters.get('membership_type')
         if membership_type:
@@ -543,6 +603,19 @@ class TabDataView(ReportBaseView):
                 membership_type = [membership_type]
         
             qs = qs.filter(member__member_type_id__in=membership_type)
+
+        from django.db.models import IntegerField, Func
+        from django.db.models.functions import Now
+
+        qs = qs.annotate(
+            late_days=Func(
+                F('return_date'),
+                F('due_date'),
+                function='DATEDIFF',
+                output_field=IntegerField()
+            )
+        )
+
 
         data = []
         for transaction in qs:
@@ -558,12 +631,13 @@ class TabDataView(ReportBaseView):
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
                 'received_by': transaction.received_by,
-                'days_overdue_count': transaction.days_overdue_count or 0,
+                # 'days_overdue_count': transaction.days_overdue_count or 0,
+                'days_overdue_count': transaction.late_days or 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
                 'book_fine_amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0,
                 'total_fine': float(transaction.total_fine) if transaction.total_fine else 0,
                 'adjusted_fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0,
-                'fine_status': transaction.fine_status,
+                'fine_status': transaction.fine_status if transaction.fine_amount and transaction.fine_amount > 0 else None,
                 'fine_paid_date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
                 'remarks': transaction.remarks,
                 'updated_at': transaction.updated_at.strftime('%Y-%m-%d %H:%M') if transaction.updated_at else '',

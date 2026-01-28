@@ -831,9 +831,17 @@ function convertToTableRow(tabName, item) {
                 ? `<span class="badge bg-danger">${item.days_overdue_count} days</span>`
                 : `<span class="badge bg-success">On time</span>`;
 
-            const fineStatusBadge = item.fine_status === 'paid'
-                ? `<span class="badge bg-success">Paid</span>`
-                : `<span class="badge bg-danger">Unpaid</span>`;
+            let fineStatusBadge = '';
+
+            if (item.fine_amount > 0) {
+                if (item.fine_status === 'Paid') {
+                    fineStatusBadge = `<span class="badge bg-success">Paid</span>`;
+                } else if (item.fine_status === 'Adjusted') {
+                    fineStatusBadge = `<span class="badge bg-warning text-dark">Adjusted</span>`;
+                } else {
+                    fineStatusBadge = `<span class="badge bg-danger">Unpaid</span>`;
+                }
+            }
 
             return [
                 item.member_name || '',
