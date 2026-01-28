@@ -601,6 +601,7 @@ def registration(request):
 
 from collections import defaultdict
 @no_direct_access
+@login_required
 def membership_approval(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -617,6 +618,13 @@ def membership_approval(request):
     }
 
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+    
         # Load all membership records
         memberships = (
             MembershipDetails.objects
@@ -696,6 +704,13 @@ def membership_form_create(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         user_code = request.session["user_id"]
 
@@ -916,6 +931,13 @@ def membership_form_edit(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         user_code = request.session["user_id"]
 
@@ -1299,6 +1321,13 @@ def membership_form_view(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         user_code = request.session["user_id"]
         role_id = request.session["role_id"]
@@ -2168,6 +2197,13 @@ def membership_payment_index(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         username = request.session.get('username', None)
         user_id = request.session["user_id"]
@@ -2488,6 +2524,13 @@ def membership_form_renew(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         user_code = request.session["user_id"]
 
@@ -2776,6 +2819,13 @@ def membership_form_cancellation(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         user_id = request.session.get("user_id")
         
@@ -2916,12 +2966,20 @@ def membership_form_cancellation(request):
         return redirect("L01:membership_payment_index")
 
 # circulation
-@login_required
+@no_direct_access 
+@login_required 
 def bar_code_index(request):
     Db.closeConnection()
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         username = request.session.get('username', None)
         user_id = request.session["user_id"]
@@ -3382,10 +3440,18 @@ def issue_return_book_create(request):
         Db.closeConnection()
         m = Db.get_connection()
         cursor = m.cursor()
+        
         library_code = request.session.get('library_db', None)
         username = request.session.get('username', None)
         user_id = request.session["user_id"]
         role_id = request.session["role_id"]
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if request.method == "GET":
             # Get only active MEMBERS (role_id=3)
@@ -3925,6 +3991,13 @@ def circulation_transaction_details(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         library_code = request.session.get('library_db', None)
         username = request.session.get('username', None)
         user_id = request.session.get("user_id")
@@ -4014,6 +4087,7 @@ def circulation_transaction_details(request):
         messages.error(request, 'Oops...! Something went wrong!')
     
 # Palavees work
+@no_direct_access 
 @login_required
 def library_master_index_individual(request):
     library = None
@@ -4031,6 +4105,13 @@ def library_master_index_individual(request):
     cursor = m.cursor()
 
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.method == "POST":
             # ------------------------
             # Form fields
@@ -4294,13 +4375,16 @@ def library_master_index_individual(request):
         print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
 
+@no_direct_access
 @login_required
 def user_master_index(request):
     try:
-        if request.user.is_authenticated:
-            global user, role_id
-            user = request.user.id
-            role_id = request.user.role_id
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if request.method == "GET":
             # 🔹 Fetch all user records with related role
@@ -4325,7 +4409,7 @@ def user_master_index(request):
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
-        callproc("stp_error_log", [fun, str(e), user])
+        callproc("stp_error_log", [fun, str(e), ''])
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("user_master_index")
 
@@ -4369,6 +4453,13 @@ from django.db import transaction
 @login_required
 def user_create(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         user_id = request.user.id
 
         if request.method == "POST":
@@ -4702,9 +4793,16 @@ def user_edit(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("L01:user_master_index")
 
+@no_direct_access
 @login_required
 def user_view(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         user_id = request.user.id
 
         enc_id = request.GET.get("user_id")
@@ -4741,6 +4839,12 @@ def view_catalogue(request):
     })
     
 def view_catalogue_login_page(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
     username = request.session.get('username')
     return render(request, "L01/view_catalogue_login_page.html", {
         "MEDIA_URL": settings.MEDIA_URL,
@@ -5478,7 +5582,16 @@ def mpsc_chapters_index(request, topic_id):
             status=500
         )
 
+@no_direct_access 
+@login_required 
 def member_entry_exit(request):
+    if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
     from django.utils.timezone import localdate
     active_user_ids = CustomUser.objects.filter(
         is_active=1
@@ -5679,6 +5792,13 @@ def get_member_detail(request, membership_code):
 @no_direct_access
 def membership_dashboard(request):
     # Generate or retrieve your key (ensure it's secure and private)
+    
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
 
     # Get username from session
     username = request.session.get('username')
@@ -5892,6 +6012,13 @@ def show_Library_catalogue(request):
         username = request.session.get('username')
         user_id = request.session.get('user_id')
         role_id = request.session.get('role_id')
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if library_code != 'L01':
             messages.error(request, "Invalid library access.")
@@ -5930,6 +6057,13 @@ def visit_Library_catalogue(request):
         username = request.session.get('username')
         user_id = request.session.get('user_id')
         role_id = request.session.get('role_id')
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if library_code != 'L01':
             messages.error(request, "Invalid library access.")
@@ -5952,7 +6086,7 @@ def visit_Library_catalogue(request):
         # --- BOOKS BY FIRST SUBJECT (use indexed subject_id) ---
         if first_subject:
             books = BookCatalog.objects.filter(subject_id=first_subject.id)\
-                                       .select_related('subject', 'material', 'ebook')
+                                       .select_related('subject', 'material', 'ebook').order_by('-cat_ref_num')
         else:
             books = BookCatalog.objects.none()
             
@@ -6073,7 +6207,7 @@ def get_books_by_subject(request):
         
         if searching:
             # Global search mode (across all subjects)
-            all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook')
+            all_books = BookCatalog.objects.all().select_related('subject', 'material', 'ebook').order_by('-cat_ref_num')
 
             if search:
                 # Search across all subjects
@@ -6116,7 +6250,7 @@ def get_books_by_subject(request):
                 return JsonResponse({'error': 'Subject ID required'}, status=400)
                 
             all_books = BookCatalog.objects.filter(subject_id=subject_id)\
-                                           .select_related('subject', 'material', 'ebook')
+                                           .select_related('subject', 'material', 'ebook').order_by('-cat_ref_num')
 
             # Search filter
             if search:
@@ -6289,6 +6423,13 @@ def view_book_detail(request):
         username = request.session.get('username')
         user_id = request.session.get('user_id')
         role_id = request.session.get('role_id')
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if not all([library_code, username, user_id, role_id]):
             messages.warning(request, "Session expired or invalid. Please login again.")
@@ -6831,8 +6972,17 @@ def insert_book_by_isbn(request, isbn):
 # Stock Checking by Imran
 
 @csrf_exempt
+@no_direct_access 
+@login_required 
 def scan_barcode(request):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         if request.method == "GET":
             stock_year = StockYearMaster.objects.filter(is_active = 1)
 
@@ -6923,6 +7073,7 @@ def complete_stock_batch(request):
             
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 class StockReportView(View):
     def get(self, request):
         """
@@ -8411,6 +8562,12 @@ def led_tv_index(request):
     library_code = request.session.get('library_db', None)
 
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         # ============================================
         # LIBRARIES
         # ============================================
@@ -8570,7 +8727,15 @@ def led_tv_index(request):
             {}
         )
 
+@no_direct_access 
+@login_required
 def advertisement_index(request):
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
     # Fetch all ads ordered by newest first
         advertisements = Advertisement.objects.all().order_by('-created_at')
 
@@ -8626,8 +8791,16 @@ def advertisement_toggle_status(request, encrypted_id):
 
     return redirect('L01:advertisement_index')
 
+@no_direct_access 
 @login_required
 def advertisement_create(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+    
     library_code = request.session.get('library_db', None)
     if request.method == 'POST':
         try:
@@ -8721,8 +8894,16 @@ def advertisement_create(request):
     # GET request - show the form
     return render(request, 'L01/Display/advertisement_create.html')
 
+@no_direct_access 
 @login_required
 def event_announcement_index(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+    
     # Fetch all events ordered by newest first
     announcements = EventAnnouncement.objects.all().order_by('-created_at')
 
@@ -8795,8 +8976,15 @@ def event_announcement_toggle_status(request, encrypted_id):
 
     return redirect('L01:event_announcement_index')
 
+@no_direct_access 
 @login_required
 def event_announcement_create(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
     if request.method == 'POST':
         try:
             # Get form data
@@ -8859,9 +9047,17 @@ def event_announcement_create(request):
     # GET request - show the form
     return render(request, 'L01/Display/event_announcement_create.html')
 
+@no_direct_access 
 @login_required
 def advertisement_edit(request, encrypted_id):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         # Decrypt advertisement ID
         adv_id = int(dec(encrypted_id))
 
@@ -8949,9 +9145,17 @@ def advertisement_edit(request, encrypted_id):
         messages.error(request, f"Error editing advertisement: {str(e)}")
         return redirect('L01:advertisement_index')
 
+@no_direct_access 
 @login_required
 def event_announcement_edit(request, encrypted_id):
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
+        
         # Decrypt event announcement ID
         announcement_id = int(dec(encrypted_id))
         announcement = get_object_or_404(EventAnnouncement, pk=announcement_id)
@@ -9032,6 +9236,12 @@ def dashboard_view(request):
     Main dashboard view with 4 tabs
     """
     try:
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
         breadcrumb = request.POST.get("breadcrumb")
         if not breadcrumb:
             breadcrumb = 0
@@ -10601,7 +10811,16 @@ def export_catalog_pdf(request):
 
 # For Kiosk Display and Ebook Catalogue
 
+@no_direct_access 
+@login_required
 def kiosk_display(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+    
     # Get library_code from session
     library_code_from_session = request.session.get('library_db', None)
     library_name = None  # This will now store Marathi name if available
@@ -10946,6 +11165,13 @@ def visit_ebook_catalogue(request):
         username = request.session.get('username')
         user_id = request.session.get('user_id')
         role_id = request.session.get('role_id')
+        
+        if not request.user.is_authenticated:
+            # Clear any session flags
+            if '_session_expired' in request.session:
+                request.session.pop('_session_expired')
+            messages.warning(request, "Your session has expired. Please log in again.")
+            return redirect('library_list')
 
         if library_code != 'L01':
             messages.error(request, "Invalid library access.")
@@ -12385,8 +12611,15 @@ def flatten_json_iterative(data: Dict[str, Any], separator: str = '_') -> Dict[s
     
     return items
 
-@login_required
+@no_direct_access 
+@login_required    
 def get_book_data_isbn(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
     """Render the main search page"""
     return render(request, 'L01/ISBN/book_search_isbn.html')
 

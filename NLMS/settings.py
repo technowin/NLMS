@@ -119,8 +119,10 @@ DATABASES = {
 }
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # safest default
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
 SESSION_COOKIE_SECURE = False  # True only if HTTPS
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -152,27 +154,27 @@ SECRET_KEY = 'django-insecure-$vute#e^tqlu5ehd!)vv5m3x!z5^7p%jb9hm9272-!6%0ouz*r
 SECRET_KEY1 = '5pQsZXhU8vKyv7GxThldGn_JLK9UXVYyZD3GwQxsztY='
 LOGOUT_REDIRECT_URL ='/Login'
 LOGIN_REDIRECT_URL ='/Login'
-LOGIN_URL="/Login"
+LOGIN_URL="/library_list_login"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
-# SESSION_COOKIE_AGE = 3600  # 1-hour session timeout
-
-SESSION_COOKIE_AGE = 1209600    # 1-hour session timeout
+SESSION_COOKIE_AGE = 900  # 15 minutes idle timeout
 SESSION_SAVE_EVERY_REQUEST = True
 # Clickjacking Protection
 # X_FRAME_OPTIONS = 'DENY'
 
 # Security Headers
-SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'oRVCHTumzesh-E71A-bAnjjEDuIlkceL6dvAYiCShp0=')
 
@@ -247,6 +249,8 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'middleware.no_cache.NoCacheMiddleware',
+    'middleware.session_security.SessionExpiryRedirectMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',  # MUST be first
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -274,7 +278,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://nmmclibrary.in',        # ← Add non-www version
 ]
 AUTO_LOGOUT = {
-    'IDLE_TIME': 3600,
+    'IDLE_TIME': 900,
     'REDIRECT_TO_LOGIN_IMMEDIATELY': True,
     'MESSAGE': 'The session has expired. Please login again to continue.',
 }

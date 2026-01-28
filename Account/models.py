@@ -1,5 +1,5 @@
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,PermissionsMixin
 from django.db import models
 from django.utils import timezone
 
@@ -28,7 +28,7 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(username, email, password, **extra_fields)
 
-class CustomUser(AbstractBaseUser):
+class CustomUser(AbstractBaseUser,PermissionsMixin):
     USER_TYPES = (
         ('admin', 'Admin'),
         ('librarian', 'Librarian'),
@@ -51,6 +51,8 @@ class CustomUser(AbstractBaseUser):
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     dark_mode = models.BooleanField(default=False)
     email_verified = models.BooleanField(default=False)
+    session_key = models.CharField(max_length=255, null=True, blank=True)
+    is_logged_in = models.BooleanField(default=False)
     phone_verified = models.BooleanField(default=False)
     last_activity = models.DateTimeField(auto_now=True)
     date_joined = models.DateTimeField(auto_now_add=True)   # ✅ better than auto_now
