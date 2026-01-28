@@ -68,11 +68,10 @@ ENVIRONMENT = detect_environment()
 print(f"=== Environment detected: {ENVIRONMENT} ===")
 
 # Set DEBUG based on environment
-# if ENVIRONMENT == 'local':
-#     DEBUG = True
-# else:
-#     DEBUG = False
-DEBUG = True
+if ENVIRONMENT == 'local':
+    DEBUG = True
+else:
+    DEBUG = False
 
 ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', 'www.nmmclibrary.in']
 
