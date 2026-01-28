@@ -154,7 +154,7 @@ SECRET_KEY = 'django-insecure-$vute#e^tqlu5ehd!)vv5m3x!z5^7p%jb9hm9272-!6%0ouz*r
 SECRET_KEY1 = '5pQsZXhU8vKyv7GxThldGn_JLK9UXVYyZD3GwQxsztY='
 LOGOUT_REDIRECT_URL ='/Login'
 LOGIN_REDIRECT_URL ='/Login'
-LOGIN_URL="/Login"
+LOGIN_URL="/library_list_login"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
