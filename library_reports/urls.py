@@ -13,7 +13,6 @@ urlpatterns = [
     path('load-report-session/<int:session_id>/', views.LoadReportSessionView.as_view(), name='load_report_session'),
     path('list-sessions/', views.ListReportSessionsView.as_view(), name='list_report_sessions'),
     path('get-member-options/', views.GetMemberOptionsView.as_view(), name='get_member_options'),
-    path('get-filter-counts/', views.GetFilterCountsView.as_view(), name='get_filter_counts'),
     path('delete-session/<int:session_id>/', views.DeleteReportSessionView.as_view(), name='delete_report_session'),
     
     # API endpoints for document viewing
@@ -27,5 +26,4 @@ urlpatterns = [
 
     path('api/members/<int:member_id>/documents/', views.MemberDocumentsView.as_view(), name='member_documents'),
     path('delete-session/<int:session_id>/', views.DeleteReportSessionView.as_view(), name='delete_report_session'),
-    path('get-filter-counts/', views.GetFilterCountsView.as_view(), name='get_filter_counts'),
 ]

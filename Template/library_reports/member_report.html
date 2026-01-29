@@ -1116,7 +1116,7 @@ function exportTabData(tabName) {
         showToast('Please select at least one member to export', 'warning');
         return;
     }
-    
+    debugger;
     const tabNames = {
         'member-details': 'Member Details',
         'membership-details': 'Membership Details',
@@ -1135,7 +1135,7 @@ function exportTabData(tabName) {
         tab_filters: JSON.stringify(tabFilters[tabName] || {}),
         filename: fileName
     });
-    
+    debugger;
     showToast(`Exporting ${tabNames[tabName]}...`, 'info');
     window.location.href = `/reports/export-report/?${params.toString()}`;
 }
