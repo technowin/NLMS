@@ -242,8 +242,8 @@ class MemberDocumentsView(ReportBaseView):
             data.append({
                 'id': doc.id,
                 'document_name': doc.document.document_name if doc.document else 'Unknown',
-                'file_name': doc.file_name,
-                'file_path': doc.file_path,
+                'file_name': doc.file_name, 
+                'file_path': settings.MEDIA_URL + doc.file_path,
                 'uploaded_at': doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else ''
             })
         
