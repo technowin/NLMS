@@ -97,29 +97,12 @@ $(document).ready(function() {
     initDataTables();
     initFilterModals();
     setupEventListeners();
-    initDatePickers();
-    initSelect2();
+    initSelectize();
     checkSavedSession();
     includeModals();
 });
 
-function initDatePickers() {
-    //$('.datepicker').datepicker({
-    //    format: 'yyyy-mm-dd',
-    //    autoclose: true,
-    //    todayHighlight: true,
-    //    orientation: 'bottom auto'
-    //});
-    
-    //$('input[type="month"]').datepicker({
-    //    format: 'yyyy-mm',
-    //    minViewMode: 'months',
-    //    autoclose: true,
-    //    orientation: 'bottom auto'
-    //});
-}
-
-function initSelect2() {
+function initSelectize() {
     $('select[multiple]').each(function() {
         $(this).selectize({
             plugins: ['remove_button'],
@@ -329,229 +312,6 @@ function initDataTables() {
         }
     });
 }
-{% comment %} 
-function initDataTables() {
-    const tabConfigs = {
-        'member-details': {
-            columns: [
-                { data: 'first_name' },
-                { data: 'middle_name' },
-                { data: 'last_name' },
-                { data: 'membership_code' },
-                { data: 'user_id' },
-                { data: 'email' },
-                { data: 'mobile_no' },
-                { data: 'status' },
-                { 
-                    data: null,
-                    render: function(data, type, row) {
-                        return `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${row.id})">
-                                    <i class="bi bi-files"></i>
-                                </button>`;
-                    }
-                }
-            ]
-        },
-        'membership-details': {
-            columns: [
-                { data: 'first_name' },
-                { data: 'last_name' },
-                { data: 'membership_code' },
-                { data: 'actionperformed' },
-                { data: 'from_date' },
-                { data: 'to_date' },
-                { 
-                    data: 'deposit',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'entry_fees',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'subscription',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { data: 'gap_months' },
-                { data: 'changed_at' },
-                { data: 'changed_by' }
-            ]
-        },
-        'loan': {
-            columns: [
-                { data: 'membership_code' },
-                { data: 'barcode' },
-                { data: 'accession_id' },
-                { data: 'issue_date' },
-                { data: 'due_date' },
-                { data: 'return_date' },
-                { 
-                    data: 'days_overdue_count',
-                    render: function(data) {
-                        if (data > 0) {
-                            return `<span class="badge bg-danger">${data} days</span>`;
-                        }
-                        return `<span class="badge bg-success">On time</span>`;
-                    }
-                },
-                { 
-                    data: 'fine_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { data: 'issued_by' },
-                { data: 'remarks' },
-                { data: 'created_at' }
-            ]
-        },
-        'transactions': {
-            columns: [
-                { data: 'member_name' },
-                { data: 'membership_code' },
-                { data: 'barcode' },
-                { data: 'transaction_type' },
-                { data: 'issue_date' },
-                { data: 'due_date' },
-                { data: 'return_date' },
-                { 
-                    data: 'days_overdue_count',
-                    render: function(data) {
-                        if (data > 0) {
-                            return `<span class="badge bg-danger">${data} days</span>`;
-                        }
-                        return `<span class="badge bg-success">On time</span>`;
-                    }
-                },
-                { 
-                    data: 'fine_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'fine_status',
-                    render: function(data) {
-                        if (data === 'paid') {
-                            return `<span class="badge bg-success">Paid</span>`;
-                        } else if (data === 'unpaid') {
-                            return `<span class="badge bg-danger">Unpaid</span>`;
-                        }
-                        return `<span class="badge bg-warning">Pending</span>`;
-                    }
-                },
-                { data: 'issued_by' },
-                { data: 'created_at' }
-            ]
-        },
-        'physical-visit': {
-            columns: [
-                { data: 'member_name' },
-                { data: 'membership_code' },
-                { data: 'entry_time' },
-                { data: 'exit_time' },
-                { 
-                    data: null,
-                    render: function(data) {
-                        if (data.entry_time && data.exit_time) {
-                            const entry = new Date(data.entry_time);
-                            const exit = new Date(data.exit_time);
-                            const duration = (exit - entry) / (1000 * 60 * 60); // hours
-                            return `${duration.toFixed(2)} hours`;
-                        }
-                        return 'In progress';
-                    }
-                },
-                { data: 'remark' },
-                { data: 'created_at' }
-            ]
-        },
-        'virtual-usage': {
-            columns: [
-                { data: 'member_name' },
-                { data: 'membership_code' },
-                { data: 'screen_name' },
-                { data: 'visited_at' },
-                { 
-                    data: 'duration',
-                    render: function(data) {
-                        return data || 'N/A';
-                    }
-                },
-                { data: 'ip_address' },
-                { data: 'device_type' }
-            ]
-        },
-        'payments': {
-            columns: [
-                { data: 'payment_mode' },
-                { data: 'payment_type' },
-                { data: 'payment_method' },
-                { 
-                    data: 'deposit_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'entry_fee_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'total_subscription_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { data: 'transaction_id' },
-                { data: 'payment_date' },
-                { data: 'membership_code' },
-                { data: 'created_at' }
-            ]
-        }
-    };
-
-
-
-    Object.keys(tabConfigs).forEach(tabId => {
-        
-        const tableId = `#${tabId}-table`;
-        if ($(tableId).length) {
-            dataTables[tabId] = $(tableId).DataTable({
-                dom: '<"top"f>rt<"bottom"lip><"clear">',
-                pageLength: 25,
-                language: {
-                    search: "Search in table:",
-                    lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    paginate: {
-                        first: "First",
-                        last: "Last",
-                        next: "Next",
-                        previous: "Previous"
-                    }
-                },
-                columnDefs: [
-                    {
-                        targets: '_all',
-                        className: 'text-center'
-                    }
-                ],
-                columns: tabConfigs[tabId].columns,
-                order: [[0, 'asc']]
-            });
-        }
-    });
-} {% endcomment %}
-
 
 function loadCurrentTabData() {
     const activeTab = $('#reportTabs .nav-link.active').attr('id');
@@ -586,25 +346,6 @@ function loadTabData(tabName) {
         }
     });
 }
-{% comment %} 
-function populateTabData(tabName, data) {
-    
-    const table = dataTables[tabName];
-    if (!table) return;
-    
-    table.clear();
-    
-    data.forEach(item => {
-        // Add row to DataTable
-        table.row.add(item);
-    });
-    
-    table.draw();
-    
-    // Update record count
-    const recordCount = data.length;
-    $(`#${tabName}-table_info`).html(`Showing ${recordCount} records`);
-} {% endcomment %}
 
 function populateTabData(tabName, data) {
     const table = document.getElementById(`${tabName}-table`);
@@ -1167,17 +908,6 @@ function viewDocuments(memberId) {
     console.log('View documents for member:', memberId);
 }
 
-// Save report session
-function saveReportSession() {
-    // Implement save functionality
-    console.log('Save report session');
-}
-
-// Load report session
-function loadReportSession() {
-    // Implement load functionality
-    console.log('Load report session');
-}
 
 // Scroll management
 $(window).scroll(function() {
@@ -1212,20 +942,6 @@ function setupEventListeners() {
         const searchText = $(this).val().toLowerCase();
         highlightText(searchText);
     });
-    
-    // Initialize date pickers
-    //$('.datepicker').datepicker({
-    //    format: 'yyyy-mm-dd',
-    //    autoclose: true,
-    //    todayHighlight: true
-    //});
-    
-    // Initialize month pickers
-    //$('input[type="month"]').datepicker({
-    //    format: 'yyyy-mm',
-    //    minViewMode: 'months',
-    //    autoclose: true
-    //});
     
     // Initialize select2 for multi-select filters
     $('select[multiple]').each(function() {
@@ -1398,186 +1114,6 @@ function viewDocument(filePath) {
     window.open(filePath, '_blank');
 }
 
-// Save report session with modal
-function saveReportSession() {
-    const modalHtml = `
-        <div class="modal fade" id="saveSessionModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-save me-2"></i>Save Report Session
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Session Name</label>
-                            <input type="text" class="form-control" id="sessionName" 
-                                   placeholder="Enter session name..." 
-                                   value="Report_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <input type="checkbox" class="form-check-input" id="saveFilters" checked>
-                                Save current filters
-                            </label>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <input type="checkbox" class="form-check-input" id="saveSelections" checked>
-                                Save selected members
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="confirmSaveSession()">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    $('body').append(modalHtml);
-    $('#saveSessionModal').modal('show');
-    
-    $('#saveSessionModal').on('hidden.bs.modal', function() {
-        $(this).remove();
-    });
-}
-
-function confirmSaveSession() {
-    const sessionData = {
-        name: $('#sessionName').val(),
-        filters: $('#saveFilters').is(':checked') ? currentFilters : {},
-        selected_members: $('#saveSelections').is(':checked') ? Array.from(selectedMembers) : []
-    };
-    
-    $.ajax({
-        url: '{% url "save_report_session" %}',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(sessionData),
-        success: function(response) {
-            if (response.success) {
-                showToast('Session saved successfully!', 'success');
-                $('#saveSessionModal').modal('hide');
-            } else {
-                showToast('Error saving session: ' + response.error, 'error');
-            }
-        }
-    });
-}
-
-// Load report session with modal
-function loadReportSession() {
-    $.ajax({
-        url: '{% url "list_report_sessions" %}',
-        success: function(response) {
-            if (response.sessions.length === 0) {
-                showToast('No saved sessions found', 'info');
-                return;
-            }
-            
-            const modalHtml = `
-                <div class="modal fade" id="loadSessionModal" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-folder2-open me-2"></i>Load Report Session
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Session Name</th>
-                                                <th>Type</th>
-                                                <th>Created</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${response.sessions.map(session => `
-                                                <tr>
-                                                    <td>${session.name}</td>
-                                                    <td><span class="badge bg-info">${session.report_type}</span></td>
-                                                    <td>${session.created_at}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-primary" onclick="loadSpecificSession(${session.id})">
-                                                            <i class="bi bi-upload me-1"></i>Load
-                                                        </button>
-                                                        <button class="btn btn-sm btn-danger" onclick="deleteSession(${session.id})">
-                                                            <i class="bi bi-trash me-1"></i>Delete
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            $('body').append(modalHtml);
-            $('#loadSessionModal').modal('show');
-            
-            $('#loadSessionModal').on('hidden.bs.modal', function() {
-                $(this).remove();
-            });
-        }
-    });
-}
-
-function loadSpecificSession(sessionId) {
-    $.ajax({
-        url: `/reports/load-report-session/${sessionId}/`,
-        success: function(response) {
-            if (response.success) {
-                const session = response.session;
-                
-                // Apply filters
-                if (session.filters) {
-                    currentFilters = session.filters;
-                    applySavedFilters(session.filters);
-                }
-                
-                // Select members
-                if (session.selected_members && session.selected_members.length > 0) {
-                    selectedMembers = new Set(session.selected_members);
-                    updateMemberListSelection();
-                    loadCurrentTabData();
-                }
-                
-                showToast('Session loaded successfully!', 'success');
-                $('#loadSessionModal').modal('hide');
-            }
-        }
-    });
-}
-
-function applySavedFilters(filters) {
-    // Apply filters to UI
-    if (filters.search) {
-        $('#member-search').val(filters.search);
-    }
-    if (filters.membership_type) {
-        $('#membership-type-filter').val(filters.membership_type);
-    }
-    if (filters.membership_status) {
-        $('#membership-status-filter').val(filters.membership_status);
-    }
-    
-    // Reload member list with saved filters
-    loadMemberList(1);
-}
 
 function updateMemberListSelection() {
     $('.member-list-item').each(function() {
@@ -1702,11 +1238,6 @@ $(document).keydown(function(e) {
         deselectAll();
         return false;
     }
-});
-
-// Initialize everything when page loads
-$(document).ready(function() {
-
 });
 
 </script>
