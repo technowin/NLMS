@@ -211,21 +211,8 @@ function renderMemberList(members) {
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <div class="member-id">${member.membership_code || 'N/A'}</div>
-                        <div class="member-name" style="color:black;">${member.first_name} ${member.last_name}</div>
-                        <div class="member-info small text-muted">
-                            ${member.user_id} • ${member.email}
-                        </div>
+                        <div class="member-name text-dark" >${member.first_name} ${member.last_name} <span class="member-info small "> ( ${member.user_id} ) </span></div>
                     </div>
-                    <div>
-                        <span class="member-status ${statusClass}">
-                            ${member.status}
-                        </span>
-                    </div>
-                </div>
-                <div>
-                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:500;">
-                        ${member.membership_type}
-                    </span>
                 </div>
             </div>
         `);
