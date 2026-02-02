@@ -866,8 +866,14 @@ class TabDataView(ReportBaseView):
             )
 
         # Payment attributes
-        if filters.get('payment_type'):
-            qs = qs.filter(payment_type=filters['payment_type'])
+        payment_type = filters.get('payment_type')
+
+        if payment_type:
+            if payment_type == 'Fine':
+                qs = qs.filter(payment_type__in=['Fine', 'Membership Renewed'])
+            else:
+                qs = qs.filter(payment_type=payment_type)
+
 
         if filters.get('payment_mode'):
             qs = qs.filter(payment_mode=filters['payment_mode'])
@@ -997,7 +1003,6 @@ def normalize_export_filters(filters):
             normalized_filters[key] = value
 
     return normalized_filters
-
 
 def export_member_details_to_excel(writer, db, member_ids, filters):
 
@@ -1219,7 +1224,7 @@ def export_membership_details_to_excel(writer, db, member_ids, filters):
             'Middle Name (Marathi)': h.middle_name_mar or '',
             'Last Name (Marathi)': h.last_name_mar or '',
             'Action Performed': h.actionperformed or '',
-            'Membership Type': h.membershipmaster.membership_type if h.membershipmaster else '',
+            'Membership Type': h.membershipmaster.membership_type_en if h.membershipmaster else '',
             'Member Type': h.member_type.parameter_value if h.member_type else '',
             'Membership Code': h.membership_code or '',
             'From Date': h.from_date.strftime('%d-%m-%Y') if h.from_date else '',
@@ -2548,8 +2553,13 @@ def apply_payment_filters_export(qs, filters):
             membership__member_type_id__in=filters['membership_types']
         )
     # Payment attributes
-    if filters.get('payment_type'):
-        qs = qs.filter(payment_type=filters['payment_type'])
+    payment_type = filters.get('payment_type')
+
+    if payment_type:
+        if payment_type == 'Fine':
+            qs = qs.filter(payment_type__in=['Fine', 'Membership Renewed'])
+        else:
+            qs = qs.filter(payment_type=payment_type)
     if filters.get('payment_mode'):
         qs = qs.filter(payment_mode=filters['payment_mode'])
     if filters.get('payment_method'):
@@ -2725,76 +2735,75 @@ class ExportReportView(ReportBaseView):
                 export_type.replace('-', ' ').title()
             )
             worksheet.write(0, 0, 'No data available')
-
 class ExportAllDataView(ReportBaseView):
-    """Export all tabs data to Excel with multiple sheets"""
+    """Export selected tabs data to Excel"""
 
     def get(self, request):
+        # --------------------------------
+        # Parse inputs
+        # --------------------------------
         member_ids = request.GET.getlist('member_ids')
+        selected_tabs = request.GET.getlist('tabs')
+        filename = request.GET.get('filename', 'member_report')
+        format_type = request.GET.get('format', 'excel')
+
         filters_json = request.GET.get('filters', '{}')
         tab_filters_json = request.GET.get('tab_filters', '{}')
 
-        # --------------------------------
-        # Normalize member_ids
-        # --------------------------------
-        if len(member_ids) == 1 and ',' in member_ids[0]:
-            member_ids = [
-                int(i) for i in member_ids[0].split(',')
-                if i.strip().isdigit()
-            ]
-        else:
-            member_ids = [int(i) for i in member_ids if str(i).isdigit()]
+        member_ids = [int(i) for i in member_ids if str(i).isdigit()]
 
-        # --------------------------------
-        # Parse JSON filters safely
-        # --------------------------------
         try:
             filters = json.loads(filters_json)
-        except (TypeError, ValueError):
+        except Exception:
             filters = {}
 
         try:
             tab_filters = json.loads(tab_filters_json)
-        except (TypeError, ValueError):
+        except Exception:
             tab_filters = {}
+
+        if not member_ids:
+            return JsonResponse({'error': 'No members selected'}, status=400)
+
+        if not selected_tabs:
+            return JsonResponse({'error': 'No tabs selected'}, status=400)
 
         db = self.get_library_db()
 
         # --------------------------------
-        # Create temp Excel file
+        # Export function map
+        # --------------------------------
+        export_map = {
+            'member-details': export_member_details_to_excel,
+            'membership-details': export_membership_details_to_excel,
+            'loan': export_loan_to_excel,
+            'transactions': export_transactions_to_excel,
+            'physical-visit': export_physical_visits_to_excel,
+            'virtual-usage': export_virtual_usage_to_excel,
+            'payments': export_payments_to_excel,
+        }
+
+        # --------------------------------
+        # Create temp Excel
         # --------------------------------
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
             output_path = tmp.name
 
         try:
-            # --------------------------------
-            # Excel writer
-            # --------------------------------
             with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
 
-                # Map tabs to export functions
-                export_map = {
-                    'member-details': export_member_details_to_excel,
-                    'membership-details': export_membership_details_to_excel,
-                    'loan': export_loan_to_excel,
-                    'transactions': export_transactions_to_excel,
-                    'physical-visit': export_physical_visits_to_excel,
-                    'virtual-usage': export_virtual_usage_to_excel,
-                    'payments': export_payments_to_excel,
-                }
+                for tab in selected_tabs:
+                    export_func = export_map.get(tab)
+                    if not export_func:
+                        continue  # skip unknown tabs
 
-                # Export each tab
-                for tab_name, export_func in export_map.items():
                     export_func(
-                        writer,
-                        db,
-                        member_ids,
-                        tab_filters.get(tab_name, {})
+                        writer=writer,
+                        db=db,
+                        member_ids=member_ids,
+                        filters=tab_filters.get(tab, {})
                     )
 
-            # --------------------------------
-            # Prepare response
-            # --------------------------------
             with open(output_path, 'rb') as f:
                 response = HttpResponse(
                     f.read(),
@@ -2803,10 +2812,10 @@ class ExportAllDataView(ReportBaseView):
                         'spreadsheetml.sheet'
                     )
                 )
-                response['Content-Disposition'] = (
-                    'attachment; filename="member_complete_report.xlsx"'
-                )
 
+            response['Content-Disposition'] = (
+                f'attachment; filename="{filename}.xlsx"'
+            )
             return response
 
         except Exception as e:
@@ -2816,8 +2825,5 @@ class ExportAllDataView(ReportBaseView):
             )
 
         finally:
-            # --------------------------------
-            # Cleanup temp file (always)
-            # --------------------------------
             if os.path.exists(output_path):
                 os.unlink(output_path)

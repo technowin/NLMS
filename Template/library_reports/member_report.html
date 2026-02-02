@@ -818,42 +818,54 @@ function exportAllTabs() {
 
 function processExportAll() {
     const format = $('#exportFormat').val();
-    const fileName = $('#exportFileName').val();
-    
-    // Collect which tabs to export
-    const tabsToExport = [];
-    if ($('#exportMemberDetails').is(':checked')) tabsToExport.push('member-details');
-    if ($('#exportMembershipDetails').is(':checked')) tabsToExport.push('membership-details');
-    if ($('#exportLoan').is(':checked')) tabsToExport.push('loan');
-    if ($('#exportTransactions').is(':checked')) tabsToExport.push('transactions');
-    if ($('#exportPhysicalVisit').is(':checked')) tabsToExport.push('physical-visit');
-    if ($('#exportVirtualUsage').is(':checked')) tabsToExport.push('virtual-usage');
-    if ($('#exportPayments').is(':checked')) tabsToExport.push('payments');
-    
-    if (tabsToExport.length === 0) {
-        showToast('Please select at least one tab to export', 'warning');
+    let fileName = $('#exportFileName').val().trim();
+
+    if (!fileName) {
+        showToast('Please enter file name', 'warning');
         return;
     }
-    
-    // Build export URL
-    const params = new URLSearchParams({
-        type: 'all-tabs',
-        member_ids: Array.from(selectedMembers),
-        filters: JSON.stringify(currentFilters),
-        tab_filters: JSON.stringify(tabFilters),
-        format: format,
-        tabs: tabsToExport.join(','),
-        filename: fileName
+
+    // sanitize filename
+    fileName = fileName.replace(/[^\w\-]/g, '_');
+
+    const tabsToExport = [];
+    const tabMap = {
+        exportMemberDetails: 'member-details',
+        exportMembershipDetails: 'membership-details',
+        exportLoan: 'loan',
+        exportTransactions: 'transactions',
+        exportPhysicalVisit: 'physical-visit',
+        exportVirtualUsage: 'virtual-usage',
+        exportPayments: 'payments'
+    };
+
+    Object.entries(tabMap).forEach(([checkboxId, tabKey]) => {
+        if ($('#' + checkboxId).is(':checked')) {
+            tabsToExport.push(tabKey);
+        }
     });
-    
-    // Show loading
-    showToast('Preparing export...', 'info');
-    
-    // Trigger download
+
+    if (tabsToExport.length === 0) {
+        showToast('Please select at least one tab', 'warning');
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('format', format);
+    params.append('filename', fileName);
+    params.append('filters', JSON.stringify(currentFilters || {}));
+    params.append('tab_filters', JSON.stringify(tabFilters || {}));
+
+    // 🔥 append arrays properly
+    Array.from(selectedMembers).forEach(id => params.append('member_ids', id));
+    tabsToExport.forEach(tab => params.append('tabs', tab));
+
+    showToast('Preparing export…', 'info');
+
     window.location.href = `/reports/export-all-data/?${params.toString()}`;
-    
     $('#exportOptionsModal').modal('hide');
 }
+
 
 
 function exportTabData(tabName) {
