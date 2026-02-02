@@ -949,6 +949,56 @@ class GetMemberOptionsView(ReportBaseView):
             'actionperformed_list': list(actionperformed_list)
         })
 
+def normalize_export_filters(filters):
+    FILTER_MODEL_MAP = {
+        'membership_type': {
+            'model': MembershipMaster,
+            'pk': 'id',
+            'label': 'membership_type_en',
+        },
+        'member_type': {
+            'model': parameter_master_L01,
+            'pk': 'parameter_id',
+            'label': 'parameter_value',
+        },
+        'status': {
+            'model': StatusMaster,
+            'pk': 'id',
+            'label': 'status_name',
+        },
+    }
+
+    normalized_filters = {}
+
+    for key, value in filters.items():
+        if not value:
+            normalized_filters[key] = value
+            continue
+
+        if key in FILTER_MODEL_MAP:
+            cfg = FILTER_MODEL_MAP[key]
+            model = cfg['model']
+            pk_field = cfg['pk']
+            label_field = cfg['label']
+
+            ids = value if isinstance(value, (list, tuple)) else [value]
+
+            lookup = {f"{pk_field}__in": ids}
+
+            names = list(
+                model.objects.filter(**lookup)
+                .values_list(label_field, flat=True)
+            )
+
+            normalized_filters[key] = ", ".join(map(str, names))
+
+        else:
+            # Leave everything else untouched
+            normalized_filters[key] = value
+
+    return normalized_filters
+
+
 def export_member_details_to_excel(writer, db, member_ids, filters):
 
     # --------------------------------------------------
@@ -1031,7 +1081,7 @@ def export_member_details_to_excel(writer, db, member_ids, filters):
         'border': 1,
         'align': 'center',
         'valign': 'middle',
-        'bg_color': '#E9EEF3'
+        'bg_color': '#D9E1F2'
     })
 
     cell_format = workbook.add_format({
@@ -1058,6 +1108,9 @@ def export_member_details_to_excel(writer, db, member_ids, filters):
         f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
         subtitle_format
     )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
 
     # --------------------------------------------------
     # Applied Filters Section
@@ -1227,7 +1280,7 @@ def export_membership_details_to_excel(writer, db, member_ids, filters):
         'border': 1,
         'align': 'center',
         'valign': 'middle',
-        'bg_color': '#E9EEF3',
+        'bg_color': '#D9E1F2',
         'text_wrap': True
     })
 
@@ -1260,6 +1313,8 @@ def export_membership_details_to_excel(writer, db, member_ids, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -1447,7 +1502,7 @@ def export_loan_to_excel(writer, db, member_ids, filters):
         'align': 'center',
         'valign': 'middle',
         'text_wrap': True,
-        'bg_color': '#E9EEF3'
+        'bg_color': '#D9E1F2'
     })
 
     cell_format = workbook.add_format({
@@ -1479,6 +1534,8 @@ def export_loan_to_excel(writer, db, member_ids, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
     # --------------------------------------------------
     # Applied Filters Section
     # --------------------------------------------------
@@ -1694,7 +1751,7 @@ def export_transactions_to_excel(writer, db, member_ids, filters):
         'align': 'center',
         'valign': 'middle',
         'text_wrap': True,
-        'bg_color': '#E9EEF3'
+        'bg_color': '#D9E1F2'
     })
 
     cell_format = workbook.add_format({
@@ -1726,6 +1783,8 @@ def export_transactions_to_excel(writer, db, member_ids, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
     # --------------------------------------------------
     # Applied Filters Section
     # --------------------------------------------------
@@ -2005,7 +2064,7 @@ def export_physical_visits_to_excel(writer, db, member_ids, filters):
         'align': 'center',
         'valign': 'middle',
         'text_wrap': True,
-        'bg_color': '#E9EEF3'
+        'bg_color': '#D9E1F2'
     })
 
     cell_format = workbook.add_format({
@@ -2037,6 +2096,8 @@ def export_physical_visits_to_excel(writer, db, member_ids, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -2145,7 +2206,7 @@ def export_virtual_usage_to_excel(writer, db, member_ids, filters):
         'bg_color': '#F7F7F7',
         'align': 'left'
     })
-
+    
     # -------------------------
     # DATA COLLECTION
     # -------------------------
@@ -2227,15 +2288,35 @@ def export_virtual_usage_to_excel(writer, db, member_ids, filters):
     # -------------------------
     worksheet.merge_range('A1:I1', 'Virtual Usage Report', title_format)
 
+    filter_label_format = workbook.add_format({
+        'bold': True,
+        'font_size': 10,
+        'align': 'left'
+    })
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
     # -------------------------
-    # APPLIED FILTERS
+    # APPLIED FILTERS (DYNAMIC)
     # -------------------------
-    filters_text = (
-        f"From: {filters.get('from_date') or 'All'} | "
-        f"To: {filters.get('to_date') or 'All'} | "
-        f"Activity: {activity_type or 'All'}"
-    )
-    worksheet.merge_range('A2:I2', filters_text, filter_format)
+    filter_row = 1  # Excel row 3 (0-based)
+
+    worksheet.write(filter_row, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            display_value = (
+                ", ".join(value) if isinstance(value, (list, tuple)) else value
+            )
+            worksheet.write(
+                filter_row,
+                col,
+                f"{key.replace('_', ' ').title()}: {display_value}",
+                filter_format
+            )
+            col += 1
+
 
     # -------------------------
     # TABLE HEADER
@@ -2376,16 +2457,32 @@ def export_payments_to_excel(writer, db, member_ids, filters):
     # =====================================================
     worksheet.merge_range('A1:W1', 'Payment Details Report', title_format)
 
+    filter_label_format = workbook.add_format({
+        'bold': True,
+        'font_size': 10,
+        'align': 'left'
+    })
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
     # =====================================================
-    # APPLIED FILTERS
+    # APPLIED FILTERS (DYNAMIC)
     # =====================================================
-    filters_text = (
-        f"From: {filters.get('from_date') or 'All'} | "
-        f"To: {filters.get('to_date') or 'All'} | "
-        f"Payment Mode: {filters.get('payment_mode') or 'All'} | "
-        f"Status: {filters.get('status') or 'All'}"
-    )
-    worksheet.merge_range('A2:W2', filters_text, filter_format)
+    filter_row = 1  # Row index (0-based) → Excel row 3
+
+    worksheet.write(filter_row, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                filter_row,
+                col,
+                f"{key.replace('_', ' ').title()}: {value}",
+                filter_format
+            )
+            col += 1
+
 
     # =====================================================
     # TABLE HEADER
@@ -2533,7 +2630,7 @@ class ExportReportView(ReportBaseView):
                         export_type=export_type,
                         db=db,
                         member_ids=member_ids,
-                        filters=tab_filters.get(export_type, {})
+                        filters=tab_filters
                     )
 
             # --------------------------------------------------
