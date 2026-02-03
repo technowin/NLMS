@@ -27,6 +27,17 @@ from Account.models import CustomUser
 
 from datetime import date
 import calendar
+from django.db.models import Q, F, Value
+from django.db.models.functions import Coalesce
+
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import tempfile
+import os
+from django.core.files.storage import FileSystemStorage
+from django.db import transaction
+from django.db.models import Q
 
 def parse_month_start(month_str):
     y, m = map(int, month_str.split('-'))
@@ -215,6 +226,29 @@ class MemberListDataView(ReportBaseView):
         
         return JsonResponse({'error': 'Invalid form data'}, status=400)
 
+class MemberDocumentsView(ReportBaseView):
+    """Get documents for a specific member"""
+    
+    def get(self, request, member_id):
+        db = self.get_library_db()
+        
+        documents = DocumentDetails.objects.using(db).filter(
+            membership_id=member_id,
+            isactive=1
+        ).select_related('document')
+        
+        data = []
+        for doc in documents:
+            data.append({
+                'id': doc.id,
+                'document_name': doc.document.document_name if doc.document else 'Unknown',
+                'file_name': doc.file_name, 
+                'file_path': settings.MEDIA_URL + doc.file_path,
+                'uploaded_at': doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else ''
+            })
+        
+        return JsonResponse({'documents': data})
+
 class TabDataView(ReportBaseView):
     """AJAX endpoint for tab data"""
     
@@ -313,8 +347,6 @@ class TabDataView(ReportBaseView):
         
         return {'data': data}
     
-    from django.db.models import Q
-
     def get_membership_details_data(self, db, member_ids, filters):
 
         base_filter = Q()
@@ -372,31 +404,6 @@ class TabDataView(ReportBaseView):
         def fmt_dt(d):
             return d.strftime('%Y-%m-%d %H:%M') if d else ''
 
-        # Current data
-        # for member in current_qs:
-        #     data.append({
-        #         'first_name': member.first_name,
-        #         'middle_name': member.middle_name,
-        #         'last_name': member.last_name,
-        #         'first_name_mar': member.first_name_mar,
-        #         'middle_name_mar': member.middle_name_mar,
-        #         'last_name_mar': member.last_name_mar,
-        #         'actionperformed': member.actionperformed,
-        #         'from_date': fmt_date(member.from_date),
-        #         'to_date': fmt_date(member.to_date),
-        #         'deposit': float(member.deposit or 0),
-        #         'entry_fees': float(member.entry_fees or 0),
-        #         'subscription': float(member.subscription or 0),
-        #         'fine_calculated_at': fmt_dt(member.fine_calculated_at),
-        #         'gap_fine_subscription': float(member.gap_fine or 0),
-        #         'gap_fine_delay': float(member.late_fee or 0),
-        #         'gap_months': member.gap_months or 0,
-        #         'late_fee': float(member.late_fee or 0),
-        #         'changed_at': fmt_dt(member.updated_at),
-        #         'changed_by': member.updated_by,
-        #         'membership_type_id': member.membership_id,
-        #     })
-
         # History data
         for history in history_qs:
             data.append({
@@ -424,7 +431,6 @@ class TabDataView(ReportBaseView):
 
         return {'data': data}
 
-    
     def get_loan_data(self, db, member_ids, filters):
         qs = CirculationTransaction.objects.using(db).filter(
             member_id__in=member_ids,
@@ -604,17 +610,23 @@ class TabDataView(ReportBaseView):
         
             qs = qs.filter(member__member_type_id__in=membership_type)
 
-        from django.db.models import IntegerField, Func
-        from django.db.models.functions import Now
+        from django.db.models import IntegerField, Func, F
+        from django.db.models.functions import Now, Cast, Coalesce
+        from django.db.models import DateField
+
 
         qs = qs.annotate(
             late_days=Func(
-                F('return_date'),
+                Coalesce(
+                    F('return_date'),
+                    Cast(Now(), DateField())   # today if return_date is NULL
+                ),
                 F('due_date'),
                 function='DATEDIFF',
                 output_field=IntegerField()
             )
         )
+
 
 
         data = []
@@ -746,7 +758,6 @@ class TabDataView(ReportBaseView):
 
         return {'data': data}
 
-    
     def get_virtual_usage_data(self, db, member_ids, filters):
         data = []
 
@@ -832,9 +843,6 @@ class TabDataView(ReportBaseView):
             return f"{delta.total_seconds() / 60:.1f} mins"
         return "Active"
 
-    from django.db.models import Q, F, Value
-    from django.db.models.functions import Coalesce
-
     def get_payment_data(self, db, member_ids, filters):
         qs = PaymentDetails.objects.using(db).filter(
             membership_id__in=member_ids
@@ -858,8 +866,14 @@ class TabDataView(ReportBaseView):
             )
 
         # Payment attributes
-        if filters.get('payment_type'):
-            qs = qs.filter(payment_type=filters['payment_type'])
+        payment_type = filters.get('payment_type')
+
+        if payment_type:
+            if payment_type == 'Fine':
+                qs = qs.filter(payment_type__in=['Fine', 'Membership Renewed'])
+            else:
+                qs = qs.filter(payment_type=payment_type)
+
 
         if filters.get('payment_mode'):
             qs = qs.filter(payment_mode=filters['payment_mode'])
@@ -915,283 +929,6 @@ class TabDataView(ReportBaseView):
         
         return {'data': data}
 
-class ExportReportView(ReportBaseView):
-    """Export report to Excel"""
-    
-    def get(self, request):
-        export_type = request.GET.get('type', 'all-tabs')
-        member_ids = request.GET.getlist('member_ids[]')
-        filters_json = request.GET.get('filters', '{}')
-        tab_filters_json = request.GET.get('tab_filters', '{}')
-        
-        try:
-            filters = json.loads(filters_json)
-            tab_filters = json.loads(tab_filters_json)
-        except:
-            filters = {}
-            tab_filters = {}
-        
-        db = self.get_library_db()
-        
-        # Create Excel file in memory
-        output = BytesIO()
-        workbook = xlsxwriter.Workbook(output)
-        
-        # Define formats
-        header_format = workbook.add_format({
-            'bold': True,
-            'bg_color': '#4CAF50',
-            'color': 'white',
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter'
-        })
-        
-        cell_format = workbook.add_format({
-            'border': 1,
-            'align': 'left',
-            'valign': 'vcenter'
-        })
-        
-        if export_type == 'all-tabs':
-            # Export all tabs to different sheets
-            self.export_all_tabs(workbook, db, member_ids, filters, tab_filters, 
-                               header_format, cell_format)
-        else:
-            # Export specific tab
-            self.export_single_tab(workbook, export_type, db, member_ids, 
-                                 tab_filters.get(export_type, {}), 
-                                 header_format, cell_format)
-        
-        workbook.close()
-        output.seek(0)
-        
-        # Create response
-        response = HttpResponse(
-            output.getvalue(),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = 'attachment; filename="member_report.xlsx"'
-        
-        return response
-    
-    def export_all_tabs(self, workbook, db, member_ids, filters, tab_filters, header_format, cell_format):
-        """Export all tabs to different sheets"""
-
-        # Sheet 1: Member Details
-        if self.should_export_tab('member-details', tab_filters):
-            self.create_member_details_sheet(workbook, db, member_ids, 
-                                           tab_filters.get('member-details', {}),
-                                           header_format, cell_format)
-
-        # Sheet 2: Membership Details
-        if self.should_export_tab('membership-details', tab_filters):
-            self.create_membership_details_sheet(workbook, db, member_ids,
-                                               tab_filters.get('membership-details', {}),
-                                               header_format, cell_format)
-
-        # Sheet 3: Loan
-        if self.should_export_tab('loan', tab_filters):
-            self.create_loan_sheet(workbook, db, member_ids,
-                                 tab_filters.get('loan', {}),
-                                 header_format, cell_format)
-
-        # Sheet 4: Transactions
-        if self.should_export_tab('transactions', tab_filters):
-            self.create_transactions_sheet(workbook, db, member_ids,
-                                         tab_filters.get('transactions', {}),
-                                         header_format, cell_format)
-
-        # Sheet 5: Physical Visits
-        if self.should_export_tab('physical-visit', tab_filters):
-            self.create_physical_visits_sheet(workbook, db, member_ids,
-                                            tab_filters.get('physical-visit', {}),
-                                            header_format, cell_format)
-
-        # Sheet 6: Virtual Usage
-        if self.should_export_tab('virtual-usage', tab_filters):
-            self.create_virtual_usage_sheet(workbook, db, member_ids,
-                                          tab_filters.get('virtual-usage', {}),
-                                          header_format, cell_format)
-
-        # Sheet 7: Payments
-        if self.should_export_tab('payments', tab_filters):
-            self.create_payments_sheet(workbook, db, member_ids,
-                                     tab_filters.get('payments', {}),
-                                     header_format, cell_format)
-
-    def should_export_tab(self, tab_name, tab_filters):
-        """Check if a tab should be exported based on filters"""
-        # If tab_filters contains the tab, check if it's marked for export
-        # You might want to add a parameter to track which tabs to export
-        return True  # For now, export all tabs
-    
-    def export_single_tab(self, workbook, export_type, db, member_ids, filters, header_format, cell_format):
-        """Export a single tab to Excel sheet"""
-        if export_type == 'member-details':
-            self.export_member_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        elif export_type == 'membership-details':
-            self.export_membership_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        elif export_type == 'loan':
-            self.export_loan_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        elif export_type == 'transactions':
-            self.export_transactions_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        elif export_type == 'physical-visit':
-            self.export_physical_visits_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        elif export_type == 'virtual-usage':
-            self.export_virtual_usage_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        elif export_type == 'payments':
-            self.export_payments_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-        else:
-            # Create a placeholder sheet if tab type is unknown
-            worksheet = workbook.add_worksheet(export_type.replace('-', ' ').title())
-            worksheet.write(0, 0, 'No data available for this tab', header_format)
-            # Add more sheets for other tabs...
-    
-    def create_member_details_sheet(self, workbook, db, member_ids, filters, 
-                                   header_format, cell_format):
-        """Create member details sheet"""
-        worksheet = workbook.add_worksheet('Member Details')
-        
-        # Define headers
-        headers = [
-            'First Name', 'Middle Name', 'Last Name', 'First Name (Mar)', 
-            'Last Name (Mar)', 'Middle Name (Mar)', 'Membership Type',
-            'Member Type', 'Membership Code', 'Membership Date',
-            'Renewal From Date', 'Renewal To Date', 'User ID', 'Ward',
-            'Pincode', 'Local Address', 'Mobile No', 'Email', 'Occupation',
-            'Office Phone', 'Education', 'Institute Name', 'Recommender Details',
-            'Date of Birth', 'Aadhar No', 'Address Same as Aadhar',
-            'Resident of NMMC', 'Status', 'Created At', 'Created By',
-            'Updated At', 'Updated By', 'Approved By', 'Approved Date'
-        ]
-        
-        # Write headers
-        for col, header in enumerate(headers):
-            worksheet.write(0, col, header, header_format)
-            worksheet.set_column(col, col, 20)  # Set column width
-        
-        # Get data
-        qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-        
-        # Apply filters
-        qs = self.apply_member_details_filters(qs, filters)
-        
-        # Write data
-        row = 1
-        for member in qs:
-            worksheet.write(row, 0, member.first_name or '', cell_format)
-            worksheet.write(row, 1, member.middle_name or '', cell_format)
-            # ... write all other columns
-            
-            row += 1
-    
-    def apply_member_details_filters(self, qs, filters):
-        """Apply filters to member details queryset"""
-        if filters.get('membership_month_from'):
-            qs = qs.filter(from_date__gte=filters['membership_month_from'])
-        if filters.get('membership_month_to'):
-            qs = qs.filter(from_date__lte=filters['membership_month_to'])
-        # ... apply other filters
-        
-        return qs
-
-    def create_membership_details_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create membership details sheet for export_all_tabs method"""
-        # This method should use the same logic as export_membership_details_to_excel
-        self.export_membership_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-    # reports/views.py - Add these methods to ExportAllDataView class
-
-    def create_member_details_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create member details sheet for export_all_tabs method"""
-        self.export_member_details_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-    
-    def create_loan_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create loan sheet for export_all_tabs method"""
-        self.export_loan_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-    
-    def create_transactions_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create transactions sheet for export_all_tabs method"""
-        self.export_transactions_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-    
-    def create_payments_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create payments sheet for export_all_tabs method"""
-        self.export_payments_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-    
-    def create_physical_visits_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create physical visits sheet for export_all_tabs method"""
-        self.export_physical_visits_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-    
-    def create_virtual_usage_sheet(self, workbook, db, member_ids, filters, header_format, cell_format):
-        """Create virtual usage sheet for export_all_tabs method"""
-        self.export_virtual_usage_to_excel(workbook, db, member_ids, filters, header_format, cell_format)
-# reports/views.py - ADD THESE MISSING VIEWS
-
-from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-import tempfile
-import os
-from django.core.files.storage import FileSystemStorage
-from django.db import transaction
-
-class SaveReportSessionView(ReportBaseView):
-    """Save current report session"""
-    
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-    
-    def post(self, request):
-        try:
-            data = json.loads(request.body)
-            
-            session = ReportSession.objects.create(
-                name=data.get('name', f"Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}"),
-                report_type='member',
-                filters_json=data.get('filters', {}),
-                selected_members_json=data.get('selected_members', []),
-                created_by=request.user if request.user.is_authenticated else None
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'session_id': session.id,
-                'message': 'Report session saved successfully'
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=400)
-
-class LoadReportSessionView(ReportBaseView):
-    """Load saved report session"""
-    
-    def get(self, request, session_id):
-        try:
-            session = ReportSession.objects.get(id=session_id, created_by=request.user)
-            
-            return JsonResponse({
-                'success': True,
-                'session': {
-                    'id': session.id,
-                    'name': session.name,
-                    'filters': session.filters_json,
-                    'selected_members': session.selected_members_json
-                }
-            })
-        except ReportSession.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Session not found'
-            }, status=404)
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=400)
-
 class GetMemberOptionsView(ReportBaseView):
     """Get filter options for member types, wards, etc."""
     
@@ -1218,69 +955,229 @@ class GetMemberOptionsView(ReportBaseView):
             'actionperformed_list': list(actionperformed_list)
         })
 
-class GetFilterCountsView(ReportBaseView):
-    """Get count of applied filters for each tab"""
-    
-    def post(self, request):
-        try:
-            data = json.loads(request.body)
-            tab_name = data.get('tab_name')
-            filters = data.get('filters', {})
-            member_ids = data.get('member_ids', [])
-            
-            db = self.get_library_db()
-            count = 0
-            
-            if tab_name == 'member-details':
-                qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-                count = self.apply_member_details_filters(qs, filters).count()
-            elif tab_name == 'membership-details':
-                qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-                qs_history = MembershipDetailsHistory.objects.using(db).filter(
-                    membership_id__in=member_ids
-                )
-                count = self.apply_membership_details_filters(qs, qs_history, filters)
-            elif tab_name == 'loan':
-                qs = CirculationTransaction.objects.using(db).filter(
-                    member_id__in=member_ids,
-                    transaction_type='issue'
-                )
-                count = self.apply_loan_filters(qs, filters).count()
-            elif tab_name == 'transactions':
-                qs = CirculationTransaction.objects.using(db).filter(
-                    member_id__in=member_ids
-                )
-                count = self.apply_transaction_filters(qs, filters).count()
-            elif tab_name == 'physical-visit':
-                # Get membership codes
-                members = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-                member_codes = [m.membership_code for m in members if m.membership_code]
-                qs = MemberEntryExit.objects.using(db).filter(
-                    membership_code__in=member_codes
-                )
-                count = self.apply_physical_visit_filters(qs, filters).count()
-            elif tab_name == 'virtual-usage':
-                qs_login = MemberLoginSession.objects.using(db).filter(
-                    member_id__in=member_ids
-                )
-                qs_activity = MemberScreenActivity.objects.using(db).filter(
-                    session__member_id__in=member_ids
-                )
-                count = self.apply_virtual_usage_filters(qs_login, qs_activity, filters)
-            elif tab_name == 'payments':
-                qs = PaymentDetails.objects.using(db).filter(
-                    membership_id__in=member_ids
-                )
-                count = self.apply_payment_filters(qs, filters).count()
-            else:
-                return JsonResponse({'count': 0, 'error': 'Invalid tab name'})
-            
-            return JsonResponse({'count': count})
-        except Exception as e:
-            return JsonResponse({'count': 0, 'error': str(e)})
-    
-    def apply_member_details_filters(self, qs, filters):
-        """Apply filters to member details data"""
+def normalize_export_filters(filters):
+    FILTER_MODEL_MAP = {
+        'membership_type': {
+            'model': MembershipMaster,
+            'pk': 'id',
+            'label': 'membership_type_en',
+        },
+        'member_type': {
+            'model': parameter_master_L01,
+            'pk': 'parameter_id',
+            'label': 'parameter_value',
+        },
+        'status': {
+            'model': StatusMaster,
+            'pk': 'id',
+            'label': 'status_name',
+        },
+    }
+
+    normalized_filters = {}
+
+    for key, value in filters.items():
+        if not value:
+            normalized_filters[key] = value
+            continue
+
+        if key in FILTER_MODEL_MAP:
+            cfg = FILTER_MODEL_MAP[key]
+            model = cfg['model']
+            pk_field = cfg['pk']
+            label_field = cfg['label']
+
+            ids = value if isinstance(value, (list, tuple)) else [value]
+
+            lookup = {f"{pk_field}__in": ids}
+
+            names = list(
+                model.objects.filter(**lookup)
+                .values_list(label_field, flat=True)
+            )
+
+            normalized_filters[key] = ", ".join(map(str, names))
+
+        else:
+            # Leave everything else untouched
+            normalized_filters[key] = value
+
+    return normalized_filters
+
+def export_member_details_to_excel(writer, db, member_ids, filters):
+
+    # --------------------------------------------------
+    # Query & Filters
+    # --------------------------------------------------
+    qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+    qs = apply_member_details_filters(qs, filters)
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for m in qs.select_related('membership', 'status', 'member_type'):
+        rows.append({
+            'First Name': m.first_name or '',
+            'Middle Name': m.middle_name or '',
+            'Last Name': m.last_name or '',
+            'First Name (Marathi)': m.first_name_mar or '',
+            'Middle Name (Marathi)': m.middle_name_mar or '',
+            'Last Name (Marathi)': m.last_name_mar or '',
+            'Membership Type': m.membership.membership_type if m.membership else '',
+            'Member Type': m.member_type.parameter_value if m.member_type else '',
+            'Membership Code': m.membership_code or '',
+            'Membership Date': m.created_at.strftime('%d-%m-%Y') if m.created_at else '',
+            'Renewal From': m.from_date.strftime('%d-%m-%Y') if m.from_date else '',
+            'Renewal To': m.to_date.strftime('%d-%m-%Y') if m.to_date else '',
+            'Ward': m.ward or '',
+            'Pincode': m.pincode or '',
+            'Mobile No': m.mobile_no or '',
+            'Email': m.email or '',
+            'Occupation': m.occupation or '',
+            'Institute Name': m.institute_name or '',
+            'DOB': m.dob.strftime('%d-%m-%Y') if m.dob else '',
+            'Aadhar No': m.aadhar_no or '',
+            'Resident of NMMC': 'Yes' if m.is_resident_of_nmmc else 'No',
+            'Status': 'Active' if m.isactive else 'Inactive',
+            'Created At': m.created_at.strftime('%d-%m-%Y %H:%M') if m.created_at else '',
+            'Created By': m.created_by or '',
+            'Approved By': m.reviewed or '',
+            'Approved Date': m.reviewed_at.strftime('%d-%m-%Y') if m.reviewed_at else '',
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Member Details'
+    start_row = 6  # leave space for title + filters
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+    worksheet.merge_range(0, 0, 0, total_columns - 1, 'Member Details Report', title_format)
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
+    # --------------------------------------------------
+    # Applied Filters Section
+    # --------------------------------------------------
+    filter_row = 3
+    worksheet.write(filter_row, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(filter_row, col, f'{key.replace("_", " ").title()}: {value}')
+            col += 1
+
+    # --------------------------------------------------
+    # Style Header Row
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Apply Row Styling
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(len(df.columns)):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 3)
+
+    # --------------------------------------------------
+    # Freeze Header
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No records found for selected filters',
+            workbook.add_format({'align': 'center', 'italic': True})
+        )
+
+def apply_member_details_filters(qs, filters):
+        # Apply filters
         if filters.get('membership_month_from'):
             start_date = parse_month_start(filters['membership_month_from'])
             qs = qs.filter(from_date__gte=start_date)
@@ -1302,813 +1199,1631 @@ class GetFilterCountsView(ReportBaseView):
         
         return qs
     
-    def apply_membership_details_filters(self, qs, qs_history, filters):
-        """Apply filters to membership details data"""
-        count = 0
-        
-        # Apply filters to current memberships
-        filtered_qs = qs
-        if filters.get('from_date'):
-            filtered_qs = filtered_qs.filter(from_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            filtered_qs = filtered_qs.filter(to_date__lte=filters['to_date'])
-        if filters.get('gap_period') == 'has_gap':
-            filtered_qs = filtered_qs.filter(gap_months__gt=0)
-        elif filters.get('gap_period') == 'no_gap':
-            filtered_qs = filtered_qs.filter(gap_months=0)
-        if filters.get('action_performed'):
-            filtered_qs = filtered_qs.filter(
-                actionperformed__icontains=filters['action_performed']
-            )
-        
-        count += filtered_qs.count()
-        
-        # Apply filters to historical data
-        filtered_history = qs_history
-        if filters.get('from_date'):
-            filtered_history = filtered_history.filter(from_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            filtered_history = filtered_history.filter(to_date__lte=filters['to_date'])
-        if filters.get('gap_period') == 'has_gap':
-            filtered_history = filtered_history.filter(gap_months__gt=0)
-        elif filters.get('gap_period') == 'no_gap':
-            filtered_history = filtered_history.filter(gap_months=0)
-        if filters.get('action_performed'):
-            filtered_history = filtered_history.filter(
-                actionperformed__icontains=filters['action_performed']
-            )
-        
-        count += filtered_history.count()
-        
-        return count
-    
-    def apply_loan_filters(self, qs, filters):
-        """Apply filters to loan data"""
-        if filters.get('from_date'):
-            qs = qs.filter(issue_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(issue_date__lte=filters['to_date'])
-        if filters.get('overdue') == 'overdue':
-            qs = qs.filter(days_overdue_count__gt=0)
-        elif filters.get('overdue') == 'not_overdue':
-            qs = qs.filter(days_overdue_count=0)
-        if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status='paid')
-        elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(fine_status__in=['unpaid', 'pending', None])
-        
-        return qs
-    
-    def apply_transaction_filters(self, qs, filters):
-        """Apply filters to transaction data"""
-        if filters.get('from_date'):
-            qs = qs.filter(created_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(created_at__date__lte=filters['to_date'])
-        if filters.get('late_returns') == 'late':
-            qs = qs.filter(days_overdue_count__gt=0)
-        elif filters.get('late_returns') == 'on_time':
-            qs = qs.filter(days_overdue_count=0)
-        if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status='paid')
-        elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(fine_status__in=['unpaid', 'pending', None])
-        
-        return qs
-    
-    def apply_physical_visit_filters(self, qs, filters):
-        """Apply filters to physical visit data"""
-        if filters.get('from_date'):
-            qs = qs.filter(entry_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(entry_time__date__lte=filters['to_date'])
-        if filters.get('activity_type') == 'entry':
-            qs = qs.filter(exit_time__isnull=True)
-        elif filters.get('activity_type') == 'exit':
-            qs = qs.filter(exit_time__isnull=False)
-        elif filters.get('activity_type') == 'completed':
-            qs = qs.filter(entry_time__isnull=False, exit_time__isnull=False)
-        if filters.get('remarks_search'):
-            qs = qs.filter(remark__icontains=filters['remarks_search'])
-        
-        return qs
-    
-    def apply_virtual_usage_filters(self, qs_login, qs_activity, filters):
-        """Apply filters to virtual usage data"""
-        count = 0
-        
-        # Apply filters to login sessions
-        if filters.get('from_date'):
-            qs_login = qs_login.filter(login_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs_login = qs_login.filter(login_time__date__lte=filters['to_date'])
-        if filters.get('activity_type') == 'login':
-            count += qs_login.count()
-            return count
-        if filters.get('device_type'):
-            qs_login = qs_login.filter(device_type__icontains=filters['device_type'])
-        
-        # Apply filters to screen activities
-        if filters.get('from_date'):
-            qs_activity = qs_activity.filter(visited_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs_activity = qs_activity.filter(visited_at__date__lte=filters['to_date'])
-        if filters.get('activity_type') == 'screen':
-            count += qs_activity.count()
-            return count
-        if filters.get('screen_name'):
-            qs_activity = qs_activity.filter(screen_name__icontains=filters['screen_name'])
-        if filters.get('device_type'):
-            qs_activity = qs_activity.filter(session__device_type__icontains=filters['device_type'])
-        
-        count += qs_login.count() + qs_activity.count()
-        return count
-    
-    def apply_payment_filters(self, qs, filters):
-        """Apply filters to payment data"""
-        if filters.get('from_date'):
-            qs = qs.filter(payment_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(payment_date__lte=filters['to_date'])
-        if filters.get('payment_type'):
-            qs = qs.filter(payment_type=filters['payment_type'])
-        
-        return qs
+def export_membership_details_to_excel(writer, db, member_ids, filters):
 
-class ExportAllDataView(ReportBaseView):
-    """Export all tabs data to Excel with multiple sheets"""
+    # --------------------------------------------------
+    # Query Data (History Only – authoritative source)
+    # --------------------------------------------------
+    history_qs = MembershipDetailsHistory.objects.using(db).filter(
+        membership_id__in=member_ids
+    ).select_related('membershipmaster', 'member_type').distinct()
+
+    history_qs = apply_membership_details_filters(history_qs, filters)
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for h in history_qs:
+        rows.append({
+            'Record Type': 'Historical',
+            'First Name': h.first_name or '',
+            'Middle Name': h.middle_name or '',
+            'Last Name': h.last_name or '',
+            'First Name (Marathi)': h.first_name_mar or '',
+            'Middle Name (Marathi)': h.middle_name_mar or '',
+            'Last Name (Marathi)': h.last_name_mar or '',
+            'Action Performed': h.actionperformed or '',
+            'Membership Type': h.membershipmaster.membership_type_en if h.membershipmaster else '',
+            'Member Type': h.member_type.parameter_value if h.member_type else '',
+            'Membership Code': h.membership_code or '',
+            'From Date': h.from_date.strftime('%d-%m-%Y') if h.from_date else '',
+            'To Date': h.to_date.strftime('%d-%m-%Y') if h.to_date else '',
+            'Membership Duration (Months)': h.membership_duration or 0,
+            'Deposit Amount': float(h.deposit) if h.deposit else 0.0,
+            'Entry Fees': float(h.entry_fees) if h.entry_fees else 0.0,
+            'Subscription Fees': float(h.subscription) if h.subscription else 0.0,
+            'Gap Months': h.gap_months or 0,
+            'Gap Fine (Subscription)': float(h.gap_fine) if h.gap_fine else 0.0,
+            'Late Fee': float(h.late_fee) if h.late_fee else 0.0,
+            'Total Membership Fine': float(h.total_fine_membership) if h.total_fine_membership else 0.0,
+            'Gap Period From': h.gap_period_from or '',
+            'Gap Period To': h.gap_period_to or '',
+            'Fine Calculated At': h.fine_calculated_at.strftime('%d-%m-%Y %H:%M') if h.fine_calculated_at else '',
+            'Changed At': h.changed_at.strftime('%d-%m-%Y %H:%M') if h.changed_at else '',
+            'Changed By': h.changed_by or '',
+            'User ID': h.user_id or '',
+            'Status': 'Active' if h.isactive else 'Inactive',
+        })
+
+    df = pd.DataFrame(rows)
+
+    # --------------------------------------------------
+    # Sheet & Positioning
+    # --------------------------------------------------
+    sheet_name = 'Membership Details'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2',
+        'text_wrap': True
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({'bold': True})
+
+    # --------------------------------------------------
+    # Report Header
+    # --------------------------------------------------
+    total_cols = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_cols - 1,
+        'Membership Details History Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_cols - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3, col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Style Header Row
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Style Data Rows
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        fmt = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(len(df.columns)):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                fmt
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 3)
+
+    # --------------------------------------------------
+    # Freeze Header Row
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_cols - 1,
+            'No membership history found for selected filters',
+            workbook.add_format({'align': 'center', 'italic': True})
+        )
+
+def apply_membership_details_filters(qs, filters):
+
+    if filters.get('from_date'):
+        qs = qs.filter(from_date__gte=filters['from_date'])
+
+    if filters.get('to_date'):
+        qs = qs.filter(to_date__lte=filters['to_date'])
+
+    if filters.get('action_performed'):
+        qs = qs.filter(actionperformed__in=filters['action_performed'])
+
+    if filters.get('membership_type'):
+        mt_ids = [
+            int(x) for x in filters['membership_type']
+            if str(x).isdigit()
+        ]
+        qs = qs.filter(membership_id__in=mt_ids)
+
+    gap_filter = filters.get('gap_period')
+
+    if gap_filter == 'only':
+        # Only members who have gap
+        qs = qs.filter(gap_months__gt=0)
+
+    elif gap_filter == 'exclude':
+        # Exclude members who have gap
+        qs = qs.filter(gap_months=0)
+
+    return qs
+
+def export_loan_to_excel(writer, db, member_ids, filters):
+
+    # --------------------------------------------------
+    # Base Query (Outstanding Loans)
+    # --------------------------------------------------
+    qs = CirculationTransaction.objects.using(db).filter(
+        member_id__in=member_ids,
+        transaction_type__in=['Offline', 'Online'],
+        return_date__isnull=True,
+        due_date__isnull=False
+    ).select_related(
+        'catalog',
+        'accession',
+        'member',
+        'return_condition'
+    )
+
+    qs = apply_loan_filters(qs, filters)
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for t in qs:
+        rows.append({
+            'Membership Code': t.member.membership_code if t.member else '',
+            'Member Name': (
+                f"{t.member.first_name or ''} {t.member.last_name or ''}".strip()
+                if t.member else ''
+            ),
+            'Barcode': t.barcode or '',
+            'Accession No': t.accession.accession_no if t.accession else '',
+            'Catalog Ref No': t.catalog.cat_ref_num if t.catalog else '',
+            'Book Title': t.catalog.title if t.catalog else '',
+            'Author': t.catalog.author if t.catalog else '',
+            'Issue Date': t.issue_date.strftime('%d-%m-%Y') if t.issue_date else '',
+            'Due Date': t.due_date.strftime('%d-%m-%Y') if t.due_date else '',
+            'Days Overdue': t.days_overdue_count or 0,
+            'Fine Amount': float(t.fine_amount) if t.fine_amount else 0.0,
+            'Book Fine': float(t.book_fine_amount) if t.book_fine_amount else 0.0,
+            'Total Fine': float(t.total_fine) if t.total_fine else 0.0,
+            'Adjusted Fine': float(t.adjusted_fine) if t.adjusted_fine else 0.0,
+            'Fine Status': t.fine_status or '',
+            'Fine Paid Date': t.fine_paid_date.strftime('%d-%m-%Y') if t.fine_paid_date else '',
+            'Transaction Type': t.transaction_type or '',
+            'Transaction Status': t.transaction_status or '',
+            'Issued By': t.issued_by or '',
+            'Received By': t.received_by or '',
+            'Return Condition': t.return_condition.status_name if t.return_condition else '',
+            'Remarks': t.remarks or '',
+            'Created At': t.created_at.strftime('%d-%m-%Y %H:%M') if t.created_at else '',
+            'Created By': t.created_by or '',
+            'Updated At': t.updated_at.strftime('%d-%m-%Y %H:%M') if t.updated_at else '',
+            'Updated By': t.updated_by or '',
+        })
+
+    df = pd.DataFrame(rows)
+
+    # --------------------------------------------------
+    # Sheet & Position
+    # --------------------------------------------------
+    sheet_name = 'Loan Transactions'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'text_wrap': True,
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({'bold': True})
+
+    # --------------------------------------------------
+    # Report Header
+    # --------------------------------------------------
+    total_cols = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_cols - 1,
+        'Outstanding Loan Transactions Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_cols - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    # --------------------------------------------------
+    # Applied Filters Section
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3, col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Row Styling
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        fmt = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(len(df.columns)):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                fmt
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 3)
+
+    # --------------------------------------------------
+    # Freeze Header Row
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_cols - 1,
+            'No outstanding loan records found for selected filters',
+            workbook.add_format({'align': 'center', 'italic': True})
+        )
+
+def apply_loan_filters(qs, filters):
+    from datetime import date, timedelta
+    from django.db.models import Q
+        
+    today = date.today()
+    # Apply filters
+    if filters.get('from_date'):
+        qs = qs.filter(issue_date__gte=filters['from_date'])
+    if filters.get('to_date'):
+        qs = qs.filter(issue_date__lte=filters['to_date'])
+    overdue_filter = filters.get('overdue')
+    if overdue_filter == '0_3':
+        qs = qs.filter(
+            due_date__lt=today,
+            due_date__gte=today - timedelta(days=3)
+        )
+    elif overdue_filter == '4_7':
+        qs = qs.filter(
+            due_date__lt=today - timedelta(days=3),
+            due_date__gte=today - timedelta(days=7)
+        )
+    elif overdue_filter == '1_month':
+        qs = qs.filter(
+            due_date__lt=today - timedelta(days=30)
+        )
+    elif overdue_filter == '3_month':
+        qs = qs.filter(
+            due_date__lt=today - timedelta(days=90)
+        )
     
+    elif overdue_filter == '6_month':
+        qs = qs.filter(
+            due_date__lt=today - timedelta(days=180)
+        )
+    if filters.get('fine_status') == 'paid':
+        qs = qs.filter(fine_status__iexact='Paid')
+    elif filters.get('fine_status') == 'not_paid':
+        qs = qs.filter(
+        Q(fine_status__iexact='Unpaid') |
+        Q(fine_amount__gt=0, fine_paid_date__isnull=True)
+    )
+    
+    membership_type = filters.get('membership_type')
+    if membership_type:
+        if not isinstance(membership_type, (list, tuple)):
+            membership_type = [membership_type]
+        qs = qs.filter(member__member_type_id__in=membership_type)
+
+    return qs
+
+def export_transactions_to_excel(writer, db, member_ids, filters):
+
+    # --------------------------------------------------
+    # Base Query
+    # --------------------------------------------------
+    qs = CirculationTransaction.objects.using(db).filter(
+        member_id__in=member_ids
+    ).select_related(
+        'catalog',
+        'accession',
+        'member',
+        'return_condition'
+    ).order_by('-created_at')
+
+    qs = apply_transaction_filters_export(qs, filters)
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for t in qs:
+        rows.append({
+            'Member Name': (
+                f"{t.member.first_name or ''} {t.member.last_name or ''}".strip()
+                if t.member else ''
+            ),
+            'Membership Code': t.member.membership_code if t.member else '',
+            'Barcode': t.barcode or '',
+            'Accession No': t.accession.accession_no if t.accession else '',
+            'Catalog Ref No': t.catalog.cat_ref_num if t.catalog else '',
+            'Book Title': t.catalog.title if t.catalog else '',
+            'Transaction Type': t.transaction_type or '',
+            'Transaction Status': t.transaction_status or '',
+            'Issue Date': t.issue_date.strftime('%d-%m-%Y') if t.issue_date else '',
+            'Due Date': t.due_date.strftime('%d-%m-%Y') if t.due_date else '',
+            'Return Date': t.return_date.strftime('%d-%m-%Y') if t.return_date else '',
+            'Issued By': t.issued_by or '',
+            'Received By': t.received_by or '',
+            'Days Overdue': t.days_overdue_count or 0,
+            'Fine Amount': float(t.fine_amount) if t.fine_amount else 0.0,
+            'Book Fine': float(t.book_fine_amount) if t.book_fine_amount else 0.0,
+            'Total Fine': float(t.total_fine) if t.total_fine else 0.0,
+            'Adjusted Fine': float(t.adjusted_fine) if t.adjusted_fine else 0.0,
+            'Fine Status': t.fine_status or '',
+            'Fine Paid Date': (
+                t.fine_paid_date.strftime('%d-%m-%Y')
+                if t.fine_paid_date else ''
+            ),
+            'Return Condition': (
+                t.return_condition.status_name
+                if t.return_condition else ''
+            ),
+            'Remarks': t.remarks or '',
+            'Created At': (
+                t.created_at.strftime('%d-%m-%Y %H:%M')
+                if t.created_at else ''
+            ),
+            'Updated At': (
+                t.updated_at.strftime('%d-%m-%Y %H:%M')
+                if t.updated_at else ''
+            ),
+            'Updated By': t.updated_by or '',
+        })
+
+    df = pd.DataFrame(rows)
+
+    # --------------------------------------------------
+    # Sheet & Positioning
+    # --------------------------------------------------
+    sheet_name = 'All Transactions'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'text_wrap': True,
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({'bold': True})
+
+    # --------------------------------------------------
+    # Report Header
+    # --------------------------------------------------
+    total_cols = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_cols - 1,
+        'All Circulation Transactions Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_cols - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    # --------------------------------------------------
+    # Applied Filters Section
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3, col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Row Styling
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        fmt = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(len(df.columns)):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                fmt
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 3)
+
+    # --------------------------------------------------
+    # Freeze Header Row
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_cols - 1,
+            'No transactions found for selected filters',
+            workbook.add_format({'align': 'center', 'italic': True})
+        )
+
+def apply_transaction_filters_export(qs, filters):
+    if filters.get('from_date'):
+            start_date = parse_month_start(filters['from_date'])
+            qs = qs.filter(issue_date__gte=start_date)
+    if filters.get('to_date'):
+            end_date = parse_month_end(filters['to_date'])
+            qs = qs.filter(issue_date__lte=end_date)
+        
+    from datetime import timedelta
+    from django.db.models import F
+    late_filter = filters.get('late_returns')
+    if late_filter:
+        # Only returned books
+        qs = qs.filter(
+            return_date__isnull=False,
+            due_date__isnull=False
+        )
+        if late_filter == '0_3':
+            qs = qs.filter(
+                return_date__gt=F('due_date'),
+                return_date__lte=F('due_date') + timedelta(days=3)
+            )
+        elif late_filter == '4_7':
+            qs = qs.filter(
+                return_date__gt=F('due_date') + timedelta(days=3),
+                return_date__lte=F('due_date') + timedelta(days=7)
+            )
+        elif late_filter == '1_month':
+            qs = qs.filter(
+                return_date__gt=F('due_date') + timedelta(days=30)
+            )
+        elif late_filter == '3_month':
+            qs = qs.filter(
+                return_date__gt=F('due_date') + timedelta(days=90)
+            )
+        elif late_filter == '6_month':
+            qs = qs.filter(
+                return_date__gt=F('due_date') + timedelta(days=180)
+            )
+    if filters.get('fine_status') == 'paid':
+        qs = qs.filter(
+            Q(fine_amount__gt=0, fine_status='Paid') |
+            Q(fine_amount__lte=0)
+        )
+    elif filters.get('fine_status') == 'not_paid':
+        qs = qs.filter(
+            Q(fine_amount__gt=0, fine_status__in=['Unpaid', 'Pending']) |
+            Q(fine_amount__lte=0)
+        )
+    elif filters.get('fine_status') == 'adjusted':
+        qs = qs.filter(
+            Q(fine_amount__gt=0, fine_status='Adjusted') |
+            Q(fine_amount__lte=0)
+        )
+    membership_type = filters.get('membership_type')
+    if membership_type:
+        if not isinstance(membership_type, (list, tuple)):
+            membership_type = [membership_type]
+    
+        qs = qs.filter(member__member_type_id__in=membership_type)
+    
+    return qs
+
+def export_physical_visits_to_excel(writer, db, member_ids, filters):
+
+    activity = (filters.get('activity_type') or '').lower()
+    membership_type = filters.get('membership_type')
+    from_date = filters.get('from_date')
+    to_date = filters.get('to_date')
+
+    # --------------------------------------------------
+    # Filter Members
+    # --------------------------------------------------
+    member_qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+
+    if membership_type:
+        if not isinstance(membership_type, (list, tuple)):
+            membership_type = [membership_type]
+        member_qs = member_qs.filter(member_type_id__in=membership_type)
+
+    members = list(member_qs.values(
+        'id', 'membership_code', 'first_name', 'last_name'
+    ))
+
+    member_ids = [m['id'] for m in members]
+    member_codes = [m['membership_code'] for m in members if m['membership_code']]
+
+    member_map = {
+        m['membership_code']: f"{m['first_name'] or ''} {m['last_name'] or ''}".strip()
+        for m in members
+    }
+
+    rows = []
+
+    # --------------------------------------------------
+    # 1️⃣ Reading Room Visits
+    # --------------------------------------------------
+    if activity in ['', 'reading']:
+        visit_qs = MemberEntryExit.objects.using(db).filter(
+            membership_code__in=member_codes
+        )
+
+        if from_date:
+            visit_qs = visit_qs.filter(entry_time__date__gte=from_date)
+        if to_date:
+            visit_qs = visit_qs.filter(entry_time__date__lte=to_date)
+
+        for v in visit_qs:
+            rows.append({
+                'Activity Type': 'Reading',
+                'Member Name': member_map.get(v.membership_code, ''),
+                'Membership Code': v.membership_code,
+                'Entry Date & Time': (
+                    v.entry_time.strftime('%d-%m-%Y %H:%M')
+                    if v.entry_time else ''
+                ),
+                'Exit Date & Time': (
+                    v.exit_time.strftime('%d-%m-%Y %H:%M')
+                    if v.exit_time else ''
+                ),
+                'Remarks': v.remark or '',
+                'Recorded At': (
+                    v.created_at.strftime('%d-%m-%Y %H:%M')
+                    if v.created_at else ''
+                )
+            })
+
+    # --------------------------------------------------
+    # 2️⃣ Issue / Return Circulation
+    # --------------------------------------------------
+    if activity in ['', 'issue', 'return']:
+        trans_qs = CirculationTransaction.objects.using(db).filter(
+            member_id__in=member_ids
+        )
+
+        if activity == 'issue':
+            trans_qs = trans_qs.filter(transaction_type='Issue')
+            if from_date:
+                trans_qs = trans_qs.filter(issue_date__gte=from_date)
+            if to_date:
+                trans_qs = trans_qs.filter(issue_date__lte=to_date)
+
+        elif activity == 'return':
+            trans_qs = trans_qs.filter(transaction_type='Return')
+            if from_date:
+                trans_qs = trans_qs.filter(return_date__gte=from_date)
+            if to_date:
+                trans_qs = trans_qs.filter(return_date__lte=to_date)
+
+        else:
+            if from_date:
+                trans_qs = trans_qs.filter(issue_date__gte=from_date)
+            if to_date:
+                trans_qs = trans_qs.filter(issue_date__lte=to_date)
+
+        for t in trans_qs:
+            rows.append({
+                'Activity Type': t.transaction_type,
+                'Member Name': (
+                    f"{t.member.first_name or ''} {t.member.last_name or ''}".strip()
+                    if t.member else ''
+                ),
+                'Membership Code': t.membership_code,
+                'Entry Date & Time': (
+                    t.issue_date.strftime('%d-%m-%Y')
+                    if t.issue_date else ''
+                ),
+                'Exit Date & Time': (
+                    t.return_date.strftime('%d-%m-%Y')
+                    if t.return_date else ''
+                ),
+                'Remarks': t.remarks or '',
+                'Recorded At': (
+                    t.created_at.strftime('%d-%m-%Y %H:%M')
+                    if t.created_at else ''
+                )
+            })
+
+    # --------------------------------------------------
+    # Create DataFrame
+    # --------------------------------------------------
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Physical Visits'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'text_wrap': True,
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({'bold': True})
+
+    # --------------------------------------------------
+    # Report Header
+    # --------------------------------------------------
+    total_cols = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_cols - 1,
+        'Physical Visits & Circulation Activity Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_cols - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3, col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Row Styling
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        fmt = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(len(df.columns)):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                fmt
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 3)
+
+    # --------------------------------------------------
+    # Freeze Header Row
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_cols - 1,
+            'No physical visit or circulation activity found for selected filters',
+            workbook.add_format({'align': 'center', 'italic': True})
+        )
+
+def calculate_visit_duration(visit):
+    """Calculate visit duration"""
+    if visit.entry_time and visit.exit_time:
+        duration = visit.exit_time - visit.entry_time
+        hours = duration.total_seconds() / 3600
+        return f"{hours:.2f} hours"
+    return 'Still in library'
+
+def export_virtual_usage_to_excel(writer, db, member_ids, filters):
+    """Export virtual usage (Login + Screen) to Excel with formatting"""
+
+    workbook = writer.book
+
+    # -------------------------
+    # FORMATS
+    # -------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 14,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    filter_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'left'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#D9E1F2',
+        'border': 1,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    row_format_1 = workbook.add_format({
+        'border': 1,
+        'align': 'left'
+    })
+
+    row_format_2 = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F7F7F7',
+        'align': 'left'
+    })
+    
+    # -------------------------
+    # DATA COLLECTION
+    # -------------------------
+    data = []
+
+    member_qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+
+    membership_type = filters.get('membership_type')
+    if membership_type:
+        if not isinstance(membership_type, (list, tuple)):
+            membership_type = [membership_type]
+        member_qs = member_qs.filter(member_type_id__in=membership_type)
+
+    member_ids = list(member_qs.values_list('id', flat=True))
+    activity_type = (filters.get('activity_type') or '').lower()
+
+    # LOGIN
+    if activity_type in ('', 'login'):
+        login_qs = MemberLoginSession.objects.using(db).filter(
+            member_id__in=member_ids
+        ).select_related('member')
+
+        if filters.get('from_date'):
+            login_qs = login_qs.filter(login_time__date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            login_qs = login_qs.filter(login_time__date__lte=filters['to_date'])
+
+        for s in login_qs:
+            m = s.member
+            data.append([
+                f"{m.first_name or ''} {m.last_name or ''}".strip(),
+                m.membership_code or '',
+                'Login',
+                'Login Session',
+                '/login',
+                s.login_time.strftime('%Y-%m-%d %H:%M:%S') if s.login_time else '',
+                s.ip_address or '',
+                s.device_type or '',
+                calculate_session_duration_excel(s) or ''
+            ])
+
+    # SCREEN
+    if activity_type in ('', 'screen'):
+        activity_qs = MemberScreenActivity.objects.using(db).filter(
+            session__member_id__in=member_ids
+        ).select_related('session__member')
+
+        if filters.get('from_date'):
+            activity_qs = activity_qs.filter(visited_at__date__gte=filters['from_date'])
+        if filters.get('to_date'):
+            activity_qs = activity_qs.filter(visited_at__date__lte=filters['to_date'])
+
+        for a in activity_qs:
+            m = a.session.member
+            data.append([
+                f"{m.first_name or ''} {m.last_name or ''}".strip(),
+                m.membership_code or '',
+                'Screen',
+                a.screen_name or '',
+                a.screen_route or '',
+                a.visited_at.strftime('%Y-%m-%d %H:%M:%S') if a.visited_at else '',
+                a.session.ip_address or '',
+                a.session.device_type or '',
+                'N/A'
+            ])
+
+    # SORT
+    data.sort(key=lambda x: x[5] or '', reverse=True)
+
+    # -------------------------
+    # WORKSHEET SETUP
+    # -------------------------
+    sheet_name = 'Virtual Usage'
+    worksheet = workbook.add_worksheet(sheet_name)
+    writer.sheets[sheet_name] = worksheet
+
+    # -------------------------
+    # REPORT HEADER
+    # -------------------------
+    worksheet.merge_range('A1:I1', 'Virtual Usage Report', title_format)
+
+    filter_label_format = workbook.add_format({
+        'bold': True,
+        'font_size': 10,
+        'align': 'left'
+    })
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    # -------------------------
+    # APPLIED FILTERS (DYNAMIC)
+    # -------------------------
+    filter_row = 1  # Excel row 3 (0-based)
+
+    worksheet.write(filter_row, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            display_value = (
+                ", ".join(value) if isinstance(value, (list, tuple)) else value
+            )
+            worksheet.write(
+                filter_row,
+                col,
+                f"{key.replace('_', ' ').title()}: {display_value}",
+                filter_format
+            )
+            col += 1
+
+
+    # -------------------------
+    # TABLE HEADER
+    # -------------------------
+    headers = [
+        'Member Name', 'Membership Code', 'Activity',
+        'Screen Name', 'Screen Route', 'Visited At',
+        'IP Address', 'Device Type', 'Duration'
+    ]
+
+    start_row = 3
+    for col, header in enumerate(headers):
+        worksheet.write(start_row, col, header, header_format)
+
+    # -------------------------
+    # DATA ROWS (ZEBRA STYLE)
+    # -------------------------
+    for row_idx, row in enumerate(data, start=start_row + 1):
+        fmt = row_format_1 if row_idx % 2 == 0 else row_format_2
+        for col_idx, value in enumerate(row):
+            worksheet.write(row_idx, col_idx, value, fmt)
+
+    # -------------------------
+    # COLUMN WIDTHS
+    # -------------------------
+    for col_idx, header in enumerate(headers):
+        max_len = max(
+            [len(str(r[col_idx])) for r in data] + [len(header)]
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 2)
+
+    # -------------------------
+    # FREEZE & FILTER
+    # -------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+    worksheet.autofilter(start_row, 0, start_row + len(data), len(headers) - 1)
+
+def export_payments_to_excel(writer, db, member_ids, filters):
+    """Export payment data to Excel with full formatting"""
+
+    workbook = writer.book
+
+    # =====================================================
+    # FORMATS
+    # =====================================================
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 14,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    filter_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'left'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#D9E1F2',
+        'border': 1,
+        'align': 'center',
+        'valign': 'vcenter',
+        'text_wrap': True
+    })
+
+    row_format_1 = workbook.add_format({
+        'border': 1,
+        'align': 'left'
+    })
+
+    row_format_2 = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F7F7F7',
+        'align': 'left'
+    })
+
+    amount_format = workbook.add_format({
+        'border': 1,
+        'align': 'right',
+        'num_format': '#,##0.00'
+    })
+
+    # =====================================================
+    # QUERY
+    # =====================================================
+    qs = PaymentDetails.objects.using(db).filter(
+        membership_id__in=member_ids
+    ).select_related(
+        'membership', 'status', 'circulation_transaction'
+    ).order_by('-created_at')
+
+    qs = apply_payment_filters_export(qs, filters)
+
+    # =====================================================
+    # DATA PREPARATION (LIST for XlsxWriter)
+    # =====================================================
+    data = []
+
+    for p in qs:
+        data.append([
+            p.payment_mode or '',
+            p.payment_type or '',
+            p.payment_method or '',
+            float(p.deposit_amount or 0),
+            float(p.entry_fee_amount or 0),
+            float(p.monthly_subscription_amount or 0),
+            float(p.total_subscription_amount or 0),
+            p.subscription_from.strftime('%Y-%m-%d') if p.subscription_from else '',
+            p.subscription_to.strftime('%Y-%m-%d') if p.subscription_to else '',
+            float(p.fine_amount or 0),
+            float(p.book_fine_amount or 0),
+            float(p.adjusted_amount or 0),
+            p.status.status_name if p.status else '',
+            p.transaction_id or '',
+            p.remarks or '',
+            p.user_id or '',
+            p.membership_code or '',
+            p.created_at.strftime('%Y-%m-%d %H:%M:%S') if p.created_at else '',
+            p.created_by or '',
+            p.updated_at.strftime('%Y-%m-%d %H:%M:%S') if p.updated_at else '',
+            p.updated_by or '',
+            p.payment_date.strftime('%Y-%m-%d') if p.payment_date else '',
+            f"{p.membership.first_name or ''} {p.membership.last_name or ''}".strip()
+            if p.membership else ''
+        ])
+
+    # =====================================================
+    # WORKSHEET
+    # =====================================================
+    sheet_name = 'Payment Details'
+    worksheet = workbook.add_worksheet(sheet_name)
+    writer.sheets[sheet_name] = worksheet
+
+    # =====================================================
+    # REPORT HEADER
+    # =====================================================
+    worksheet.merge_range('A1:W1', 'Payment Details Report', title_format)
+
+    filter_label_format = workbook.add_format({
+        'bold': True,
+        'font_size': 10,
+        'align': 'left'
+    })
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    # =====================================================
+    # APPLIED FILTERS (DYNAMIC)
+    # =====================================================
+    filter_row = 1  # Row index (0-based) → Excel row 3
+
+    worksheet.write(filter_row, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                filter_row,
+                col,
+                f"{key.replace('_', ' ').title()}: {value}",
+                filter_format
+            )
+            col += 1
+
+
+    # =====================================================
+    # TABLE HEADER
+    # =====================================================
+    headers = [
+        'Payment Mode', 'Payment Type', 'Payment Method',
+        'Deposit Amount', 'Entry Fee Amount',
+        'Monthly Subscription Amount', 'Total Subscription Amount',
+        'Subscription From', 'Subscription To',
+        'Fine Amount', 'Book Fine Amount', 'Adjusted Amount',
+        'Status', 'Transaction ID', 'Remarks', 'User ID',
+        'Membership Code', 'Created At', 'Created By',
+        'Updated At', 'Updated By', 'Payment Date', 'Member Name'
+    ]
+
+    start_row = 3
+
+    for col_idx, header in enumerate(headers):
+        worksheet.write(start_row, col_idx, header, header_format)
+
+    # =====================================================
+    # DATA ROWS (ZEBRA + AMOUNT FORMATS)
+    # =====================================================
+    amount_cols = {3, 4, 5, 6, 9, 10, 11}
+
+    for row_idx, row in enumerate(data, start=start_row + 1):
+        base_fmt = row_format_1 if row_idx % 2 == 0 else row_format_2
+
+        for col_idx, value in enumerate(row):
+            if col_idx in amount_cols:
+                worksheet.write(row_idx, col_idx, value, amount_format)
+            else:
+                worksheet.write(row_idx, col_idx, value, base_fmt)
+
+    # =====================================================
+    # COLUMN WIDTHS
+    # =====================================================
+    for col_idx, header in enumerate(headers):
+        max_len = max(
+            [len(str(r[col_idx])) for r in data] + [len(header)]
+        )
+        worksheet.set_column(col_idx, col_idx, max_len + 2)
+
+    # =====================================================
+    # FREEZE HEADER + FILTER
+    # =====================================================
+    worksheet.freeze_panes(start_row + 1, 0)
+    worksheet.autofilter(
+        start_row, 0,
+        start_row + len(data),
+        len(headers) - 1
+    )
+
+def apply_payment_filters_export(qs, filters):
+    # Date filters
+    if filters.get('from_date'):
+        qs = qs.filter(payment_date__gte=filters['from_date'])
+    if filters.get('to_date'):
+        qs = qs.filter(payment_date__lte=filters['to_date'])
+    # Membership type
+    if filters.get('membership_types'):
+        qs = qs.filter(
+            membership__member_type_id__in=filters['membership_types']
+        )
+    # Payment attributes
+    payment_type = filters.get('payment_type')
+
+    if payment_type:
+        if payment_type == 'Fine':
+            qs = qs.filter(payment_type__in=['Fine', 'Membership Renewed'])
+        else:
+            qs = qs.filter(payment_type=payment_type)
+    if filters.get('payment_mode'):
+        qs = qs.filter(payment_mode=filters['payment_mode'])
+    if filters.get('payment_method'):
+        qs = qs.filter(payment_method=filters['payment_method'])
+    if filters.get('min_amount'):
+        qs = qs.filter(fine_amount__gte=float(filters['min_amount']))
+    if filters.get('max_amount'):
+        qs = qs.filter(fine_amount__lte=float(filters['max_amount']))
+    
+    return qs
+
+def calculate_session_duration_excel(session):
+    """Calculate session duration for Excel export"""
+    if session.login_time and session.logout_time:
+        duration = session.logout_time - session.login_time
+        minutes = duration.total_seconds() / 60
+        return f"{minutes:.1f} minutes"
+    return 'Still active'
+
+class ExportReportView(ReportBaseView):
+    """Export member report (single tab or all tabs) to Excel"""
+
     def get(self, request):
-        member_ids = request.GET.getlist('member_ids[]')
+        export_type = request.GET.get('type', 'all-tabs')
+        member_ids = request.GET.getlist('member_ids')
         filters_json = request.GET.get('filters', '{}')
         tab_filters_json = request.GET.get('tab_filters', '{}')
-        
+
+        # --------------------------------------------------
+        # Normalize member_ids
+        # --------------------------------------------------
+        if len(member_ids) == 1 and ',' in member_ids[0]:
+            member_ids = [
+                int(i) for i in member_ids[0].split(',')
+                if i.strip().isdigit()
+            ]
+        else:
+            member_ids = [int(i) for i in member_ids if str(i).isdigit()]
+
+        # --------------------------------------------------
+        # Parse filters safely
+        # --------------------------------------------------
         try:
             filters = json.loads(filters_json)
-            tab_filters = json.loads(tab_filters_json)
-        except:
+        except (TypeError, ValueError):
             filters = {}
-            tab_filters = {}
-        
-        db = self.get_library_db()
-        
-        # Create temporary file
-        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
-            output_path = tmp.name
-        
+
         try:
-            # Create Excel writer
-            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-                # Export each tab to separate sheet
-                self.export_member_details_to_excel(writer, db, member_ids, 
-                                                   tab_filters.get('member-details', {}))
-                self.export_membership_details_to_excel(writer, db, member_ids,
-                                                       tab_filters.get('membership-details', {}))
-                self.export_loan_to_excel(writer, db, member_ids,
-                                         tab_filters.get('loan', {}))
-                self.export_transactions_to_excel(writer, db, member_ids,
-                                                tab_filters.get('transactions', {}))
-                self.export_payments_to_excel(writer, db, member_ids,
-                                            tab_filters.get('payments', {}))
-                self.export_physical_visits_to_excel(writer, db, member_ids,
-                                                   tab_filters.get('physical-visit', {}))
-                self.export_virtual_usage_to_excel(writer, db, member_ids,
-                                                 tab_filters.get('virtual-usage', {}))
-            
-            # Read file and prepare response
+            tab_filters = json.loads(tab_filters_json)
+        except (TypeError, ValueError):
+            tab_filters = {}
+
+        db = self.get_library_db()
+
+        # --------------------------------------------------
+        # Create temp Excel file
+        # --------------------------------------------------
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+            output_path = tmp.name
+
+        try:
+            # --------------------------------------------------
+            # Excel Writer (pandas + xlsxwriter)
+            # --------------------------------------------------
+            with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+
+                if export_type == 'all-tabs':
+                    self.export_all_tabs(
+                        writer=writer,
+                        db=db,
+                        member_ids=member_ids,
+                        filters=filters,
+                        tab_filters=tab_filters
+                    )
+                else:
+                    self.export_single_tab(
+                        writer=writer,
+                        export_type=export_type,
+                        db=db,
+                        member_ids=member_ids,
+                        filters=tab_filters
+                    )
+
+            # --------------------------------------------------
+            # Prepare HTTP response
+            # --------------------------------------------------
             with open(output_path, 'rb') as f:
                 response = HttpResponse(
                     f.read(),
-                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                )
-                response['Content-Disposition'] = 'attachment; filename="member_complete_report.xlsx"'
-            
-            # Clean up
-            os.unlink(output_path)
-            
-            # Log export
-            if request.user.is_authenticated:
-                ReportExport.objects.create(
-                    export_type='complete_report',
-                    file_path='exported_to_client',
-                    filters_applied={'filters': filters, 'tab_filters': tab_filters},
-                    exported_by=request.user
+                    content_type=(
+                        'application/vnd.openxmlformats-officedocument.'
+                        'spreadsheetml.sheet'
+                    )
                 )
             
+            if export_type == 'all-tabs':
+                file_name = 'member_report_all_tabs.xlsx'
+            else:
+                safe_tab_name = export_type.replace('-', '_')
+                file_name = f'member_report_{safe_tab_name}.xlsx'
+            
+            response['Content-Disposition'] = (
+                f'attachment; filename="{file_name}"'
+            )
+
+
             return response
-            
+
         except Exception as e:
-            # Clean up on error
+            return JsonResponse(
+                {'error': 'Export failed', 'details': str(e)},
+                status=500
+            )
+
+        finally:
+            # --------------------------------------------------
+            # Cleanup temp file
+            # --------------------------------------------------
             if os.path.exists(output_path):
                 os.unlink(output_path)
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    # reports/views.py - Complete this method
 
-def export_member_details_to_excel(self, writer, db, member_ids, filters, header_format=None, cell_format=None):
-    """Export member details to Excel sheet"""
-    qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
-    qs = self.apply_member_details_filters(qs, filters)
-    
-    data = []
-    for member in qs.select_related('membership', 'status', 'member_type'):
-        data.append({
-            'First Name': member.first_name or '',
-            'Middle Name': member.middle_name or '',
-            'Last Name': member.last_name or '',
-            'First Name (Marathi)': member.first_name_mar or '',
-            'Last Name (Marathi)': member.last_name_mar or '',
-            'Middle Name (Marathi)': member.middle_name_mar or '',
-            'Membership Type': member.membership.membership_type if member.membership else '',
-            'Member Type': member.member_type.name if member.member_type else '',
-            'Membership Code': member.membership_code or '',
-            'Membership Date': member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
-            'Renewal From Date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
-            'Renewal To Date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
-            'User ID': member.user_id or '',
-            'Ward': member.ward or '',
-            'Pincode': member.pincode or '',
-            'Local Address': member.local_address or '',
-            'Mobile No': member.mobile_no or '',
-            'Email': member.email or '',
-            'Occupation': member.occupation or '',
-            'Office Phone': member.office_phone or '',
-            'Education': member.education or '',
-            'Institute Name': member.institute_name or '',
-            'Recommender Details': member.recommender_details or '',
-            'Date of Birth': member.dob.strftime('%Y-%m-%d') if member.dob else '',
-            'Aadhar No': member.aadhar_no or '',
-            'Address Same as Aadhar': 'Yes' if member.address_same_as_aadhar == 1 else 'No',
-            'Resident of NMMC': 'Yes' if member.is_resident_of_nmmc == 1 else 'No',
-            'Status': 'Active' if member.isactive == 1 else 'Inactive',
-            'Created At': member.created_at.strftime('%Y-%m-%d %H:%M') if member.created_at else '',
-            'Created By': member.created_by or '',
-            'Updated At': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
-            'Updated By': member.updated_by or '',
-            'Approved By': member.reviewed or '',
-            'Approved Date': member.reviewed_at.strftime('%Y-%m-%d %H:%M') if member.reviewed_at else '',
-        })
-    
-    df = pd.DataFrame(data)
-    df.to_excel(writer, sheet_name='Member Details', index=False)
-    
-    # Auto-adjust column widths
-    if 'Member Details' in writer.sheets:
-        worksheet = writer.sheets['Member Details']
-        for column in df:
-            column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-            col_idx = df.columns.get_loc(column)
-            worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def export_membership_details_to_excel(self, writer, db, member_ids, filters):
-        """Export membership details to Excel sheet"""
-        # Current memberships
-        current_qs = MembershipDetails.objects.using(db).filter(
-            id__in=member_ids
-        ).select_related('membership', 'member_type')
-        
-        # Historical data
-        history_qs = MembershipDetailsHistory.objects.using(db).filter(
-            membership_id__in=member_ids
-        ).select_related('membershipmaster', 'member_type')
-        
-        # Apply filters to both querysets
-        current_qs = self.apply_membership_details_filters_export(current_qs, filters)
-        history_qs = self.apply_membership_details_filters_export_history(history_qs, filters)
-        
-        data = []
-        
-        # Current memberships
-        for member in current_qs:
-            data.append({
-                'Record Type': 'Current',
-                'First Name': member.first_name or '',
-                'Middle Name': member.middle_name or '',
-                'Last Name': member.last_name or '',
-                'First Name (Marathi)': member.first_name_mar or '',
-                'Middle Name (Marathi)': member.middle_name_mar or '',
-                'Last Name (Marathi)': member.last_name_mar or '',
-                'Action Performed': member.actionperformed or '',
-                'From Date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
-                'To Date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
-                'Membership Duration': member.membership_duration or 0,
-                'Deposit': float(member.deposit) if member.deposit else 0.0,
-                'Entry Fees': float(member.entry_fees) if member.entry_fees else 0.0,
-                'Subscription': float(member.subscription) if member.subscription else 0.0,
-                'Fine Calculated At': member.fine_calculated_at.strftime('%Y-%m-%d %H:%M:%S') if member.fine_calculated_at else '',
-                'Gap Fine (Subscription)': float(member.gap_fine) if member.gap_fine else 0.0,
-                'Gap Fine (Delay)': float(member.late_fee) if member.late_fee else 0.0,
-                'Gap Months': member.gap_months or 0,
-                'Late Fee': float(member.late_fee) if member.late_fee else 0.0,
-                'Total Fine Membership': float(member.total_fine_membership) if member.total_fine_membership else 0.0,
-                'Gap Period From': member.gap_period_from or '',
-                'Gap Period To': member.gap_period_to or '',
-                'Gap Subscription Delay': float(member.gap_subscription_delay) if member.gap_subscription_delay else 0.0,
-                'Changed At': member.updated_at.strftime('%Y-%m-%d %H:%M:%S') if member.updated_at else '',
-                'Changed By': member.updated_by or '',
-                'Membership Type': member.membership.membership_type if member.membership else '',
-                'Member Type': member.member_type.name if member.member_type else '',
-                'Membership Code': member.membership_code or '',
-                'User ID': member.user_id or '',
-                'Status': 'Active' if member.isactive == 1 else 'Inactive',
-            })
-        
-        # Historical data
-        for history in history_qs:
-            data.append({
-                'Record Type': 'Historical',
-                'First Name': history.first_name or '',
-                'Middle Name': history.middle_name or '',
-                'Last Name': history.last_name or '',
-                'First Name (Marathi)': history.first_name_mar or '',
-                'Middle Name (Marathi)': history.middle_name_mar or '',
-                'Last Name (Marathi)': history.last_name_mar or '',
-                'Action Performed': history.actionperformed or '',
-                'From Date': history.from_date.strftime('%Y-%m-%d') if history.from_date else '',
-                'To Date': history.to_date.strftime('%Y-%m-%d') if history.to_date else '',
-                'Membership Duration': history.membership_duration or 0,
-                'Deposit': float(history.deposit) if history.deposit else 0.0,
-                'Entry Fees': float(history.entry_fees) if history.entry_fees else 0.0,
-                'Subscription': float(history.subscription) if history.subscription else 0.0,
-                'Fine Calculated At': history.fine_calculated_at.strftime('%Y-%m-%d %H:%M:%S') if history.fine_calculated_at else '',
-                'Gap Fine (Subscription)': float(history.gap_fine) if history.gap_fine else 0.0,
-                'Gap Fine (Delay)': float(history.late_fee) if history.late_fee else 0.0,
-                'Gap Months': history.gap_months or 0,
-                'Late Fee': float(history.late_fee) if history.late_fee else 0.0,
-                'Total Fine Membership': float(history.total_fine_membership) if history.total_fine_membership else 0.0,
-                'Gap Period From': history.gap_period_from or '',
-                'Gap Period To': history.gap_period_to or '',
-                'Gap Subscription Delay': float(history.gap_subscription_delay) if history.gap_subscription_delay else 0.0,
-                'Changed At': history.changed_at.strftime('%Y-%m-%d %H:%M:%S') if history.changed_at else '',
-                'Changed By': history.changed_by or '',
-                'Membership Type': history.membershipmaster.membership_type if history.membershipmaster else '',
-                'Member Type': history.member_type.name if history.member_type else '',
-                'Membership Code': history.membership_code or '',
-                'User ID': history.user_id or '',
-                'Status': 'Active' if history.isactive == 1 else 'Inactive',
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Membership Details', index=False)
-        
-        # Auto-adjust column widths
-        if 'Membership Details' in writer.sheets:
-            worksheet = writer.sheets['Membership Details']
-            for column in df:
-                column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-                col_idx = df.columns.get_loc(column)
-                worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def apply_membership_details_filters_export(self, qs, filters):
-        """Apply filters for current membership export"""
-        if filters.get('from_date'):
-            qs = qs.filter(from_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(to_date__lte=filters['to_date'])
-        
-        if filters.get('gap_period') == 'has_gap':
-            qs = qs.filter(gap_months__gt=0)
-        elif filters.get('gap_period') == 'no_gap':
-            qs = qs.filter(gap_months=0)
-        
-        if filters.get('action_performed'):
-            qs = qs.filter(actionperformed__icontains=filters['action_performed'])
-        
-        return qs
-    
-    def apply_membership_details_filters_export_history(self, qs, filters):
-        """Apply filters for historical membership export"""
-        if filters.get('from_date'):
-            qs = qs.filter(from_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(to_date__lte=filters['to_date'])
-        
-        if filters.get('gap_period') == 'has_gap':
-            qs = qs.filter(gap_months__gt=0)
-        elif filters.get('gap_period') == 'no_gap':
-            qs = qs.filter(gap_months=0)
-        
-        if filters.get('action_performed'):
-            qs = qs.filter(actionperformed__icontains=filters['action_performed'])
-        
-        return qs
+    # ======================================================
+    # EXPORT HELPERS
+    # ======================================================
 
-    def export_loan_to_excel(self, writer, db, member_ids, filters):
-        """Export loan data to Excel sheet"""
-        qs = CirculationTransaction.objects.using(db).filter(
-            member_id__in=member_ids,
-            transaction_type='issue'
-        ).select_related('catalog', 'accession', 'member').order_by('-issue_date')
-        
-        # Apply filters
-        qs = self.apply_loan_filters_export(qs, filters)
-        
-        data = []
-        for transaction in qs:
-            data.append({
-                'Membership Code': transaction.member.membership_code if transaction.member else '',
-                'Barcode': transaction.barcode or '',
-                'Accession ID': transaction.accession.accession_no if transaction.accession else '',
-                'Catalog Ref Number': transaction.catalog.cat_ref_num if transaction.catalog else '',
-                'Book Title': transaction.catalog.title if transaction.catalog else '',
-                'Author': transaction.catalog.author1 if transaction.catalog else '',
-                'Issue Date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
-                'Due Date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'Return Date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                'Days Overdue': transaction.days_overdue_count or 0,
-                'Fine Amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
-                'Book Fine Amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0.0,
-                'Total Fine': float(transaction.total_fine) if transaction.total_fine else 0.0,
-                'Adjusted Fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0.0,
-                'Fine Status': transaction.fine_status or '',
-                'Fine Paid Date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
-                'Transaction Type': transaction.transaction_type or '',
-                'Transaction Status': transaction.transaction_status or '',
-                'Issued By': transaction.issued_by or '',
-                'Received By': transaction.received_by or '',
-                'Membership Code (Transaction)': transaction.membership_code or '',
-                'Return Condition': transaction.return_condition.status_name if transaction.return_condition else '',
-                'Remarks': transaction.remarks or '',
-                'Created At': transaction.created_at.strftime('%Y-%m-%d %H:%M:%S') if transaction.created_at else '',
-                'Created By': transaction.created_by or '',
-                'Updated At': transaction.updated_at.strftime('%Y-%m-%d %H:%M:%S') if transaction.updated_at else '',
-                'Updated By': transaction.updated_by or '',
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Loan Transactions', index=False)
-        
-        # Auto-adjust column widths
-        if 'Loan Transactions' in writer.sheets:
-            worksheet = writer.sheets['Loan Transactions']
-            for column in df:
-                column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-                col_idx = df.columns.get_loc(column)
-                worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def apply_loan_filters_export(self, qs, filters):
-        """Apply filters for loan export"""
-        if filters.get('from_date'):
-            qs = qs.filter(issue_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(issue_date__lte=filters['to_date'])
-        
-        if filters.get('overdue') == 'overdue':
-            qs = qs.filter(days_overdue_count__gt=0)
-        elif filters.get('overdue') == 'not_overdue':
-            qs = qs.filter(days_overdue_count=0)
-        
-        if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status='paid')
-        elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(fine_status__in=['unpaid', 'pending', None])
-        
-        return qs
-    
-    def export_transactions_to_excel(self, writer, db, member_ids, filters):
-        """Export all transactions to Excel sheet"""
-        qs = CirculationTransaction.objects.using(db).filter(
-            member_id__in=member_ids
-        ).select_related('catalog', 'accession', 'member', 'return_condition').order_by('-created_at')
-        
-        # Apply filters
-        qs = self.apply_transaction_filters_export(qs, filters)
-        
-        data = []
-        for transaction in qs:
-            data.append({
-                'Member Name': f"{transaction.member.first_name or ''} {transaction.member.last_name or ''}".strip(),
-                'Membership Code': transaction.member.membership_code if transaction.member else '',
-                'Barcode': transaction.barcode or '',
-                'Accession ID': transaction.accession.accession_no if transaction.accession else '',
-                'Catalog Ref Number': transaction.catalog.cat_ref_num if transaction.catalog else '',
-                'Book Title': transaction.catalog.title if transaction.catalog else '',
-                'Transaction Type': transaction.transaction_type or '',
-                'Transaction Status': transaction.transaction_status or '',
-                'Issue Date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
-                'Due Date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'Issued By': transaction.issued_by or '',
-                'Created At': transaction.created_at.strftime('%Y-%m-%d %H:%M:%S') if transaction.created_at else '',
-                'Return Date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                'Received By': transaction.received_by or '',
-                'Days Overdue': transaction.days_overdue_count or 0,
-                'Fine Amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
-                'Book Fine Amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0.0,
-                'Total Fine': float(transaction.total_fine) if transaction.total_fine else 0.0,
-                'Adjusted Fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0.0,
-                'Fine Status': transaction.fine_status or '',
-                'Fine Paid Date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
-                'Return Condition': transaction.return_condition.status_name if transaction.return_condition else '',
-                'Remarks': transaction.remarks or '',
-                'Updated At': transaction.updated_at.strftime('%Y-%m-%d %H:%M:%S') if transaction.updated_at else '',
-                'Updated By': transaction.updated_by or '',
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='All Transactions', index=False)
-        
-        # Auto-adjust column widths
-        if 'All Transactions' in writer.sheets:
-            worksheet = writer.sheets['All Transactions']
-            for column in df:
-                column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-                col_idx = df.columns.get_loc(column)
-                worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def apply_transaction_filters_export(self, qs, filters):
-        """Apply filters for transaction export"""
-        if filters.get('from_date'):
-            qs = qs.filter(created_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(created_at__date__lte=filters['to_date'])
-        
-        if filters.get('late_returns') == 'late':
-            qs = qs.filter(days_overdue_count__gt=0)
-        elif filters.get('late_returns') == 'on_time':
-            qs = qs.filter(days_overdue_count=0)
-        
-        if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status='paid')
-        elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(fine_status__in=['unpaid', 'pending', None])
-        
-        return qs
-    
-    def export_physical_visits_to_excel(self, writer, db, member_ids, filters):
-        """Export physical visits to Excel sheet"""
-        # Get membership codes
-        members = MembershipDetails.objects.using(db).filter(
-            id__in=member_ids
-        ).values('id', 'membership_code', 'first_name', 'last_name')
-        
-        member_map = {m['membership_code']: m for m in members if m['membership_code']}
-        member_codes = list(member_map.keys())
-        
-        qs = MemberEntryExit.objects.using(db).filter(
-            membership_code__in=member_codes
-        ).order_by('-entry_time')
-        
-        # Apply filters
-        if filters.get('from_date'):
-            qs = qs.filter(entry_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(entry_time__date__lte=filters['to_date'])
-        
-        data = []
-        for visit in qs:
-            member = member_map.get(visit.membership_code, {})
-            data.append({
-                'Member Name': f"{member.get('first_name', '')} {member.get('last_name', '')}".strip(),
-                'Membership Code': visit.membership_code,
-                'Entry Time': visit.entry_time.strftime('%Y-%m-%d %H:%M:%S') if visit.entry_time else '',
-                'Exit Time': visit.exit_time.strftime('%Y-%m-%d %H:%M:%S') if visit.exit_time else '',
-                'Duration': self.calculate_visit_duration(visit),
-                'Remark': visit.remark or '',
-                'Created At': visit.created_at.strftime('%Y-%m-%d %H:%M:%S') if visit.created_at else '',
-                'Role ID': visit.role_id or ''
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Physical Visits', index=False)
-        
-        # Auto-adjust column widths
-        if 'Physical Visits' in writer.sheets:
-            worksheet = writer.sheets['Physical Visits']
-            for column in df:
-                column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-                col_idx = df.columns.get_loc(column)
-                worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def calculate_visit_duration(self, visit):
-        """Calculate visit duration"""
-        if visit.entry_time and visit.exit_time:
-            duration = visit.exit_time - visit.entry_time
-            hours = duration.total_seconds() / 3600
-            return f"{hours:.2f} hours"
-        return 'Still in library'
-    
-    def export_virtual_usage_to_excel(self, writer, db, member_ids, filters):
-        """Export virtual usage to Excel sheet"""
-        # Get login sessions
-        login_sessions = MemberLoginSession.objects.using(db).filter(
-            member_id__in=member_ids
-        ).select_related('member').order_by('-login_time')
-        
-        # Apply filters
-        if filters.get('from_date'):
-            login_sessions = login_sessions.filter(login_time__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            login_sessions = login_sessions.filter(login_time__date__lte=filters['to_date'])
-        
-        data = []
-        for session in login_sessions:
-            data.append({
-                'Member Name': f"{session.member.first_name or ''} {session.member.last_name or ''}".strip(),
-                'Membership Code': session.member.membership_code if session.member else '',
-                'Activity Type': 'Login Session',
-                'Screen Name': 'Login',
-                'Screen Route': '/login',
-                'Visited At': session.login_time.strftime('%Y-%m-%d %H:%M:%S'),
-                'Logout Time': session.logout_time.strftime('%Y-%m-%d %H:%M:%S') if session.logout_time else '',
-                'Duration': self.calculate_session_duration_excel(session),
-                'IP Address': session.ip_address or '',
-                'Device Type': session.device_type or ''
-            })
-        
-        # Get screen activities
-        activities = MemberScreenActivity.objects.using(db).filter(
-            session__member_id__in=member_ids
-        ).select_related('session', 'session__member').order_by('-visited_at')
-        
-        # Apply filters
-        if filters.get('from_date'):
-            activities = activities.filter(visited_at__date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            activities = activities.filter(visited_at__date__lte=filters['to_date'])
-        
-        for activity in activities:
-            data.append({
-                'Member Name': f"{activity.session.member.first_name or ''} {activity.session.member.last_name or ''}".strip(),
-                'Membership Code': activity.session.member.membership_code if activity.session.member else '',
-                'Activity Type': 'Screen Visit',
-                'Screen Name': activity.screen_name,
-                'Screen Route': activity.screen_route,
-                'Visited At': activity.visited_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'Logout Time': '',
-                'Duration': '',
-                'IP Address': activity.session.ip_address or '',
-                'Device Type': activity.session.device_type or ''
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Virtual Usage', index=False)
-        
-        # Auto-adjust column widths
-        if 'Virtual Usage' in writer.sheets:
-            worksheet = writer.sheets['Virtual Usage']
-            for column in df:
-                column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-                col_idx = df.columns.get_loc(column)
-                worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def export_payments_to_excel(self, writer, db, member_ids, filters):
-        """Export payment data to Excel sheet"""
-        qs = PaymentDetails.objects.using(db).filter(
-            membership_id__in=member_ids
-        ).select_related('membership', 'status', 'circulation_transaction').order_by('-created_at')
-        
-        # Apply filters
-        qs = self.apply_payment_filters_export(qs, filters)
-        
-        data = []
-        for payment in qs:
-            data.append({
-                'Payment Mode': payment.payment_mode or '',
-                'Payment Type': payment.payment_type or '',
-                'Payment Method': payment.payment_method or '',
-                'Deposit Amount': float(payment.deposit_amount) if payment.deposit_amount else 0.0,
-                'Entry Fee Amount': float(payment.entry_fee_amount) if payment.entry_fee_amount else 0.0,
-                'Monthly Subscription Amount': float(payment.monthly_subscription_amount) if payment.monthly_subscription_amount else 0.0,
-                'Total Subscription Amount': float(payment.total_subscription_amount) if payment.total_subscription_amount else 0.0,
-                'Subscription From': payment.subscription_from.strftime('%Y-%m-%d') if payment.subscription_from else '',
-                'Subscription To': payment.subscription_to.strftime('%Y-%m-%d') if payment.subscription_to else '',
-                'Fine Amount': float(payment.fine_amount) if payment.fine_amount else 0.0,
-                'Book Fine Amount': float(payment.book_fine_amount) if payment.book_fine_amount else 0.0,
-                'Adjusted Amount': float(payment.adjusted_amount) if payment.adjusted_amount else 0.0,
-                'Status': payment.status.status_name if payment.status else '',
-                'Transaction ID': payment.transaction_id or '',
-                'Remarks': payment.remarks or '',
-                'User ID': payment.user_id or '',
-                'Membership Code': payment.membership_code or '',
-                'Created At': payment.created_at.strftime('%Y-%m-%d %H:%M:%S') if payment.created_at else '',
-                'Created By': payment.created_by or '',
-                'Updated At': payment.updated_at.strftime('%Y-%m-%d %H:%M:%S') if payment.updated_at else '',
-                'Updated By': payment.updated_by or '',
-                'Membership ID': payment.membership_id,
-                'Status ID': payment.status_id,
-                'Payment Date': payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '',
-                'Circulation Transaction ID': payment.circulation_transaction_id,
-                'Member Name': f"{payment.membership.first_name or ''} {payment.membership.last_name or ''}".strip() if payment.membership else '',
-                'Member User ID': payment.membership.user_id if payment.membership else '',
-            })
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Payment Details', index=False)
-        
-        # Auto-adjust column widths
-        if 'Payment Details' in writer.sheets:
-            worksheet = writer.sheets['Payment Details']
-            for column in df:
-                column_width = max(df[column].astype(str).map(len).max(), len(column)) + 2
-                col_idx = df.columns.get_loc(column)
-                worksheet.column_dimensions[chr(65 + col_idx)].width = column_width
-    
-    def apply_payment_filters_export(self, qs, filters):
-        """Apply filters for payment export"""
-        if filters.get('from_date'):
-            qs = qs.filter(payment_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(payment_date__lte=filters['to_date'])
-        
-        if filters.get('payment_type'):
-            qs = qs.filter(payment_type__icontains=filters['payment_type'])
-        
-        if filters.get('payment_mode'):
-            qs = qs.filter(payment_mode=filters['payment_mode'])
-        
-        if filters.get('payment_method'):
-            qs = qs.filter(payment_method=filters['payment_method'])
-        
-        if filters.get('min_amount'):
-            qs = qs.filter(total_subscription_amount__gte=float(filters['min_amount']))
-        
-        if filters.get('max_amount'):
-            qs = qs.filter(total_subscription_amount__lte=float(filters['max_amount']))
-        
-        return qs
-    
-    def calculate_session_duration_excel(self, session):
-        """Calculate session duration for Excel export"""
-        if session.login_time and session.logout_time:
-            duration = session.logout_time - session.login_time
-            minutes = duration.total_seconds() / 60
-            return f"{minutes:.1f} minutes"
-        return 'Still active'
-# reports/views.py - ADD THESE ADDITIONAL VIEWS
+    def export_all_tabs(self, writer, db, member_ids, filters, tab_filters):
+        """Export all tabs to separate sheets"""
 
-class ListReportSessionsView(ReportBaseView):
-    """List all saved report sessions for current user"""
-    
+        export_map = {
+            'member-details': export_member_details_to_excel,
+            'membership-details': export_membership_details_to_excel,
+            'loan': export_loan_to_excel,
+            'transactions': export_transactions_to_excel,
+            'physical-visit': export_physical_visits_to_excel,
+            'virtual-usage': export_virtual_usage_to_excel,
+            'payments': export_payments_to_excel,
+        }
+
+        for tab_name, export_func in export_map.items():
+            export_func(
+                writer,
+                db,
+                member_ids,
+                tab_filters.get(tab_name, {})
+            )
+
+    def export_single_tab(self, writer, export_type, db, member_ids, filters):
+        """Export a single tab"""
+
+        export_map = {
+            'member-details': export_member_details_to_excel,
+            'membership-details': export_membership_details_to_excel,
+            'loan': export_loan_to_excel,
+            'transactions': export_transactions_to_excel,
+            'physical-visit': export_physical_visits_to_excel,
+            'virtual-usage': export_virtual_usage_to_excel,
+            'payments': export_payments_to_excel,
+        }
+
+        export_func = export_map.get(export_type)
+
+        if export_func:
+            export_func(
+                writer,
+                db,
+                member_ids,
+                filters
+            )
+        else:
+            # Fallback sheet
+            workbook = writer.book
+            worksheet = workbook.add_worksheet(
+                export_type.replace('-', ' ').title()
+            )
+            worksheet.write(0, 0, 'No data available')
+class ExportAllDataView(ReportBaseView):
+    """Export selected tabs data to Excel"""
+
     def get(self, request):
-        sessions = ReportSession.objects.filter(
-            created_by=request.user,
-            report_type='member'
-        ).order_by('-created_at')[:50]
-        
-        data = []
-        for session in sessions:
-            data.append({
-                'id': session.id,
-                'name': session.name,
-                'report_type': session.report_type,
-                'created_at': session.created_at.strftime('%Y-%m-%d %H:%M'),
-                'filters_count': len(session.filters_json) if session.filters_json else 0
-            })
-        
-        return JsonResponse({'sessions': data})
+        # --------------------------------
+        # Parse inputs
+        # --------------------------------
+        member_ids = request.GET.getlist('member_ids')
+        selected_tabs = request.GET.getlist('tabs')
+        filename = request.GET.get('filename', 'member_report')
+        format_type = request.GET.get('format', 'excel')
 
-class DeleteReportSessionView(ReportBaseView):
-    """Delete a saved report session"""
-    
-    def delete(self, request, session_id):
+        filters_json = request.GET.get('filters', '{}')
+        tab_filters_json = request.GET.get('tab_filters', '{}')
+
+        member_ids = [int(i) for i in member_ids if str(i).isdigit()]
+
         try:
-            session = ReportSession.objects.get(id=session_id, created_by=request.user)
-            session.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Session deleted successfully'
-            })
-        except ReportSession.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Session not found'
-            }, status=404)
+            filters = json.loads(filters_json)
+        except Exception:
+            filters = {}
 
-class MemberDocumentsView(ReportBaseView):
-    """Get documents for a specific member"""
-    
-    def get(self, request, member_id):
+        try:
+            tab_filters = json.loads(tab_filters_json)
+        except Exception:
+            tab_filters = {}
+
+        if not member_ids:
+            return JsonResponse({'error': 'No members selected'}, status=400)
+
+        if not selected_tabs:
+            return JsonResponse({'error': 'No tabs selected'}, status=400)
+
         db = self.get_library_db()
-        
-        documents = DocumentDetails.objects.using(db).filter(
-            membership_id=member_id,
-            isactive=1
-        ).select_related('document')
-        
-        data = []
-        for doc in documents:
-            data.append({
-                'id': doc.id,
-                'document_name': doc.document.document_name if doc.document else 'Unknown',
-                'file_name': doc.file_name,
-                'file_path': doc.file_path,
-                'uploaded_at': doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else ''
-            })
-        
-        return JsonResponse({'documents': data})
 
-class ExportPDFView(ReportBaseView):
-    """Export tab data to PDF"""
-    
-    def get(self, request, tab_name):
-        # This would require reportlab or similar PDF generation library
-        # Implementation depends on your PDF generation requirements
-        pass
+        # --------------------------------
+        # Export function map
+        # --------------------------------
+        export_map = {
+            'member-details': export_member_details_to_excel,
+            'membership-details': export_membership_details_to_excel,
+            'loan': export_loan_to_excel,
+            'transactions': export_transactions_to_excel,
+            'physical-visit': export_physical_visits_to_excel,
+            'virtual-usage': export_virtual_usage_to_excel,
+            'payments': export_payments_to_excel,
+        }
 
-class ExportCompletePDFView(ReportBaseView):
-    """Export complete report to PDF"""
-    
-    def get(self, request):
-        # Implementation for complete PDF export
-        pass
+        # --------------------------------
+        # Create temp Excel
+        # --------------------------------
+        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
+            output_path = tmp.name
+
+        try:
+            with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+
+                for tab in selected_tabs:
+                    export_func = export_map.get(tab)
+                    if not export_func:
+                        continue  # skip unknown tabs
+
+                    export_func(
+                        writer=writer,
+                        db=db,
+                        member_ids=member_ids,
+                        filters=tab_filters.get(tab, {})
+                    )
+
+            with open(output_path, 'rb') as f:
+                response = HttpResponse(
+                    f.read(),
+                    content_type=(
+                        'application/vnd.openxmlformats-officedocument.'
+                        'spreadsheetml.sheet'
+                    )
+                )
+
+            response['Content-Disposition'] = (
+                f'attachment; filename="{filename}.xlsx"'
+            )
+            return response
+
+        except Exception as e:
+            return JsonResponse(
+                {'error': 'Export failed', 'details': str(e)},
+                status=500
+            )
+
+        finally:
+            if os.path.exists(output_path):
+                os.unlink(output_path)

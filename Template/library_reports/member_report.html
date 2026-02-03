@@ -35,6 +35,22 @@
 
 <style>
 
+.document-card {
+    max-width: 220px;
+    transition: all 0.2s ease-in-out;
+}
+
+.document-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+
+@media (max-width: 576px) {
+    .document-card {
+        max-width: 100%;
+    }
+}
+
 
 </style>
 {% endblock %}
@@ -97,29 +113,12 @@ $(document).ready(function() {
     initDataTables();
     initFilterModals();
     setupEventListeners();
-    initDatePickers();
-    initSelect2();
+    initSelectize();
     checkSavedSession();
     includeModals();
 });
 
-function initDatePickers() {
-    //$('.datepicker').datepicker({
-    //    format: 'yyyy-mm-dd',
-    //    autoclose: true,
-    //    todayHighlight: true,
-    //    orientation: 'bottom auto'
-    //});
-    
-    //$('input[type="month"]').datepicker({
-    //    format: 'yyyy-mm',
-    //    minViewMode: 'months',
-    //    autoclose: true,
-    //    orientation: 'bottom auto'
-    //});
-}
-
-function initSelect2() {
+function initSelectize() {
     $('select[multiple]').each(function() {
         $(this).selectize({
             plugins: ['remove_button'],
@@ -211,21 +210,8 @@ function renderMemberList(members) {
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <div class="member-id">${member.membership_code || 'N/A'}</div>
-                        <div class="member-name" style="color:black;">${member.first_name} ${member.last_name}</div>
-                        <div class="member-info small text-muted">
-                            ${member.user_id} • ${member.email}
-                        </div>
+                        <div class="member-name text-dark" >${member.first_name} ${member.last_name} <span class="member-info small "> ( ${member.user_id} ) </span></div>
                     </div>
-                    <div>
-                        <span class="member-status ${statusClass}">
-                            ${member.status}
-                        </span>
-                    </div>
-                </div>
-                <div>
-                    <span class="bg-light text-dark" style="font-size:0.9rem;font-weight:500;">
-                        ${member.membership_type}
-                    </span>
                 </div>
             </div>
         `);
@@ -342,229 +328,6 @@ function initDataTables() {
         }
     });
 }
-{% comment %} 
-function initDataTables() {
-    const tabConfigs = {
-        'member-details': {
-            columns: [
-                { data: 'first_name' },
-                { data: 'middle_name' },
-                { data: 'last_name' },
-                { data: 'membership_code' },
-                { data: 'user_id' },
-                { data: 'email' },
-                { data: 'mobile_no' },
-                { data: 'status' },
-                { 
-                    data: null,
-                    render: function(data, type, row) {
-                        return `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${row.id})">
-                                    <i class="bi bi-files"></i>
-                                </button>`;
-                    }
-                }
-            ]
-        },
-        'membership-details': {
-            columns: [
-                { data: 'first_name' },
-                { data: 'last_name' },
-                { data: 'membership_code' },
-                { data: 'actionperformed' },
-                { data: 'from_date' },
-                { data: 'to_date' },
-                { 
-                    data: 'deposit',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'entry_fees',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'subscription',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { data: 'gap_months' },
-                { data: 'changed_at' },
-                { data: 'changed_by' }
-            ]
-        },
-        'loan': {
-            columns: [
-                { data: 'membership_code' },
-                { data: 'barcode' },
-                { data: 'accession_id' },
-                { data: 'issue_date' },
-                { data: 'due_date' },
-                { data: 'return_date' },
-                { 
-                    data: 'days_overdue_count',
-                    render: function(data) {
-                        if (data > 0) {
-                            return `<span class="badge bg-danger">${data} days</span>`;
-                        }
-                        return `<span class="badge bg-success">On time</span>`;
-                    }
-                },
-                { 
-                    data: 'fine_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { data: 'issued_by' },
-                { data: 'remarks' },
-                { data: 'created_at' }
-            ]
-        },
-        'transactions': {
-            columns: [
-                { data: 'member_name' },
-                { data: 'membership_code' },
-                { data: 'barcode' },
-                { data: 'transaction_type' },
-                { data: 'issue_date' },
-                { data: 'due_date' },
-                { data: 'return_date' },
-                { 
-                    data: 'days_overdue_count',
-                    render: function(data) {
-                        if (data > 0) {
-                            return `<span class="badge bg-danger">${data} days</span>`;
-                        }
-                        return `<span class="badge bg-success">On time</span>`;
-                    }
-                },
-                { 
-                    data: 'fine_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'fine_status',
-                    render: function(data) {
-                        if (data === 'paid') {
-                            return `<span class="badge bg-success">Paid</span>`;
-                        } else if (data === 'unpaid') {
-                            return `<span class="badge bg-danger">Unpaid</span>`;
-                        }
-                        return `<span class="badge bg-warning">Pending</span>`;
-                    }
-                },
-                { data: 'issued_by' },
-                { data: 'created_at' }
-            ]
-        },
-        'physical-visit': {
-            columns: [
-                { data: 'member_name' },
-                { data: 'membership_code' },
-                { data: 'entry_time' },
-                { data: 'exit_time' },
-                { 
-                    data: null,
-                    render: function(data) {
-                        if (data.entry_time && data.exit_time) {
-                            const entry = new Date(data.entry_time);
-                            const exit = new Date(data.exit_time);
-                            const duration = (exit - entry) / (1000 * 60 * 60); // hours
-                            return `${duration.toFixed(2)} hours`;
-                        }
-                        return 'In progress';
-                    }
-                },
-                { data: 'remark' },
-                { data: 'created_at' }
-            ]
-        },
-        'virtual-usage': {
-            columns: [
-                { data: 'member_name' },
-                { data: 'membership_code' },
-                { data: 'screen_name' },
-                { data: 'visited_at' },
-                { 
-                    data: 'duration',
-                    render: function(data) {
-                        return data || 'N/A';
-                    }
-                },
-                { data: 'ip_address' },
-                { data: 'device_type' }
-            ]
-        },
-        'payments': {
-            columns: [
-                { data: 'payment_mode' },
-                { data: 'payment_type' },
-                { data: 'payment_method' },
-                { 
-                    data: 'deposit_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'entry_fee_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { 
-                    data: 'total_subscription_amount',
-                    render: function(data) {
-                        return data ? '₹' + parseFloat(data).toFixed(2) : '₹0.00';
-                    }
-                },
-                { data: 'transaction_id' },
-                { data: 'payment_date' },
-                { data: 'membership_code' },
-                { data: 'created_at' }
-            ]
-        }
-    };
-
-
-
-    Object.keys(tabConfigs).forEach(tabId => {
-        
-        const tableId = `#${tabId}-table`;
-        if ($(tableId).length) {
-            dataTables[tabId] = $(tableId).DataTable({
-                dom: '<"top"f>rt<"bottom"lip><"clear">',
-                pageLength: 25,
-                language: {
-                    search: "Search in table:",
-                    lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    paginate: {
-                        first: "First",
-                        last: "Last",
-                        next: "Next",
-                        previous: "Previous"
-                    }
-                },
-                columnDefs: [
-                    {
-                        targets: '_all',
-                        className: 'text-center'
-                    }
-                ],
-                columns: tabConfigs[tabId].columns,
-                order: [[0, 'asc']]
-            });
-        }
-    });
-} {% endcomment %}
-
 
 function loadCurrentTabData() {
     const activeTab = $('#reportTabs .nav-link.active').attr('id');
@@ -599,25 +362,6 @@ function loadTabData(tabName) {
         }
     });
 }
-{% comment %} 
-function populateTabData(tabName, data) {
-    
-    const table = dataTables[tabName];
-    if (!table) return;
-    
-    table.clear();
-    
-    data.forEach(item => {
-        // Add row to DataTable
-        table.row.add(item);
-    });
-    
-    table.draw();
-    
-    // Update record count
-    const recordCount = data.length;
-    $(`#${tabName}-table_info`).html(`Showing ${recordCount} records`);
-} {% endcomment %}
 
 function populateTabData(tabName, data) {
     const table = document.getElementById(`${tabName}-table`);
@@ -1074,49 +818,62 @@ function exportAllTabs() {
 
 function processExportAll() {
     const format = $('#exportFormat').val();
-    const fileName = $('#exportFileName').val();
-    
-    // Collect which tabs to export
-    const tabsToExport = [];
-    if ($('#exportMemberDetails').is(':checked')) tabsToExport.push('member-details');
-    if ($('#exportMembershipDetails').is(':checked')) tabsToExport.push('membership-details');
-    if ($('#exportLoan').is(':checked')) tabsToExport.push('loan');
-    if ($('#exportTransactions').is(':checked')) tabsToExport.push('transactions');
-    if ($('#exportPhysicalVisit').is(':checked')) tabsToExport.push('physical-visit');
-    if ($('#exportVirtualUsage').is(':checked')) tabsToExport.push('virtual-usage');
-    if ($('#exportPayments').is(':checked')) tabsToExport.push('payments');
-    
-    if (tabsToExport.length === 0) {
-        showToast('Please select at least one tab to export', 'warning');
+    let fileName = $('#exportFileName').val().trim();
+
+    if (!fileName) {
+        showToast('Please enter file name', 'warning');
         return;
     }
-    
-    // Build export URL
-    const params = new URLSearchParams({
-        type: 'all-tabs',
-        member_ids: Array.from(selectedMembers),
-        filters: JSON.stringify(currentFilters),
-        tab_filters: JSON.stringify(tabFilters),
-        format: format,
-        tabs: tabsToExport.join(','),
-        filename: fileName
+
+    // sanitize filename
+    fileName = fileName.replace(/[^\w\-]/g, '_');
+
+    const tabsToExport = [];
+    const tabMap = {
+        exportMemberDetails: 'member-details',
+        exportMembershipDetails: 'membership-details',
+        exportLoan: 'loan',
+        exportTransactions: 'transactions',
+        exportPhysicalVisit: 'physical-visit',
+        exportVirtualUsage: 'virtual-usage',
+        exportPayments: 'payments'
+    };
+
+    Object.entries(tabMap).forEach(([checkboxId, tabKey]) => {
+        if ($('#' + checkboxId).is(':checked')) {
+            tabsToExport.push(tabKey);
+        }
     });
-    
-    // Show loading
-    showToast('Preparing export...', 'info');
-    
-    // Trigger download
+
+    if (tabsToExport.length === 0) {
+        showToast('Please select at least one tab', 'warning');
+        return;
+    }
+
+    const params = new URLSearchParams();
+    params.append('format', format);
+    params.append('filename', fileName);
+    params.append('filters', JSON.stringify(currentFilters || {}));
+    params.append('tab_filters', JSON.stringify(tabFilters || {}));
+
+    // 🔥 append arrays properly
+    Array.from(selectedMembers).forEach(id => params.append('member_ids', id));
+    tabsToExport.forEach(tab => params.append('tabs', tab));
+
+    showToast('Preparing export…', 'info');
+
     window.location.href = `/reports/export-all-data/?${params.toString()}`;
-    
     $('#exportOptionsModal').modal('hide');
 }
+
+
 
 function exportTabData(tabName) {
     if (selectedMembers.size === 0) {
         showToast('Please select at least one member to export', 'warning');
         return;
     }
-    
+    debugger;
     const tabNames = {
         'member-details': 'Member Details',
         'membership-details': 'Membership Details',
@@ -1126,16 +883,16 @@ function exportTabData(tabName) {
         'virtual-usage': 'Virtual Usage',
         'payments': 'Payment Details'
     };
-    
+    const filters = tabFilters[tabName] || {};
     const fileName = `${tabNames[tabName]}_${new Date().toISOString().slice(0,10)}.xlsx`;
-    
+
     const params = new URLSearchParams({
         type: tabName,
         member_ids: Array.from(selectedMembers),
-        tab_filters: JSON.stringify(tabFilters[tabName] || {}),
+        tab_filters: JSON.stringify(filters),
         filename: fileName
     });
-    
+    debugger;
     showToast(`Exporting ${tabNames[tabName]}...`, 'info');
     window.location.href = `/reports/export-report/?${params.toString()}`;
 }
@@ -1174,23 +931,8 @@ function updateFilterBadge(tabId, count) {
     $(`#${tabId}-filter-count`).text(count);
 }
 
-// View documents for a member
-function viewDocuments(memberId) {
-    // Implement document viewer modal
-    console.log('View documents for member:', memberId);
-}
 
-// Save report session
-function saveReportSession() {
-    // Implement save functionality
-    console.log('Save report session');
-}
 
-// Load report session
-function loadReportSession() {
-    // Implement load functionality
-    console.log('Load report session');
-}
 
 // Scroll management
 $(window).scroll(function() {
@@ -1225,20 +967,6 @@ function setupEventListeners() {
         const searchText = $(this).val().toLowerCase();
         highlightText(searchText);
     });
-    
-    // Initialize date pickers
-    //$('.datepicker').datepicker({
-    //    format: 'yyyy-mm-dd',
-    //    autoclose: true,
-    //    todayHighlight: true
-    //});
-    
-    // Initialize month pickers
-    //$('input[type="month"]').datepicker({
-    //    format: 'yyyy-mm',
-    //    minViewMode: 'months',
-    //    autoclose: true
-    //});
     
     // Initialize select2 for multi-select filters
     $('select[multiple]').each(function() {
@@ -1305,8 +1033,6 @@ jQuery.fn.removeHighlight = function() {
     }).end();
 };
 
-// Add to the existing JavaScript in member_report.html
-
 // Initialize all filter modals
 function initFilterModals() {
     
@@ -1355,242 +1081,108 @@ function initFilterModals() {
     });
 }
 
-// Document viewer modal
 function viewDocuments(memberId) {
+
+    // Remove existing modal if already open
+    const existing = document.getElementById('documentViewerModal');
+    if (existing) existing.remove();
+
     $.ajax({
-        url: `/api/members/${memberId}/documents/`,
-        success: function(response) {
-            const modalHtml = `
-                <div class="modal fade" id="documentViewerModal" tabindex="-1">
-                    <div class="modal-dialog modal-xl">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-files me-2"></i>Member Documents
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row" id="document-grid">
-                                    ${response.documents.map(doc => `
-                                        <div class="col-md-4 mb-3">
-                                            <div class="card document-card">
-                                                <div class="card-body text-center">
-                                                    <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 3rem;"></i>
-                                                    <h6 class="mt-2">${doc.document_name}</h6>
-                                                    <p class="text-muted small">Uploaded: ${doc.uploaded_at}</p>
-                                                    <button class="btn btn-sm btn-primary" onclick="viewDocument('${doc.file_path}')">
-                                                        <i class="bi bi-eye me-1"></i>View
-                                                    </button>
-                                                    <a href="${doc.file_path}" class="btn btn-sm btn-success" download>
-                                                        <i class="bi bi-download me-1"></i>Download
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
+        url: `/reports/api/members/${memberId}/documents/`,
+        method: 'GET',
+        success: function (response) {
+
+            const documents = response.documents || [];
+
+            const documentsHtml = documents.length
+                ? documents.map(doc => `
+                    <div class="col-12 col-sm-6 mb-3 d-flex justify-content-center">
+                        <div class="card document-card w-100 text-center">
+                            <div class="card-body">
+                                <i class="bi bi-file-earmark-pdf text-danger mb-2"
+                                   style="font-size: 2.5rem;"></i>
+
+                                <h6 class="text-truncate" title="${doc.document_name}">
+                                    ${doc.document_name}
+                                </h6>
+
+                                <small class="text-muted d-block mb-3">
+                                    Uploaded: ${doc.uploaded_at}
+                                </small>
+
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-sm btn-primary"
+                                            onclick="viewDocument('${doc.file_path}')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <a href="${doc.file_path}"
+                                       class="btn btn-sm btn-success"
+                                       download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
+                `).join('')
+                : `
+                    <div class="col-12 text-center py-4">
+                        <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="mt-2 text-muted">No documents found</p>
+                    </div>
+                `;
+
+            const modalHtml = `
+                <div class="modal fade" id="documentViewerModal" tabindex="-1">
+                    <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content">
+
+                            <div class="modal-header justify-content-center">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-files me-2"></i> Member Documents
+                                </h5>
+                                <button type="button" class="btn-close position-absolute end-0 me-3"
+                                        data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="row justify-content-center">
+                                    ${documentsHtml}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             `;
-            
-            $('body').append(modalHtml);
-            $('#documentViewerModal').modal('show');
-            
-            // Clean up modal after closing
-            $('#documentViewerModal').on('hidden.bs.modal', function() {
-                $(this).remove();
-            });
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = new bootstrap.Modal(
+                document.getElementById('documentViewerModal'),
+                { backdrop: 'static', keyboard: true }
+            );
+
+            modal.show();
+
+            document
+                .getElementById('documentViewerModal')
+                .addEventListener('hidden.bs.modal', function () {
+                    this.remove();
+                });
+        },
+        error: function () {
+            alert('Unable to load documents');
         }
     });
 }
+
 
 function viewDocument(filePath) {
     window.open(filePath, '_blank');
 }
 
-// Save report session with modal
-function saveReportSession() {
-    const modalHtml = `
-        <div class="modal fade" id="saveSessionModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-save me-2"></i>Save Report Session
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Session Name</label>
-                            <input type="text" class="form-control" id="sessionName" 
-                                   placeholder="Enter session name..." 
-                                   value="Report_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <input type="checkbox" class="form-check-input" id="saveFilters" checked>
-                                Save current filters
-                            </label>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <input type="checkbox" class="form-check-input" id="saveSelections" checked>
-                                Save selected members
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="confirmSaveSession()">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    $('body').append(modalHtml);
-    $('#saveSessionModal').modal('show');
-    
-    $('#saveSessionModal').on('hidden.bs.modal', function() {
-        $(this).remove();
-    });
-}
-
-function confirmSaveSession() {
-    const sessionData = {
-        name: $('#sessionName').val(),
-        filters: $('#saveFilters').is(':checked') ? currentFilters : {},
-        selected_members: $('#saveSelections').is(':checked') ? Array.from(selectedMembers) : []
-    };
-    
-    $.ajax({
-        url: '{% url "save_report_session" %}',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(sessionData),
-        success: function(response) {
-            if (response.success) {
-                showToast('Session saved successfully!', 'success');
-                $('#saveSessionModal').modal('hide');
-            } else {
-                showToast('Error saving session: ' + response.error, 'error');
-            }
-        }
-    });
-}
-
-// Load report session with modal
-function loadReportSession() {
-    $.ajax({
-        url: '{% url "list_report_sessions" %}',
-        success: function(response) {
-            if (response.sessions.length === 0) {
-                showToast('No saved sessions found', 'info');
-                return;
-            }
-            
-            const modalHtml = `
-                <div class="modal fade" id="loadSessionModal" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-folder2-open me-2"></i>Load Report Session
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Session Name</th>
-                                                <th>Type</th>
-                                                <th>Created</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${response.sessions.map(session => `
-                                                <tr>
-                                                    <td>${session.name}</td>
-                                                    <td><span class="badge bg-info">${session.report_type}</span></td>
-                                                    <td>${session.created_at}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-primary" onclick="loadSpecificSession(${session.id})">
-                                                            <i class="bi bi-upload me-1"></i>Load
-                                                        </button>
-                                                        <button class="btn btn-sm btn-danger" onclick="deleteSession(${session.id})">
-                                                            <i class="bi bi-trash me-1"></i>Delete
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            $('body').append(modalHtml);
-            $('#loadSessionModal').modal('show');
-            
-            $('#loadSessionModal').on('hidden.bs.modal', function() {
-                $(this).remove();
-            });
-        }
-    });
-}
-
-function loadSpecificSession(sessionId) {
-    $.ajax({
-        url: `/reports/load-report-session/${sessionId}/`,
-        success: function(response) {
-            if (response.success) {
-                const session = response.session;
-                
-                // Apply filters
-                if (session.filters) {
-                    currentFilters = session.filters;
-                    applySavedFilters(session.filters);
-                }
-                
-                // Select members
-                if (session.selected_members && session.selected_members.length > 0) {
-                    selectedMembers = new Set(session.selected_members);
-                    updateMemberListSelection();
-                    loadCurrentTabData();
-                }
-                
-                showToast('Session loaded successfully!', 'success');
-                $('#loadSessionModal').modal('hide');
-            }
-        }
-    });
-}
-
-function applySavedFilters(filters) {
-    // Apply filters to UI
-    if (filters.search) {
-        $('#member-search').val(filters.search);
-    }
-    if (filters.membership_type) {
-        $('#membership-type-filter').val(filters.membership_type);
-    }
-    if (filters.membership_status) {
-        $('#membership-status-filter').val(filters.membership_status);
-    }
-    
-    // Reload member list with saved filters
-    loadMemberList(1);
-}
 
 function updateMemberListSelection() {
     $('.member-list-item').each(function() {
@@ -1715,11 +1307,6 @@ $(document).keydown(function(e) {
         deselectAll();
         return false;
     }
-});
-
-// Initialize everything when page loads
-$(document).ready(function() {
-
 });
 
 </script>
