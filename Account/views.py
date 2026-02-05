@@ -558,14 +558,33 @@ def adminLogin(request):
     # Just return the template
     return render(request, 'bootstrap/account/admin_login.html')
 
+import hashlib
+import logging
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_protect
+
+logger = logging.getLogger(__name__)
+
+def get_client_ip(request):
+    """
+    Returns the real client IP.
+    Works correctly behind proxies / load balancers.
+    """
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
 @csrf_protect
 def librarianLogin(request):
     """
-    Librarian staff login view for library staff.
-    Uses Django's built-in authentication with PBKDF2 passwords.
+    Librarian staff login view.
+    Prevents session fixation & basic hijacking.
     """
 
-    library_code = request.session.get('library_db', None)
+    library_code = request.session.get('library_db')
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -576,46 +595,51 @@ def librarianLogin(request):
             return render(request, 'bootstrap/account/librarian_login.html')
 
         try:
+
             user = authenticate(request, username=username, password=password)
 
-            if user and hasattr(user, 'role_id') and user.role_id != 3:
-                login(request, user)
+            if user and getattr(user, 'role_id', None) != 3:
 
+                login(request, user)  # Django creates fresh session here
+
+                # ✅ App-specific session data
                 request.session['using_database'] = library_code
                 request.session['is_librarian'] = True
-                request.session['username'] = str(user.username)
-                request.session['full_name'] = str(getattr(user, 'full_name', user.username))
-                request.session['user_id'] = str(user.id)
-                request.session['role_id'] = str(user.role_id)
+                request.session['username'] = user.username
+                request.session['full_name'] = getattr(user, 'full_name', user.username)
+                request.session['user_id'] = user.id
+                request.session['role_id'] = user.role_id
                 request.session['last_login'] = (
                     user.last_login.isoformat() if user.last_login else ''
                 )
 
-                # messages.success(
-                #     request,
-                #     f'Login successful. Welcome, {user.full_name or user.username}.'
-                # )
+                # 🔐 Fingerprinting
+                ua = request.META.get('HTTP_USER_AGENT', '')
+                request.session['_ua_hash'] = hashlib.sha256(ua.encode()).hexdigest()
+                request.session['_ua_raw'] = ua
+                request.session['_ip'] = get_client_ip(request)
+
+                # 🧹 Cleanup flags
+                request.session.pop('_session_expired', None)
+                request.session.pop('_user_logged_out', None)
+
                 return redirect('L01:dashboard')
 
-            # 🔒 Generic failure message (no role / user leakage)
+            # Generic failure (VAPT-friendly)
             messages.error(
                 request,
                 'Login unsuccessful. Invalid credentials or insufficient access rights.'
             )
 
-        except Exception as e:
+        except Exception:
+            logger.exception("Librarian login error for username '%s'", username)
             messages.error(
                 request,
                 'Login could not be completed at this time. Please try again later.'
             )
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(
-                f"Librarian login error for username '{username}'",
-                exc_info=True
-            )
 
     return render(request, 'bootstrap/account/librarian_login.html')
+
 
 # def logoutView(request):
 #     library_code = request.session.get('library_db', None)

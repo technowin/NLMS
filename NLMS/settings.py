@@ -247,25 +247,57 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # SESSION_ENGINE ="django.contrib.sessions.backends.file"
 # SESSION_FILE_PATH=r"D:\PYTHON PROJECTS\mantra_io"
 
+# MIDDLEWARE = [
+#     'django.middleware.security.SecurityMiddleware',
+#     'middleware.no_cache.NoCacheMiddleware',
+#     'middleware.session_security.SessionExpiryRedirectMiddleware',
+#     'django.contrib.sessions.middleware.SessionMiddleware',  # MUST be first
+#     'django.middleware.common.CommonMiddleware',
+#     'django.middleware.csrf.CsrfViewMiddleware',
+#     'django.contrib.auth.middleware.AuthenticationMiddleware',
+#     'django.contrib.messages.middleware.MessageMiddleware',
+#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+#     'django_user_agents.middleware.UserAgentMiddleware',
+#     # Your DB middleware should be **AFTER auth and messages**
+#     'administration.middleware.LibraryDatabaseMiddleware',
+#     'L01.middleware.MemberActivityMiddleware',
+#     'Masters.middleware.VisitorTrackingMiddleware',
+#     # Optional:
+#     'django_auto_logout.middleware.auto_logout',
+#     'axes.middleware.AxesMiddleware',
+# ]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'middleware.no_cache.NoCacheMiddleware',
-    'middleware.session_security.SessionExpiryRedirectMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',  # MUST be first
+
+    # ✅ Sessions MUST come first
+    'django.contrib.sessions.middleware.SessionMiddleware',
+
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+
+    # ✅ Auth before anything that checks request.user
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # ✅ NOW your custom session logic
+    'middleware.session_security.SessionExpiryRedirectMiddleware',
+    'middleware.session_binding.SessionBindingMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
-    # Your DB middleware should be **AFTER auth and messages**
+
+    # App / DB / tracking middleware
     'administration.middleware.LibraryDatabaseMiddleware',
     'L01.middleware.MemberActivityMiddleware',
     'Masters.middleware.VisitorTrackingMiddleware',
-    # Optional:
-    'django_auto_logout.middleware.auto_logout',
+
+    # Optional / security
+    # 'django_auto_logout.middleware.auto_logout',  # recommended to REMOVE
     'axes.middleware.AxesMiddleware',
 ]
+
 CORS_ALLOWED_ORIGINS = [
     'http://push3.aclgateway.com',
     'https://www.nmmclibrary.in',    # ← Add your domain
