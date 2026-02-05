@@ -204,6 +204,13 @@ python manage.py migrate library_reports
 python manage.py makemigrations library_reports
 python manage.py migrate library_reports --database=L01
 
+python manage.py startapp book_report
+python manage.py makemigrations book_report 
+python manage.py migrate book_report
+
+python manage.py makemigrations book_report
+python manage.py migrate book_report --database=L01
+
 curl -s http://15.207.169.98/ocr_files
 
 git config --global user.name "technowin"

@@ -1,0 +1,64 @@
+<div class="modal fade" id="circulationFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel me-2"></i>Circulation Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="circulationForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">From Date</label>
+                                <input type="date" class="form-control" name="from_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">To Date</label>
+                                <input type="date" class="form-control" name="to_date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Processing Status</label>
+                                <select class="form-select status-select" name="processing_status[]" multiple></select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Shelf Location</label>
+                                <select class="form-select location-select" name="shelf_location[]" multiple></select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Current Status</label>
+                                <select class="form-select status-select" name="current_status[]" multiple></select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        onclick="clearTabFilters('circulation', 'circulationForm')">
+                    Clear Filters
+                </button>
+                <button type="button" class="btn btn-primary" 
+                        onclick="applyTabFilters('circulation', 'circulationForm')">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

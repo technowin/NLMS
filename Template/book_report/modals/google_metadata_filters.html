@@ -1,0 +1,57 @@
+<div class="modal fade" id="googleMetadataFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel me-2"></i>Google Metadata Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="googleMetadataForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Title</label>
+                                <input type="text" class="form-control" name="title" 
+                                       placeholder="Search title...">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">ISBN</label>
+                                <input type="text" class="form-control" name="isbn" 
+                                       placeholder="Search ISBN...">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">From Date</label>
+                                <input type="date" class="form-control" name="from_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">To Date</label>
+                                <input type="date" class="form-control" name="to_date">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        onclick="clearTabFilters('google-metadata', 'googleMetadataForm')">
+                    Clear Filters
+                </button>
+                <button type="button" class="btn btn-primary" 
+                        onclick="applyTabFilters('google-metadata', 'googleMetadataForm')">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

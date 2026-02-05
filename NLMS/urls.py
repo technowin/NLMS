@@ -217,6 +217,7 @@ urlpatterns = [
     path('isbn-lookup/', isbn_lookup, name='book_catalog_isbn_lookup'),
 
     path('reports/', include('library_reports.urls')),
+    path('books/', include('book_report.urls')),
     
     # NEW PUBLIC ROUTES (no login required)
     path('public-book-catalogue/', public_library_catalogue, name='public_book_catalogue'),

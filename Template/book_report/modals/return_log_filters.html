@@ -1,0 +1,59 @@
+<div class="modal fade" id="returnLogFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel me-2"></i>Return Log Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="returnLogForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">From Date</label>
+                                <input type="date" class="form-control" name="from_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">To Date</label>
+                                <input type="date" class="form-control" name="to_date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Shelved Status</label>
+                                <select class="form-select" name="is_shelved">
+                                    <option value="">All</option>
+                                    <option value="true">Shelved</option>
+                                    <option value="false">Not Shelved</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Catalog</label>
+                                <select class="form-select catalogue-select" name="catalog[]" multiple></select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        onclick="clearTabFilters('return-log', 'returnLogForm')">
+                    Clear Filters
+                </button>
+                <button type="button" class="btn btn-primary" 
+                        onclick="applyTabFilters('return-log', 'returnLogForm')">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

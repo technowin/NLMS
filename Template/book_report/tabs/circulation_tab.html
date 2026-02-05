@@ -1,0 +1,46 @@
+<div class="d-flex flex-column h-100">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-0">
+                <i class="bi bi-arrow-left-right me-2"></i>Circulation Details
+                <small class="text-muted ms-2" id="circulation-info">Select books to view details</small>
+            </h5>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn" data-bs-toggle="modal" 
+                    data-bs-target="#circulationFiltersModal">
+                <i class="bi bi-funnel me-1"></i>Filters
+                <span class="badge rounded-pill bg-light text-primary filter-badge" id="circulation-filter-count">0</span>
+            </button>
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-success btn-sm" onclick="exportCurrentTab()">
+                <i class="bi bi-file-earmark-excel me-1"></i>Export
+            </button>
+        </div>
+    </div>
+    
+     <div class="table-responsive table-scroll">
+        <table class="table table-hover table-striped" id="circulation-table">
+            <thead class="table-light">
+                <tr>
+                    <th>Barcode</th>
+                    <th>Book Title</th>
+                    <th>Catalog ID</th>
+                    <th>Accession No</th>
+                    <th>Date Processed</th>
+                    <th>Processing Status</th>
+                    <th>Shelf Location</th>
+                    <th>Current Status</th>
+                    <th>Remarks</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="text-center py-5" id="circulation-empty" style="display: none;">
+        <i class="bi bi-arrow-left-right text-muted" style="font-size: 3rem;"></i>
+        <p class="mt-2 text-muted">No circulation data found for selected books</p>
+    </div>
+</div>
