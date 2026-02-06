@@ -2735,6 +2735,7 @@ class ExportReportView(ReportBaseView):
                 export_type.replace('-', ' ').title()
             )
             worksheet.write(0, 0, 'No data available')
+            
 class ExportAllDataView(ReportBaseView):
     """Export selected tabs data to Excel"""
 

@@ -1,0 +1,40 @@
+<div class="d-flex flex-column h-100">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-0">
+                <i class="bi bi-google me-2"></i>Google Books Metadata
+                <small class="text-muted ms-2" id="google-metadata-info">All Google Books data</small>
+            </h5>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn" data-bs-toggle="modal" 
+                    data-bs-target="#googleMetadataFiltersModal">
+                <i class="bi bi-funnel me-1"></i>Filters
+                <span class="badge rounded-pill bg-light text-primary filter-badge" id="google-metadata-filter-count">0</span>
+            </button>
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-success btn-sm" onclick="exportCurrentTab()">
+                <i class="bi bi-file-earmark-excel me-1"></i>Export
+            </button>
+        </div>
+    </div>
+    
+     <div class="table-responsive table-scroll">
+        <table class="table table-hover table-striped" id="google-metadata-table">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>ISBN</th>
+                    <th>Created At</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="text-center py-5" id="google-metadata-empty" style="display: none;">
+        <i class="bi bi-google text-muted" style="font-size: 3rem;"></i>
+        <p class="mt-2 text-muted">No Google Books metadata found</p>
+    </div>
+</div>

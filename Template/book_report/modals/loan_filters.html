@@ -1,0 +1,82 @@
+<div class="modal fade" id="loanFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel me-2"></i>Loan Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="loanForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Issue From Date</label>
+                                <input type="date" class="form-control" name="issue_from_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Issue To Date</label>
+                                <input type="date" class="form-control" name="issue_to_date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Due From Date</label>
+                                <input type="date" class="form-control" name="due_from_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Due To Date</label>
+                                <input type="date" class="form-control" name="due_to_date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Overdue</label>
+                                <select class="form-select" name="overdue">
+                                    <option value="">All</option>
+                                    <option value="0_3">0-3 Days</option>
+                                    <option value="4_7">4-7 Days</option>
+                                    <option value="1_month">More than 1 Month</option>
+                                    <option value="3_month">More than 3 Months</option>
+                                    <option value="6_month">More than 6 Months</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Fine Status</label>
+                                <select class="form-select" name="fine_status">
+                                    <option value="">All</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="unpaid">Unpaid</option>
+                                    <option value="adjusted">Adjusted</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        onclick="clearTabFilters('loan', 'loanForm')">
+                    Clear Filters
+                </button>
+                <button type="button" class="btn btn-primary" 
+                        onclick="applyTabFilters('loan', 'loanForm')">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

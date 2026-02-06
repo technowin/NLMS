@@ -1,0 +1,44 @@
+<div class="modal fade" id="supplierFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel me-2"></i>Supplier Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="supplierForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Supplier</label>
+                                <select class="form-select supplier-select" name="supplier[]" multiple></select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Active Status</label>
+                                <select class="form-select" name="is_active">
+                                    <option value="">All</option>
+                                    <option value="1">Active</option>
+                                    <option value="0">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        onclick="clearTabFilters('supplier', 'supplierForm')">
+                    Clear Filters
+                </button>
+                <button type="button" class="btn btn-primary" 
+                        onclick="applyTabFilters('supplier', 'supplierForm')">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

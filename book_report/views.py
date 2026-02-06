@@ -1,0 +1,1498 @@
+from warnings import filters
+from django.conf import settings
+from django.forms import DateField
+from django.shortcuts import render
+
+# Create your views here.
+# reports/views.py
+import json
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse, HttpResponse
+from django.views import View
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q, F, Value, CharField
+from django.db.models.functions import Concat, ExtractMonth
+from django.core.paginator import Paginator
+from django.utils import timezone
+from httpcore import request
+import pandas as pd
+from io import BytesIO
+import xlsxwriter
+
+from book_report.models import *
+
+from .forms import *
+from L01.models import *
+from Account.models import CustomUser 
+
+from datetime import date
+import calendar
+from django.db.models import Q, F, Value
+from django.db.models.functions import Coalesce
+
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import tempfile
+import os
+from django.core.files.storage import FileSystemStorage
+from django.db import transaction
+from django.db.models import Q
+
+def parse_month_start(month_str):
+    y, m = map(int, month_str.split('-'))
+    return date(y, m, 1)
+
+def parse_month_end(month_str):
+    y, m = map(int, month_str.split('-'))
+    last_day = calendar.monthrange(y, m)[1]
+    return date(y, m, last_day)
+
+
+import json
+import tempfile
+import os
+import pandas as pd
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+from django.views import View
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q, F, Value, CharField, IntegerField, Func
+from django.db.models.functions import Concat, Now, Cast, Coalesce
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.db import connection
+from datetime import date, timedelta
+import calendar
+import xlsxwriter
+from io import BytesIO
+
+from .forms import *
+from L01.models import *
+
+import json
+import tempfile
+import os
+import pandas as pd
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+from django.views import View
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q, F, Value, CharField, IntegerField, Func, DateField
+from django.db.models.functions import Concat, Now, Cast, Coalesce
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.db import connection
+from datetime import date, timedelta, datetime
+import calendar
+import xlsxwriter
+from io import BytesIO
+
+from .forms import *
+from L01.models import *
+from django.conf import settings
+
+class ReportBaseView(LoginRequiredMixin, View):
+    """Base view for handling dynamic database selection"""
+    
+    def get_library_db(self):
+        """Get current library database from session"""
+        library_code = self.request.session.get('library_db', 'default')
+        if library_code not in settings.DATABASES:
+            library_code = 'default'
+        return library_code
+    
+    def get_queryset(self, model_class, **filters):
+        """Get queryset with dynamic database"""
+        db = self.get_library_db()
+        return model_class.objects.using(db).filter(**filters)
+    
+    def get_book_queryset(self, list_type='title', filters=None):
+        """Get book queryset based on list type with applied filters"""
+        db = self.get_library_db()
+        
+        if list_type == 'title':
+            qs = BookCatalog.objects.using(db).filter(status_id=1)
+            
+            # Apply filters
+            if filters:
+                if filters.get('language'):
+                    qs = qs.filter(language=filters['language'])
+                
+                if filters.get('resource_type') == 'ebook':
+                    qs = qs.filter(ebook_available='Yes')
+                elif filters.get('resource_type') == 'book':
+                    qs = qs.filter(Q(ebook_available__isnull=True) | Q(ebook_available='No'))
+                
+                if filters.get('search'):
+                    search_term = filters['search']
+                    qs = qs.filter(
+                        Q(title__icontains=search_term) |
+                        Q(isbn_issn__icontains=search_term) |
+                        Q(author__icontains=search_term)
+                    )
+            
+            return qs.values('cat_ref_num', 'title', 'language', 'ebook_available', 'author')
+            
+        elif list_type == 'author':
+            qs = AuthorMaster.objects.using(db).all()
+            
+            if filters and filters.get('search'):
+                search_term = filters['search']
+                qs = qs.filter(
+                    Q(author_name_english__icontains=search_term) |
+                    Q(author_name_marathi__icontains=search_term)
+                )
+            
+            return qs.values('author_code', 'author_name_english', 'author_name_marathi')
+            
+        elif list_type == 'category':
+            qs = SubjectTypeMaster.objects.using(db).filter(is_active=1)
+            
+            if filters and filters.get('search'):
+                search_term = filters['search']
+                qs = qs.filter(
+                    Q(subjectNameEnglish__icontains=search_term) |
+                    Q(subjectNameMarathi__icontains=search_term)
+                )
+            
+            return qs.values('id', 'subjectNameEnglish', 'subjectNameMarathi')
+        
+        return []
+
+class BookReportView(ReportBaseView, TemplateView):
+    """Main book report view"""
+    template_name = 'book_report/book_report.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        db = self.get_library_db()
+        
+        # Initialize all filter forms
+        context['book_list_form'] = BookListFilterForm()
+        
+        # Initialize all tab filter forms with dynamic choices
+        catalogue_form = CatalogueFilterForm()
+        accession_form = AccessionFilterForm()
+        circulation_form = CirculationFilterForm()
+        supplier_form = SupplierFilterForm()
+        review_form = ReviewFilterForm()
+        return_log_form = ReturnLogFilterForm()
+        
+        # Get dynamic choices for forms
+        try:
+            # Subjects
+            subjects = SubjectTypeMaster.objects.using(db).filter(is_active=1).values_list('id', 'subjectNameEnglish')
+            catalogue_form.fields['subject'].choices = [(s[0], s[1]) for s in subjects]
+            
+            # Statuses
+            statuses = status_master.objects.using(db).filter(isactive=1).values_list('id', 'status_name')
+            catalogue_form.fields['status'].choices = [(s[0], s[1]) for s in statuses]
+            accession_form.fields['status'].choices = [(s[0], s[1]) for s in statuses]
+            circulation_form.fields['processing_status'].choices = [(s[0], s[1]) for s in statuses]
+            circulation_form.fields['current_status'].choices = [(s[0], s[1]) for s in statuses]
+            
+            # Conditions
+            conditions = ConditionAtEntryMaster.objects.using(db).filter(is_active=1).values_list('id', 'condition_at_entry')
+            accession_form.fields['condition'].choices = [(c[0], c[1]) for c in conditions]
+            
+            # Sources
+            sources = FundingSourceMaster.objects.using(db).filter(is_active=1).values_list('id', 'funding_source_name')
+            accession_form.fields['source'].choices = [(s[0], s[1]) for s in sources]
+            
+            # Locations
+            locations = ResourceLocationMaster.objects.using(db).filter(is_active=1).values_list('id', 'location_name')
+            accession_form.fields['location'].choices = [(l[0], l[1]) for l in locations]
+            circulation_form.fields['shelf_location'].choices = [(l[0], l[1]) for l in locations]
+            
+            # Suppliers
+            suppliers = SupplierMaster.objects.using(db).filter(is_active=1).values_list('id', 'supplier_name')
+            accession_form.fields['supplier'].choices = [(s[0], s[1]) for s in suppliers]
+            supplier_form.fields['supplier'].choices = [(s[0], s[1]) for s in suppliers]
+            
+            # Libraries
+            libraries = tbl_librarymasterL01.objects.using(db).filter(is_active=1).values_list('library_code', 'library_name')
+            review_form.fields['library'].choices = [(l[0], l[1]) for l in libraries]
+            
+            # Catalogues for review filter
+            catalogues = BookCatalog.objects.using(db).filter(status_id=1).values_list('cat_ref_num', 'title')[:100]
+            review_form.fields['catalogue'].choices = [(c[0], c[1]) for c in catalogues]
+            return_log_form.fields['catalog'].choices = [(c[0], c[1]) for c in catalogues]
+            
+        except Exception as e:
+            print(f"Error loading filter options: {e}")
+        
+        context['catalogue_form'] = catalogue_form
+        context['accession_form'] = accession_form
+        context['circulation_form'] = circulation_form
+        context['loan_form'] = LoanFilterForm()
+        context['circulation_transaction_form'] = CirculationTransactionFilterForm()
+        context['supplier_form'] = supplier_form
+        context['review_form'] = review_form
+        context['return_log_form'] = return_log_form
+        context['google_metadata_form'] = GoogleMetadataFilterForm()
+        context['loc_metadata_form'] = LOCMetadataFilterForm()
+        
+        # Get initial book list (titles)
+        books = BookCatalog.objects.using(db).filter(
+            status_id=1
+        ).select_related('status')[:50]
+        
+        context['books'] = books
+        context['total_book_count'] = BookCatalog.objects.using(db).filter(
+            status_id=1
+        ).count()
+        
+        # Add library info
+        context['library_db'] = self.get_library_db()
+        context['current_library'] = self.request.session.get('library_name', 'Main Library')
+        
+        # Add user info for template
+        context['user'] = self.request.user
+        
+        return context
+
+class BookListDataView(ReportBaseView):
+    """AJAX endpoint for book list data on left side"""
+    
+    def get(self, request):
+        form = BookListFilterForm(request.GET)
+        if form.is_valid():
+            filters = form.cleaned_data
+            list_type = filters.get('list_type', 'title')
+            
+            books_qs = self.get_book_queryset(list_type, filters)
+            
+            # Convert queryset to list for pagination
+            books_list = list(books_qs)
+            
+            # Pagination
+            page = int(request.GET.get('page', 1))
+            per_page = int(request.GET.get('per_page', 20))
+            paginator = Paginator(books_list, per_page)
+            
+            try:
+                books_page = paginator.page(page)
+            except:
+                books_page = paginator.page(1)
+            
+            # Prepare response data
+            data = {
+                'books': [],
+                'total': paginator.count,
+                'pages': paginator.num_pages,
+                'current_page': page,
+                'list_type': list_type
+            }
+            
+            for book in books_page.object_list:
+                if list_type == 'title':
+                    data['books'].append({
+                        'id': book['cat_ref_num'],
+                        'name': book['title'],
+                        'code': book['cat_ref_num'],
+                        'type': 'Title',
+                        'subtext': f"Author: {book.get('author', 'N/A')} | Lang: {book.get('language', 'N/A')} | Ebook: {book.get('ebook_available', 'No')}"
+                    })
+                elif list_type == 'author':
+                    data['books'].append({
+                        'id': book['author_code'],
+                        'name': book['author_name_english'],
+                        'code': book.get('author_code', ''),
+                        'type': 'Author',
+                        'subtext': book.get('author_name_marathi', '')
+                    })
+                elif list_type == 'category':
+                    data['books'].append({
+                        'id': book['id'],
+                        'name': book['subjectNameEnglish'],
+                        'code': f"SUB{book['id']}",
+                        'type': 'Category',
+                        'subtext': book.get('subjectNameMarathi', '')
+                    })
+            
+            return JsonResponse(data)
+        
+        return JsonResponse({'error': 'Invalid form data'}, status=400)
+
+class TabDataView(ReportBaseView):
+    """AJAX endpoint for tab data on right side"""
+    
+    def get(self, request, tab_name):
+        book_ids = request.GET.getlist('book_ids[]')
+        list_type = request.GET.get('list_type', 'title')
+        filters_json = request.GET.get('filters', '{}')
+        
+        try:
+            filters = json.loads(filters_json)
+        except:
+            filters = {}
+        
+        db = self.get_library_db()
+        
+        # Map tab names to data retrieval methods
+        tab_methods = {
+            'catalogue': self.get_catalogue_data,
+            'accession': self.get_accession_data,
+            'circulation': self.get_circulation_data,
+            'loan': self.get_loan_data,
+            'circulation-transaction': self.get_circulation_transaction_data,
+            'supplier': self.get_supplier_data,
+            'review': self.get_review_data,
+            'return-log': self.get_return_log_data,
+            'google-metadata': self.get_google_metadata_data,
+            'loc-metadata': self.get_loc_metadata_data,
+        }
+        
+        method = tab_methods.get(tab_name)
+        if method:
+            data = method(db, book_ids, list_type, filters)
+            return JsonResponse(data)
+        
+        return JsonResponse({'error': 'Invalid tab'}, status=400)
+    
+    def get_catalogue_data(self, db, book_ids, list_type, filters):
+        """Get catalogue data for selected books"""
+        qs = BookCatalog.objects.using(db).filter(status_id=1)
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(cat_ref_num__in=book_ids)
+        elif list_type == 'author':
+            # Get books by this author
+            qs = qs.filter(author__author_code__in=book_ids)
+        elif list_type == 'category':
+            # Get books in this category
+            qs = qs.filter(subject_id__in=book_ids)
+        
+        # Apply additional filters
+        if filters.get('from_date'):
+            try:
+                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__gte=from_date)
+            except:
+                pass
+        
+        if filters.get('to_date'):
+            try:
+                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__lte=to_date)
+            except:
+                pass
+        
+        if filters.get('language'):
+            languages = filters['language'] if isinstance(filters['language'], list) else [filters['language']]
+            qs = qs.filter(language__in=languages)
+        
+        if filters.get('subject'):
+            subjects = filters['subject'] if isinstance(filters['subject'], list) else [filters['subject']]
+            qs = qs.filter(subject_id__in=subjects)
+        
+        if filters.get('status'):
+            statuses = filters['status'] if isinstance(filters['status'], list) else [filters['status']]
+            qs = qs.filter(status_id__in=statuses)
+        
+        if filters.get('ebook_available') == 'Yes':
+            qs = qs.filter(ebook_available='Yes')
+        elif filters.get('ebook_available') == 'No':
+            qs = qs.filter(Q(ebook_available__isnull=True) | Q(ebook_available='No'))
+        
+        qs = qs.select_related('subject', 'material')
+        
+        data = []
+        for catalog in qs:
+            data.append({
+                'cat_ref_num': catalog.cat_ref_num,
+                'title': catalog.title,
+                'subtitle': catalog.subtitle or '',
+                'author': catalog.author or '',
+                'other_authors': catalog.other_authors or '',
+                'publisher': catalog.publisher or '',
+                'isbn_issn': catalog.isbn_issn or '',
+                'edition': catalog.edition or '',
+                'keywords': catalog.keywords or '',
+                'language': catalog.language or '',
+                'publication_place': catalog.publication_place or '',
+                'year_of_publication': catalog.year_of_publication or '',
+                'classification_number': catalog.classification_number or '',
+                'pages': catalog.pages or '',
+                'date_of_registration': catalog.date_of_registration.strftime('%Y-%m-%d') if catalog.date_of_registration else '',
+                'status_name': 'Yes' if catalog.status_id else '',
+                'subject_name': catalog.subject.subjectNameEnglish if catalog.subject else '',
+                'call_number': catalog.call_number or '',
+                'cutter_number': catalog.cutter_number or '',
+                'publication_year': catalog.publication_year or '',
+                'remarks': catalog.remarks or '',
+                'material_name': catalog.material.materialNameEnglish if catalog.material else '',
+                'ebook_available': catalog.ebook_available or 'No',
+                'ebook_id': catalog.ebook_id or '',
+                'created_at': catalog.created_at.strftime('%Y-%m-%d %H:%M') if catalog.created_at else '',
+                'created_by': catalog.created_by or '',
+                'updated_at': catalog.updated_at.strftime('%Y-%m-%d %H:%M') if catalog.updated_at else '',
+                'updated_by': catalog.updated_by or '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_accession_data(self, db, book_ids, list_type, filters):
+        """Get accession data for selected books"""
+        qs = (BookAccession.objects.using(db).select_related('catalogue','condition_at_entry','funding_source','location','status','supplier','currency'))
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(catalogue_id__in=book_ids)
+
+        elif list_type == 'author':
+            # author is TextField, so filtering directly
+            catalog_ids = (
+                BookCatalog.objects.using(db)
+                .filter(author__in=book_ids)
+                .values_list('cat_ref_num', flat=True)
+            )
+            qs = qs.filter(catalogue_id__in=catalog_ids)
+
+        elif list_type == 'category':
+            catalog_ids = (
+                BookCatalog.objects.using(db)
+                .filter(subject_id__in=book_ids)
+                .values_list('cat_ref_num', flat=True)
+            )
+            qs = qs.filter(catalogue_id__in=catalog_ids)
+        
+        # Apply filters
+        if filters.get('from_date'):
+            try:
+                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(acquisition_date__gte=from_date)
+            except:
+                pass
+        
+        if filters.get('to_date'):
+            try:
+                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(acquisition_date__lte=to_date)
+            except:
+                pass
+        
+        if filters.get('condition'):
+            conditions = filters['condition'] if isinstance(filters['condition'], list) else [filters['condition']]
+            qs = qs.filter(condition_at_entry_id__in=conditions)
+        
+        if filters.get('source'):
+            sources = filters['source'] if isinstance(filters['source'], list) else [filters['source']]
+            qs = qs.filter(source_id__in=sources)
+        
+        if filters.get('location'):
+            locations = filters['location'] if isinstance(filters['location'], list) else [filters['location']]
+            qs = qs.filter(location_id__in=locations)
+        
+        if filters.get('status'):
+            statuses = filters['status'] if isinstance(filters['status'], list) else [filters['status']]
+            qs = qs.filter(status_id__in=statuses)
+        
+        if filters.get('supplier'):
+            suppliers = filters['supplier'] if isinstance(filters['supplier'], list) else [filters['supplier']]
+            qs = qs.filter(supplier_id__in=suppliers)
+        
+        # qs = qs.select_related(
+        #     'catalog_ref_no', 'condition_at_entry', 'source', 
+        #     'location', 'status', 'supplier', 'currency'
+        # )
+        def apply_fk_filter(qs, field, value):
+            if value:
+                values = value if isinstance(value, list) else [value]
+                return qs.filter(**{f"{field}__in": values})
+            return qs
+
+        qs = apply_fk_filter(qs, 'condition_at_entry_id', filters.get('condition'))
+        qs = apply_fk_filter(qs, 'funding_source_id', filters.get('source'))
+        qs = apply_fk_filter(qs, 'location_id', filters.get('location'))
+        qs = apply_fk_filter(qs, 'status_id', filters.get('status'))
+        qs = apply_fk_filter(qs, 'supplier_id', filters.get('supplier'))
+
+        data = []
+        for acc in qs:
+            data.append({
+                'accession_no': acc.accession_no,
+                'acquisition_date': acc.acquisition_date.strftime('%Y-%m-%d') if acc.acquisition_date else '',
+                'catalog_ref_no': acc.catalogue.cat_ref_num if acc.catalogue else '',
+                'book_title': acc.catalogue.title if acc.catalogue else '',
+                'copy_number': acc.copy_number or '',
+                'invoice_number': acc.invoice_number or '',
+                'invoice_date': acc.invoice_date.strftime('%Y-%m-%d') if acc.invoice_date else '',
+                'price': float(acc.price) if acc.price else 0.0,
+                'remarks': acc.remarks or '',
+                'created_at': acc.created_at.strftime('%Y-%m-%d %H:%M') if acc.created_at else '',
+                'created_by': acc.created_by or '',
+                'updated_at': acc.updated_at.strftime('%Y-%m-%d %H:%M') if acc.updated_at else '',
+                'updated_by': acc.updated_by or '',
+                'condition_name': acc.condition_at_entry.condition_at_entry if acc.condition_at_entry else '',
+                'currency_name': acc.currency.currency_name if acc.currency else '',
+                'source_name': acc.funding_source.funding_source_name if acc.funding_source else '',
+                'location_name': acc.location.location_name if acc.location else '',
+                'status_name': acc.status.status_name if acc.status else '',
+                'supplier_name': acc.supplier.supplier_name if acc.supplier else '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_circulation_data(self, db, book_ids, list_type, filters):
+        """Get circulation data for selected books"""
+        qs = CirculationCopyStatus.objects.using(db).all()
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(bookcatalog_id__in=book_ids)
+        elif list_type == 'author':
+            # Get circulation for books by this author
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                author__author_code__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(bookcatalog_id__in=catalog_ids)
+        elif list_type == 'category':
+            # Get circulation for books in this category
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                subject_id__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(bookcatalog_id__in=catalog_ids)
+        
+        # Apply filters
+        if filters.get('from_date'):
+            try:
+                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(date_processed__gte=from_date)
+            except:
+                pass
+        
+        if filters.get('to_date'):
+            try:
+                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(date_processed__lte=to_date)
+            except:
+                pass
+        
+        if filters.get('processing_status'):
+            statuses = filters['processing_status'] if isinstance(filters['processing_status'], list) else [filters['processing_status']]
+            qs = qs.filter(processing_status_id__in=statuses)
+        
+        if filters.get('shelf_location'):
+            locations = filters['shelf_location'] if isinstance(filters['shelf_location'], list) else [filters['shelf_location']]
+            qs = qs.filter(shelf_location_id__in=locations)
+        
+        if filters.get('current_status'):
+            statuses = filters['current_status'] if isinstance(filters['current_status'], list) else [filters['current_status']]
+            qs = qs.filter(current_status_id__in=statuses)
+        
+        qs = qs.select_related(
+            'accession', 'bookcatalog', 'shelf_location',
+            'processing_status', 'current_status'
+        )
+        
+        data = []
+        for circulation in qs:
+            data.append({
+                'barcode': circulation.barcode or '',
+                'book_title': circulation.bookcatalog.title if circulation.bookcatalog else '',
+                'bookcatalog_id': circulation.bookcatalog.cat_ref_num if circulation.bookcatalog else '',
+                'accession_no': circulation.accession.accession_no if circulation.accession else '',
+                'date_processed': circulation.date_processed.strftime('%Y-%m-%d') if circulation.date_processed else '',
+                'processing_status': circulation.processing_status.status_name if circulation.processing_status else '',
+                'shelf_location': circulation.shelf_location.location_name if circulation.shelf_location else '',
+                'remarks': circulation.remarks or '',
+                'created_at': circulation.created_at.strftime('%Y-%m-%d %H:%M') if circulation.created_at else '',
+                'created_by': circulation.created_by or '',
+                'updated_at': circulation.updated_at.strftime('%Y-%m-%d %H:%M') if circulation.updated_at else '',
+                'updated_by': circulation.updated_by or '',
+                'current_status': circulation.current_status.status_name if circulation.current_status else '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_loan_data(self, db, book_ids, list_type, filters):
+        """Get loan data for selected books"""
+        qs = CirculationTransaction.objects.using(db).filter(
+            return_date__isnull=True,  # Only outstanding loans
+            due_date__isnull=False
+        )
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(catalog_id__in=book_ids)
+        elif list_type == 'author':
+            # Get loans for books by this author
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                author__author_code__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(catalog_id__in=catalog_ids)
+        elif list_type == 'category':
+            # Get loans for books in this category
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                subject_id__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(catalog_id__in=catalog_ids)
+        
+        # Apply date filters
+        if filters.get('issue_from_date'):
+            try:
+                issue_from_date = datetime.strptime(filters['issue_from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(issue_date__gte=issue_from_date)
+            except:
+                pass
+        
+        if filters.get('issue_to_date'):
+            try:
+                issue_to_date = datetime.strptime(filters['issue_to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(issue_date__lte=issue_to_date)
+            except:
+                pass
+        
+        if filters.get('due_from_date'):
+            try:
+                due_from_date = datetime.strptime(filters['due_from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(due_date__gte=due_from_date)
+            except:
+                pass
+        
+        if filters.get('due_to_date'):
+            try:
+                due_to_date = datetime.strptime(filters['due_to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(due_date__lte=due_to_date)
+            except:
+                pass
+        
+        # Apply overdue filter
+        today = date.today()
+        overdue_filter = filters.get('overdue')
+        if overdue_filter == '0_3':
+            qs = qs.filter(
+                due_date__lt=today,
+                due_date__gte=today - timedelta(days=3)
+            )
+        elif overdue_filter == '4_7':
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=3),
+                due_date__gte=today - timedelta(days=7)
+            )
+        elif overdue_filter == '1_month':
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=30)
+            )
+        elif overdue_filter == '3_month':
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=90)
+            )
+        elif overdue_filter == '6_month':
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=180)
+            )
+        
+        # Apply fine status filter
+        if filters.get('fine_status') == 'paid':
+            qs = qs.filter(fine_status='Paid')
+        elif filters.get('fine_status') == 'unpaid':
+            qs = qs.filter(Q(fine_status='Unpaid') | Q(fine_status__isnull=True))
+        elif filters.get('fine_status') == 'adjusted':
+            qs = qs.filter(fine_status='Adjusted')
+        
+        qs = qs.select_related('catalog', 'accession', 'member')
+        
+        # Calculate overdue days
+        qs = qs.annotate(
+            overdue_days=Func(
+                Now(),
+                F('due_date'),
+                function='DATEDIFF',
+                output_field=IntegerField()
+            )
+        )
+        
+        data = []
+        for transaction in qs:
+            data.append({
+                'barcode': transaction.barcode or '',
+                'accession_id': transaction.accession.accession_no if transaction.accession else '',
+                'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
+                'book_title': transaction.catalog.title if transaction.catalog else '',
+                'member_name': f"{transaction.member.first_name or ''} {transaction.member.last_name or ''}".strip() if transaction.member else '',
+                'membership_code': transaction.membership_code or '',
+                'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
+                'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
+                'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
+                'days_overdue_count': transaction.overdue_days if transaction.overdue_days and transaction.overdue_days > 0 else 0,
+                'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
+                'issued_by': transaction.issued_by or '',
+                'remarks': transaction.remarks or '',
+                'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_circulation_transaction_data(self, db, book_ids, list_type, filters):
+        """Get circulation transaction data"""
+        qs = CirculationTransaction.objects.using(db).all()
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(catalog_id__in=book_ids)
+        elif list_type == 'author':
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                author__author_code__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(catalog_id__in=catalog_ids)
+        elif list_type == 'category':
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                subject_id__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(catalog_id__in=catalog_ids)
+        
+        # Apply all date filters
+        if filters.get('issue_from_date'):
+            try:
+                issue_from_date = datetime.strptime(filters['issue_from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(issue_date__gte=issue_from_date)
+            except:
+                pass
+        
+        if filters.get('issue_to_date'):
+            try:
+                issue_to_date = datetime.strptime(filters['issue_to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(issue_date__lte=issue_to_date)
+            except:
+                pass
+        
+        if filters.get('due_from_date'):
+            try:
+                due_from_date = datetime.strptime(filters['due_from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(due_date__gte=due_from_date)
+            except:
+                pass
+        
+        if filters.get('due_to_date'):
+            try:
+                due_to_date = datetime.strptime(filters['due_to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(due_date__lte=due_to_date)
+            except:
+                pass
+        
+        if filters.get('return_from_date'):
+            try:
+                return_from_date = datetime.strptime(filters['return_from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(return_date__gte=return_from_date)
+            except:
+                pass
+        
+        if filters.get('return_to_date'):
+            try:
+                return_to_date = datetime.strptime(filters['return_to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(return_date__lte=return_to_date)
+            except:
+                pass
+        
+        # Apply other filters
+        if filters.get('book_fine') == 'yes':
+            qs = qs.filter(book_fine_amount__gt=0)
+        elif filters.get('book_fine') == 'no':
+            qs = qs.filter(Q(book_fine_amount__isnull=True) | Q(book_fine_amount=0))
+        
+        if filters.get('book_loss_fine') == 'yes':
+            qs = qs.filter(fine_amount__gt=0)
+        elif filters.get('book_loss_fine') == 'no':
+            qs = qs.filter(Q(fine_amount__isnull=True) | Q(fine_amount=0))
+        
+        if filters.get('fine_status'):
+            qs = qs.filter(fine_status=filters['fine_status'])
+        
+        qs = qs.select_related('catalog', 'accession', 'member', 'return_condition')
+        
+        # Calculate late days
+        qs = qs.annotate(
+            late_days=Func(
+                Coalesce(F('return_date'), Cast(Now(), DateField())),
+                F('due_date'),
+                function='DATEDIFF',
+                output_field=IntegerField()
+            )
+        )
+        
+        data = []
+        for transaction in qs:
+            data.append({
+                'barcode': transaction.barcode or '',
+                'accession_id': transaction.accession.accession_no if transaction.accession else '',
+                'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
+                'member_name': f"{transaction.member.first_name or ''} {transaction.member.last_name or ''}".strip() if transaction.member else '',
+                'membership_code': transaction.membership_code or '',
+                'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
+                'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
+                'issued_by': transaction.issued_by or '',
+                'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
+                'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
+                'received_by': transaction.received_by or '',
+                'days_overdue_count': transaction.late_days if transaction.late_days and transaction.late_days > 0 else 0,
+                'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
+                'book_fine_amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0.0,
+                'total_fine': float(transaction.total_fine) if transaction.total_fine else 0.0,
+                'adjusted_fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0.0,
+                'fine_status': transaction.fine_status or '',
+                'fine_paid_date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
+                'remarks': transaction.remarks or '',
+                'updated_at': transaction.updated_at.strftime('%Y-%m-%d %H:%M') if transaction.updated_at else '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_supplier_data(self, db, book_ids, list_type, filters):
+        """Get supplier data for selected books"""
+        qs = BookAccession.objects.using(db).select_related('catalogue', 'supplier')
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(catalogue_id__in=book_ids)
+    
+        elif list_type == 'author':
+            # author is TextField in BookCatalog (NOT FK)
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                author__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+    
+            qs = qs.filter(catalogue_id__in=catalog_ids)
+    
+        elif list_type == 'category':
+            # subject is FK → subject_id is correct
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                subject_id__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+
+            qs = qs.filter(catalogue_id__in=catalog_ids)
+        
+        # Apply supplier filters
+        if filters.get('supplier'):
+            suppliers = filters['supplier'] if isinstance(filters['supplier'], list) else [filters['supplier']]
+            qs = qs.filter(supplier_id__in=suppliers)
+        
+        if filters.get('is_active') == '1':
+            qs = qs.filter(supplier__is_active=1)
+        elif filters.get('is_active') == '0':
+            qs = qs.filter(supplier__is_active=0)
+        
+        qs = qs.exclude(supplier__isnull=True)
+        qs = qs.order_by('supplier_id').distinct()
+
+        
+        data = []
+        for acc in qs:
+            supplier = acc.supplier
+            catalog = acc.catalogue
+    
+            data.append({
+                'accession_no': acc.accession_no or '',
+                'acquisition_date': acc.acquisition_date.strftime('%Y-%m-%d') if acc.acquisition_date else '',
+                'catalog_ref_no': catalog.cat_ref_num if catalog else '',
+                'book_title': catalog.title if catalog else '',
+                'supplier_code': supplier.supplier_code,
+                'supplier_name': supplier.supplier_name,
+                'supplier_mobile': supplier.supplier_mobile or '',
+                'supplier_email': supplier.supplier_email or '',
+                'supplier_address': supplier.supplier_address or '',
+                'supplier_pincode': supplier.supplier_pincode or '',
+                'is_active': 'Yes' if supplier.is_active == 1 else 'No',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_review_data(self, db, book_ids, list_type, filters):
+        """Get review data for selected books"""
+        qs = BookReview.objects.using(db).all()
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(book_id__in=book_ids)
+        elif list_type == 'author':
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                author__author_code__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(book_id__in=catalog_ids)
+        elif list_type == 'category':
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                subject_id__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(book_id__in=catalog_ids)
+        
+        # Apply filters
+        if filters.get('rating'):
+            ratings = filters['rating'] if isinstance(filters['rating'], list) else [filters['rating']]
+            qs = qs.filter(rating__in=ratings)
+        
+        if filters.get('library'):
+            libraries = filters['library'] if isinstance(filters['library'], list) else [filters['library']]
+            qs = qs.filter(library_code__in=libraries)
+        
+        if filters.get('book_title'):
+            qs = qs.filter(book__title__icontains=filters['book_title'])
+        
+        if filters.get('catalogue'):
+            catalogues = filters['catalogue'] if isinstance(filters['catalogue'], list) else [filters['catalogue']]
+            qs = qs.filter(book_id__in=catalogues)
+        
+        qs = qs.select_related('book')
+        
+        data = []
+        for review in qs:
+            # Get member details if user_id is a member ID
+            member_name = ''
+            if review.user_id:
+                try:
+                    member = MembershipDetails.objects.using(db).filter(id=review.user_id).first()
+                    if member:
+                        member_name = f"{member.first_name or ''} {member.last_name or ''}".strip()
+                except:
+                    pass
+            
+            data.append({
+                'user_name': f"User {review.user_id}",
+                'member_name': member_name,
+                'rating': review.rating,
+                'review': review.review,
+                'created_at': review.created_at.strftime('%Y-%m-%d %H:%M') if review.created_at else '',
+                'updated_at': review.updated_at.strftime('%Y-%m-%d %H:%M') if review.updated_at else '',
+                'library_code': review.library_code or '',
+                'cat_ref_id': review.book.cat_ref_num if review.book else '',
+                'book_title': review.book.title if review.book else '',
+                'ebook_name': review.book.title if review.book and review.book.ebook_available == 'Yes' else '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_return_log_data(self, db, book_ids, list_type, filters):
+        """Get return log data for selected books"""
+        qs = BookReturnLog.objects.using(db).all()
+        
+        # Apply filters based on list_type
+        if list_type == 'title':
+            qs = qs.filter(cat_rem_num_id__in=book_ids)
+        elif list_type == 'author':
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                author__author_code__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(cat_rem_num_id__in=catalog_ids)
+        elif list_type == 'category':
+            catalog_ids = BookCatalog.objects.using(db).filter(
+                subject_id__in=book_ids
+            ).values_list('cat_ref_num', flat=True)
+            qs = qs.filter(cat_rem_num_id__in=catalog_ids)
+        
+        # Apply filters
+        if filters.get('from_date'):
+            try:
+                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__gte=from_date)
+            except:
+                pass
+        
+        if filters.get('to_date'):
+            try:
+                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__lte=to_date)
+            except:
+                pass
+        
+        if filters.get('is_shelved') == 'true':
+            qs = qs.filter(is_shelved=True)
+        elif filters.get('is_shelved') == 'false':
+            qs = qs.filter(is_shelved=False)
+        
+        if filters.get('catalog'):
+            catalogs = filters['catalog'] if isinstance(filters['catalog'], list) else [filters['catalog']]
+            qs = qs.filter(cat_rem_num_id__in=catalogs)
+        
+        qs = qs.select_related('cat_rem_num', 'eod_log', 'created_by', 'updated_by')
+        
+        data = []
+        for log in qs:
+            data.append({
+                'barcode': log.barcode,
+                'book_title': log.cat_rem_num.title if log.cat_rem_num else '',
+                'cat_ref_num_id': log.cat_rem_num.cat_ref_num if log.cat_rem_num else '',
+                'is_shelved': 'Yes' if log.is_shelved else 'No',
+                'created_at': log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else '',
+                'updated_at': log.updated_at.strftime('%Y-%m-%d %H:%M') if log.updated_at else '',
+                'created_by_name': log.created_by.full_name if log.created_by else '',
+                'eod_log_id': log.eod_log_id,
+                'updated_by_name': log.updated_by.full_name if log.updated_by else '',
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_google_metadata_data(self, db, book_ids, list_type, filters):
+        """Get Google metadata data"""
+        qs = GoogleBookMaster.objects.using(db).all()
+        
+        # Apply filters
+        if filters.get('title'):
+            qs = qs.filter(title__icontains=filters['title'])
+        
+        if filters.get('isbn'):
+            qs = qs.filter(isbn__icontains=filters['isbn'])
+        
+        if filters.get('from_date'):
+            try:
+                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__gte=from_date)
+            except:
+                pass
+        
+        if filters.get('to_date'):
+            try:
+                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__lte=to_date)
+            except:
+                pass
+        
+        qs = qs.prefetch_related('google_details')
+        
+        data = []
+        for book in qs:
+            # Get all details as key-value pairs
+            details = {}
+            for detail in book.google_details.all():
+                details[detail.key] = detail.value
+            
+            data.append({
+                'title': book.title,
+                'isbn': book.isbn,
+                'created_at': book.created_at.strftime('%Y-%m-%d %H:%M') if book.created_at else '',
+                'details': json.dumps(details)
+            })
+        
+        return {'data': data, 'total': len(data)}
+    
+    def get_loc_metadata_data(self, db, book_ids, list_type, filters):
+        """Get LOC metadata data"""
+        qs = LOCBookMaster.objects.using(db).all()
+        
+        # Apply filters
+        if filters.get('title'):
+            qs = qs.filter(title__icontains=filters['title'])
+        
+        if filters.get('isbn'):
+            qs = qs.filter(isbn__icontains=filters['isbn'])
+        
+        if filters.get('from_date'):
+            try:
+                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__gte=from_date)
+            except:
+                pass
+        
+        if filters.get('to_date'):
+            try:
+                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                qs = qs.filter(created_at__date__lte=to_date)
+            except:
+                pass
+        
+        qs = qs.prefetch_related('loc_details')
+        
+        data = []
+        for book in qs:
+            # Get all details as key-value pairs
+            details = {}
+            for detail in book.loc_details.all():
+                details[detail.key] = detail.value
+            
+            data.append({
+                'title': book.title,
+                'isbn': book.isbn,
+                'created_at': book.created_at.strftime('%Y-%m-%d %H:%M') if book.created_at else '',
+                'details': json.dumps(details)
+            })
+        
+        return {'data': data, 'total': len(data)}
+
+class GetBookOptionsView(ReportBaseView):
+    """Get filter options for book types, subjects, etc."""
+    
+    def get(self, request):
+        db = self.get_library_db()
+        
+        # Get all filter options
+        try:
+            # Subjects for catalogue filter
+            subjects = SubjectTypeMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'subjectNameEnglish')
+            
+            # Statuses
+            statuses = status_master.objects.using(db).filter(
+                isactive=1
+            ).values('id', 'status_name')
+            
+            # Conditions
+            conditions = ConditionAtEntryMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'condition_at_entry')
+            
+            # Funding sources
+            sources = FundingSourceMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'funding_source_name')
+            
+            # Locations
+            locations = ResourceLocationMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'location_name')
+            
+            # Suppliers
+            suppliers = SupplierMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'supplier_name')
+            
+            # Libraries
+            libraries = tbl_librarymasterL01.objects.using(db).filter(
+                is_active=1
+            ).values('library_code', 'library_name')
+            
+            # Catalogues for review filter
+            catalogues = BookCatalog.objects.using(db).filter(
+                status_id=1
+            ).values('cat_ref_num', 'title')[:100]
+            
+        except Exception as e:
+            # Return empty arrays on error
+            subjects = []
+            statuses = []
+            conditions = []
+            sources = []
+            locations = []
+            suppliers = []
+            libraries = []
+            catalogues = []
+        
+        return JsonResponse({
+            'subjects': list(subjects),
+            'statuses': list(statuses),
+            'conditions': list(conditions),
+            'sources': list(sources),
+            'locations': list(locations),
+            'suppliers': list(suppliers),
+            'libraries': list(libraries),
+            'catalogues': list(catalogues),
+        })
+
+def export_catalogue_to_excel(writer, db, book_ids, list_type, filters):
+    """Export catalogue data to Excel"""
+    # Get data using the same logic as get_catalogue_data
+    view = TabDataView()
+    response = view.get_catalogue_data(db, book_ids, list_type, filters)
+    data = response['data']
+    
+    # Create DataFrame
+    rows = []
+    for item in data:
+        rows.append({
+            'Ref No': item['cat_ref_num'],
+            'Title': item['title'],
+            'Subtitle': item['subtitle'],
+            'Author': item['author'],
+            'Other Authors': item['other_authors'],
+            'Publisher': item['publisher'],
+            'ISBN/ISSN': item['isbn_issn'],
+            'Edition': item['edition'],
+            'Keywords': item['keywords'],
+            'Language': item['language'],
+            'Publication Place': item['publication_place'],
+            'Year of Publication': item['year_of_publication'],
+            'Classification Number': item['classification_number'],
+            'Pages': item['pages'],
+            'Date of Registration': item['date_of_registration'],
+            'Status': item['status_name'],
+            'Subject': item['subject_name'],
+            'Call Number': item['call_number'],
+            'Cutter Number': item['cutter_number'],
+            'Publication Year': item['publication_year'],
+            'Remarks': item['remarks'],
+            'Material': item['material_name'],
+            'Ebook Available': item['ebook_available'],
+            'Ebook ID': item['ebook_id'],
+            'Created At': item['created_at'],
+            'Created By': item['created_by'],
+            'Updated At': item['updated_at'],
+            'Updated By': item['updated_by'],
+        })
+    
+    df = pd.DataFrame(rows)
+    
+    # Write to Excel
+    sheet_name = 'Catalogue'
+    start_row = 6
+    
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+    
+    # Add formatting
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+    
+    # Add title
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+    })
+    
+    worksheet.merge_range(0, 0, 0, len(df.columns)-1, 'Catalogue Report', title_format)
+    worksheet.merge_range(1, 0, 1, len(df.columns)-1, 
+                         f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}')
+    
+    # Add filter info
+    filter_info = f"List Type: {list_type.title()} | Selected Items: {len(book_ids)}"
+    worksheet.merge_range(3, 0, 3, len(df.columns)-1, filter_info)
+    
+    # Format header
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#D9E1F2',
+        'border': 1,
+        'align': 'center',
+    })
+    
+    for col_idx, column in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, column, header_format)
+    
+    # Set column widths
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(df[column].astype(str).map(len).max(), len(column)) + 2
+        worksheet.set_column(col_idx, col_idx, min(max_len, 50))
+    
+    return worksheet
+
+def export_accession_to_excel(writer, db, book_ids, list_type, filters):
+    """Export accession data to Excel"""
+    view = TabDataView()
+    response = view.get_accession_data(db, book_ids, list_type, filters)
+    data = response['data']
+    
+    rows = []
+    for item in data:
+        rows.append({
+            'Accession No': item['accession_no'],
+            'Acquisition Date': item['acquisition_date'],
+            'Catalog Ref No': item['catalog_ref_no'],
+            'Book Title': item['book_title'],
+            'Copy Number': item['copy_number'],
+            'Invoice Number': item['invoice_number'],
+            'Invoice Date': item['invoice_date'],
+            'Price': item['price'],
+            'Remarks': item['remarks'],
+            'Condition': item['condition_name'],
+            'Currency': item['currency_name'],
+            'Source': item['source_name'],
+            'Location': item['location_name'],
+            'Status': item['status_name'],
+            'Supplier': item['supplier_name'],
+            'Created At': item['created_at'],
+            'Created By': item['created_by'],
+            'Updated At': item['updated_at'],
+            'Updated By': item['updated_by'],
+        })
+    
+    df = pd.DataFrame(rows)
+    sheet_name = 'Accession'
+    start_row = 6
+    
+    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=start_row)
+    
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+    
+    title_format = workbook.add_format({'bold': True, 'font_size': 16, 'align': 'center'})
+    worksheet.merge_range(0, 0, 0, len(df.columns)-1, 'Accession Report', title_format)
+    
+    return worksheet
+
+# Similar export functions for other tabs would follow the same pattern
+
+class ExportReportView(ReportBaseView):
+    """Export book report to Excel"""
+    
+    def get(self, request):
+        export_type = request.GET.get('type', 'all-tabs')
+        book_ids = request.GET.getlist('book_ids')
+        list_type = request.GET.get('list_type', 'title')
+        filters_json = request.GET.get('filters', '{}')
+        tab_filters_json = request.GET.get('tab_filters', '{}')
+        
+        # Parse book IDs
+        if len(book_ids) == 1 and ',' in book_ids[0]:
+            book_ids = [int(i) for i in book_ids[0].split(',') if i.strip().isdigit()]
+        else:
+            book_ids = [int(i) for i in book_ids if str(i).isdigit()]
+        
+        # Parse filters
+        try:
+            filters = json.loads(filters_json)
+        except:
+            filters = {}
+        
+        try:
+            tab_filters = json.loads(tab_filters_json)
+        except:
+            tab_filters = {}
+        
+        db = self.get_library_db()
+        
+        # Create temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+            output_path = tmp.name
+        
+        try:
+            with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+                if export_type == 'all-tabs':
+                    self.export_all_tabs(writer, db, book_ids, list_type, filters, tab_filters)
+                else:
+                    self.export_single_tab(writer, export_type, db, book_ids, list_type, tab_filters.get(export_type, {}))
+            
+            # Prepare response
+            with open(output_path, 'rb') as f:
+                response = HttpResponse(
+                    f.read(),
+                    content_type=(
+                        'application/vnd.openxmlformats-officedocument.'
+                        'spreadsheetml.sheet'
+                    )
+                )
+            
+            if export_type == 'all-tabs':
+                file_name = 'book_report_all_tabs.xlsx'
+            else:
+                safe_tab_name = export_type.replace('-', '_')
+                file_name = f'book_report_{safe_tab_name}.xlsx'
+            
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            return response
+            
+        except Exception as e:
+            return JsonResponse(
+                {'error': 'Export failed', 'details': str(e)},
+                status=500
+            )
+        finally:
+            if os.path.exists(output_path):
+                os.unlink(output_path)
+    
+    def export_all_tabs(self, writer, db, book_ids, list_type, filters, tab_filters):
+        """Export all tabs to separate sheets"""
+        export_functions = {
+            'catalogue': export_catalogue_to_excel,
+            'accession': export_accession_to_excel,
+            # Add other export functions here
+        }
+        
+        for tab_name, export_func in export_functions.items():
+            if tab_name in tab_filters:
+                export_func(writer, db, book_ids, list_type, tab_filters[tab_name])
+    
+    def export_single_tab(self, writer, export_type, db, book_ids, list_type, filters):
+        """Export a single tab"""
+        export_functions = {
+            'catalogue': export_catalogue_to_excel,
+            'accession': export_accession_to_excel,
+            # Add other export functions here
+        }
+        
+        export_func = export_functions.get(export_type)
+        if export_func:
+            export_func(writer, db, book_ids, list_type, filters)
+        else:
+            # Create empty sheet for unsupported tabs
+            workbook = writer.book
+            worksheet = workbook.add_worksheet(export_type.replace('-', ' ').title())
+            worksheet.write(0, 0, f'Export for {export_type} not yet implemented')
+
+class ExportAllDataView(ReportBaseView):
+    """Export selected tabs data to Excel"""
+    
+    def get(self, request):
+        # Parse inputs
+        book_ids = request.GET.getlist('book_ids')
+        selected_tabs = request.GET.getlist('tabs')
+        filename = request.GET.get('filename', 'book_report')
+        list_type = request.GET.get('list_type', 'title')
+        
+        # Parse tab filters
+        tab_filters = {}
+        for key in request.GET:
+            if key.startswith('tab_filters['):
+                tab_name = key.split('[')[1].split(']')[0]
+                try:
+                    tab_filters[tab_name] = json.loads(request.GET.get(key))
+                except:
+                    tab_filters[tab_name] = {}
+        
+        # Parse book IDs
+        if len(book_ids) == 1 and ',' in book_ids[0]:
+            book_ids = [int(i) for i in book_ids[0].split(',') if i.strip().isdigit()]
+        else:
+            book_ids = [int(i) for i in book_ids if str(i).isdigit()]
+        
+        if not book_ids:
+            return JsonResponse({'error': 'No books selected'}, status=400)
+        
+        if not selected_tabs:
+            return JsonResponse({'error': 'No tabs selected'}, status=400)
+        
+        db = self.get_library_db()
+        
+        # Create temp file
+        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
+            output_path = tmp.name
+        
+        try:
+            with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+                # Export each selected tab
+                for tab in selected_tabs:
+                    if tab == 'catalogue':
+                        export_catalogue_to_excel(
+                            writer, db, book_ids, list_type, 
+                            tab_filters.get(tab, {})
+                        )
+                    elif tab == 'accession':
+                        export_accession_to_excel(
+                            writer, db, book_ids, list_type,
+                            tab_filters.get(tab, {})
+                        )
+                    # Add other tabs here
+                    else:
+                        # Create placeholder sheet for unimplemented tabs
+                        workbook = writer.book
+                        worksheet = workbook.add_worksheet(tab.replace('-', ' ').title())
+                        worksheet.write(0, 0, f'Data for {tab} tab')
+            
+            # Send file
+            with open(output_path, 'rb') as f:
+                response = HttpResponse(
+                    f.read(),
+                    content_type=(
+                        'application/vnd.openxmlformats-officedocument.'
+                        'spreadsheetml.sheet'
+                    )
+                )
+            
+            response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+            return response
+            
+        except Exception as e:
+            return JsonResponse(
+                {'error': 'Export failed', 'details': str(e)},
+                status=500
+            )
+        finally:
+            if os.path.exists(output_path):
+                os.unlink(output_path)

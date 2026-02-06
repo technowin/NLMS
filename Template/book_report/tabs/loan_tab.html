@@ -1,0 +1,49 @@
+<div class="d-flex flex-column h-100">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-check me-2"></i>Loan Details (Outstanding)
+                <small class="text-muted ms-2" id="loan-info">Select books to view details</small>
+            </h5>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn" data-bs-toggle="modal" 
+                    data-bs-target="#loanFiltersModal">
+                <i class="bi bi-funnel me-1"></i>Filters
+                <span class="badge rounded-pill bg-light text-primary filter-badge" id="loan-filter-count">0</span>
+            </button>
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-success btn-sm" onclick="exportCurrentTab()">
+                <i class="bi bi-file-earmark-excel me-1"></i>Export
+            </button>
+        </div>
+    </div>
+    
+     <div class="table-responsive table-scroll">
+        <table class="table table-hover table-striped" id="loan-table">
+            <thead class="table-light">
+                <tr>
+                    <th>Barcode</th>
+                    <th>Accession No</th>
+                    <th>Catalog Ref</th>
+                    <th>Book Title</th>
+                    <th>Member Name</th>
+                    <th>Membership Code</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Days Overdue</th>
+                    <th>Fine Amount</th>
+                    <th>Issued By</th>
+                    <th>Remarks</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="text-center py-5" id="loan-empty" style="display: none;">
+        <i class="bi bi-calendar-check text-muted" style="font-size: 3rem;"></i>
+        <p class="mt-2 text-muted">No outstanding loans found for selected books</p>
+    </div>
+</div>
