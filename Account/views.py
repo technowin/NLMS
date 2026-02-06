@@ -1,67 +1,68 @@
+# Standard library
 import json
 import random
 import string
-from L01.views import send_sms
-from django.contrib.auth.hashers import make_password
+import traceback
+import logging
+import hashlib
+from datetime import date, timedelta
+
+# Django core
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render,redirect
-from django.contrib.auth import authenticate, login ,logout,get_user_model
-from Account.forms import RegistrationForm
-from Account.models import  CustomUser, password_storage
-# import mysql.connector as sql
-from Account.serializers import *
-import Db 
-import bcrypt
-from L01.models import *
+from django.contrib.auth import (
+    authenticate, login, logout, get_user_model
+)
 from django.contrib.auth.decorators import login_required
-# from .models import SignUpModel
-# from .forms import SignUpForm
+from django.contrib.auth.models import update_last_login
+from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.hashers import (
+    make_password, check_password
+)
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.urls import reverse
+from django.utils import timezone
+from django.db import models, IntegrityError
+
+# Django REST Framework
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# Third-party
+import bcrypt
+import requests
+
+# Project / App imports
+from L01.views import send_sms
+from L01.models import *
+from Account.forms import RegistrationForm
+from Account.models import CustomUser, password_storage
+from Account.serializers import *
+from Account.utils import encrypt_email, decrypt_email
 from NLMS.encryption import *
-from django.http import HttpResponse
+from Masters.models import *
+from MenuManager.models import *
+from administration.models import *
+from .db_utils import callproc
+import Db
+
+# PDF generation
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph
-from Account.utils import decrypt_email, encrypt_email
-import traceback
-from rest_framework.views import APIView
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.hashers import check_password
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.contrib.auth.backends import ModelBackend
-from .db_utils import callproc
-from django.utils import timezone
-from Account.models import *
-from Masters.models import *
-from MenuManager.models import *
-from django.db import IntegrityError
-from django.urls import reverse
-from django.http import HttpResponseBadRequest
-import logging
-import requests
-from django.db import models
-from administration.models import *
-from django.views.decorators.csrf import csrf_protect
-from datetime import date, timedelta
 
-# Set up logging
-logger = logging.getLogger(__name__)
-
-from django.contrib.auth.hashers import check_password
-from django.contrib.auth import get_user_model
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
-from django.shortcuts import render, redirect
-
+# User model
 User = get_user_model()
 
-from django.contrib.auth.models import update_last_login
+# Logger
+logger = logging.getLogger(__name__)
 
 def safe_login(request, user, db_alias):
     # Temporarily override update_last_login to use correct DB
@@ -96,6 +97,15 @@ def authenticate_from_db(request, username, password, db_alias):
 
 @csrf_exempt
 def Login(request):
+    """
+    Member login view with session security and back button protection
+    """
+    
+    # 🔴 ADD: Check for expired session from back button
+    expired = request.GET.get('expired')
+    if expired:
+        request.session.flush()
+        messages.warning(request, 'Your session has expired. Please login again.')
 
     library_code = request.session.get('library_db', None)
     today = date.today()
@@ -110,9 +120,9 @@ def Login(request):
         if not db_alias:
             db_alias = None
         else:
-            db_alias= enc(db_alias)
+            db_alias = enc(db_alias)
     
-        encrypted_cat_ref_num= request.GET.get("cat_ref_num", "")
+        encrypted_cat_ref_num = request.GET.get("cat_ref_num", "")
         encrypted_ebook_id = request.GET.get("ebook_id")
         encrypted_pdf_url = request.GET.get("pdf_url")
 
@@ -127,15 +137,20 @@ def Login(request):
 
         membership_url = library.membership_page_link.strip() if library and library.membership_page_link else "#"
 
-        return render(request, 'bootstrap/account/login.html', {
+        # 🔴 ADD: Create response with no-cache headers
+        response = render(request, 'bootstrap/account/login.html', {
             'library_code': library_code,
             'registration_url': membership_url,
             'next': next_url,
             'cat': encrypted_cat_ref_num,
             'ebook_id': encrypted_ebook_id,
             'pdf_url': encrypted_pdf_url,
-             'db_alias':db_alias
+            'db_alias': db_alias
         })
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
     # ============================================================
     # POST METHOD
@@ -147,11 +162,11 @@ def Login(request):
         remember_me = request.POST.get('remember_me')
         next_url = request.POST.get('next')
         
-
         encrypted_cat_ref_num = request.POST.get("cat")
         encrypted_ebook_id = request.POST.get("ebook_id")
         encrypted_pdf_url = request.POST.get("pdf_url")
         db_alias = request.POST.get("db_alias")
+        
         if db_alias == 'None':
             db_alias = None
         else:
@@ -159,299 +174,252 @@ def Login(request):
 
         ebook_id = dec(encrypted_ebook_id) if encrypted_ebook_id else None
         pdf_url = dec(encrypted_pdf_url) if encrypted_pdf_url else None
-        # cat_ref_num = encrypted_cat_ref_num if encrypted_cat_ref_num else None
 
-        # ------------------------------------------
-        # Database alias (static for L01)
-        # ------------------------------------------
+        # Remove the first if condition, keep only the else part logic
         
-        # if library_code == 'default' or library_code is None and next_url == '':
-        if ( library_code == 'default' or library_code is None ) and next_url == '':
+        params = {}
+
+        if encrypted_cat_ref_num and encrypted_cat_ref_num.strip():
+            params['cat_ref_num'] = encrypted_cat_ref_num.strip()
+
+        if encrypted_ebook_id:
+            params['ebook_id'] = encrypted_ebook_id
+
+        if encrypted_pdf_url:
+            params['pdf_url'] = encrypted_pdf_url
             
-            db_alias = library_code
-
-            # ------------------------------------------
-            # Authenticate user
-            # ------------------------------------------
-            user = authenticate_from_db(request, username, password, db_alias)
-            
-            if user.is_logged_in:
-
-                timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
-
-                if user.last_activity and \
-                timezone.now() - user.last_activity < timeout:
-
-                    return render(request, "bootstrap/account/login.html", {
-                        "error": "You are already logged in on another device."
-                    })
-                else:
-                    # expired session cleanup
-                    user.is_logged_in = False
-                    user.session_key = None
-                    user.save()
-
-            session_key = str(uuid.uuid4())
-            request.session["session_key"] = session_key
-
-            user.session_key = session_key
-            user.is_logged_in = True
-            user.last_activity = timezone.now()
-            user.save()
-
-            if user is None:
-                messages.error(request, 'Login unsuccessful. Please verify your credentials.')
-                return redirect("Login")
-
-            # 🔒 ROLE GATE — ONLY MEMBERS ALLOWED
-            if str(user.role_id) != '3':
-                messages.error(
-                    request,
-                    'Access denied. This portal is available to registered members only.'
-                )
-                return redirect("Login")
-            
-            # ------------------------------------------
-            # Set session user data
-            # ------------------------------------------
-            request.session.cycle_key()
-            request.session["username"] = str(username)
-            request.session["full_name"] = str(user.full_name)
-            request.session["user_id"] = str(user.id)
-            request.session["role_id"] = str(user.role_id)
-            
-            return redirect(f'LMS_Dashboard')
+        print("Library code:", library_code)
         
-        else:
-            
-            params = {}
-
-            if encrypted_cat_ref_num and encrypted_cat_ref_num.strip():
-                params['cat_ref_num'] = encrypted_cat_ref_num.strip()
-
-            if encrypted_ebook_id:
-                params['ebook_id'] = encrypted_ebook_id
-
-            if encrypted_pdf_url:
-                params['pdf_url'] = encrypted_pdf_url
-                
-            login_url = reverse('Login')
-            
-            print("Library code:", library_code)
-            
+        # Default to L01 if not specified
+        if not db_alias or db_alias == 'None':
             db_alias = "L01"
-            request.session['service'] = db_alias
-            request.session['library_db'] = db_alias
+            
+        request.session['service'] = db_alias
+        request.session['library_db'] = db_alias
 
-            user = authenticate_from_db(request, username, password, db_alias)
+        user = authenticate_from_db(request, username, password, db_alias)
 
-            # ------------------------------------------
-            # Authenticate user
-            # ------------------------------------------
-            if user.is_logged_in:
+        # 🔴 FIX: Check if user is None BEFORE accessing attributes
+        if user is None:
+            messages.error(request, 'Login unsuccessful. Please verify your credentials.')
+            
+            if next_url and next_url.strip():
+                return redirect(f"{reverse('Login')}?next={next_url}")
+            
+            if params:
+                from urllib.parse import urlencode
+                login_url = f"{reverse('Login')}?{urlencode(params)}"
+                return redirect(login_url)
+            
+            return redirect("Login")
 
-                timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
+        # ------------------------------------------
+        # Authenticate user - NOW user is guaranteed not to be None
+        # ------------------------------------------
+        if user.is_logged_in:
 
-                if user.last_activity and \
-                timezone.now() - user.last_activity < timeout:
-                    
-                    messages.error(request, 'Login unsuccessful. You are already logged in on another device.')
+            timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
 
-                    return render(request, "bootstrap/account/login.html")
-                else:
-                    # expired session cleanup
-                    user.is_logged_in = False
-                    user.session_key = None
-                    user.save()
-
-            import uuid
-            session_key = str(uuid.uuid4())
-            request.session["session_key"] = session_key
-
-            user.session_key = session_key
-            user.is_logged_in = True
-            user.last_activity = timezone.now()
-            user.save()
-
-            if user is None:
-                messages.error(request, 'Login unsuccessful. Please verify your credentials.')
+            if user.last_activity and \
+            timezone.now() - user.last_activity < timeout:
                 
-                if next_url and next_url.strip():
-                    return redirect(f"{reverse('Login')}?next={next_url}")
-                
-                if params:
-                    from urllib.parse import urlencode
-                    login_url = f"{reverse('Login')}?{urlencode(params)}"
-                    return redirect(login_url)
-                
-                return redirect("Login")
+                messages.error(request, 'Login unsuccessful. You are already logged in on another device.')
 
-            # 🔒 ROLE GATE — ONLY MEMBERS ALLOWED
-            if str(user.role_id) != '3':
-                messages.error(
-                    request,
-                    'Access denied. This portal is available to registered members only.'
+                response = render(request, "bootstrap/account/login.html")
+                response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                response['Pragma'] = 'no-cache'
+                response['Expires'] = '0'
+                return response
+            else:
+                # expired session cleanup
+                user.is_logged_in = False
+                user.session_key = None
+                user.save()
+
+        import uuid
+        session_key = str(uuid.uuid4())
+        request.session["session_key"] = session_key
+
+        user.session_key = session_key
+        user.is_logged_in = True
+        user.last_activity = timezone.now()
+        user.save()
+
+        # 🔒 ROLE GATE — ONLY MEMBERS ALLOWED
+        if str(user.role_id) != '3':
+            messages.error(
+                request,
+                'Access denied. This portal is available to registered members only.'
+            )
+            
+            if next_url and next_url.strip():
+                return redirect(f"{reverse('Login')}?next={next_url}")
+            
+            if params:
+                from urllib.parse import urlencode
+                login_url = f"{reverse('Login')}?{urlencode(params)}"
+                return redirect(login_url)
+            
+            return redirect("Login")
+
+        # ------------------------------------------
+        # Set session user data
+        # ------------------------------------------
+        request.session.cycle_key()
+        request.session["username"] = str(username)
+        request.session["full_name"] = str(user.full_name)
+        request.session["user_id"] = str(user.id)
+        request.session["role_id"] = str(user.role_id)
+        request.session['library_db'] = db_alias
+        
+        # 🔴 ADD: Session fingerprinting for security
+        import hashlib
+        ua = request.META.get('HTTP_USER_AGENT', '')
+        request.session['_ua_hash'] = hashlib.sha256(ua.encode()).hexdigest()
+        request.session['_ua_raw'] = ua
+        request.session['_ip'] = get_client_ip(request)
+        
+        # 🔴 ADD: Set member flow completed flag for back button protection
+        request.session['member_flow_completed'] = True
+        request.session.modified = True
+
+        # ------------------------------------------
+        # Get membership info
+        # ------------------------------------------
+        member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
+
+        membership_id = None
+        if member:
+            try:
+                membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
+                membership_id = membership.id
+            except MembershipMaster.DoesNotExist:
+                membership_id = None
+                
+        if str(user.role_id) == '3' and member:
+            try:
+                login_session = MemberLoginSession.objects.using('L01').create(
+                    member=member,   # ✅ pass MembershipDetails instance
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    created_by=str(user.id)
                 )
+
+                request.session['login_session_id'] = login_session.id
+
+            except Exception as e:
+                print(f"Error creating MemberLoginSession: {e}")
                 
-                if next_url and next_url.strip():
-                    return redirect(f"{reverse('Login')}?next={next_url}")
+        # Inactive membership
+        if member and member.isactive != 1:
+            request.session["sweet_alert"] = {
+                "title": "Membership Inactive",
+                "text": "आपली सदस्यता सध्या सक्रिय नाही. कृपया प्रशासनाशी संपर्क साधा.",
+                "icon": "warning"
+            }
+            request.session.set_expiry(0)
+            return redirect("L01:membership_dashboard")
+
+        # Membership expired
+        if member and today > member.to_date:
+            request.session["sweet_alert"] = {
+                "title": "Membership Expired",
+                "text": "आपली सदस्यता संपलेली आहे. कृपया नूतनीकरण करा.",
+                "icon": "warning"
+            }
+            request.session.set_expiry(0)
+            return redirect("L01:membership_dashboard")
+
+        # Membership not started yet
+        if member and today < member.from_date:
+            request.session["sweet_alert"] = {
+                "title": "Membership Not Active Yet",
+                "text": "आपली सदस्यता अद्याप सुरू झालेली नाही.",
+                "icon": "info"
+            }
+            request.session.set_expiry(0)
+            return redirect("L01:membership_dashboard")
+            
+        if membership_id == 8:
+
+            # Clear any previous pending action
+            request.session.pop("pending_action", None)
+
+            if next_url:
+                request.session["pending_action"] = {
+                    "type": "next_url",
+                    "url": next_url,
+                    "message": "कृपया आपले पुस्तक उघडण्यासाठी पुढे जा."
+                }
+
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
                 
-                if params:
-                    from urllib.parse import urlencode
-                    login_url = f"{reverse('Login')}?{urlencode(params)}"
-                    return redirect(login_url)
-                
-                return redirect("Login")
-
-            # ------------------------------------------
-            # Set session user data
-            # ------------------------------------------
-            request.session.cycle_key()
-            request.session["username"] = str(username)
-            request.session["full_name"] = str(user.full_name)
-            request.session["user_id"] = str(user.id)
-            request.session["role_id"] = str(user.role_id)
-            request.session['library_db'] = db_alias
-
-            # ------------------------------------------
-            # Get membership info
-            # ------------------------------------------
-            member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
-
-            membership_id = None
-            if member:
-                try:
-                    membership = MembershipMaster.objects.using(db_alias).get(id=member.membership_id)
-                    membership_id = membership.id
-                except MembershipMaster.DoesNotExist:
-                    membership_id = None
-                    
-            if str(user.role_id) == '3' and member:
-                try:
-                    login_session = MemberLoginSession.objects.using('L01').create(
-                        member=member,   # ✅ pass MembershipDetails instance
-                        ip_address=request.META.get('REMOTE_ADDR'),
-                        created_by=str(user.id)
-                    )
-
-                    request.session['login_session_id'] = login_session.id
-
-                except Exception as e:
-                    print(f"Error creating MemberLoginSession: {e}")
-            # Inactive membership
-            if member and member.isactive != 1:
+            if ebook_id and pdf_url or encrypted_cat_ref_num:
                 request.session["sweet_alert"] = {
-                    "title": "Membership Inactive",
-                    "text": "आपली सदस्यता सध्या सक्रिय नाही. कृपया प्रशासनाशी संपर्क साधा.",
+                    "title": "Access Restricted",
+                    "text": "हे पुस्तक अभ्यासिका शाखेसाठी उपलब्ध नाही.",
                     "icon": "warning"
                 }
-                request.session.set_expiry(0)
-                return redirect("L01:membership_dashboard")
 
-            # Membership expired
-            if member and today > member.to_date:
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard") 
+
+            return redirect("L01:membership_dashboard")
+
+        # ============================================================
+        # VALID MEMBERSHIP (NOT PRACTITIONER)
+        # ============================================================
+        if membership_id is not None and membership_id != 8:
+
+            # Clear any previous pending action
+            request.session.pop("pending_action", None)
+            if next_url:
                 request.session["sweet_alert"] = {
-                    "title": "Membership Expired",
-                    "text": "आपली सदस्यता संपलेली आहे. कृपया नूतनीकरण करा.",
+                    "title": "Access Restricted",
+                    "text": "हे पुस्तक उघडण्यासाठी अभ्यासिका शाखेत नोंदणी करा.",
                     "icon": "warning"
                 }
+
                 request.session.set_expiry(0)
                 return redirect("L01:membership_dashboard")
 
-            # Membership not started yet
-            if member and today < member.from_date:
-                request.session["sweet_alert"] = {
-                    "title": "Membership Not Active Yet",
-                    "text": "आपली सदस्यता अद्याप सुरू झालेली नाही.",
-                    "icon": "info"
+            # Ebook + PDF intent
+            elif ebook_id and encrypted_pdf_url:
+                request.session["pending_action"] = {
+                    "type": "pdf",
+                    "url": encrypted_pdf_url,
+                    "message": "कृपया आपले ई-बुक उघडण्यासाठी पुढे जा."
                 }
-                request.session.set_expiry(0)
-                return redirect("L01:membership_dashboard")
-            if membership_id == 8:
 
-                # Clear any previous pending action
-                request.session.pop("pending_action", None)
+            # Catalog detail intent
+            elif encrypted_cat_ref_num:
+                request.session["pending_action"] = {
+                    "type": "catalog",
+                    "url": f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}",
+                    "message": "कृपया आपले पुस्तक उघडण्यासाठी पुढे जा."
+                }
 
-                if next_url:
-                    request.session["pending_action"] = {
-                        "type": "next_url",
-                        "url": next_url,
-                        "message": "कृपया आपले पुस्तक उघडण्यासाठी पुढे जा."
-                    }
+            request.session.set_expiry(0)
+            return redirect("L01:membership_dashboard")
 
-                    request.session.set_expiry(0)
-
-                    return redirect("L01:membership_dashboard")
-                if ebook_id and pdf_url or encrypted_cat_ref_num:
-                    request.session["sweet_alert"] = {
-                        "title": "Access Restricted",
-                        "text": "हे पुस्तक अभ्यासिका शाखेसाठी उपलब्ध नाही.",
-                        "icon": "warning"
-                    }
-
-                    request.session.set_expiry(0)
-                    return redirect("L01:membership_dashboard") 
-
-                return redirect("L01:membership_dashboard")
-
-
-            # ============================================================
-            # VALID MEMBERSHIP (NOT PRACTITIONER)
-            # ============================================================
-            if membership_id is not None and membership_id != 8:
-
-                # Clear any previous pending action
-                request.session.pop("pending_action", None)
-                if next_url:
-                    request.session["sweet_alert"] = {
-                        "title": "Access Restricted",
-                        "text": "हे पुस्तक उघडण्यासाठी अभ्यासिका शाखेत नोंदणी करा.",
-                        "icon": "warning"
-                    }
-
-                    request.session.set_expiry(0)
-                    return redirect("L01:membership_dashboard")
-
-                # Ebook + PDF intent
-                elif ebook_id and encrypted_pdf_url:
-                    # file_url = settings.MEDIA_URL + pdf_url
-                    # final_pdf_url = request.build_absolute_uri(file_url)
-
-                    request.session["pending_action"] = {
-                        "type": "pdf",
-                        "url": encrypted_pdf_url,
-                        "message": "कृपया आपले ई-बुक उघडण्यासाठी पुढे जा."
-                    }
-
-                # Catalog detail intent
-                elif encrypted_cat_ref_num:
-                    request.session["pending_action"] = {
-                        "type": "catalog",
-                        "url": f"/{library_code}/view_book_detail/?cat_ref_num={encrypted_cat_ref_num}",
-                        "message": "कृपया आपले पुस्तक उघडण्यासाठी पुढे जा."
-                    }
-
-                request.session.set_expiry(0)
-                return redirect("L01:membership_dashboard")
-
-            # ============================================================
-            # NO MEMBERSHIP FOUND
-            # ============================================================
-            if membership_id is None:
-                request.session.set_expiry(0)
-                return redirect('L01:dashboard')
-
-            # ============================================================
-            # Role fallback
-            # ============================================================
-            if str(user.role_id) == '3':
-                return redirect('L01:membership_dashboard')
-
+        # ============================================================
+        # NO MEMBERSHIP FOUND
+        # ============================================================
+        if membership_id is None:
+            request.session.set_expiry(0)
             return redirect('L01:dashboard')
 
+        # ============================================================
+        # Role fallback
+        # ============================================================
+        if str(user.role_id) == '3':
+            return redirect('L01:membership_dashboard')
+
+        return redirect('L01:dashboard')
+
     else:
-            messages.error(request, 'Invalid Credentials')
-            return redirect("Login")
+        messages.error(request, 'Invalid Credentials')
+        return redirect("Login")
 
 from django.db import connections
 from django.db.utils import ConnectionDoesNotExist
@@ -487,6 +455,12 @@ def adminLogin(request):
     if request.user.is_authenticated and request.user.is_staff:
         return redirect('LMS_Dashboard')
     
+    # 🔴 ADD: Check for expired session from back button
+    expired = request.GET.get('expired')
+    if expired:
+        request.session.flush()
+        messages.warning(request, 'Your session has expired. Please login again.')
+    
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
@@ -494,7 +468,12 @@ def adminLogin(request):
         # Validate input
         if not username or not password:
             messages.error(request, 'Please provide both username and password.')
-            return render(request, 'bootstrap/account/admin_login.html')
+            # Add no-cache headers to error response too
+            response = render(request, 'bootstrap/account/admin_login.html')
+            response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+            return response
         
         try:
             User = get_user_model()
@@ -521,12 +500,22 @@ def adminLogin(request):
                                 # Set session variables - ONLY default database
                                 request.session['using_database'] = 'default'
                                 request.session['library_db'] = 'default'
-                                request.session['is_admin'] = True
+                                request.session['is_admin'] = True  # 🔴 SET THIS FLAG
                                 request.session['username'] = str(user.username)
                                 request.session['full_name'] = str(user.full_name)
                                 request.session['user_id'] = str(user.id)
                                 request.session['role_id'] = str(user.role_id)
                                 request.session['last_login'] = user.last_login.isoformat() if user.last_login else ''
+                                
+                                # 🔐 Fingerprinting
+                                ua = request.META.get('HTTP_USER_AGENT', '')
+                                request.session['_ua_hash'] = hashlib.sha256(ua.encode()).hexdigest()
+                                request.session['_ua_raw'] = ua
+                                request.session['_ip'] = get_client_ip(request)
+                                
+                                # 🔴 ALSO set admin_flow_completed for consistency
+                                request.session['admin_flow_completed'] = True
+                                request.session.modified = True  # Ensure it's saved
                                 
                                 # Update last_login timestamp
                                 user.last_login = timezone.now()
@@ -554,18 +543,12 @@ def adminLogin(request):
             logger = logging.getLogger(__name__)
             logger.error(f"Admin login error for user '{username}': {str(e)}", exc_info=True)
     
-    # REMOVE the problematic connection cleanup - it's causing issues
-    # Just return the template
-    return render(request, 'bootstrap/account/admin_login.html')
-
-import hashlib
-import logging
-from django.contrib import messages
-from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_protect
-
-logger = logging.getLogger(__name__)
+    # 🔴 ADD no-cache headers to ALL responses
+    response = render(request, 'bootstrap/account/admin_login.html')
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 def get_client_ip(request):
     """
@@ -584,6 +567,24 @@ def librarianLogin(request):
     Prevents session fixation & basic hijacking.
     """
 
+    # 🔴 ADD THIS AT THE BEGINNING: Check if user is already authenticated
+    # This handles direct URL access while logged in
+    
+    library_code = request.session.get('library_db')  # Default to L01
+    
+    if request.user.is_authenticated:
+        # Redirect to appropriate dashboard based on library_code
+        from django.urls import reverse
+        return redirect(f'{library_code}:dashboard')
+       
+    
+    # 🔴 ADD THIS: Check for expired session from back button
+    expired = request.GET.get('expired')
+    if expired:
+        # Clear session completely when coming from expired redirect
+        request.session.flush()
+        messages.warning(request, 'Your session has expired. Please login again.')
+
     library_code = request.session.get('library_db')
 
     if request.method == 'POST':
@@ -599,7 +600,7 @@ def librarianLogin(request):
             user = authenticate(request, username=username, password=password)
 
             if user and getattr(user, 'role_id', None) != 3:
-
+                
                 login(request, user)  # Django creates fresh session here
 
                 # ✅ App-specific session data
@@ -622,8 +623,14 @@ def librarianLogin(request):
                 # 🧹 Cleanup flags
                 request.session.pop('_session_expired', None)
                 request.session.pop('_user_logged_out', None)
-
-                return redirect('L01:dashboard')
+                
+                # 🔴 CRITICAL: Set this flag exactly as in your working OTP project
+                request.session['admin_flow_completed'] = True
+                # Also set session modified to ensure it's saved
+                request.session.modified = True
+                
+                return redirect(f'{library_code}:dashboard')
+                
 
             # Generic failure (VAPT-friendly)
             messages.error(
@@ -638,50 +645,117 @@ def librarianLogin(request):
                 'Login could not be completed at this time. Please try again later.'
             )
 
-    return render(request, 'bootstrap/account/librarian_login.html')
-
-
-# def logoutView(request):
-#     library_code = request.session.get('library_db', None)
-
-#     # Flush session
-#     request.session.flush()
-#     from django.contrib.auth import logout as django_logout
-#     django_logout(request)
-#     from django.shortcuts import redirect
-#     from django.contrib.auth.models import AnonymousUser
-#     # Ensure user is set to anonymous
-#     request.user = AnonymousUser()
-
-#     # Redirect based on whether library_code existed
-#     if library_code == 'default':
-#         return redirect("library_list")  
-#     else:
-#         return redirect("library_list")
+    # 🔴 ADD THIS: Create response with no-cache headers
+    response = render(request, 'bootstrap/account/librarian_login.html')
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
 
 def logoutView(request):
-    library_code = request.session.get('library_db', None)
-    
-    if request.user.is_authenticated:
-        user = request.user
-        user.is_logged_in = False
-        user.session_key = None
-        user.save(update_fields=['is_logged_in', 'session_key'])
-
-    # 🔔 Mark session as expired (IMPORTANT)
-    request.session['_session_expired'] = True
-
-    # Flush session
-    request.session.flush()
-
-    from django.contrib.auth import logout as django_logout
-    django_logout(request)
-
-    from django.contrib.auth.models import AnonymousUser
-    request.user = AnonymousUser()
-
-    return redirect("library_list")
-
+    """
+    Universal logout view that handles both Admin and Librarian logout
+    """
+    try:
+        # Determine user type and redirect URL BEFORE clearing session
+        is_admin = request.session.get('is_admin', False)
+        is_librarian = request.session.get('is_librarian', False)
+        
+        # Set appropriate redirect URL based on user type
+        if is_admin:
+            redirect_url = reverse('library_list')  # Redirect to admin login
+        elif is_librarian:
+            redirect_url = reverse('library_list')  # Redirect to library selection
+        else:
+            # Default fallback
+            redirect_url = reverse('library_list')
+        
+        # 1️⃣ Clear ALL authentication flags (CRITICAL for middleware)
+        flags_to_clear = [
+            'admin_flow_completed',  # Librarian flag
+            'is_admin',              # Admin flag
+            'is_librarian',          # Librarian flag
+        ]
+        
+        for flag in flags_to_clear:
+            request.session.pop(flag, None)
+        
+        # 2️⃣ Update user status if authenticated
+        if request.user.is_authenticated:
+            user = request.user
+            if hasattr(user, 'is_logged_in'):
+                user.is_logged_in = False
+            if hasattr(user, 'session_key'):
+                user.session_key = None
+            
+            # Save only if we modified fields
+            update_fields = []
+            if hasattr(user, 'is_logged_in') and user.is_logged_in is False:
+                update_fields.append('is_logged_in')
+            if hasattr(user, 'session_key') and user.session_key is None:
+                update_fields.append('session_key')
+            
+            if update_fields:
+                user.save(update_fields=update_fields)
+        
+        # 3️⃣ Clear ALL session keys
+        session_keys_to_clear = [
+            # Auth flags
+            'admin_flow_completed', 'is_admin', 'is_librarian',
+            
+            # User data
+            'using_database', 'library_db', 'username', 'full_name',
+            'user_id', 'role_id', 'last_login',
+            
+            # Fingerprinting
+            '_ua_hash', '_ua_raw', '_ip',
+            
+            # Status flags
+            '_session_expired', '_user_logged_out'
+        ]
+        
+        # Also clear any keys that start with specific patterns
+        all_keys = list(request.session.keys())
+        for key in all_keys:
+            # Clear any remaining auth/session keys
+            if key not in session_keys_to_clear:
+                if any(term in key.lower() for term in ['auth', 'login', 'session', 'user']):
+                    request.session.pop(key, None)
+        
+        for key in session_keys_to_clear:
+            request.session.pop(key, None)
+        
+        # 4️⃣ Django logout (clears authentication)
+        from django.contrib.auth import logout as django_logout
+        django_logout(request)
+        
+        # 5️⃣ Mark session as modified
+        request.session.modified = True
+        
+        # 6️⃣ Flush entire session
+        request.session.flush()
+        
+        # 7️⃣ Add logout flag to new session
+        request.session['_user_logged_out'] = True
+        
+        # 8️⃣ Add cache-busting parameter
+        import time
+        final_redirect_url = f"{redirect_url}?_={int(time.time())}"
+        
+        # Optional: Add success message
+        messages.success(request, "You have been logged out successfully.")
+        
+        return redirect(final_redirect_url)
+        
+    except Exception as e:
+        # Log error but still redirect
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Logout error: {e}")
+        
+        # Fallback redirect to library list
+        return redirect('library_list')
 
 def register_new_user(request):
     Db.closeConnection()

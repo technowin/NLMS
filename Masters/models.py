@@ -160,6 +160,8 @@ class BookCatalog(models.Model):
     title = models.TextField(blank=True, null=True)
     subtitle = models.TextField(blank=True, null=True)
     author = models.TextField(blank=True, null=True)
+    author_short_name = models.TextField(blank=True, null=True)
+    author_fk = models.ForeignKey('AuthorMaster', on_delete=models.SET_NULL, blank=True, null=True, db_column='author_id')
     publisher = models.TextField(blank=True, null=True)
     isbn_issn = models.TextField(blank=True, null=True)
     edition = models.TextField(blank=True, null=True)

@@ -280,6 +280,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 
     # ✅ NOW your custom session logic
+    'middleware.auth_flow.AuthFlowGuardMiddleware',
     'middleware.session_security.SessionExpiryRedirectMiddleware',
     'middleware.session_binding.SessionBindingMiddleware',
 

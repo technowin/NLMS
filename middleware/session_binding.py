@@ -71,18 +71,51 @@ def log_session_activity(
     try:
         user_id = None
         user_type = None
+        role_id = None
+        username = None
 
+        # Get role_id from session (set by both adminLogin and librarianLogin)
+        role_id = request.session.get('role_id')
+        
+        # Get user_id from either Django user or session
         if hasattr(request, 'user') and request.user.is_authenticated:
             user_id = str(request.user.id)
-            user_type = 'admin'
+            username = str(request.user.username)
         elif request.session.get('user_id'):
             user_id = str(request.session.get('user_id'))
-            user_type = 'citizen'
+            username = request.session.get('username', '')
+
+        # Determine user_type based on role_id from session
+        if role_id:
+            role_id_str = str(role_id)
+            if role_id_str == '1':
+                user_type = 'admin'
+            elif role_id_str == '2':
+                user_type = 'librarian'
+            elif role_id_str == '3':
+                user_type = 'member'
+            elif role_id_str == '4':
+                user_type = 'kiosk_user'
+            else:
+                user_type = 'unknown'
+        else:
+            # If no role_id in session, check other indicators
+            if request.session.get('is_admin'):
+                user_type = 'admin'
+            elif request.session.get('is_librarian'):
+                user_type = 'librarian'
+            elif hasattr(request, 'user') and request.user.is_authenticated:
+                # Default authenticated user to admin
+                user_type = 'admin'
+            else:
+                user_type = 'citizen'
 
         # ✅ FORCE DEFAULT DB
         SessionActivityLog.objects.using('default').create(
             user_id=user_id,
             user_type=user_type,
+            role_id=role_id,
+            username=username,
 
             ip_address=current_ip,
             stored_ip_address=stored_ip,
@@ -98,13 +131,11 @@ def log_session_activity(
         )
 
     except Exception as e:
-        # ❗ Do NOT fully swallow errors in security logging
         import logging
         logging.getLogger('session_debug').error(
             f"SessionActivityLog failed: {e}",
             exc_info=True
         )
-
 
 # from django.contrib.auth import logout
 # from django.shortcuts import redirect
