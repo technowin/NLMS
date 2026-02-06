@@ -1124,20 +1124,24 @@ def edit_payment_report(request):
 @login_required
 def view_secure_receipt(request, enc_id):
     try:
-        # decrypt the relative file path
+        # decrypt relative file path
         relative_path = dec(enc_id)
-        file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
 
-        # verify file actually exists
-        if not os.path.exists(file_path):
+        # get secure file URL from storage service
+        file_url = file_storage_service.get_file_url(relative_path)
+
+        if not file_url:
             raise Http404("File not found.")
 
-        # Optional: Add permission check — e.g. only admins or creator can view
-        # if not request.user.is_staff:
-        #     return HttpResponseForbidden("You are not allowed to access this file.")
+        # redirect to secure/signed URL
+        return redirect(file_url)
 
-        # Serve securely without exposing path
-        return FileResponse(open(file_path, "rb"))
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), request.user.id])
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("payment_report")
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)

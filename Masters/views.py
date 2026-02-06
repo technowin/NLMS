@@ -273,37 +273,49 @@ def LMS_Dashboard(request):
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), user])
         messages.error(request, 'Oops...! Something went wrong!')
-         
-# Book Catalog Index     
-@no_direct_access 
-@login_required 
-def book_catalog_index(request):
-    try:
-        if not request.user.is_authenticated:
-            # Clear any session flags
-            if '_session_expired' in request.session:
-                request.session.pop('_session_expired')
-            messages.warning(request, "Your session has expired. Please log in again.")
-            return redirect('library_list')
-        user = request.user.id
-        role_id = request.user.role_id
 
-        # Fetch catalogs with related subject, material, status
-        catalogs = BookCatalog.objects.select_related("subject", "material").all().order_by("-cat_ref_num")
+# notepad ++ book_catalog_index
+@no_direct_access
+@login_required
+def book_catalog_index(request):
+    if not request.user.is_authenticated:
+        # Clear any session flags
+        if '_session_expired' in request.session:
+            request.session.pop('_session_expired')
+        messages.warning(request, "Your session has expired. Please log in again.")
+        return redirect('library_list')
+    user = request.user.id
+    try:
+        catalogs = (
+            BookCatalog.objects
+            .select_related("subject", "material")
+            .order_by("-cat_ref_num")
+        )
+
+        # 🔹 Fetch all statuses once
+        status_map = {
+            s.status_id: s
+            for s in status_master.objects.all()
+        }
 
         for c in catalogs:
-            c.status_obj = status_master.objects.filter(pk=c.status_id).first()
+            c.status_obj = status_map.get(c.status_id)
             c.encrypted_id = enc(str(c.cat_ref_num))
 
-        return render(request, 'Master/book_catalog_index.html', {"catalogs": catalogs})
+        return render(
+            request,
+            'Master/book_catalog_index.html',
+            {"catalogs": catalogs}
+        )
 
     except Exception as e:
-        tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name
-        callproc("stp_error_log", [fun, str(e), user])
-        messages.error(request, 'Oops...! Something went wrong!')
-        # Always return HttpResponse, even on error
-        return render(request, 'Master/book_catalog_index.html', {"catalogs": []})
+        callproc("stp_error_log", ["book_catalog_index", str(e), user])
+        messages.error(request, "Oops! Something went wrong.")
+        return render(
+            request,
+            'Master/book_catalog_index.html',
+            {"catalogs": []}
+        )
 
 # Book Catalog Create
 @no_direct_access 
@@ -415,6 +427,9 @@ def book_catalog_create(request):
             return render(request, 'Master/book_catalog_create.html', context)
 
         # ---------- POST Request ----------
+        
+        # Notepad ++ book_catalog_create-Po
+        
         if request.method == "POST":
             form_data = {
                 "title": request.POST.get('title', '').strip(),
@@ -470,10 +485,35 @@ def book_catalog_create(request):
                     pub_year = form_data['year_of_publication'] or "0000"
                     call_number = f"{ClassificationNumber}.{CutterNumber}.{pub_year}"
 
+                    # 🔴 UPDATED: Create or get AuthorMaster first
+                    existing_author = AuthorMaster.objects.filter(author_name_english=authorEnglish).first()
+                    
+                    if not existing_author:
+                        # Create new author
+                        existing_author = AuthorMaster.objects.create(
+                            author_short_name=CutterNumber,
+                            author_name_english=authorEnglish,
+                            author_name_other_english=otherAuthorEnglish,
+                            author_name_marathi=authorMarathi,
+                            author_name_other_marathi=otherAuthorMarathi,
+                            detail_entered="Book Catalog Entry",
+                            is_active=1,
+                            created_by=user,
+                            updated_by=user
+                        )
+                    else:
+                        # Update existing author if needed
+                        if not existing_author.author_short_name:
+                            existing_author.author_short_name = CutterNumber
+                            existing_author.save()
+
+                    # 🔴 UPDATED: Create BookCatalog with author_fk and author_short_name
                     book = BookCatalog.objects.create(
                         title=form_data["title"],
                         subtitle=form_data["subtitle"],
-                        author=form_data["author"],
+                        author=author,  # Keep original author text
+                        author_fk=existing_author,  # ForeignKey to AuthorMaster
+                        author_short_name=existing_author.author_short_name,  # Short name from AuthorMaster
                         other_authors=other_authors,
                         publisher=form_data["publisher"],
                         isbn_issn=form_data["isbn"],
@@ -495,19 +535,6 @@ def book_catalog_create(request):
                         created_by=user,
                         updated_by=user
                     )
-
-                    # Save Author
-                    existing_author = AuthorMaster.objects.filter(author_name_english=authorEnglish).first()
-                    if not existing_author:
-                        AuthorMaster.objects.create(
-                            author_short_name=CutterNumber,
-                            author_name_english=authorEnglish,
-                            author_name_other_english=otherAuthorEnglish,
-                            author_name_marathi=authorMarathi,
-                            author_name_other_marathi=otherAuthorMarathi,
-                            created_by=user,
-                            updated_by=user
-                        )
 
                     # ---------- UPDATED IMAGE LOGIC USING FileStorageService ----------
                     front_photo = request.FILES.get('front_page_image')
@@ -730,8 +757,10 @@ def book_catalog_edit(request):
     
         # -------------------- Handle POST (Update) --------------------
         
+        # Notepad ++ book_catalog_edit-POST
+        
         if request.method == "POST":
-            
+    
             user = request.user.id
             
             # 🔥 FIX — fetch object first
@@ -742,7 +771,8 @@ def book_catalog_edit(request):
             form_data = {
                 "title": request.POST.get("title", "").strip(),
                 "subtitle": request.POST.get("subtitle", "").strip(),
-                "author": request.POST.get("author", "").strip(),
+                "author_id": dec(request.POST.get("author_id", "").strip()) if request.POST.get("author_id") else None,
+                "author": request.POST.get("author", "").strip(),  # Keep original name
                 "other_authors": request.POST.get("other_authors", "").strip(),
                 "publisher": request.POST.get("publisher", "").strip(),
                 "isbn": request.POST.get("isbn", "").strip(),
@@ -772,7 +802,7 @@ def book_catalog_edit(request):
                 "keywords": "keywords",
                 "publication_place": "publication_place",
                 "year_of_publication": "year_of_publication",
-                "page_nos": "pages",   # FIXED
+                "page_nos": "pages",
                 "front_page_photo": "front_page_photo",
                 "last_page_photo": "last_page_photo",
             }
@@ -796,13 +826,73 @@ def book_catalog_edit(request):
 
             if not changes:
                 messages.info(request, "No changes detected. Nothing was updated.")
-                # return render(request, "Master/book_catalog_edit.html", {"obj": obj})
                 return redirect('book_catalog_index')
 
-            # Update object
+            # 🔴 SIMPLE AUTHOR HANDLING - CHECK ONLY TWO COLUMNS
+            author_obj = None
+            
+            # 1. FIRST: Check if author selected from dropdown
+            if form_data["author_id"]:
+                try:
+                    author_obj = AuthorMaster.objects.get(author_code=form_data["author_id"])
+                    print(f"✅ Author from dropdown: {author_obj.author_code} - {author_obj.author_name_english}")
+                except AuthorMaster.DoesNotExist:
+                    print(f"❌ Author ID {form_data['author_id']} not found in database")
+            
+            # 2. SECOND: If no dropdown selection but author text changed, try to match
+            if not author_obj and form_data["author"] and form_data["author"] != obj.author:
+                author_text = form_data["author"].strip()
+                print(f"🔍 Searching for author: '{author_text}'")
+                
+                # 🔴 CHECK ONLY TWO COLUMNS AS YOU SAID:
+                # 2A. Check Marathi name exact match
+                author_obj = AuthorMaster.objects.filter(author_name_marathi=author_text).first()
+                if author_obj:
+                    print(f"✅ Found by author_name_marathi exact match")
+                
+                # 2B. Check English name exact match (case-insensitive)
+                if not author_obj:
+                    author_obj = AuthorMaster.objects.filter(author_name_english__iexact=author_text).first()
+                    if author_obj:
+                        print(f"✅ Found by author_name_english exact match")
+                
+                if not author_obj:
+                    print(f"❌ No author match found in database for: '{author_text}'")
+            
+            # 3. UPDATE BOOK WITH AUTHOR INFO
+            if author_obj:
+                # Author found in database - set foreign key and short name
+                obj.author_fk = author_obj
+                obj.author_short_name = author_obj.author_short_name
+                
+                # Also update the text author field
+                # Keep the original text from form
+                obj.author = form_data["author"]
+                
+                # Track these changes
+                if "author_fk" not in changes:
+                    changes.append("author_fk")
+                if "author_short_name" not in changes:
+                    changes.append("author_short_name")
+                    
+                print(f"✅ Book linked to author: {author_obj.author_code} - {author_obj.author_name_english}")
+            elif form_data["author"]:
+                # No author found in database - clear FK but keep text
+                obj.author_fk = None
+                obj.author_short_name = None
+                obj.author = form_data["author"]
+                
+                # Still track author change
+                if "author_fk" not in changes:
+                    changes.append("author_fk")
+                if "author_short_name" not in changes:
+                    changes.append("author_short_name")
+                
+                print(f"⚠️ Author not found in database, keeping as text only: '{form_data['author']}'")
+
+            # Update object with basic fields
             obj.title = form_data["title"]
             obj.subtitle = form_data["subtitle"]
-            obj.author = form_data["author"]
             obj.other_authors = form_data["other_authors"]
             obj.publisher = form_data["publisher"]
             obj.isbn_issn = form_data["isbn"]
@@ -817,21 +907,16 @@ def book_catalog_edit(request):
             obj.updated_by = request.user.id
             obj.updated_at = timezone.now()
 
-             # ---------- UPDATED FILE HANDLING USING FileStorageService ----------
+            # ---------- FILE HANDLING USING FileStorageService ----------
             front_photo = request.FILES.get('front_page_image')
             last_photo = request.FILES.get('last_page_image')
             
             if front_photo or last_photo:
-                # Get library code from session (adjust as needed for your app)
-                # If not using session, you might need to get it from the book or other context
+                # Get library code from session
                 library_code = request.session.get('library_db', 'default')
                 
                 # Use library_code for folder structure
                 book_folder = f"{library_code}/{obj.cat_ref_num}"
-                
-                # Import datetime and uuid for filename generation
-                from datetime import datetime as dt
-                import uuid
                 
                 # Generate unique timestamps for filenames
                 timestamp = dt.now().strftime("%Y%m%dT%H%M%S")
@@ -861,7 +946,6 @@ def book_catalog_edit(request):
                         
                     except Exception as e:
                         print(f"❌ Error saving front page image: {str(e)}")
-                        # Continue without image, don't fail the entire transaction
                         messages.warning(request, f"Front page image could not be saved: {str(e)}")
                 
                 # --- Last Page Image ---
@@ -889,14 +973,22 @@ def book_catalog_edit(request):
                         
                     except Exception as e:
                         print(f"❌ Error saving last page image: {str(e)}")
-                        # Continue without image, don't fail the entire transaction
                         messages.warning(request, f"Last page image could not be saved: {str(e)}")
 
             obj.save()
-            messages.success(request, "Book catalog updated successfully!")
+            
+            # Show appropriate success message
+            if obj.author_fk:
+                messages.success(request, 
+                    f"Book '{obj.title}' updated successfully! Linked to author: {obj.author_fk.author_name_english}"
+                )
+            else:
+                messages.success(request, 
+                    f"Book '{obj.title}' updated successfully!"
+                )
 
             return redirect('book_catalog_index')
-
+        
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
