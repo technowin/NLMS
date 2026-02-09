@@ -216,14 +216,18 @@
         .book-gallery {
             display: flex;
             flex-wrap: nowrap;
-            gap: 12px;
+            gap: 8px;
             scroll-snap-type: x mandatory;
         }
 
+        /* 👇 KEY FIX */
         .book-item {
-            min-width: 140px;
-            flex: 0 0 auto;
+            flex: 0 0 85%;       /* NOT 100% */
+            min-width: 85%;
             scroll-snap-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .book-gallery-wrapper::-webkit-scrollbar {
@@ -235,22 +239,23 @@
         }
     }
 
-    /* VERY SMALL PHONES (<=480px) – SIZE tweaks only */
+    /* SMALL PHONES */
     @media (max-width: 480px) {
-
         .book-item {
-            min-width: 120px;   /* Slightly smaller cards */
+            flex: 0 0 65%;
+            min-width: 65%;
+        }
+
+        .book-title {
+            font-size: 0.75rem;
+            text-align: center;
         }
 
         .book-flip {
             height: 180px;
         }
-
-        .book-title {
-            font-size: 0.8rem;
-            text-align: center;
-        }
     }
+
 
 
     /* View More Button */
@@ -744,6 +749,7 @@
                 <h4 id="marathi-head">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
                 <h4 id="english-head" style="display:none;">{{ library.library_name }} Books are available here</h4>
                 <div class="book-gallery-wrapper">
+                    
                     <div class="book-gallery">
                         {% for book in library.books %}
                             <div class="book-item">
