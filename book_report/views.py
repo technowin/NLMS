@@ -227,6 +227,7 @@ class BookReportView(ReportBaseView, TemplateView):
             print(f"Error loading filter options: {e}")
         
         context['catalogue_form'] = catalogue_form
+        context['subjects'] = subjects
         context['accession_form'] = accession_form
         context['circulation_form'] = circulation_form
         context['loan_form'] = LoanFilterForm()
@@ -1127,28 +1128,28 @@ class GetBookOptionsView(ReportBaseView):
             
             # Statuses
             statuses = status_master.objects.using(db).filter(
-                isactive=1
-            ).values('id', 'status_name')
+                is_active=1
+            ).values('status_id', 'status_name')
             
             # Conditions
             conditions = ConditionAtEntryMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'condition_at_entry')
+            ).values('condition_id', 'condition_at_entry')
             
             # Funding sources
             sources = FundingSourceMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'funding_source_name')
+            ).values('source_id', 'funding_source_name')
             
             # Locations
             locations = ResourceLocationMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'location_name')
+            ).values('location_id', 'location_name')
             
             # Suppliers
             suppliers = SupplierMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'supplier_name')
+            ).values('supplier_id', 'supplier_name')
             
             # Libraries
             libraries = tbl_librarymasterL01.objects.using(db).filter(
