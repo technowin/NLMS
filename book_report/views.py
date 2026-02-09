@@ -364,7 +364,7 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(cat_ref_num__in=book_ids)
         elif list_type == 'author':
             # Get books by this author
-            qs = qs.filter(author__author_code__in=book_ids)
+            qs = qs.filter(author_fk__in=book_ids)
         elif list_type == 'category':
             # Get books in this category
             qs = qs.filter(subject_id__in=book_ids)
@@ -449,7 +449,7 @@ class TabDataView(ReportBaseView):
             # author is TextField, so filtering directly
             catalog_ids = (
                 BookCatalog.objects.using(db)
-                .filter(author__in=book_ids)
+                .filter(author_fk__in=book_ids)
                 .values_list('cat_ref_num', flat=True)
             )
             qs = qs.filter(catalogue_id__in=catalog_ids)
@@ -549,7 +549,7 @@ class TabDataView(ReportBaseView):
         elif list_type == 'author':
             # Get circulation for books by this author
             catalog_ids = BookCatalog.objects.using(db).filter(
-                author__author_code__in=book_ids
+                author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(bookcatalog_id__in=catalog_ids)
         elif list_type == 'category':
@@ -624,7 +624,7 @@ class TabDataView(ReportBaseView):
         elif list_type == 'author':
             # Get loans for books by this author
             catalog_ids = BookCatalog.objects.using(db).filter(
-                author__author_code__in=book_ids
+                author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(catalog_id__in=catalog_ids)
         elif list_type == 'category':
@@ -739,7 +739,7 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(catalog_id__in=book_ids)
         elif list_type == 'author':
             catalog_ids = BookCatalog.objects.using(db).filter(
-                author__author_code__in=book_ids
+                author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(catalog_id__in=catalog_ids)
         elif list_type == 'category':
@@ -912,7 +912,7 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(book_id__in=book_ids)
         elif list_type == 'author':
             catalog_ids = BookCatalog.objects.using(db).filter(
-                author__author_code__in=book_ids
+                author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(book_id__in=catalog_ids)
         elif list_type == 'category':
@@ -975,7 +975,7 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(cat_rem_num_id__in=book_ids)
         elif list_type == 'author':
             catalog_ids = BookCatalog.objects.using(db).filter(
-                author__author_code__in=book_ids
+                author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(cat_rem_num_id__in=catalog_ids)
         elif list_type == 'category':
@@ -1183,183 +1183,1924 @@ class GetBookOptionsView(ReportBaseView):
         })
 
 def export_catalogue_to_excel(writer, db, book_ids, list_type, filters):
-    """Export catalogue data to Excel"""
-    # Get data using the same logic as get_catalogue_data
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
     view = TabDataView()
     response = view.get_catalogue_data(db, book_ids, list_type, filters)
-    data = response['data']
-    
-    # Create DataFrame
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
     rows = []
     for item in data:
         rows.append({
-            'Ref No': item['cat_ref_num'],
-            'Title': item['title'],
-            'Subtitle': item['subtitle'],
-            'Author': item['author'],
-            'Other Authors': item['other_authors'],
-            'Publisher': item['publisher'],
-            'ISBN/ISSN': item['isbn_issn'],
-            'Edition': item['edition'],
-            'Keywords': item['keywords'],
-            'Language': item['language'],
-            'Publication Place': item['publication_place'],
-            'Year of Publication': item['year_of_publication'],
-            'Classification Number': item['classification_number'],
-            'Pages': item['pages'],
-            'Date of Registration': item['date_of_registration'],
-            'Status': item['status_name'],
-            'Subject': item['subject_name'],
-            'Call Number': item['call_number'],
-            'Cutter Number': item['cutter_number'],
-            'Publication Year': item['publication_year'],
-            'Remarks': item['remarks'],
-            'Material': item['material_name'],
-            'Ebook Available': item['ebook_available'],
-            'Ebook ID': item['ebook_id'],
-            'Created At': item['created_at'],
-            'Created By': item['created_by'],
-            'Updated At': item['updated_at'],
-            'Updated By': item['updated_by'],
+            'Ref No': item.get('cat_ref_num', ''),
+            'Title': item.get('title', ''),
+            'Subtitle': item.get('subtitle', ''),
+            'Author': item.get('author', ''),
+            'Other Authors': item.get('other_authors', ''),
+            'Publisher': item.get('publisher', ''),
+            'ISBN / ISSN': item.get('isbn_issn', ''),
+            'Edition': item.get('edition', ''),
+            'Keywords': item.get('keywords', ''),
+            'Language': item.get('language', ''),
+            'Publication Place': item.get('publication_place', ''),
+            'Year of Publication': item.get('year_of_publication', ''),
+            'Classification Number': item.get('classification_number', ''),
+            'Pages': item.get('pages', ''),
+            'Date of Registration': item.get('date_of_registration', ''),
+            'Status': item.get('status_name', ''),
+            'Subject': item.get('subject_name', ''),
+            'Call Number': item.get('call_number', ''),
+            'Cutter Number': item.get('cutter_number', ''),
+            'Publication Year': item.get('publication_year', ''),
+            'Remarks': item.get('remarks', ''),
+            'Material': item.get('material_name', ''),
+            'Ebook Available': item.get('ebook_available', ''),
+            'Ebook ID': item.get('ebook_id', ''),
+            'Created At': item.get('created_at', ''),
+            'Created By': item.get('created_by', ''),
+            'Updated At': item.get('updated_at', ''),
+            'Updated By': item.get('updated_by', ''),
         })
-    
+
     df = pd.DataFrame(rows)
-    
-    # Write to Excel
+
     sheet_name = 'Catalogue'
-    start_row = 6
-    
+    start_row = 6  # same spacing as member report
+
     df.to_excel(
         writer,
         sheet_name=sheet_name,
         index=False,
         startrow=start_row
     )
-    
-    # Add formatting
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
     workbook = writer.book
     worksheet = writer.sheets[sheet_name]
-    
-    # Add title
+
+    # --------------------------------------------------
+    # Formats (copied & aligned)
+    # --------------------------------------------------
     title_format = workbook.add_format({
         'bold': True,
         'font_size': 16,
         'align': 'center',
+        'valign': 'vcenter'
     })
-    
-    worksheet.merge_range(0, 0, 0, len(df.columns)-1, 'Catalogue Report', title_format)
-    worksheet.merge_range(1, 0, 1, len(df.columns)-1, 
-                         f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}')
-    
-    # Add filter info
-    filter_info = f"List Type: {list_type.title()} | Selected Items: {len(book_ids)}"
-    worksheet.merge_range(3, 0, 3, len(df.columns)-1, filter_info)
-    
-    # Format header
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
     header_format = workbook.add_format({
         'bold': True,
-        'bg_color': '#D9E1F2',
+        'text_wrap': True,
         'border': 1,
         'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
     })
-    
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Catalogue Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
     for col_idx, column in enumerate(df.columns):
-        worksheet.write(start_row, col_idx, column, header_format)
-    
-    # Set column widths
-    for col_idx, column in enumerate(df.columns):
-        max_len = max(df[column].astype(str).map(len).max(), len(column)) + 2
-        worksheet.set_column(col_idx, col_idx, min(max_len, 50))
-    
-    return worksheet
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No records found for selected filters',
+            no_data_format
+        )
 
 def export_accession_to_excel(writer, db, book_ids, list_type, filters):
-    """Export accession data to Excel"""
+
+    # --------------------------------------------------
+    # Get data (same logic as UI)
+    # --------------------------------------------------
     view = TabDataView()
     response = view.get_accession_data(db, book_ids, list_type, filters)
-    data = response['data']
-    
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
     rows = []
     for item in data:
         rows.append({
-            'Accession No': item['accession_no'],
-            'Acquisition Date': item['acquisition_date'],
-            'Catalog Ref No': item['catalog_ref_no'],
-            'Book Title': item['book_title'],
-            'Copy Number': item['copy_number'],
-            'Invoice Number': item['invoice_number'],
-            'Invoice Date': item['invoice_date'],
-            'Price': item['price'],
-            'Remarks': item['remarks'],
-            'Condition': item['condition_name'],
-            'Currency': item['currency_name'],
-            'Source': item['source_name'],
-            'Location': item['location_name'],
-            'Status': item['status_name'],
-            'Supplier': item['supplier_name'],
-            'Created At': item['created_at'],
-            'Created By': item['created_by'],
-            'Updated At': item['updated_at'],
-            'Updated By': item['updated_by'],
+            'Accession No': item.get('accession_no', ''),
+            'Acquisition Date': item.get('acquisition_date', ''),
+            'Catalog Ref No': item.get('catalog_ref_no', ''),
+            'Book Title': item.get('book_title', ''),
+            'Copy Number': item.get('copy_number', ''),
+            'Invoice Number': item.get('invoice_number', ''),
+            'Invoice Date': item.get('invoice_date', ''),
+            'Price': item.get('price', ''),
+            'Remarks': item.get('remarks', ''),
+            'Condition': item.get('condition_name', ''),
+            'Currency': item.get('currency_name', ''),
+            'Source': item.get('source_name', ''),
+            'Location': item.get('location_name', ''),
+            'Status': item.get('status_name', ''),
+            'Supplier': item.get('supplier_name', ''),
+            'Created At': item.get('created_at', ''),
+            'Created By': item.get('created_by', ''),
+            'Updated At': item.get('updated_at', ''),
+            'Updated By': item.get('updated_by', ''),
         })
-    
+
     df = pd.DataFrame(rows)
+
     sheet_name = 'Accession'
     start_row = 6
-    
-    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=start_row)
-    
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
     workbook = writer.book
     worksheet = writer.sheets[sheet_name]
-    
-    title_format = workbook.add_format({'bold': True, 'font_size': 16, 'align': 'center'})
-    worksheet.merge_range(0, 0, 0, len(df.columns)-1, 'Accession Report', title_format)
-    
-    return worksheet
 
-# Similar export functions for other tabs would follow the same pattern
+    # --------------------------------------------------
+    # Formats (same as other exports)
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Accession Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 40))
+
+    # --------------------------------------------------
+    # Freeze Header & AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No records found for selected filters',
+            no_data_format
+        )
+
+def export_circulation_to_excel(writer, db, book_ids, list_type, filters):
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_circulation_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Barcode': item.get('barcode', ''),
+            'Book Title': item.get('book_title', ''),
+            'Catalogue Ref No': item.get('bookcatalog_id', ''),
+            'Accession No': item.get('accession_no', ''),
+            'Date Processed': item.get('date_processed', ''),
+            'Processing Status': item.get('processing_status', ''),
+            'Shelf Location': item.get('shelf_location', ''),
+            'Current Status': item.get('current_status', ''),
+            'Remarks': item.get('remarks', ''),
+            'Created At': item.get('created_at', ''),
+            'Created By': item.get('created_by', ''),
+            'Updated At': item.get('updated_at', ''),
+            'Updated By': item.get('updated_by', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Circulation'
+    start_row = 6  # same spacing as other reports
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Circulation Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No records found for selected filters',
+            no_data_format
+        )
+
+def export_loan_to_excel(writer, db, book_ids, list_type, filters):
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_loan_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Barcode': item.get('barcode', ''),
+            'Accession No': item.get('accession_id', ''),
+            'Catalogue Ref No': item.get('cat_ref_num', ''),
+            'Book Title': item.get('book_title', ''),
+            'Member Name': item.get('member_name', ''),
+            'Membership Code': item.get('membership_code', ''),
+            'Issue Date': item.get('issue_date', ''),
+            'Due Date': item.get('due_date', ''),
+            'Return Date': item.get('return_date', ''),
+            'Days Overdue': item.get('days_overdue_count', 0),
+            'Fine Amount': item.get('fine_amount', 0.0),
+            'Issued By': item.get('issued_by', ''),
+            'Remarks': item.get('remarks', ''),
+            'Created At': item.get('created_at', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Loans'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    money_format = workbook.add_format({
+        'border': 1,
+        'num_format': '#,##0.00'
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Loan Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    fine_col_idx = df.columns.get_loc('Fine Amount')
+
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            value = df.iloc[row_idx, col_idx]
+
+            if col_idx == fine_col_idx:
+                worksheet.write(excel_row, col_idx, value, money_format)
+            else:
+                worksheet.write(excel_row, col_idx, value, row_format)
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No outstanding loan records found for selected filters',
+            no_data_format
+        )
+
+def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, filters):
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_circulation_transaction_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Barcode': item.get('barcode', ''),
+            'Accession No': item.get('accession_id', ''),
+            'Catalogue Ref No': item.get('cat_ref_num', ''),
+            'Member Name': item.get('member_name', ''),
+            'Membership Code': item.get('membership_code', ''),
+            'Issue Date': item.get('issue_date', ''),
+            'Due Date': item.get('due_date', ''),
+            'Issued By': item.get('issued_by', ''),
+            'Created At': item.get('created_at', ''),
+            'Return Date': item.get('return_date', ''),
+            'Received By': item.get('received_by', ''),
+            'Days Overdue': item.get('days_overdue_count', 0),
+            'Book Fine Amount': item.get('book_fine_amount', 0.0),
+            'Loss Fine Amount': item.get('fine_amount', 0.0),
+            'Total Fine': item.get('total_fine', 0.0),
+            'Adjusted Fine': item.get('adjusted_fine', 0.0),
+            'Fine Status': item.get('fine_status', ''),
+            'Fine Paid Date': item.get('fine_paid_date', ''),
+            'Remarks': item.get('remarks', ''),
+            'Updated At': item.get('updated_at', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Circulation Transactions'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    money_format = workbook.add_format({
+        'border': 1,
+        'num_format': '#,##0.00'
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Circulation Transaction Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    money_columns = [
+        'Book Fine Amount',
+        'Loss Fine Amount',
+        'Total Fine',
+        'Adjusted Fine'
+    ]
+    money_col_indexes = [df.columns.get_loc(c) for c in money_columns]
+
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            value = df.iloc[row_idx, col_idx]
+
+            if col_idx in money_col_indexes:
+                worksheet.write(excel_row, col_idx, value, money_format)
+            else:
+                worksheet.write(excel_row, col_idx, value, row_format)
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No circulation transactions found for selected filters',
+            no_data_format
+        )
+
+def export_supplier_to_excel(writer, db, book_ids, list_type, filters):
+    
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_supplier_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Accession No': item.get('accession_no', ''),
+            'Acquisition Date': item.get('acquisition_date', ''),
+            'Catalogue Ref No': item.get('catalog_ref_no', ''),
+            'Book Title': item.get('book_title', ''),
+            'Supplier Code': item.get('supplier_code', ''),
+            'Supplier Name': item.get('supplier_name', ''),
+            'Supplier Mobile': item.get('supplier_mobile', ''),
+            'Supplier Email': item.get('supplier_email', ''),
+            'Supplier Address': item.get('supplier_address', ''),
+            'Supplier Pincode': item.get('supplier_pincode', ''),
+            'Active': item.get('is_active', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Suppliers'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Supplier Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No supplier records found for selected filters',
+            no_data_format
+        )
+
+def export_review_to_excel(writer, db, book_ids, list_type, filters):
+    
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_review_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'User': item.get('user_name', ''),
+            'Member Name': item.get('member_name', ''),
+            'Rating': item.get('rating', ''),
+            'Review': item.get('review', ''),
+            'Library Code': item.get('library_code', ''),
+            'Catalogue Ref No': item.get('cat_ref_id', ''),
+            'Book Title': item.get('book_title', ''),
+            'Ebook Name': item.get('ebook_name', ''),
+            'Created At': item.get('created_at', ''),
+            'Updated At': item.get('updated_at', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Reviews'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    wrap_text_format = workbook.add_format({
+        'border': 1,
+        'text_wrap': True,
+        'valign': 'top'
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Book Review Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    review_col_idx = df.columns.get_loc('Review')
+
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            value = df.iloc[row_idx, col_idx]
+
+            if col_idx == review_col_idx:
+                worksheet.write(excel_row, col_idx, value, wrap_text_format)
+            else:
+                worksheet.write(excel_row, col_idx, value, row_format)
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 60))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No reviews found for selected filters',
+            no_data_format
+        )
+
+def export_return_log_to_excel(writer, db, book_ids, list_type, filters):
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_return_log_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Barcode': item.get('barcode', ''),
+            'Book Title': item.get('book_title', ''),
+            'Catalogue Ref No': item.get('cat_ref_num_id', ''),
+            'Shelved': item.get('is_shelved', ''),
+            'Created At': item.get('created_at', ''),
+            'Created By': item.get('created_by_name', ''),
+            'Updated At': item.get('updated_at', ''),
+            'Updated By': item.get('updated_by_name', ''),
+            'EOD Log ID': item.get('eod_log_id', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Return Log'
+    start_row = 6  # same spacing as other reports
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Return Log Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    worksheet.write(3, col, f'List Type: {list_type.title()}')
+    col += 1
+    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    col += 1
+
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No return logs found for selected filters',
+            no_data_format
+        )
+
+def export_google_metadata_to_excel(writer, db, book_ids, list_type, filters):
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_google_metadata_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Title': item.get('title', ''),
+            'ISBN': item.get('isbn', ''),
+            'Created At': item.get('created_at', ''),
+            'Metadata (JSON)': item.get('details', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'Google Metadata'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'Google Metadata Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 70))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No Google metadata found for selected filters',
+            no_data_format
+        )
+
+def export_loc_metadata_to_excel(writer, db, book_ids, list_type, filters):
+
+    # --------------------------------------------------
+    # Get data (same source as UI)
+    # --------------------------------------------------
+    view = TabDataView()
+    response = view.get_loc_metadata_data(db, book_ids, list_type, filters)
+    data = response.get('data', [])
+
+    # --------------------------------------------------
+    # Prepare Data
+    # --------------------------------------------------
+    rows = []
+    for item in data:
+        rows.append({
+            'Title': item.get('title', ''),
+            'ISBN': item.get('isbn', ''),
+            'Created At': item.get('created_at', ''),
+            'LOC Metadata (JSON)': item.get('details', ''),
+        })
+
+    df = pd.DataFrame(rows)
+
+    sheet_name = 'LOC Metadata'
+    start_row = 6
+
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False,
+        startrow=start_row
+    )
+
+    # --------------------------------------------------
+    # Workbook & Worksheet
+    # --------------------------------------------------
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+
+    # --------------------------------------------------
+    # Formats
+    # --------------------------------------------------
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+
+    subtitle_format = workbook.add_format({
+        'italic': True,
+        'font_size': 10,
+        'align': 'center'
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'border': 1,
+        'align': 'center',
+        'valign': 'middle',
+        'bg_color': '#D9E1F2'
+    })
+
+    cell_format = workbook.add_format({
+        'border': 1,
+        'valign': 'top'
+    })
+
+    alt_row_format = workbook.add_format({
+        'border': 1,
+        'bg_color': '#F9F9F9'
+    })
+
+    filter_label_format = workbook.add_format({
+        'bold': True
+    })
+
+    no_data_format = workbook.add_format({
+        'align': 'center',
+        'italic': True
+    })
+
+    # --------------------------------------------------
+    # Report Title
+    # --------------------------------------------------
+    total_columns = len(df.columns)
+
+    worksheet.merge_range(
+        0, 0, 0, total_columns - 1,
+        'LOC Metadata Report',
+        title_format
+    )
+
+    worksheet.merge_range(
+        1, 0, 1, total_columns - 1,
+        f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
+        subtitle_format
+    )
+
+    # --------------------------------------------------
+    # Applied Filters
+    # --------------------------------------------------
+    worksheet.write(3, 0, 'Applied Filters:', filter_label_format)
+
+    col = 1
+    for key, value in filters.items():
+        if value:
+            worksheet.write(
+                3,
+                col,
+                f'{key.replace("_", " ").title()}: {value}'
+            )
+            col += 1
+
+    # --------------------------------------------------
+    # Header Styling
+    # --------------------------------------------------
+    for col_idx, col_name in enumerate(df.columns):
+        worksheet.write(start_row, col_idx, col_name, header_format)
+
+    # --------------------------------------------------
+    # Data Rows Styling (alternate rows)
+    # --------------------------------------------------
+    for row_idx in range(len(df)):
+        excel_row = start_row + 1 + row_idx
+        row_format = alt_row_format if row_idx % 2 else cell_format
+
+        for col_idx in range(total_columns):
+            worksheet.write(
+                excel_row,
+                col_idx,
+                df.iloc[row_idx, col_idx],
+                row_format
+            )
+
+    # --------------------------------------------------
+    # Auto Column Width
+    # --------------------------------------------------
+    for col_idx, column in enumerate(df.columns):
+        max_len = max(
+            df[column].astype(str).map(len).max() if not df.empty else 10,
+            len(column)
+        )
+        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 70))
+
+    # --------------------------------------------------
+    # Freeze Header & Enable AutoFilter
+    # --------------------------------------------------
+    worksheet.freeze_panes(start_row + 1, 0)
+
+    worksheet.autofilter(
+        start_row,
+        0,
+        start_row + len(df),
+        total_columns - 1
+    )
+
+    # --------------------------------------------------
+    # No Data Message
+    # --------------------------------------------------
+    if df.empty:
+        worksheet.merge_range(
+            start_row + 1, 0,
+            start_row + 2, total_columns - 1,
+            'No LOC metadata found for selected filters',
+            no_data_format
+        )
 
 class ExportReportView(ReportBaseView):
-    """Export book report to Excel"""
-    
+    """Export book report (single tab or all tabs) to Excel"""
+
     def get(self, request):
         export_type = request.GET.get('type', 'all-tabs')
         book_ids = request.GET.getlist('book_ids')
         list_type = request.GET.get('list_type', 'title')
+
         filters_json = request.GET.get('filters', '{}')
         tab_filters_json = request.GET.get('tab_filters', '{}')
-        
-        # Parse book IDs
+
+        # ----------------------------------
+        # Normalize book_ids
+        # ----------------------------------
         if len(book_ids) == 1 and ',' in book_ids[0]:
-            book_ids = [int(i) for i in book_ids[0].split(',') if i.strip().isdigit()]
+            book_ids = [
+                int(i) for i in book_ids[0].split(',')
+                if i.strip().isdigit()
+            ]
         else:
             book_ids = [int(i) for i in book_ids if str(i).isdigit()]
-        
-        # Parse filters
+
+        # ----------------------------------
+        # Parse filters safely
+        # ----------------------------------
         try:
             filters = json.loads(filters_json)
-        except:
+        except (TypeError, ValueError):
             filters = {}
-        
+
         try:
             tab_filters = json.loads(tab_filters_json)
-        except:
+        except (TypeError, ValueError):
             tab_filters = {}
-        
+
         db = self.get_library_db()
-        
-        # Create temp file
+
+        # ----------------------------------
+        # Create temp Excel file
+        # ----------------------------------
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
             output_path = tmp.name
-        
+
         try:
             with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+
                 if export_type == 'all-tabs':
-                    self.export_all_tabs(writer, db, book_ids, list_type, filters, tab_filters)
+                    self.export_all_tabs(
+                        writer=writer,
+                        db=db,
+                        book_ids=book_ids,
+                        list_type=list_type,
+                        tab_filters=tab_filters
+                    )
                 else:
-                    self.export_single_tab(writer, export_type, db, book_ids, list_type, tab_filters.get(export_type, {}))
-            
-            # Prepare response
+                    self.export_single_tab(
+                        writer=writer,
+                        export_type=export_type,
+                        db=db,
+                        book_ids=book_ids,
+                        list_type=list_type,
+                        filters=tab_filters.get(export_type, {})
+                    )
+
+            # ----------------------------------
+            # Response
+            # ----------------------------------
             with open(output_path, 'rb') as f:
                 response = HttpResponse(
                     f.read(),
@@ -1368,114 +3109,142 @@ class ExportReportView(ReportBaseView):
                         'spreadsheetml.sheet'
                     )
                 )
-            
+
             if export_type == 'all-tabs':
-                file_name = 'book_report_all_tabs.xlsx'
+                filename = 'book_report_all_tabs.xlsx'
             else:
-                safe_tab_name = export_type.replace('-', '_')
-                file_name = f'book_report_{safe_tab_name}.xlsx'
-            
-            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+                filename = f'book_report_{export_type.replace("-", "_")}.xlsx'
+
+            response['Content-Disposition'] = (
+                f'attachment; filename="{filename}"'
+            )
+
             return response
-            
+
         except Exception as e:
             return JsonResponse(
                 {'error': 'Export failed', 'details': str(e)},
                 status=500
             )
+
         finally:
             if os.path.exists(output_path):
                 os.unlink(output_path)
-    
-    def export_all_tabs(self, writer, db, book_ids, list_type, filters, tab_filters):
-        """Export all tabs to separate sheets"""
-        export_functions = {
-            'catalogue': export_catalogue_to_excel,
-            'accession': export_accession_to_excel,
-            # Add other export functions here
-        }
-        
-        for tab_name, export_func in export_functions.items():
-            if tab_name in tab_filters:
-                export_func(writer, db, book_ids, list_type, tab_filters[tab_name])
-    
+
+    # ======================================================
+    # EXPORT HELPERS
+    # ======================================================
+
+    def export_all_tabs(self, writer, db, book_ids, list_type, tab_filters):
+        """Export all tabs into separate sheets"""
+
+        export_map = self.get_export_map()
+
+        for tab_name, export_func in export_map.items():
+            export_func(
+                writer=writer,
+                db=db,
+                book_ids=book_ids,
+                list_type=list_type,
+                filters=tab_filters.get(tab_name, {})
+            )
+
     def export_single_tab(self, writer, export_type, db, book_ids, list_type, filters):
         """Export a single tab"""
-        export_functions = {
+
+        export_func = self.get_export_map().get(export_type)
+
+        if export_func:
+            export_func(
+                writer=writer,
+                db=db,
+                book_ids=book_ids,
+                list_type=list_type,
+                filters=filters
+            )
+        else:
+            workbook = writer.book
+            worksheet = workbook.add_worksheet(
+                export_type.replace('-', ' ').title()
+            )
+            worksheet.write(0, 0, 'No data available')
+
+    def get_export_map(self):
+        """
+        Central tab → export function mapping
+        """
+        return {
             'catalogue': export_catalogue_to_excel,
             'accession': export_accession_to_excel,
-            # Add other export functions here
+            'circulation': export_circulation_to_excel,
+            'loan': export_loan_to_excel,
+            'circulation-transaction': export_circulation_transaction_to_excel,
+            'supplier': export_supplier_to_excel,
+            'review': export_review_to_excel,
+            'return-log': export_return_log_to_excel,
+            'google-metadata': export_google_metadata_to_excel,
+            'loc-metadata': export_loc_metadata_to_excel,
         }
-        
-        export_func = export_functions.get(export_type)
-        if export_func:
-            export_func(writer, db, book_ids, list_type, filters)
-        else:
-            # Create empty sheet for unsupported tabs
-            workbook = writer.book
-            worksheet = workbook.add_worksheet(export_type.replace('-', ' ').title())
-            worksheet.write(0, 0, f'Export for {export_type} not yet implemented')
 
 class ExportAllDataView(ReportBaseView):
-    """Export selected tabs data to Excel"""
-    
+    """Export selected book report tabs to Excel"""
+
     def get(self, request):
-        # Parse inputs
         book_ids = request.GET.getlist('book_ids')
         selected_tabs = request.GET.getlist('tabs')
         filename = request.GET.get('filename', 'book_report')
         list_type = request.GET.get('list_type', 'title')
-        
-        # Parse tab filters
-        tab_filters = {}
-        for key in request.GET:
-            if key.startswith('tab_filters['):
-                tab_name = key.split('[')[1].split(']')[0]
-                try:
-                    tab_filters[tab_name] = json.loads(request.GET.get(key))
-                except:
-                    tab_filters[tab_name] = {}
-        
-        # Parse book IDs
+
+        filters_json = request.GET.get('filters', '{}')
+        tab_filters_json = request.GET.get('tab_filters', '{}')
+
+        # ----------------------------------
+        # Normalize book_ids
+        # ----------------------------------
         if len(book_ids) == 1 and ',' in book_ids[0]:
-            book_ids = [int(i) for i in book_ids[0].split(',') if i.strip().isdigit()]
+            book_ids = [
+                int(i) for i in book_ids[0].split(',')
+                if i.strip().isdigit()
+            ]
         else:
             book_ids = [int(i) for i in book_ids if str(i).isdigit()]
-        
+
         if not book_ids:
             return JsonResponse({'error': 'No books selected'}, status=400)
-        
+
         if not selected_tabs:
             return JsonResponse({'error': 'No tabs selected'}, status=400)
-        
+
+        try:
+            tab_filters = json.loads(tab_filters_json)
+        except Exception:
+            tab_filters = {}
+
         db = self.get_library_db()
-        
-        # Create temp file
-        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
+        export_map = self.get_export_map()
+
+        # ----------------------------------
+        # Temp file
+        # ----------------------------------
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
             output_path = tmp.name
-        
+
         try:
             with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
-                # Export each selected tab
+
                 for tab in selected_tabs:
-                    if tab == 'catalogue':
-                        export_catalogue_to_excel(
-                            writer, db, book_ids, list_type, 
-                            tab_filters.get(tab, {})
-                        )
-                    elif tab == 'accession':
-                        export_accession_to_excel(
-                            writer, db, book_ids, list_type,
-                            tab_filters.get(tab, {})
-                        )
-                    # Add other tabs here
-                    else:
-                        # Create placeholder sheet for unimplemented tabs
-                        workbook = writer.book
-                        worksheet = workbook.add_worksheet(tab.replace('-', ' ').title())
-                        worksheet.write(0, 0, f'Data for {tab} tab')
-            
-            # Send file
+                    export_func = export_map.get(tab)
+                    if not export_func:
+                        continue
+
+                    export_func(
+                        writer=writer,
+                        db=db,
+                        book_ids=book_ids,
+                        list_type=list_type,
+                        filters=tab_filters.get(tab, {})
+                    )
+
             with open(output_path, 'rb') as f:
                 response = HttpResponse(
                     f.read(),
@@ -1484,15 +3253,32 @@ class ExportAllDataView(ReportBaseView):
                         'spreadsheetml.sheet'
                     )
                 )
-            
-            response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+
+            response['Content-Disposition'] = (
+                f'attachment; filename="{filename}.xlsx"'
+            )
             return response
-            
+
         except Exception as e:
             return JsonResponse(
                 {'error': 'Export failed', 'details': str(e)},
                 status=500
             )
+
         finally:
             if os.path.exists(output_path):
                 os.unlink(output_path)
+
+    def get_export_map(self):
+        return {
+            'catalogue': export_catalogue_to_excel,
+            'accession': export_accession_to_excel,
+            'circulation': export_circulation_to_excel,
+            'loan': export_loan_to_excel,
+            'circulation-transaction': export_circulation_transaction_to_excel,
+            'supplier': export_supplier_to_excel,
+            'review': export_review_to_excel,
+            'return-log': export_return_log_to_excel,
+            'google-metadata': export_google_metadata_to_excel,
+            'loc-metadata': export_loc_metadata_to_excel,
+        }

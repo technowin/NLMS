@@ -43,7 +43,32 @@
                     </div>
                 </div>
 
-
+                {% comment %} <div class="row g-2 align-items-end">
+                    <!-- Membership Type Filter -->
+                    <div class="col-md-6 col-12">
+                        <label class="form-label small mb-1">Type</label>
+                        <select class="form-control form-control-sm"
+                            id="membership-type-filter"
+                            multiple>
+                    <option value="">--Types--</option>
+                    {% for mt in membership_types %}
+                    <option value="{{ mt.id }}">{{ mt.membership_type_en }}</option>
+                    {% endfor %}
+                    </select>
+                    </div>
+                
+                    <!-- Membership Status Filter -->
+                    <div class="col-md-6 col-12">
+                        <label class="form-label small mb-1">Status</label>
+                         <select class="form-control form-control-sm"
+                            id="membership-status-filter"
+                            multiple>
+                        <option value="">--Status--</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    </div>
+                </div> {% endcomment %}
                 <!-- Membership Type Filter -->
                 <div class="mb-2 selectize-sm">
                     <label class="form-label small ">Membership Type</label>

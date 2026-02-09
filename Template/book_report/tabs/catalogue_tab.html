@@ -1,16 +1,23 @@
 <div class="d-flex flex-column h-100">
     <!-- Tab Header with Actions -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
         <div>
             <h5 class="mb-0">
                 <i class="bi bi-journal me-2"></i>Catalogue Details
                 <small class="text-muted ms-2" id="catalogue-info">Select books to view details</small>
+                <small class="text-muted">
+                    <a href="#" onclick="deselectAll()" class="text-danger">
+                        <i class="bi bi-x-circle"></i> Clear 
+                    </a>
+                </small>
             </h5>
         </div>
         <div class="btn-group">
             <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 filter-btn" data-bs-toggle="modal" 
                     data-bs-target="#catalogueFiltersModal">
-                <i class="bi bi-funnel me-1"></i>Filters
+                <span class="d-inline-flex align-items-center">
+                                <i class="bi bi-sliders me-1"></i> Filters
+                            </span>
                 <span class="badge rounded-pill bg-light text-primary filter-badge" id="catalogue-filter-count">0</span>
             </button>
             &nbsp;&nbsp;&nbsp;
@@ -27,16 +34,35 @@
                 <tr>
                     <th>Ref No</th>
                     <th>Title</th>
+                    <th>Subtitle</th>
                     <th>Author</th>
-                    <th>ISBN/ISSN</th>
+                    <th>Other Authors</th>
+                    <th>Publisher</th>
+                    <th>ISBN / ISSN</th>
+                    <th>Edition</th>
+                    <th>Keywords</th>
                     <th>Language</th>
-                    <th>Year</th>
+                    <th>Publication Place</th>
+                    <th>Year of Publication</th>
+                    <th>Classification No</th>
+                    <th>Pages</th>
+                    <th>Date of Registration</th>
                     <th>Status</th>
                     <th>Subject</th>
-                    <th>Ebook</th>
+                    <th>Call Number</th>
+                    <th>Cutter Number</th>
+                    <th>Publication Year</th>
+                    <th>Remarks</th>
+                    <th>Material</th>
+                    <th>Ebook Available</th>
+                    <th>Ebook ID</th>
                     <th>Created At</th>
+                    <th>Created By</th>
+                    <th>Updated At</th>
+                    <th>Updated By</th>
                 </tr>
             </thead>
+
             <tbody>
                 <!-- Data will be populated here -->
             </tbody>

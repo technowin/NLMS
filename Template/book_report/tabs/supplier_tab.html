@@ -1,9 +1,14 @@
 <div class="d-flex flex-column h-100">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
         <div>
             <h5 class="mb-0">
                 <i class="bi bi-truck me-2"></i>Supplier Details
                 <small class="text-muted ms-2" id="supplier-info">Select books to view details</small>
+                <small class="text-muted">
+                    <a href="#" onclick="deselectAll()" class="text-danger">
+                        <i class="bi bi-x-circle"></i> Clear 
+                    </a>
+                </small>
             </h5>
         </div>
         <div class="btn-group">
@@ -25,7 +30,7 @@
                 <tr>
                     <th>Accession No</th>
                     <th>Acquisition Date</th>
-                    <th>Catalog Ref</th>
+                    <th>Catalog Ref No</th>
                     <th>Book Title</th>
                     <th>Supplier Code</th>
                     <th>Supplier Name</th>
@@ -36,6 +41,7 @@
                     <th>Active Status</th>
                 </tr>
             </thead>
+
             <tbody></tbody>
         </table>
     </div>

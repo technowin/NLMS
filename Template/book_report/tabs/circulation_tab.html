@@ -1,9 +1,14 @@
 <div class="d-flex flex-column h-100">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
         <div>
             <h5 class="mb-0">
                 <i class="bi bi-arrow-left-right me-2"></i>Circulation Details
                 <small class="text-muted ms-2" id="circulation-info">Select books to view details</small>
+                <small class="text-muted">
+                    <a href="#" onclick="deselectAll()" class="text-danger">
+                        <i class="bi bi-x-circle"></i> Clear 
+                    </a>
+                </small>
             </h5>
         </div>
         <div class="btn-group">
@@ -25,16 +30,20 @@
                 <tr>
                     <th>Barcode</th>
                     <th>Book Title</th>
-                    <th>Catalog ID</th>
+                    <th>Catalog Ref No</th>
                     <th>Accession No</th>
                     <th>Date Processed</th>
                     <th>Processing Status</th>
                     <th>Shelf Location</th>
-                    <th>Current Status</th>
                     <th>Remarks</th>
                     <th>Created At</th>
+                    <th>Created By</th>
+                    <th>Updated At</th>
+                    <th>Updated By</th>
+                    <th>Current Status</th>
                 </tr>
             </thead>
+
             <tbody></tbody>
         </table>
     </div>

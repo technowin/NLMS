@@ -58,7 +58,7 @@
 {% block content %}
 <div class="report-container d-flex">
     {% include 'library_reports/left_member_list.html' %}
-    {% include 'library_reports/right_report_tabs.html' %}
+    {% include 'library_reports/right_content_area.html' %}
 </div>
 
 <!-- Loading Overlay -->
@@ -277,7 +277,7 @@ function updateSelectionCount() {
     
     if (count > 0) {
         $('#bulk-actions').addClass('show');
-        $('#report-summary').html(`
+        $('.report-summary').html(`
             <strong>${count}</strong> member${count > 1 ? 's' : ''} selected
             <span class="ms-2">
                 <a href="#" onclick="deselectAll()" class="text-danger">
@@ -287,7 +287,7 @@ function updateSelectionCount() {
         `);
     } else {
         $('#bulk-actions').removeClass('show');
-        $('#report-summary').text('Select members from the left panel to view details');
+        $('.report-summary').text('Select members from the left panel to view details');
     }
 }
 
