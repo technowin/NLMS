@@ -1362,13 +1362,13 @@ def export_catalogue_to_excel(writer, db, book_ids, list_type, filters):
     # Freeze Header & Enable AutoFilter
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
-
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -1553,12 +1553,13 @@ def export_accession_to_excel(writer, db, book_ids, list_type, filters):
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -1735,13 +1736,13 @@ def export_circulation_to_excel(writer, db, book_ids, list_type, filters):
     # Freeze Header & Enable AutoFilter
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
-
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -1927,12 +1928,13 @@ def export_loan_to_excel(writer, db, book_ids, list_type, filters):
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -2130,12 +2132,13 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -2311,12 +2314,13 @@ def export_supplier_to_excel(writer, db, book_ids, list_type, filters):
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -2499,12 +2503,13 @@ def export_review_to_excel(writer, db, book_ids, list_type, filters):
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -2678,12 +2683,13 @@ def export_return_log_to_excel(writer, db, book_ids, list_type, filters):
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -2847,12 +2853,13 @@ def export_google_metadata_to_excel(writer, db, book_ids, list_type, filters):
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
 
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -3015,13 +3022,13 @@ def export_loc_metadata_to_excel(writer, db, book_ids, list_type, filters):
     # Freeze Header & Enable AutoFilter
     # --------------------------------------------------
     worksheet.freeze_panes(start_row + 1, 0)
-
-    worksheet.autofilter(
-        start_row,
-        0,
-        start_row + len(df),
-        total_columns - 1
-    )
+    if not df.empty:
+        worksheet.autofilter(
+            start_row,
+            0,
+            start_row + len(df),
+            total_columns - 1
+        )
 
     # --------------------------------------------------
     # No Data Message
@@ -3260,6 +3267,8 @@ class ExportAllDataView(ReportBaseView):
             return response
 
         except Exception as e:
+            import traceback
+            traceback.print_exc() 
             return JsonResponse(
                 {'error': 'Export failed', 'details': str(e)},
                 status=500
