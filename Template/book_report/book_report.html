@@ -1094,6 +1094,10 @@ function exportCurrentTab() {
 }
 
 function exportAllTabs() {
+
+    // initial count
+    updateExportCounts();
+
     if (selectedBooks.size === 0) {
         showToast('Please select at least one book to export', 'warning');
         return;
@@ -1189,9 +1193,14 @@ function exportAllTabs() {
                         
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            This will export data for <strong>${selectedBooks.size}</strong> selected book(s) 
-                            with all applied filters.
+                            This will export <strong>
+                                <span id="exportBookCount">${selectedBooks.size}</span>
+                            </strong> book(s) from 
+                            <strong>
+                                <span id="exportTabCount">7</span>
+                            </strong> selected tab(s).
                         </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -1210,6 +1219,20 @@ function exportAllTabs() {
     $('#exportOptionsModal').on('hidden.bs.modal', function() {
         $(this).remove();
     });
+
+    // live update on checkbox toggle
+    $('#exportOptionsModal').on('change', 'input[type="checkbox"]', function () {
+        updateExportCounts();
+    });
+}
+
+function updateExportCounts() {
+    const checkedTabs = $('#exportOptionsModal input[type="checkbox"]:checked').length;
+
+    $('#exportTabCount').text(checkedTabs);
+    $('#exportBookCount').text(
+        checkedTabs > 0 ? selectedBooks.size : 0
+    );
 }
 
 function processExportAll() {
