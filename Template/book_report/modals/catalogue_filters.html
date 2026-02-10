@@ -54,7 +54,12 @@
                             <div class="mb-3">
                                 <label class="form-label">Subject</label>
                                 <select class="form-control subject-select" name="subject[]" multiple>
-                                    <!-- Populated dynamically -->
+                                    <option value="">--Select--</option>
+                                    {% for s in subjects %}
+                                        <option value="{{ s.id }}">
+                                            {{ s.subjectNameEnglish }}
+                                        </option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
@@ -62,7 +67,12 @@
                             <div class="mb-3">
                                 <label class="form-label">Material Type</label>
                                 <select class="form-control material_type-select" name="material_type[]" multiple>
-                                    <!-- Populated dynamically -->
+                                    <option value="">--Select--</option>
+                                    {% for s in material_type %}
+                                        <option value="{{ s.id }}">
+                                            {{ s.materialNameEnglish }}
+                                        </option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
