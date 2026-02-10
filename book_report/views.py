@@ -222,10 +222,70 @@ class BookReportView(ReportBaseView, TemplateView):
             catalogues = BookCatalog.objects.using(db).filter(status_id=1).values_list('cat_ref_num', 'title')[:100]
             review_form.fields['catalogue'].choices = [(c[0], c[1]) for c in catalogues]
             return_log_form.fields['catalog'].choices = [(c[0], c[1]) for c in catalogues]
+
+            
             
         except Exception as e:
             print(f"Error loading filter options: {e}")
+
+        # Subjects for catalogue filter
+        subjects = SubjectTypeMaster.objects.using(db).filter(
+            is_active=1
+        ).values('id', 'subjectNameEnglish')
+        # Material Type
+        material_type = MaterialTypeMaster.objects.using(db).filter(
+            is_active=1
+        ).values('id', 'materialNameEnglish')
         
+        # Conditions
+        conditions = ConditionAtEntryMaster.objects.using(db).filter(
+            is_active=1
+        ).values('condition_id', 'condition_at_entry')
+        
+        # Funding sources
+        sources = FundingSourceMaster.objects.using(db).filter(
+            is_active=1
+        ).values('source_id', 'funding_source_name')
+        
+        # Locations
+        locations = ResourceLocationMaster.objects.using(db).filter(
+            is_active=1
+        ).values('location_id', 'location_name')
+        
+        # Suppliers
+        suppliers = SupplierMaster.objects.using(db).filter(
+            is_active=1
+        ).values('supplier_id', 'supplier_name')
+        
+        # Processing Status
+        processing_status = status_master.objects.using(db).filter(
+            is_active=1,status_type="Inventory"
+        ).values('status_id', 'status_name')
+        # Current Status
+        current_status = status_master.objects.using(db).filter(
+            is_active=1,status_type="Circulation Status"
+        ).values('status_id', 'status_name')
+        # Libraries
+        libraries = tbl_librarymasterL01.objects.using(db).filter(
+            is_active=1
+        ).values('library_code', 'library_name')
+        
+        # Catalogues for review filter
+        catalogues = BookCatalog.objects.using(db).filter(
+            status_id=1
+        ).values('cat_ref_num', 'title')[:100]
+
+        context['subjects'] = subjects
+        context['material_type'] = material_type
+        context['conditions'] = conditions
+        context['sources'] = sources
+        context['locations'] = locations
+        context['suppliers'] = suppliers
+        context['processing_status'] = processing_status
+        context['current_status'] = current_status
+        context['libraries'] = libraries
+        context['catalogues '] = catalogues
+
         context['catalogue_form'] = catalogue_form
         context['accession_form'] = accession_form
         context['circulation_form'] = circulation_form

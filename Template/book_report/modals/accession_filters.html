@@ -28,13 +28,27 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Condition</label>
-                                <select class="form-control condition-select" name="condition[]" multiple></select>
+                                <select class="form-control condition-select" name="condition[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in conditions %}
+                                        <option value="{{ s.condition_id }}">
+                                            {{ s.condition_at_entry }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Source</label>
-                                <select class="form-control source-select" name="source[]" multiple></select>
+                                <select class="form-control source-select" name="source[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in sources %}
+                                        <option value="{{ s.source_id }}">
+                                            {{ s.funding_source_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -43,14 +57,28 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Location</label>
-                                <select class="form-control location-select" name="location[]" multiple></select>
+                                <select class="form-control location-select" name="location[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in locations %}
+                                        <option value="{{ s.location_id }}">
+                                            {{ s.location_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Supplier</label>
-                                <select class="form-control supplier-select" name="supplier[]" multiple></select>
+                                <select class="form-control supplier-select" name="supplier[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in suppliers %}
+                                        <option value="{{ s.supplier_id }}">
+                                            {{ s.supplier_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             {% comment %} <div class="mb-3">
                                 <label class="form-label">Status</label>
