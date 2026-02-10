@@ -1345,6 +1345,9 @@ function populateDropdowns(data) {
     if (data.statuses?.length) {
         populateSelect('.status-select', data.statuses, 'status_id', 'status_name');
     }
+    if (data.material_type?.length) {
+        populateSelect('.material_type-select', data.material_type, 'id', 'materialNameEnglish');
+    }
     if (data.conditions?.length) {
         populateSelect('.condition-select', data.conditions, 'condition_id', 'condition_at_entry');
     }
