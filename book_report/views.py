@@ -525,14 +525,14 @@ class TabDataView(ReportBaseView):
         # Apply filters
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(acquisition_date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(acquisition_date__lte=to_date)
             except:
                 pass
@@ -622,14 +622,14 @@ class TabDataView(ReportBaseView):
         # Apply filters
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(date_processed__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(date_processed__lte=to_date)
             except:
                 pass
@@ -697,28 +697,28 @@ class TabDataView(ReportBaseView):
         # Apply date filters
         if filters.get('issue_from_date'):
             try:
-                issue_from_date = datetime.strptime(filters['issue_from_date'], '%Y-%m-%d').date()
+                issue_from_date = parse_month_start(filters['issue_from_date']) 
                 qs = qs.filter(issue_date__gte=issue_from_date)
             except:
                 pass
         
         if filters.get('issue_to_date'):
             try:
-                issue_to_date = datetime.strptime(filters['issue_to_date'], '%Y-%m-%d').date()
+                issue_to_date = parse_month_start(filters['issue_to_date'])
                 qs = qs.filter(issue_date__lte=issue_to_date)
             except:
                 pass
         
         if filters.get('due_from_date'):
             try:
-                due_from_date = datetime.strptime(filters['due_from_date'], '%Y-%m-%d').date()
+                due_from_date = parse_month_start(filters['due_from_date']) 
                 qs = qs.filter(due_date__gte=due_from_date)
             except:
                 pass
         
         if filters.get('due_to_date'):
             try:
-                due_to_date = datetime.strptime(filters['due_to_date'], '%Y-%m-%d').date()
+                due_to_date = parse_month_start(filters['due_to_date']) 
                 qs = qs.filter(due_date__lte=due_to_date)
             except:
                 pass
@@ -811,42 +811,42 @@ class TabDataView(ReportBaseView):
         # Apply all date filters
         if filters.get('issue_from_date'):
             try:
-                issue_from_date = datetime.strptime(filters['issue_from_date'], '%Y-%m-%d').date()
+                issue_from_date = parse_month_start(filters['issue_from_date']) 
                 qs = qs.filter(issue_date__gte=issue_from_date)
             except:
                 pass
         
         if filters.get('issue_to_date'):
             try:
-                issue_to_date = datetime.strptime(filters['issue_to_date'], '%Y-%m-%d').date()
+                issue_to_date = parse_month_start(filters['issue_to_date']) 
                 qs = qs.filter(issue_date__lte=issue_to_date)
             except:
                 pass
         
         if filters.get('due_from_date'):
             try:
-                due_from_date = datetime.strptime(filters['due_from_date'], '%Y-%m-%d').date()
+                due_from_date = parse_month_start(filters['due_from_date']) 
                 qs = qs.filter(due_date__gte=due_from_date)
             except:
                 pass
         
         if filters.get('due_to_date'):
             try:
-                due_to_date = datetime.strptime(filters['due_to_date'], '%Y-%m-%d').date()
+                due_to_date = parse_month_start(filters['due_to_date']) 
                 qs = qs.filter(due_date__lte=due_to_date)
             except:
                 pass
         
         if filters.get('return_from_date'):
             try:
-                return_from_date = datetime.strptime(filters['return_from_date'], '%Y-%m-%d').date()
+                return_from_date = parse_month_start(filters['return_from_date'])
                 qs = qs.filter(return_date__gte=return_from_date)
             except:
                 pass
         
         if filters.get('return_to_date'):
             try:
-                return_to_date = datetime.strptime(filters['return_to_date'], '%Y-%m-%d').date()
+                return_to_date = parse_month_start(filters['return_to_date'])
                 qs = qs.filter(return_date__lte=return_to_date)
             except:
                 pass
@@ -1047,14 +1047,14 @@ class TabDataView(ReportBaseView):
         # Apply filters
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(created_at__date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(created_at__date__lte=to_date)
             except:
                 pass
@@ -1099,14 +1099,14 @@ class TabDataView(ReportBaseView):
         
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(created_at__date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(created_at__date__lte=to_date)
             except:
                 pass
@@ -1142,14 +1142,14 @@ class TabDataView(ReportBaseView):
         
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(created_at__date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(created_at__date__lte=to_date)
             except:
                 pass
