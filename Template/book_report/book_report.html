@@ -1301,53 +1301,69 @@ function initFilterModals() {
         }
     });
 }
-
 function populateDropdowns(data) {
-    // Helper function to populate a select element
+   
     function populateSelect(selector, items, valueKey, textKey) {
-        $(selector).each(function() {
-            const $select = $(this);
-            $select.empty().append('<option value="">--Select--</option>');
-            items.forEach(item => {
-                $select.append(`<option value="${item[valueKey]}">${item[textKey]}</option>`);
-            });
-            
-            // Re-initialize selectize if it exists
-            if ($select[0].selectize) {
-                $select[0].selectize.destroy();
+        $(selector).each(function () {
+            const select = this;
+            let selectize;
+
+            // If selectize already initialized
+            if (select.selectize) {
+                selectize = select.selectize;
+                selectize.clearOptions(); // clear existing options
+            } else {
+                // Initialize selectize
+                selectize = $(select).selectize({
+                    plugins: ['remove_button'],
+                    delimiter: ',',
+                    persist: false,
+                    create: false,
+                    placeholder: '--Select--'
+                })[0].selectize;
             }
-            $select.selectize({
-                plugins: ['remove_button'],
-                delimiter: ',',
-                persist: false,
-                create: false
+
+            // Add default empty option
+            //selectize.addOption({ value: '', text: '--Select--' });
+
+            // Add dynamic options
+            items.forEach(item => {
+                selectize.addOption({
+                    value: item[valueKey],
+                    text: item[textKey]
+                });
             });
+
+            // Refresh dropdown
+            selectize.refreshOptions(false);
         });
     }
-    
-    // Populate each dropdown
-    if (data.subjects) {
+    debugger;
+    if (data.subjects?.length) {
         populateSelect('.subject-select', data.subjects, 'id', 'subjectNameEnglish');
     }
-    if (data.statuses) {
-        populateSelect('.status-select', data.statuses, 'id', 'status_name');
+    if (data.statuses?.length) {
+        populateSelect('.status-select', data.statuses, 'status_id', 'status_name');
     }
-    if (data.conditions) {
-        populateSelect('.condition-select', data.conditions, 'id', 'condition_at_entry');
+    if (data.material_type?.length) {
+        populateSelect('.material_type-select', data.material_type, 'id', 'materialNameEnglish');
     }
-    if (data.sources) {
-        populateSelect('.source-select', data.sources, 'id', 'funding_source_name');
+    if (data.conditions?.length) {
+        populateSelect('.condition-select', data.conditions, 'condition_id', 'condition_at_entry');
     }
-    if (data.locations) {
-        populateSelect('.location-select', data.locations, 'id', 'location_name');
+    if (data.sources?.length) {
+        populateSelect('.source-select', data.sources, 'source_id', 'funding_source_name');
     }
-    if (data.suppliers) {
-        populateSelect('.supplier-select', data.suppliers, 'id', 'supplier_name');
+    if (data.locations?.length) {
+        populateSelect('.location-select', data.locations, 'location_id', 'location_name');
     }
-    if (data.libraries) {
+    if (data.suppliers?.length) {
+        populateSelect('.supplier-select', data.suppliers, 'supplier_id', 'supplier_name');
+    }
+    if (data.libraries?.length) {
         populateSelect('.library-select', data.libraries, 'library_code', 'library_name');
     }
-    if (data.catalogues) {
+    if (data.catalogues?.length) {
         populateSelect('.catalogue-select', data.catalogues, 'cat_ref_num', 'title');
     }
 }

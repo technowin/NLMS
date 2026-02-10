@@ -234,6 +234,7 @@ LOCAL_APPS = [
     'L02',
     'library_reports',
     'book_report',
+    'mini_system',
 ]
 
 # Add 'storages' to THIRD_PARTY_APPS for all environments

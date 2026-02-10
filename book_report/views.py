@@ -1127,28 +1127,33 @@ class GetBookOptionsView(ReportBaseView):
             
             # Statuses
             statuses = status_master.objects.using(db).filter(
-                isactive=1
-            ).values('id', 'status_name')
+                is_active=1
+            ).values('status_id', 'status_name')
+
+            # Material Type
+            material_type = MaterialTypeMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'materialNameEnglish')
             
             # Conditions
             conditions = ConditionAtEntryMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'condition_at_entry')
+            ).values('condition_id', 'condition_at_entry')
             
             # Funding sources
             sources = FundingSourceMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'funding_source_name')
+            ).values('source_id', 'funding_source_name')
             
             # Locations
             locations = ResourceLocationMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'location_name')
+            ).values('location_id', 'location_name')
             
             # Suppliers
             suppliers = SupplierMaster.objects.using(db).filter(
                 is_active=1
-            ).values('id', 'supplier_name')
+            ).values('supplier_id', 'supplier_name')
             
             # Libraries
             libraries = tbl_librarymasterL01.objects.using(db).filter(
@@ -1164,6 +1169,7 @@ class GetBookOptionsView(ReportBaseView):
             # Return empty arrays on error
             subjects = []
             statuses = []
+            material_type = []
             conditions = []
             sources = []
             locations = []
@@ -1174,6 +1180,7 @@ class GetBookOptionsView(ReportBaseView):
         return JsonResponse({
             'subjects': list(subjects),
             'statuses': list(statuses),
+            'material_type': list(material_type),
             'conditions': list(conditions),
             'sources': list(sources),
             'locations': list(locations),

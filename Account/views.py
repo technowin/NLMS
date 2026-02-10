@@ -207,7 +207,7 @@ def Login(request):
                 return redirect(f"{reverse('Login')}?next={next_url}")
             
             if params:
-                from urllib.parse import urlencode
+                from urllib.parse import urlencode2
                 login_url = f"{reverse('Login')}?{urlencode(params)}"
                 return redirect(login_url)
             
@@ -218,29 +218,31 @@ def Login(request):
         # ------------------------------------------
         if user.is_logged_in:
 
-            timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
+                # timeout = timedelta(seconds=settings.SESSION_COOKIE_AGE)
+                timeout = timedelta(minutes=5)
 
-            if user.last_activity and \
-            timezone.now() - user.last_activity < timeout:
-                
-                messages.error(request, 'Login unsuccessful. You are already logged in on another device.')
+                if user.last_activity and \
+                timezone.now() - user.last_activity < timeout:
 
-                response = render(request, "bootstrap/account/login.html")
-                response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                response['Pragma'] = 'no-cache'
-                response['Expires'] = '0'
-                return response
-            else:
-                # expired session cleanup
-                user.is_logged_in = False
-                user.session_key = None
-                user.save()
+                    messages.error(
+                        request,
+                        'Login unsuccessful. You are already logged in on another device.'
+                    )
 
-        import uuid
-        session_key = str(uuid.uuid4())
-        request.session["session_key"] = session_key
+                    return redirect("Login")
 
-        user.session_key = session_key
+                else:
+                    # expired session cleanup
+                    user.is_logged_in = False
+                    user.session_key = None
+                    user.save()
+
+        import secrets
+        from django.contrib.auth import login as log
+        log(request, user)
+        token = secrets.token_hex(32)
+        request.session["login_token"] = token
+        user.session_key = token
         user.is_logged_in = True
         user.last_activity = timezone.now()
         user.save()

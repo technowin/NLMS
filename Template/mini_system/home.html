@@ -1,0 +1,737 @@
+{% extends "bootstrap/horizontal_base.html" %}
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID Anti-Theft System Simulation</title>
+
+{% block content %}
+    <style>
+     
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .rfid-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .rfid-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .scan-result {
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .scan-result.alarm {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .scan-result h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .scan-result p {
+            margin: 8px 0;
+            color: #555;
+        }
+        
+        .book-list {
+            margin-top: 20px;
+        }
+        
+        .book-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .book-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .book-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .rfid-code {
+            font-family: monospace;
+            background: #e5e7eb;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #9ca3af;
+            padding: 40px;
+            font-style: italic;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-success {
+            background: #10b981;
+        }
+        
+        .notification-error {
+            background: #ef4444;
+        }
+        
+        .notification-warning {
+            background: #f59e0b;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .control-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .rfid-input {
+                min-width: 100%;
+            }
+            
+            .status-bar {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            
+            .stat-item {
+                flex: 0 0 calc(50% - 10px);
+            }
+        }
+    </style>
+
+    <div class="">
+        <header>
+            <h1>📚 RFID Anti-Theft System</h1>
+            <p>Mini System Simulation - Exit Gate Control</p>
+        </header>
+        
+        <div class="status-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalScans">{{ total_scans }}</div>
+                <div class="stat-label">Total Scans</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalAlarms">{{ total_alarms }}</div>
+                <div class="stat-label">Alarms Triggered</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ active_issued }}</div>
+                <div class="stat-label">Books Issued</div>
+            </div>
+        </div>
+        
+        <!-- RFID Scanner Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>🔍 RFID Scanner Simulation</span>
+                <button class="btn btn-danger" onclick="testAlarm()">
+                    🚨 Test Alarm
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn btn-primary" onclick="scanRandom()">
+                    📖 Scan Random RFID
+                </button>
+                <input type="text" 
+                       id="customRFID" 
+                       class="rfid-input" 
+                       placeholder="Enter RFID tag (e.g., A1B2C3D4E5)"
+                       maxlength="10">
+                <button class="btn btn-success" onclick="scanCustom()">
+                    🔍 Scan
+                </button>
+            </div>
+            
+            <div id="scanResult"></div>
+        </div>
+        
+        <!-- Book Management Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>📚 Book Management</span>
+                <button class="btn btn-warning" onclick="issueBook()">
+                    ➕ Issue New Book
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <input type="text" 
+                       id="issueRFID" 
+                       class="rfid-input" 
+                       placeholder="Book RFID (leave empty for random)">
+                <input type="text" 
+                       id="bookTitle" 
+                       class="rfid-input" 
+                       placeholder="Book Title">
+                <input type="text" 
+                       id="userName" 
+                       class="rfid-input" 
+                       placeholder="User Name">
+                <button class="btn btn-success" onclick="issueBook()">
+                    📝 Issue Book
+                </button>
+            </div>
+            
+            <div class="book-list" id="issuedBooks">
+                {% for book in issued_books %}
+                <div class="book-item">
+                    <div class="book-info">
+                        <h4>{{ book.book_title }}</h4>
+                        <p>Issued to: {{ book.user_name }} • RFID: <span class="rfid-code">{{ book.book_rfid }}</span></p>
+                        <p style="font-size: 0.8rem; color: #888;">
+                            Issued: {{ book.issue_time|date:"M d, H:i" }}
+                        </p>
+                    </div>
+                    <button class="btn btn-warning btn-sm" onclick="returnBook('{{ book.book_rfid }}')">
+                        Return
+                    </button>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    No books currently issued
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Recent Scans Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>📊 Recent Scans</span>
+                <button class="btn btn-warning" onclick="refreshScans()">
+                    🔄 Refresh
+                </button>
+            </div>
+            
+            <div id="recentScans">
+                {% for scan in recent_scans %}
+                <div class="book-item {% if not scan.is_authorized %}scan-result alarm{% endif %}" style="margin-bottom: 10px;">
+                    <div class="book-info">
+                        <h4>
+                            {{ scan.book_title|default:"Unknown Book" }}
+                            {% if scan.is_authorized %}
+                            <span style="color: #10b981;">✓</span>
+                            {% else %}
+                            <span style="color: #ef4444;">✗</span>
+                            {% endif %}
+                        </h4>
+                        <p>
+                            RFID: <span class="rfid-code">{{ scan.book_rfid }}</span> • 
+                            User: {{ scan.user_name|default:"Unknown" }}
+                        </p>
+                        <p style="color: #666; font-size: 0.9rem;">
+                            {{ scan.scan_time|date:"H:i:s" }} • 
+                            {% if scan.is_authorized %}
+                            <span style="color: #10b981;">Authorized</span>
+                            {% else %}
+                            <span style="color: #ef4444;">Unauthorized</span>
+                            {% endif %}
+                            {% if scan.alarm_triggered %}
+                            • <span style="color: #ef4444;">🚨 Alarm Triggered</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    No scans recorded yet
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- System Control Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>⚙️ System Control</span>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn btn-success" onclick="generateTestData()">
+                    🎲 Generate Test Data
+                </button>
+                <button class="btn btn-danger" onclick="clearAllData()">
+                    🗑️ Clear All Data
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        // API endpoints
+        const API_BASE = '/mini-system/';
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification notification-${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Scan RFID
+        async function scanRFID(rfid = '') {
+            try {
+                const response = await fetch(`${API_BASE}scan/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ rfid: rfid })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update statistics
+                    document.getElementById('totalScans').textContent = result.stats.total_scans;
+                    document.getElementById('totalAlarms').textContent = result.stats.total_alarms;
+                    
+                    // Show scan result
+                    const scanResult = document.getElementById('scanResult');
+                    scanResult.className = `scan-result ${result.alarm_triggered ? 'alarm' : ''}`;
+                    scanResult.innerHTML = `
+                        <h3>${result.book_title || 'Unknown Book'}</h3>
+                        <p><strong>RFID:</strong> <code>${result.rfid}</code></p>
+                        <p><strong>Status:</strong> ${result.is_authorized ? '✅ Authorized' : '❌ Unauthorized'}</p>
+                        <p><strong>User:</strong> ${result.user_name}</p>
+                        <p><strong>Time:</strong> ${result.scan_time}</p>
+                        <p style="font-weight: bold; color: ${result.alarm_triggered ? '#ef4444' : '#10b981'}">
+                            ${result.message}
+                        </p>
+                    `;
+                    
+                    // Show notification
+                    showNotification(result.message, result.alarm_triggered ? 'error' : 'success');
+                    
+                    // Refresh recent scans
+                    refreshScans();
+                    
+                    // Scroll to result
+                    scanResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // If alarm triggered, make it more noticeable
+                    if (result.alarm_triggered) {
+                        document.body.style.backgroundColor = '#fef2f2';
+                        setTimeout(() => {
+                            document.body.style.backgroundColor = '';
+                        }, 1000);
+                    }
+                } else {
+                    showNotification(result.error || 'Scan failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        // Scan random RFID
+        function scanRandom() {
+            document.getElementById('customRFID').value = '';
+            scanRFID();
+        }
+        
+        // Scan custom RFID
+        function scanCustom() {
+            const rfid = document.getElementById('customRFID').value.trim().toUpperCase();
+            if (rfid) {
+                scanRFID(rfid);
+            } else {
+                showNotification('Please enter an RFID tag', 'warning');
+            }
+        }
+        
+        // Issue a book
+        async function issueBook() {
+            const bookRFID = document.getElementById('issueRFID').value.trim().toUpperCase();
+            const bookTitle = document.getElementById('bookTitle').value.trim();
+            const userName = document.getElementById('userName').value.trim();
+            
+            try {
+                const response = await fetch(`${API_BASE}issue-book/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        book_rfid: bookRFID,
+                        book_title: bookTitle || 'Sample Book',
+                        user_name: userName || 'Test User'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    
+                    // Clear form
+                    document.getElementById('issueRFID').value = '';
+                    document.getElementById('bookTitle').value = '';
+                    document.getElementById('userName').value = '';
+                    
+                    // Refresh issued books list
+                    refreshIssuedBooks();
+                } else {
+                    showNotification(result.message || result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        // Return a book
+        async function returnBook(rfid) {
+            if (!confirm('Return this book?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}return-book/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ book_rfid: rfid })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    refreshIssuedBooks();
+                } else {
+                    showNotification(result.message || result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        // Refresh issued books
+        async function refreshIssuedBooks() {
+            try {
+                const response = await fetch(`${API_BASE}get-issued-books/`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const container = document.getElementById('issuedBooks');
+                    
+                    if (result.count === 0) {
+                        container.innerHTML = '<div class="empty-state">No books currently issued</div>';
+                    } else {
+                        container.innerHTML = result.books.map(book => `
+                            <div class="book-item">
+                                <div class="book-info">
+                                    <h4>${book.book_title}</h4>
+                                    <p>Issued to: ${book.user_name} • RFID: <span class="rfid-code">${book.book_rfid}</span></p>
+                                    <p style="font-size: 0.8rem; color: #888;">
+                                        Issued: ${book.issue_time}
+                                    </p>
+                                </div>
+                                <button class="btn btn-warning btn-sm" onclick="returnBook('${book.book_rfid}')">
+                                    Return
+                                </button>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    // Update issued count in status bar
+                    document.querySelectorAll('.stat-value')[2].textContent = result.count;
+                }
+            } catch (error) {
+                console.error('Error refreshing books:', error);
+            }
+        }
+        
+        // Refresh recent scans
+        async function refreshScans() {
+            // In a real implementation, this would fetch from API
+            // For simplicity, we'll reload the page
+            window.location.reload();
+        }
+        
+        // Generate test data
+        async function generateTestData() {
+            try {
+                const response = await fetch(`${API_BASE}generate-test-data/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    refreshIssuedBooks();
+                } else {
+                    showNotification(result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        // Clear all data
+        async function clearAllData() {
+            if (!confirm('Are you sure? This will delete ALL test data.')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}clear-data/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    window.location.reload();
+                } else {
+                    showNotification(result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Network error', 'error');
+            }
+        }
+        
+        // Test alarm system
+        function testAlarm() {
+            const scanResult = document.getElementById('scanResult');
+            scanResult.className = 'scan-result alarm';
+            scanResult.innerHTML = `
+                <h3>🚨 TEST ALARM 🚨</h3>
+                <p><strong>RFID:</strong> <code>TEST123456</code></p>
+                <p><strong>Status:</strong> ❌ Unauthorized</p>
+                <p><strong>User:</strong> Test User</p>
+                <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+                <p style="font-weight: bold; color: #ef4444">
+                    🚨 TEST ALARM - Unauthorized book detected! 🚨
+                </p>
+            `;
+            
+            showNotification('Test alarm triggered', 'error');
+            
+            // Visual effect
+            document.body.style.backgroundColor = '#fef2f2';
+            setTimeout(() => {
+                document.body.style.backgroundColor = '';
+            }, 1000);
+            
+            // Scroll to result
+            scanResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Enter key support
+        document.getElementById('customRFID').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') scanCustom();
+        });
+        
+        document.getElementById('issueRFID').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') issueBook();
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set focus to RFID input
+            document.getElementById('customRFID').focus();
+        });
+    </script>
+{% endblock %}
