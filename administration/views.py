@@ -23,6 +23,26 @@ def library_list(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
+        
+        host = request.get_host().split(':')[0]
+
+        if host.endswith("nmmclibrary.in"):
+            subdomain = host.replace(".nmmclibrary.in", "")
+
+            if subdomain == "vdb":
+                library_code = "L01"
+            else:
+                library_code = None
+
+            if library_code:
+                if request.session.get('library_db') == library_code:
+                    pass  # already set, do nothing
+                else:
+                    request.session['library_db'] = library_code
+                    request.session.modified = True
+                    set_current_service(library_code)
+                    return redirect(f"{library_code}:index")
+        
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
         
