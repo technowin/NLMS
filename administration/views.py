@@ -34,10 +34,7 @@ def library_list(request):
             else:
                 library_code = None
 
-            if library_code:
-                if request.session.get('library_db') == library_code:
-                    pass  # already set, do nothing
-                else:
+            if library_code != "default" or library_code != None :
                     request.session['library_db'] = library_code
                     request.session.modified = True
                     set_current_service(library_code)
