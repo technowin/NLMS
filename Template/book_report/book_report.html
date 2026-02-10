@@ -78,7 +78,8 @@
                            id="book-search"
                            placeholder="Search...">
                     <button class="btn btn-outline-secondary" type="button"
-                            onclick="clearSearch()">
+                            onclick="clearSearch()"
+                            style="border-radius: 10px!important; border: 1px solid grey!important;">
                         <i class="bi bi-x"></i>
                     </button>
                 </div>
@@ -155,7 +156,7 @@
         </div>
         
         <!-- Book List Container -->
-        <div id="book-list-container" style="flex: 1; overflow-y: auto;">
+        <div id="book-list-container" style="flex: 1; overflow-y: auto;" >
             <div class="text-center py-5">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
@@ -618,23 +619,40 @@ function populateTabData(tabName, data) {
     }
 }
 
-
 function convertToTableRow(tabName, item) {
     switch(tabName) {
         case 'catalogue':
             return [
                 item.cat_ref_num || '',
                 item.title || '',
+                item.subtitle || '',
                 item.author || '',
+                item.other_authors || '',
+                item.publisher || '',
                 item.isbn_issn || '',
+                item.edition || '',
+                item.keywords || '',
                 item.language || '',
+                item.publication_place || '',
                 item.year_of_publication || '',
+                item.classification_number || '',
+                item.pages || '',
+                item.date_of_registration || '',
                 item.status_name || '',
                 item.subject_name || '',
-                item.ebook_available === 'Yes' ? 
-                    '<span class="badge bg-success">Yes</span>' : 
-                    '<span class="badge bg-secondary">No</span>',
-                item.created_at || ''
+                item.call_number || '',
+                item.cutter_number || '',
+                item.publication_year || '',
+                item.remarks || '',
+                item.material_name || '',
+                item.ebook_available === 'Yes'
+                    ? '<span class="badge bg-success">Yes</span>'
+                    : '<span class="badge bg-secondary">No</span>',
+                item.ebook_id || '',
+                item.created_at || '',
+                item.created_by || '',
+                item.updated_at || '',
+                item.updated_by || ''
             ];
             
         case 'accession':
@@ -646,14 +664,22 @@ function convertToTableRow(tabName, item) {
                 item.copy_number || '',
                 item.invoice_number || '',
                 item.invoice_date || '',
-                item.price ? '₹' + parseFloat(item.price).toFixed(2) : '₹0.00',
+                item.price
+                    ? '₹' + parseFloat(item.price).toFixed(2)
+                    : '₹0.00',
+                item.remarks || '',
+                item.created_at || '',
+                item.created_by || '',
+                item.updated_at || '',
+                item.updated_by || '',
                 item.condition_name || '',
+                item.currency_name || '',
                 item.source_name || '',
                 item.location_name || '',
                 item.status_name || '',
-                item.supplier_name || '',
-                item.created_at || ''
+                item.supplier_name || ''
             ];
+
             
         case 'circulation':
             return [
@@ -664,14 +690,19 @@ function convertToTableRow(tabName, item) {
                 item.date_processed || '',
                 item.processing_status || '',
                 item.shelf_location || '',
-                item.current_status || '',
                 item.remarks || '',
-                item.created_at || ''
+                item.created_at || '',
+                item.created_by || '',
+                item.updated_at || '',
+                item.updated_by || '',
+                item.current_status || ''
             ];
+
             
         case 'loan':
             const overdueDays = item.days_overdue_count || 0;
             let overdueBadge = '<span class="badge bg-success">On time</span>';
+
             if (overdueDays > 0) {
                 if (overdueDays <= 3) {
                     overdueBadge = `<span class="badge overdue-0-3">${overdueDays} days</span>`;
@@ -683,7 +714,7 @@ function convertToTableRow(tabName, item) {
                     overdueBadge = `<span class="badge bg-danger">${overdueDays} days</span>`;
                 }
             }
-            
+        
             return [
                 item.barcode || '',
                 item.accession_id || '',
@@ -693,20 +724,27 @@ function convertToTableRow(tabName, item) {
                 item.membership_code || '',
                 item.issue_date || '',
                 item.due_date || '',
+                item.return_date || '',
                 overdueBadge,
-                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
+                item.fine_amount
+                    ? '₹' + parseFloat(item.fine_amount).toFixed(2)
+                    : '₹0.00',
                 item.issued_by || '',
                 item.remarks || '',
                 item.created_at || ''
             ];
+
             
         case 'circulation-transaction':
+
             const transactionOverdue = item.days_overdue_count || 0;
             let transactionOverdueBadge = '<span class="badge bg-success">On time</span>';
+
             if (transactionOverdue > 0) {
-                transactionOverdueBadge = `<span class="badge bg-danger">${transactionOverdue} days</span>`;
+                transactionOverdueBadge =
+                    `<span class="badge bg-danger">${transactionOverdue} days</span>`;
             }
-            
+        
             let fineStatusBadge = '';
             if (item.fine_status) {
                 if (item.fine_status === 'Paid') {
@@ -717,7 +755,7 @@ function convertToTableRow(tabName, item) {
                     fineStatusBadge = '<span class="badge fine-unpaid">Unpaid</span>';
                 }
             }
-            
+        
             return [
                 item.barcode || '',
                 item.accession_id || '',
@@ -726,7 +764,10 @@ function convertToTableRow(tabName, item) {
                 item.membership_code || '',
                 item.issue_date || '',
                 item.due_date || '',
+                item.issued_by || '',
+                item.created_at || '',
                 item.return_date || '',
+                item.received_by || '',
                 transactionOverdueBadge,
                 item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
                 item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',
@@ -734,11 +775,10 @@ function convertToTableRow(tabName, item) {
                 item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',
                 fineStatusBadge,
                 item.fine_paid_date || '',
-                item.issued_by || '',
-                item.received_by || '',
                 item.remarks || '',
-                item.created_at || ''
+                item.updated_at || ''
             ];
+
             
         case 'supplier':
             return [
@@ -752,15 +792,18 @@ function convertToTableRow(tabName, item) {
                 item.supplier_email || '',
                 item.supplier_address || '',
                 item.supplier_pincode || '',
-                item.is_active === 'Yes' ? 
-                    '<span class="badge bg-success">Active</span>' : 
-                    '<span class="badge bg-secondary">Inactive</span>'
+                item.is_active === 'Yes'
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>'
             ];
+
             
         case 'review':
+
             // Create rating stars
             const rating = item.rating || 0;
             let stars = '';
+
             for (let i = 1; i <= 5; i++) {
                 if (i <= rating) {
                     stars += '<i class="bi bi-star-fill text-warning"></i>';
@@ -768,33 +811,40 @@ function convertToTableRow(tabName, item) {
                     stars += '<i class="bi bi-star text-secondary"></i>';
                 }
             }
-            
+        
             return [
                 item.user_name || '',
                 item.member_name || '',
                 `<div class="rating-stars">${stars}</div>`,
-                item.review ? (item.review.length > 50 ? item.review.substring(0, 50) + '...' : item.review) : '',
-                item.book_title || '',
-                item.cat_ref_id || '',
-                item.library_code || '',
+                item.review
+                    ? (item.review.length > 50
+                        ? item.review.substring(0, 50) + '...'
+                        : item.review)
+                    : '',
                 item.created_at || '',
-                item.updated_at || ''
+                item.updated_at || '',
+                item.library_code || '',
+                item.cat_ref_id || '',
+                item.book_title || '',
+                item.ebook_name || ''
             ];
+
             
         case 'return-log':
             return [
                 item.barcode || '',
                 item.book_title || '',
                 item.cat_ref_num_id || '',
-                item.is_shelved === 'Yes' ? 
-                    '<span class="badge bg-success">Shelved</span>' : 
-                    '<span class="badge bg-warning text-dark">Not Shelved</span>',
+                item.is_shelved === 'Yes'
+                    ? '<span class="badge bg-success">Shelved</span>'
+                    : '<span class="badge bg-warning text-dark">Not Shelved</span>',
                 item.created_at || '',
                 item.updated_at || '',
                 item.created_by_name || '',
                 item.eod_log_id || '',
                 item.updated_by_name || ''
             ];
+
             
         case 'google-metadata':
             return [
@@ -1044,6 +1094,10 @@ function exportCurrentTab() {
 }
 
 function exportAllTabs() {
+
+    // initial count
+    updateExportCounts();
+
     if (selectedBooks.size === 0) {
         showToast('Please select at least one book to export', 'warning');
         return;
@@ -1139,9 +1193,14 @@ function exportAllTabs() {
                         
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            This will export data for <strong>${selectedBooks.size}</strong> selected book(s) 
-                            with all applied filters.
+                            This will export <strong>
+                                <span id="exportBookCount">${selectedBooks.size}</span>
+                            </strong> book(s) from 
+                            <strong>
+                                <span id="exportTabCount">7</span>
+                            </strong> selected tab(s).
                         </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -1160,6 +1219,20 @@ function exportAllTabs() {
     $('#exportOptionsModal').on('hidden.bs.modal', function() {
         $(this).remove();
     });
+
+    // live update on checkbox toggle
+    $('#exportOptionsModal').on('change', 'input[type="checkbox"]', function () {
+        updateExportCounts();
+    });
+}
+
+function updateExportCounts() {
+    const checkedTabs = $('#exportOptionsModal input[type="checkbox"]:checked').length;
+
+    $('#exportTabCount').text(checkedTabs);
+    $('#exportBookCount').text(
+        checkedTabs > 0 ? selectedBooks.size : 0
+    );
 }
 
 function processExportAll() {
@@ -1228,53 +1301,66 @@ function initFilterModals() {
         }
     });
 }
-
 function populateDropdowns(data) {
-    // Helper function to populate a select element
+   
     function populateSelect(selector, items, valueKey, textKey) {
-        $(selector).each(function() {
-            const $select = $(this);
-            $select.empty().append('<option value="">--Select--</option>');
-            items.forEach(item => {
-                $select.append(`<option value="${item[valueKey]}">${item[textKey]}</option>`);
-            });
-            
-            // Re-initialize selectize if it exists
-            if ($select[0].selectize) {
-                $select[0].selectize.destroy();
+        $(selector).each(function () {
+            const select = this;
+            let selectize;
+
+            // If selectize already initialized
+            if (select.selectize) {
+                selectize = select.selectize;
+                selectize.clearOptions(); // clear existing options
+            } else {
+                // Initialize selectize
+                selectize = $(select).selectize({
+                    plugins: ['remove_button'],
+                    delimiter: ',',
+                    persist: false,
+                    create: false,
+                    placeholder: '--Select--'
+                })[0].selectize;
             }
-            $select.selectize({
-                plugins: ['remove_button'],
-                delimiter: ',',
-                persist: false,
-                create: false
+
+            // Add default empty option
+            //selectize.addOption({ value: '', text: '--Select--' });
+
+            // Add dynamic options
+            items.forEach(item => {
+                selectize.addOption({
+                    value: item[valueKey],
+                    text: item[textKey]
+                });
             });
+
+            // Refresh dropdown
+            selectize.refreshOptions(false);
         });
     }
-    
-    // Populate each dropdown
-    if (data.subjects) {
+    debugger;
+    if (data.subjects?.length) {
         populateSelect('.subject-select', data.subjects, 'id', 'subjectNameEnglish');
     }
-    if (data.statuses) {
-        populateSelect('.status-select', data.statuses, 'id', 'status_name');
+    if (data.statuses?.length) {
+        populateSelect('.status-select', data.statuses, 'status_id', 'status_name');
     }
-    if (data.conditions) {
-        populateSelect('.condition-select', data.conditions, 'id', 'condition_at_entry');
+    if (data.conditions?.length) {
+        populateSelect('.condition-select', data.conditions, 'condition_id', 'condition_at_entry');
     }
-    if (data.sources) {
-        populateSelect('.source-select', data.sources, 'id', 'funding_source_name');
+    if (data.sources?.length) {
+        populateSelect('.source-select', data.sources, 'source_id', 'funding_source_name');
     }
-    if (data.locations) {
-        populateSelect('.location-select', data.locations, 'id', 'location_name');
+    if (data.locations?.length) {
+        populateSelect('.location-select', data.locations, 'location_id', 'location_name');
     }
-    if (data.suppliers) {
-        populateSelect('.supplier-select', data.suppliers, 'id', 'supplier_name');
+    if (data.suppliers?.length) {
+        populateSelect('.supplier-select', data.suppliers, 'supplier_id', 'supplier_name');
     }
-    if (data.libraries) {
+    if (data.libraries?.length) {
         populateSelect('.library-select', data.libraries, 'library_code', 'library_name');
     }
-    if (data.catalogues) {
+    if (data.catalogues?.length) {
         populateSelect('.catalogue-select', data.catalogues, 'cat_ref_num', 'title');
     }
 }

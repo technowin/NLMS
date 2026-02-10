@@ -58,7 +58,7 @@
 {% block content %}
 <div class="report-container d-flex">
     {% include 'library_reports/left_member_list.html' %}
-    {% include 'library_reports/right_report_tabs.html' %}
+    {% include 'library_reports/right_content_area.html' %}
 </div>
 
 <!-- Loading Overlay -->
@@ -277,7 +277,7 @@ function updateSelectionCount() {
     
     if (count > 0) {
         $('#bulk-actions').addClass('show');
-        $('#report-summary').html(`
+        $('.report-summary').html(`
             <strong>${count}</strong> member${count > 1 ? 's' : ''} selected
             <span class="ms-2">
                 <a href="#" onclick="deselectAll()" class="text-danger">
@@ -287,7 +287,7 @@ function updateSelectionCount() {
         `);
     } else {
         $('#bulk-actions').removeClass('show');
-        $('#report-summary').text('Select members from the left panel to view details');
+        $('.report-summary').text('Select members from the left panel to view details');
     }
 }
 
@@ -714,6 +714,11 @@ function convertToTableRow(tabName, item) {
 }
 
 function exportAllTabs() {
+
+    // initial count
+    updateExportCounts();
+    
+    
     if (selectedMembers.size === 0) {
         showToast('Please select at least one member to export', 'warning');
         return;
@@ -793,9 +798,14 @@ function exportAllTabs() {
                         
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            This will export data for <strong>${selectedMembers.size}</strong> selected member(s) 
-                            with all applied filters.
+                            This will export <strong>
+                                <span id="exportMemberCount">${selectedMembers.size}</span>
+                            </strong> member(s) from 
+                            <strong>
+                                <span id="exportTabCount">7</span>
+                            </strong> selected tab(s).
                         </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -814,7 +824,22 @@ function exportAllTabs() {
     $('#exportOptionsModal').on('hidden.bs.modal', function() {
         $(this).remove();
     });
+
+    // live update on checkbox toggle
+    $('#exportOptionsModal').on('change', 'input[type="checkbox"]', function () {
+        updateExportCounts();
+    });
 }
+
+function updateExportCounts() {
+    const checkedTabs = $('#exportOptionsModal input[type="checkbox"]:checked').length;
+
+    $('#exportTabCount').text(checkedTabs);
+    $('#exportMemberCount').text(
+        checkedTabs > 0 ? selectedMembers.size : 0
+    );
+}
+
 
 function processExportAll() {
     const format = $('#exportFormat').val();
