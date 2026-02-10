@@ -99,7 +99,6 @@ from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
 from NLMS.access_control import no_direct_access
 
-@no_direct_access
 def index(request):
     # Get the library code from session
     library_code = request.session.get('library_db', None)
