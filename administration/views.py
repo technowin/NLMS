@@ -24,6 +24,10 @@ def library_list(request):
     cursor = m.cursor()
     
     try:
+        if request.session.get('library_db'):
+            return redirect("auto_library_redirect")
+
+        
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
         
@@ -144,6 +148,9 @@ def service_redirect(request):
     try:
         # Get the library code from POST
         service_code_decrypted = request.POST.get('library_code')
+        if not service_code_decrypted:
+            return redirect("library_list")
+
         service_code = dec(service_code_decrypted)
 
         # Save to session
@@ -732,4 +739,20 @@ def download_sop(request):
             return JsonResponse({'error': str(e)}, status=500)
         
         messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("library_list")
+    
+def auto_library_redirect(request):
+    library_code = request.session.get('library_db')
+
+    if not library_code:
+        return redirect("library_list")
+
+    # 🔥 CRITICAL: re-set session & routing
+    request.session['library_db'] = library_code
+    request.session.modified = True
+    set_current_service(library_code)
+
+    try:
+        return redirect(f"{library_code}:index")
+    except Exception:
         return redirect("library_list")

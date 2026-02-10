@@ -59,6 +59,7 @@ urlpatterns = [
     # Account
     path("", library_list,name='library_list'),
     path("library_list_login", library_list,name='library_list'),
+    path("auto_library_redirect", auto_library_redirect,name='auto_library_redirect'),
     # path("", Login,name='Account'),
     path("Login", Login,name='Account'),
     path("Login", Login,name='Login'),
