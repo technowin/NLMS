@@ -84,7 +84,7 @@
         transition: transform 0.8s;
         transform-style: preserve-3d;
         cursor: pointer;
-        box-shadow: 0 5px 40px rgba(0,0,0);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
     }
 
     /* Front & Back Side */
@@ -94,7 +94,7 @@
         height: 100%;
         backface-visibility: hidden;
         overflow: hidden;
-        box-shadow: 0 6px 12px rgba(0,0,0);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
     }
 
     .book-flip-front img, .book-flip-back img {
@@ -568,6 +568,7 @@
     }
     /* ================= SLIDER WRAPPER ================= */
     .upcoming-slider-container {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;   /* 👈 CENTER WHOLE SLIDER */
@@ -575,7 +576,7 @@
 
         max-width: 1200px;         /* 👈 CONTROL WIDTH */
         margin: 0 auto;            /* 👈 CENTER ON PAGE */
-        padding: 10px 20px;
+        padding: 10px 60px; 
     }
 
     /* ================= SLIDER TRACK ================= */
@@ -586,9 +587,10 @@
         overflow-x: hidden;
         scroll-behavior: smooth;
 
-        width: 100%;               /* 👈 TAKE FULL SPACE INSIDE CONTAINER */
-        justify-content: center;   /* 👈 CENTER BOOKS INITIALLY */
+        width: 100%;
+        justify-content: flex-start;   
     }
+
 
     /* ================= BOOK CARD ================= */
     .upcoming-book-card {
@@ -598,12 +600,17 @@
         text-align: center;
     }
     .slider-nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%) scale(1);
+        transition: transform 0.25s ease;
+
         background: #ffffffd0;
         border: 1px solid #ddd;
         cursor: pointer;
 
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
 
         display: flex;
         align-items: center;
@@ -611,34 +618,71 @@
 
         border-radius: 50%;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: transform 0.25s ease;
+        z-index: 10;
     }
+
+    .prev-btn {
+        left: 10px;
+    }
+
+    .next-btn {
+        right: 10px;
+    }
+
+
 
 
     .slider-nav-btn i {
         color: #410bd6;
         font-size: 22px;
+        line-height: 1;
     }
 
 
     .slider-nav-btn:hover {
-        transform: scale(1.1);
+        transform: translateY(-50%) scale(1.1);
     }
     .upcoming-books-track::before,
     .upcoming-books-track::after {
         content: "";
         flex: 0 0 10px;
     }
-    @media (max-width: 768px) {
+   
+   @media (max-width: 768px) {
+
         .upcoming-slider-container {
-            max-width: 100%;
-            padding: 10px;
+            padding: 10px 50px;
+            min-height: 320px;
         }
 
         .upcoming-books-track {
-            justify-content: flex-start; /* natural swipe */
+            justify-content: flex-start;
+            gap: 8 px;
+            padding-inline: calc((100% - 180px) / 2);
+            scroll-snap-type: x mandatory;
         }
+
+        .upcoming-books-track::before,
+        .upcoming-books-track::after {
+            display: none;
+        }
+
+        .upcoming-book-card {
+            min-width: 180px;
+            max-width: 180px;
+            scroll-snap-align: center;
+        }
+
+        {% comment %} .slider-nav-btn {
+            top: 50%;
+            transform: translateY(-50%);
+        } {% endcomment %}
+        
     }
+
+
+
+
 
     /* Hide slider arrows on desktop & laptop */
     @media (min-width: 1024px) {
@@ -800,35 +844,112 @@
                                     <div class="book-flip-inner">
 
                                         {% if book.front_page_photo %}
-                                            <div class="book-flip-front">
-                                                <img src="{{ book.front_page_photo }}"
-                                                    class="book-image"
-                                                    onclick="zoomImage(this)"
-                                                    data-front-image="{{ book.front_page_photo }}"
-                                                    data-last-image="{{ book.last_page_photo }}"
-                                                    data-title="{{ book.title }}"
-                                                    data-author="{{ book.author }}"
-                                                    data-ebook_available="{{ book.ebook_available }}"
-                                                    data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num }}">
-                                            </div>
+                                        <div class="book-flip-front">
+                                            <img src="{{ book.front_page_photo }}"
+                                                alt="{{ book.title }} Front Cover"
+                                                class="book-image"
+                                                onclick="zoomImage(this)"
+                                                data-front-image="{{ book.front_page_photo }}"
+                                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
+                                                data-author="{{ book.author }}"
+                                                data-title="{{ book.title }}"
+                                                data-subtitle="{{ book.subtitle }}"
+                                                data-publisher="{{ book.publisher }}"
+                                                data-isbn_issn="{{ book.isbn_issn }}"
+                                                data-edition="{{ book.edition }}"
+                                                data-publication_place="{{ book.publication_place }}"
+                                                data-year_of_publication="{{ book.year_of_publication }}"
+                                                data-pages="{{ book.pages }}"
+                                                data-remarks="{{ book.remarks }}"
+                                                data-language="{{ book.language }}"
+                                                data-description="{{ book.description }}"
+                                                data-ebook_available="{{ book.ebook_available }}"
+                                                data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
+                                        </div>
 
                                         {% else %}
-                                            <div class="book-flip-front book-no-image"
-                                                onclick="zoomFromTitle(this)"
-                                                data-title="{{ book.title }}"
-                                                data-author="{{ book.author }}">
-                                                📘
+                                        <!-- ✅ BOOK ICON WITH DUMMY COVER -->
+                                        <div class="book-flip-front book-no-image"
+                                            style="
+                                                display:flex;
+                                                align-items:center;
+                                                justify-content:center;
+                                                background: #f5f5f5;
+                                                border: 1px solid #ddd;
+                                                border-radius: 4px;
+                                                height:220px;
+                                                cursor:pointer;
+                                                padding: 15px;
+                                                text-align: center;
+                                                position: relative;
+                                            "
+                                            onclick="zoomFromTitle(this)"
+                                            data-image=""
+                                            data-last-image=""
+                                            data-author="{{ book.author }}"
+                                            data-title="{{ book.title }}"
+                                            data-subtitle="{{ book.subtitle }}"
+                                            data-publisher="{{ book.publisher }}"
+                                            data-isbn_issn="{{ book.isbn_issn }}"
+                                            data-edition="{{ book.edition }}"
+                                            data-publication_place="{{ book.publication_place }}"
+                                            data-year_of_publication="{{ book.year_of_publication }}"
+                                            data-pages="{{ book.pages }}"
+                                            data-remarks="{{ book.remarks }}"
+                                            data-language="{{ book.language }}"
+                                            data-description="{{ book.description }}"
+                                            data-ebook_available="{{ book.ebook_available }}"
+                                            data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
+                                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                        <!-- Tablet/Device Outline -->
+                                                <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
+                                                    <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
+                                                    <div style="font-size: 30px; color: #4a90e2;">
+                                                        📱
+                                                    </div>
+                                                    <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
+                                                        BOOK
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style="margin-top: 10px;">
+                                                    <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
+                                                        {{ book.title|truncatechars:25 }}
+                                                    </div>
+                                                    {% if book.author %}
+                                                    <div style="font-size: 11px; color: #666;">
+                                                        {{ book.author|truncatechars:20 }}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
                                             </div>
-                                        {% endif %}
+                                        </div>
+                                        </div>
+                                    {% endif %}
 
                                     </div>
                                 </div>
 
                                 <p class="book-title"
-                                onclick="zoomFromTitle(this)"
-                                data-title="{{ book.title }}"
-                                data-author="{{ book.author }}">
-                                    {{ book.title }}
+                                    style="margin-bottom: 4px; cursor:pointer;"
+                                    onclick="zoomFromTitle(this)"
+                                    data-image="{% if book.front_page_photo %}{{ book.front_page_photo }}{% endif %}"
+                                    data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
+                                    data-author="{{ book.author }}"
+                                    data-title="{{ book.title }}"
+                                    data-subtitle="{{ book.subtitle }}"
+                                    data-publisher="{{ book.publisher }}"
+                                    data-isbn_issn="{{ book.isbn_issn }}"
+                                    data-edition="{{ book.edition }}"
+                                    data-publication_place="{{ book.publication_place }}"
+                                    data-year_of_publication="{{ book.year_of_publication }}"
+                                    data-pages="{{ book.pages }}"
+                                    data-remarks="{{ book.remarks }}"
+                                    data-language="{{ book.language }}"
+                                    data-description="{{ book.description }}"
+                                    data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}"
+                                    data-ebook_available="{{ book.ebook_available }}">
+                                        {{ book.title }}
                                 </p>
 
                                 {% if book.ebook_available == "Yes" %}
@@ -874,19 +995,85 @@
                                             {% if ebook.eb_front_page_photo %}
                                                 <div class="book-flip-front">
                                                     <img src="{{ ebook.eb_front_page_photo }}"
+                                                        alt="{{ ebook.eb_title }} Front Cover"
                                                         class="book-image"
                                                         onclick="zoomImage(this)"
+                                                        data-front-image="{{ ebook.eb_front_page_photo }}"
+                                                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
                                                         data-title="{{ ebook.eb_title }}"
+                                                        data-subtitle="{{ ebook.eb_subtitle }}"
                                                         data-author="{{ ebook.eb_author }}"
+                                                        data-publisher="{{ ebook.eb_publisher }}"
+                                                        data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                                        data-edition="{{ ebook.eb_edition }}"
+                                                        data-subject="{{ ebook.eb_subject }}"
+                                                        data-publication_place="{{ ebook.eb_publication_place }}"
+                                                        data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                                        data-pages="{{ ebook.eb_pages }}"
+                                                        data-remarks="{{ ebook.remarks }}"
+                                                        data-language="{{ ebook.eb_language }}"
+                                                        data-description="{{ ebook.eb_keywords }}"
+                                                        data-pdf_file="{{ ebook.eb_pdf_url }}"
                                                         data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
                                                         data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
                                                 </div>
                                             {% else %}
-                                                <div class="book-flip-front ebook-no-image"
+                                            <!-- ✅ STANDARD EBOOK COVER FOR NO IMAGE -->
+                                                <div class="book-flip-front"
+                                                    style="
+                                                        display:flex;
+                                                        align-items:center;
+                                                        justify-content:center;
+                                                        background: #e8f0fe;
+                                                        border: 1px solid #c6dafc;
+                                                        border-radius: 4px;
+                                                        height:220px;
+                                                        cursor:pointer;
+                                                        padding: 15px;
+                                                        text-align: center;
+                                                        position: relative;
+                                                    "
                                                     onclick="zoomFromTitle(this)"
+                                                    data-image=""
+                                                    data-last-image=""
+                                                    data-author="{{ ebook.eb_author }}"
                                                     data-title="{{ ebook.eb_title }}"
-                                                    data-author="{{ ebook.eb_author }}">
-                                                    📱
+                                                    data-subtitle="{{ ebook.eb_subtitle }}"
+                                                    data-publisher="{{ ebook.eb_publisher }}"
+                                                    data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                                    data-edition="{{ ebook.eb_edition }}"
+                                                    data-publication_place="{{ ebook.eb_publication_place }}"
+                                                    data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                                    data-pages="{{ ebook.eb_pages }}"
+                                                    data-remarks="{{ ebook.eb_remarks }}"
+                                                    data-language="{{ ebook.eb_language }}"
+                                                    data-description="{{ ebook.eb_description }}"
+                                                    data-ebook_available="{{ ebook.eb_ebook_available }}"
+                                                    data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                                    data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                        <!-- Tablet/Device Outline -->
+                                                        <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
+                                                            <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
+                                                            <div style="font-size: 30px; color: #4a90e2;">
+                                                                📱
+                                                            </div>
+                                                            <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
+                                                                E-BOOK
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div style="margin-top: 10px;">
+                                                            <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
+                                                                {{ ebook.eb_title|truncatechars:25 }}
+                                                            </div>
+                                                            {% if ebook.eb_author %}
+                                                            <div style="font-size: 11px; color: #666;">
+                                                                {{ ebook.eb_author|truncatechars:20 }}
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             {% endif %}
 
@@ -894,10 +1081,26 @@
                                     </div>
 
                                     <p class="book-title"
-                                    onclick="zoomFromTitle(this)"
-                                    data-title="{{ ebook.eb_title }}"
-                                    data-author="{{ ebook.eb_author }}">
-                                        {{ ebook.eb_title }}
+                                        style="margin-bottom: 4px; cursor:pointer;"
+                                        onclick="zoomFromTitle(this)"
+                                        data-image="{% if ebook.eb_front_page_photo %}{{ ebook.eb_front_page_photo }}{% endif %}"
+                                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
+                                        data-author="{{ ebook.eb_author }}"
+                                        data-title="{{ ebook.eb_title }}"
+                                        data-subtitle="{{ ebook.eb_subtitle }}"
+                                        data-publisher="{{ ebook.eb_publisher }}"
+                                        data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                        data-edition="{{ ebook.eb_edition }}"
+                                        data-publication_place="{{ ebook.eb_publication_place }}"
+                                        data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                        data-pages="{{ ebook.eb_pages }}"
+                                        data-remarks="{{ ebook.eb_remarks }}"
+                                        data-language="{{ ebook.eb_language }}"
+                                        data-description="{{ ebook.eb_description }}"
+                                        data-ebook_available="{{ ebook.eb_ebook_available }}"
+                                        data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                        data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                            {{ ebook.eb_title }}
                                     </p>
 
                                 </div>
@@ -917,7 +1120,7 @@
                 <!-- Buttons -->
                 <div class="view-more-btn-container"
                     style="display:flex; justify-content:center; gap:12px; align-items:center;
-                            margin:10px; flex-wrap:wrap;">
+                            margin:8px; margin-bottom:10px; flex-wrap:wrap;">
                     <a href="{% url 'L01:view_ebook_catalogue' %}"
                     style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff;
                             text-decoration:none; padding:8px 18px; border-radius:30px;
