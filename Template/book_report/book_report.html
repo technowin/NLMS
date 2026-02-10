@@ -557,7 +557,7 @@ function loadTabData(tabName) {
     }
     
     showLoading();
-    
+
     const filters = tabFilters[tabName] || {};
     
     $.ajax({
@@ -1236,6 +1236,7 @@ function updateExportCounts() {
 }
 
 function processExportAll() {
+    
     let fileName = $('#exportFileName').val().trim();
     if (!fileName) {
         showToast('Please enter file name', 'warning');
@@ -1243,7 +1244,7 @@ function processExportAll() {
     }
     
     fileName = fileName.replace(/[^\w\-]/g, '_');
-    
+    const filters = tabFilters[tabName] || {};
     const tabsToExport = [];
     const tabMap = {
         exportCatalogue: 'catalogue',
@@ -1272,16 +1273,17 @@ function processExportAll() {
     const params = new URLSearchParams();
     params.append('filename', fileName);
     params.append('list_type', currentListType);
-    
+    params.append('tab_filters', JSON.stringify(filters));
+
     Array.from(selectedBooks).forEach(id => params.append('book_ids', id));
     tabsToExport.forEach(tab => params.append('tabs', tab));
     
     // Add filter parameters
-    Object.entries(tabFilters).forEach(([tab, filters]) => {
-        if (tabsToExport.includes(tab)) {
-            params.append(`tab_filters[${tab}]`, JSON.stringify(filters));
-        }
-    });
+    //Object.entries(tabFilters).forEach(([tab, filters]) => {
+    //    if (tabsToExport.includes(tab)) {
+    //        params.append(`tab_filters[${tab}]`, JSON.stringify(filters));
+    //    }
+    //});
     
     showToast('Preparing export…', 'info');
     window.location.href = `/books/export-all-data/?${params.toString()}`;
@@ -1374,81 +1376,156 @@ function populateDropdowns(data) {
     }
 }
 
-// Filter application functions
-function applyTabFilters(tabName, formId) {
-    const form = document.getElementById(formId);
-    if (!form) {
-        showToast('Filter form not found', 'error');
-        return;
-    }
-    
-    const formData = new FormData(form);
-    const filters = {};
-    let hasFilters = false;
-    
-    for (const [key, value] of formData.entries()) {
-        if (value && value !== '') {
-            hasFilters = true;
-            if (key.endsWith('[]')) {
-                const cleanKey = key.replace('[]', '');
-                if (!filters[cleanKey]) filters[cleanKey] = [];
-                filters[cleanKey].push(value);
-            } else {
-                filters[key] = value;
-            }
-        }
-    }
-    
-    if (hasFilters) {
-        tabFilters[tabName] = filters;
-        updateFilterBadge(tabName, Object.keys(filters).length);
-        showToast('Filters applied successfully', 'success');
-    } else {
-        delete tabFilters[tabName];
-        updateFilterBadge(tabName, 0);
-        showToast('No filters applied', 'info');
-    }
-    
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
-    if (modal) modal.hide();
-    
-    // Reload tab data
-    loadTabData(tabName);
-}
 
-function clearTabFilters(tabName, formId) {
-    const form = document.getElementById(formId);
-    if (form) form.reset();
-    
-    // Clear selectize instances
-    $(`#${formId} select[multiple]`).each(function() {
-        if (this.selectize) {
-            this.selectize.clear();
+// Filter application functions for all tab
+function applyTabFilters(tab, formId) {
+    const $form = $('#' + formId);
+    const filters = {};
+    debugger;
+    // --------------------------------------------------
+    // 1. Collect normal inputs (text, date, single select)
+    // --------------------------------------------------
+    const formData = $form.serializeArray();
+
+    formData.forEach(item => {
+        if (!item.value) return;
+
+        if (item.name.endsWith('[]')) {
+            const key = item.name.replace('[]', '');
+            if (!filters[key]) filters[key] = [];
+            filters[key].push(item.value);
+        } else {
+            filters[item.name] = item.value;
         }
     });
-    
-    delete tabFilters[tabName];
-    updateFilterBadge(tabName, 0);
-    
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
-    if (modal) modal.hide();
-    
-    // Reload tab data
-    loadTabData(tabName);
+    debugger;
+    // --------------------------------------------------
+    // 2. Collect Selectize MULTI-SELECT values properly
+    // --------------------------------------------------
+    $form.find('select[multiple]').each(function () {
+        const name = this.name.replace('[]', '');
+        const selectize = this.selectize;
+
+        if (selectize) {
+            const values = selectize.getValue(); // array
+
+            if (values && values.length > 0) {
+                filters[name] = values;
+            }
+        }
+    });
+    debugger;
+    // --------------------------------------------------
+    // 3. Save filters & update UI
+    // --------------------------------------------------
+    tabFilters[tab] = filters;
+    updateFilterBadge(tab, Object.keys(filters).length);
+
+    $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
+    loadTabData(tab);
 }
 
-function updateFilterBadge(tabName, count) {
-    const badge = $(`.nav-link#${tabName}-tab .badge`);
-    if (count > 0) {
-        badge.removeClass('bg-secondary').addClass('bg-warning text-dark');
-        badge.text(count);
-    } else {
-        badge.removeClass('bg-warning text-dark').addClass('bg-secondary');
-        badge.text('0');
-    }
+function clearTabFilters(tab, formId) {
+    debugger;
+    const $form = $('#' + formId);
+
+    // Reset normal inputs
+    $form[0].reset();
+
+    // Clear selectize multi-selects
+    $form.find('select[multiple]').each(function () {
+        if (this.selectize) {
+            this.selectize.clear(true);
+        }
+    });
+
+    delete tabFilters[tab];
+    $('#' + tab + '-filter-count').text('0');
+
+    $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
+    loadTabData(tab);
 }
+
+
+function updateFilterBadge(tab, count) {
+    $(`#${tab}-filter-count`).text(count);
+}
+
+// Filter application functions
+//function applyTabFilters(tabName, formId) {
+//    const form = document.getElementById(formId);
+//    if (!form) {
+//        showToast('Filter form not found', 'error');
+//        return;
+//    }
+//    
+//    const formData = new FormData(form);
+//    const filters = {};
+//    let hasFilters = false;
+//    
+//    for (const [key, value] of formData.entries()) {
+//        if (value && value !== '') {
+//            hasFilters = true;
+//            if (key.endsWith('[]')) {
+//                const cleanKey = key.replace('[]', '');
+//                if (!filters[cleanKey]) filters[cleanKey] = [];
+//                filters[cleanKey].push(value);
+//            } else {
+//                filters[key] = value;
+//            }
+//        }
+//    }
+//    
+//    if (hasFilters) {
+//        tabFilters[tabName] = filters;
+//        updateFilterBadge(tabName, Object.keys(filters).length);
+//        showToast('Filters applied successfully', 'success');
+//    } else {
+//        delete tabFilters[tabName];
+//        updateFilterBadge(tabName, 0);
+//        showToast('No filters applied', 'info');
+//    }
+//    
+//    // Close modal
+//    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
+//    if (modal) modal.hide();
+//    
+//    // Reload tab data
+//    loadTabData(tabName);
+//}
+//
+//function clearTabFilters(tabName, formId) {
+//    const form = document.getElementById(formId);
+//    if (form) form.reset();
+//    
+//    // Clear selectize instances
+//    $(`#${formId} select[multiple]`).each(function() {
+//        if (this.selectize) {
+//            this.selectize.clear();
+//        }
+//    });
+//    
+//    delete tabFilters[tabName];
+//    updateFilterBadge(tabName, 0);
+//    
+//    // Close modal
+//    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
+//    if (modal) modal.hide();
+//    
+//    // Reload tab data
+//    loadTabData(tabName);
+//}
+//
+//function updateFilterBadge(tabName, count) {
+//    const badge = $(`.nav-link#${tabName}-tab .badge`);
+//    if (count > 0) {
+//        badge.removeClass('bg-secondary').addClass('bg-warning text-dark');
+//        badge.text(count);
+//    } else {
+//        badge.removeClass('bg-warning text-dark').addClass('bg-secondary');
+//        badge.text('0');
+//    }
+//}
 
 // Keyboard shortcuts
 $(document).keydown(function(e) {

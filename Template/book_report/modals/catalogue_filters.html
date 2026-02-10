@@ -55,12 +55,6 @@
                                 <label class="form-label">Subject</label>
                                 <select class="form-control subject-select" name="subject[]" multiple>
                                     <!-- Populated dynamically -->
-                                     <option value="">--Select--</option>
-                                    {% for s in subjects %}
-                                        <option value="{{ s.id }}">
-                                            {{ s.subjectNameEnglish }}
-                                        </option>
-                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
