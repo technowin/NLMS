@@ -4,7 +4,7 @@ from django.utils import timezone
 class IssuedBook(models.Model):
     """Books issued in the mini system"""
     book_rfid = models.CharField(max_length=50, unique=True, primary_key=True)
-    user_id = models.CharField(max_length=50)
+    user_rfid = models.CharField(max_length=50)
     user_name = models.CharField(max_length=100, default="Test User")
     book_title = models.CharField(max_length=200, default="Test Book")
     issue_time = models.DateTimeField(default=timezone.now)
