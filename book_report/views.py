@@ -1155,6 +1155,16 @@ class GetBookOptionsView(ReportBaseView):
                 is_active=1
             ).values('supplier_id', 'supplier_name')
             
+            # Processing Status
+            processing_status = status_master.objects.using(db).filter(
+                is_active=1,status_type="Inventory"
+            ).values('status_id', 'status_name')
+
+            # Current Status
+            current_status = status_master.objects.using(db).filter(
+                is_active=1,status_type="Circulation Status"
+            ).values('status_id', 'status_name')
+
             # Libraries
             libraries = tbl_librarymasterL01.objects.using(db).filter(
                 is_active=1
@@ -1169,6 +1179,8 @@ class GetBookOptionsView(ReportBaseView):
             # Return empty arrays on error
             subjects = []
             statuses = []
+            processing_status = []
+            current_status = []
             material_type = []
             conditions = []
             sources = []
@@ -1180,6 +1192,8 @@ class GetBookOptionsView(ReportBaseView):
         return JsonResponse({
             'subjects': list(subjects),
             'statuses': list(statuses),
+            'processing_status': list(processing_status),
+            'current_status': list(current_status),
             'material_type': list(material_type),
             'conditions': list(conditions),
             'sources': list(sources),
