@@ -1360,6 +1360,12 @@ function populateDropdowns(data) {
     if (data.suppliers?.length) {
         populateSelect('.supplier-select', data.suppliers, 'supplier_id', 'supplier_name');
     }
+    if (data.processing_status?.length) {
+        populateSelect('.processing_status-select', data.processing_status, 'status_id', 'status_name');
+    }
+    if (data.current_status?.length) {
+        populateSelect('.current_status-select', data.current_status, 'status_id', 'status_name');
+    }
     if (data.libraries?.length) {
         populateSelect('.library-select', data.libraries, 'library_code', 'library_name');
     }
