@@ -230,6 +230,7 @@ urlpatterns = [
     # Donwload SOP files
     path('sop/', sop_view, name='sop'),
     path('download-sop/', download_sop, name='download_sop'),
+    path('mini-system/', include('mini_system.urls')),
 
 
     # Media files
