@@ -106,6 +106,7 @@ def Login(request):
     if expired:
         request.session.flush()
         messages.warning(request, 'Your session has expired. Please login again.')
+        return redirect('library_list')
 
     library_code = request.session.get('library_db', None)
     today = date.today()
@@ -462,6 +463,7 @@ def adminLogin(request):
     if expired:
         request.session.flush()
         messages.warning(request, 'Your session has expired. Please login again.')
+        return redirect('library_list')
     
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -586,6 +588,7 @@ def librarianLogin(request):
         # Clear session completely when coming from expired redirect
         request.session.flush()
         messages.warning(request, 'Your session has expired. Please login again.')
+        return redirect('library_list')
 
     library_code = request.session.get('library_db')
 
