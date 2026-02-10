@@ -22,12 +22,7 @@ def library_list(request):
     Db.closeConnection()
     m = Db.get_connection()
     cursor = m.cursor()
-    
     try:
-        if request.session.get('library_db'):
-            return redirect("auto_library_redirect")
-
-        
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
         
@@ -741,18 +736,3 @@ def download_sop(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("library_list")
     
-def auto_library_redirect(request):
-    library_code = request.session.get('library_db')
-
-    if not library_code:
-        return redirect("library_list")
-
-    # 🔥 CRITICAL: re-set session & routing
-    request.session['library_db'] = library_code
-    request.session.modified = True
-    set_current_service(library_code)
-
-    try:
-        return redirect(f"{library_code}:index")
-    except Exception:
-        return redirect("library_list")

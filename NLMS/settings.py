@@ -268,51 +268,20 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 #     'axes.middleware.AxesMiddleware',
 # ]
 
-# MIDDLEWARE = [
-#     'django.middleware.security.SecurityMiddleware',
-#     'middleware.no_cache.NoCacheMiddleware',
-
-#     # ✅ Sessions MUST come first
-#     'django.contrib.sessions.middleware.SessionMiddleware',
-
-#     'django.middleware.common.CommonMiddleware',
-#     'django.middleware.csrf.CsrfViewMiddleware',
-
-#     # ✅ Auth before anything that checks request.user
-#     'django.contrib.auth.middleware.AuthenticationMiddleware',
-
-#     # ✅ NOW your custom session logic
-#     'middleware.auth_flow.AuthFlowGuardMiddleware',
-#     'middleware.session_security.SessionExpiryRedirectMiddleware',
-#     'middleware.session_binding.SessionBindingMiddleware',
-
-#     'django.contrib.messages.middleware.MessageMiddleware',
-#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-#     'django_user_agents.middleware.UserAgentMiddleware',
-
-#     # App / DB / tracking middleware
-#     'administration.middleware.LibraryDatabaseMiddleware',
-#     'L01.middleware.MemberActivityMiddleware',
-#     'Masters.middleware.VisitorTrackingMiddleware',
-
-#     # Optional / security
-#     # 'django_auto_logout.middleware.auto_logout',  # recommended to REMOVE
-#     'axes.middleware.AxesMiddleware',
-# ]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'middleware.no_cache.NoCacheMiddleware',
 
+    # ✅ Sessions MUST come first
     'django.contrib.sessions.middleware.SessionMiddleware',
-
-    # ✅ ADD HERE
-    'middleware.subdomain_library.SubdomainLibraryMiddleware',
 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+
+    # ✅ Auth before anything that checks request.user
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 
+    # ✅ NOW your custom session logic
     'middleware.auth_flow.AuthFlowGuardMiddleware',
     'middleware.session_security.SessionExpiryRedirectMiddleware',
     'middleware.session_binding.SessionBindingMiddleware',
@@ -321,10 +290,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
 
+    # App / DB / tracking middleware
     'administration.middleware.LibraryDatabaseMiddleware',
     'L01.middleware.MemberActivityMiddleware',
     'Masters.middleware.VisitorTrackingMiddleware',
 
+    # Optional / security
+    # 'django_auto_logout.middleware.auto_logout',  # recommended to REMOVE
     'axes.middleware.AxesMiddleware',
 ]
 
