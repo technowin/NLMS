@@ -227,7 +227,6 @@ class BookReportView(ReportBaseView, TemplateView):
             print(f"Error loading filter options: {e}")
         
         context['catalogue_form'] = catalogue_form
-        context['subjects'] = subjects
         context['accession_form'] = accession_form
         context['circulation_form'] = circulation_form
         context['loan_form'] = LoanFilterForm()
@@ -1130,6 +1129,11 @@ class GetBookOptionsView(ReportBaseView):
             statuses = status_master.objects.using(db).filter(
                 is_active=1
             ).values('status_id', 'status_name')
+
+            # Material Type
+            material_type = MaterialTypeMaster.objects.using(db).filter(
+                is_active=1
+            ).values('id', 'materialNameEnglish')
             
             # Conditions
             conditions = ConditionAtEntryMaster.objects.using(db).filter(
@@ -1165,6 +1169,7 @@ class GetBookOptionsView(ReportBaseView):
             # Return empty arrays on error
             subjects = []
             statuses = []
+            material_type = []
             conditions = []
             sources = []
             locations = []
@@ -1175,6 +1180,7 @@ class GetBookOptionsView(ReportBaseView):
         return JsonResponse({
             'subjects': list(subjects),
             'statuses': list(statuses),
+            'material_type': list(material_type),
             'conditions': list(conditions),
             'sources': list(sources),
             'locations': list(locations),

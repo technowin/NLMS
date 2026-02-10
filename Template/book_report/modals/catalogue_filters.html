@@ -66,8 +66,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-control status-select" name="status[]" multiple>
+                                <label class="form-label">Material Type</label>
+                                <select class="form-control material_type-select" name="material_type[]" multiple>
                                     <!-- Populated dynamically -->
                                 </select>
                             </div>
@@ -76,13 +76,14 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" 
-                        onclick="clearTabFilters('catalogue', 'catalogueForm')">
-                    Clear Filters
-                </button>
-                <button type="button" class="btn btn-primary" 
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" 
                         onclick="applyTabFilters('catalogue', 'catalogueForm')">
                     Apply Filters
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" 
+                        onclick="clearTabFilters('catalogue', 'catalogueForm')">
+                    Clear Filters
                 </button>
             </div>
         </div>
