@@ -1038,10 +1038,31 @@
             </div>
         </div>
     {% endif %}
-{% endfor %}   
+{% endfor %} 
 
-    
-
+    {% if messages %}
+        <script>
+            $(document).ready(function() {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                
+                {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags }}',
+                    title: '{{ message.tags|title }}',
+                    text: '{{ message|escapejs }}',
+                    confirmButtonText: 'OK',
+                    background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                    color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                    confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                    customClass: {
+                        popup: 'rounded-4 shadow',
+                        confirmButton: 'btn btn-primary px-4 py-2'
+                    }
+                });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
 
     <script>
         // Open modal
@@ -1075,7 +1096,7 @@
         }
     </script>
 
-   <script>
+    <script>
         // Function to open modal when clicking on book image
         function zoomImage(img) {
             const modal = document.getElementById("zoomModal");
@@ -1285,93 +1306,95 @@
         });
 
     </script>
-  <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            debugger;
-            const desc = document.getElementById("libraryDescription");
-            const btn = document.getElementById("readMoreBtn");
 
-            if (!desc || !btn) return;
+    <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                debugger;
+                const desc = document.getElementById("libraryDescription");
+                const btn = document.getElementById("readMoreBtn");
 
-            const wordCount = desc.innerText.trim().split(/\s+/).length;
+                if (!desc || !btn) return;
 
-            if (wordCount <= 50) {
-                btn.style.display = "none";
-                desc.classList.remove("collapsed"); // show full text if short
-            }
-        });
+                const wordCount = desc.innerText.trim().split(/\s+/).length;
+
+                if (wordCount <= 50) {
+                    btn.style.display = "none";
+                    desc.classList.remove("collapsed"); // show full text if short
+                }
+            });
     </script>
-   <script>
-    function toggleDescription(btn) {
-        const desc = document.getElementById("libraryDescription");
-        const isExpanded = desc.classList.contains("expanded");
-        const textSpan = btn.querySelector('.text');
-        const iconSpan = btn.querySelector('.icon');
 
-        if (isExpanded) {
-            // Collapse
-            desc.classList.remove("expanded");
-            desc.classList.add("collapsed");
-            textSpan.textContent = "Read More";
-            iconSpan.textContent = "↓";
-            iconSpan.style.transform = "rotate(0deg)";
-            btn.classList.remove("expanded");
-        } else {
-            // Expand
-            desc.classList.remove("collapsed");
-            desc.classList.add("expanded");
-            textSpan.textContent = "Show Less";
-            iconSpan.textContent = "↑";
-            btn.classList.add("expanded");
-            
-            // Smooth scroll to show more content
-            desc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    <script>
+        function toggleDescription(btn) {
+            const desc = document.getElementById("libraryDescription");
+            const isExpanded = desc.classList.contains("expanded");
+            const textSpan = btn.querySelector('.text');
+            const iconSpan = btn.querySelector('.icon');
+
+            if (isExpanded) {
+                // Collapse
+                desc.classList.remove("expanded");
+                desc.classList.add("collapsed");
+                textSpan.textContent = "Read More";
+                iconSpan.textContent = "↓";
+                iconSpan.style.transform = "rotate(0deg)";
+                btn.classList.remove("expanded");
+            } else {
+                // Expand
+                desc.classList.remove("collapsed");
+                desc.classList.add("expanded");
+                textSpan.textContent = "Show Less";
+                iconSpan.textContent = "↑";
+                btn.classList.add("expanded");
+                
+                // Smooth scroll to show more content
+                desc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
-    }
 
-    // Modal functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Open modal when rule buttons are clicked
-        document.querySelectorAll('.rule-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const modalId = this.getAttribute('data-modal');
-                const modal = document.querySelector(modalId);
-                if (modal) {
-                    modal.style.display = 'block';
-                    document.body.style.overflow = 'hidden';
-                }
+        // Modal functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Open modal when rule buttons are clicked
+            document.querySelectorAll('.rule-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const modalId = this.getAttribute('data-modal');
+                    const modal = document.querySelector(modalId);
+                    if (modal) {
+                        modal.style.display = 'block';
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
             });
-        });
 
-        // Close modal when X is clicked
-        document.querySelectorAll('.modal .close').forEach(closeBtn => {
-            closeBtn.addEventListener('click', function() {
-                this.closest('.modal').style.display = 'none';
-                document.body.style.overflow = 'auto';
-            });
-        });
-
-        // Close modal when clicking outside
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }
-            });
-        });
-
-        // Add keyboard support for modals
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.style.display = 'none';
+            // Close modal when X is clicked
+            document.querySelectorAll('.modal .close').forEach(closeBtn => {
+                closeBtn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
                     document.body.style.overflow = 'auto';
                 });
-            }
+            });
+
+            // Close modal when clicking outside
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            });
+
+            // Add keyboard support for modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                    });
+                }
+            });
         });
-    });
-</script>
+    </script>
 
     <script>
 
@@ -1391,7 +1414,6 @@
         }
     
     </script>
-
     
     <script>
         function openModal(id) {
@@ -1413,41 +1435,37 @@
                 closeModal(e.target.closest('.modal'));
             }
         });
-</script>
+    </script>
 
+    <script>
+        function changeMainImage(thumb) {
+            const wrapper = thumb.closest('.oz-libraryInd-img-wrapper');
+            const mainImage = wrapper.querySelector('.main-library-image');
 
+            mainImage.src = thumb.src;
 
-<script>
-function changeMainImage(thumb) {
-    const wrapper = thumb.closest('.oz-libraryInd-img-wrapper');
-    const mainImage = wrapper.querySelector('.main-library-image');
+            wrapper.querySelectorAll('.library-thumb').forEach(img => {
+                img.classList.remove('active');
+            });
 
-    mainImage.src = thumb.src;
+            thumb.classList.add('active');
+        }
+    </script>
 
-    wrapper.querySelectorAll('.library-thumb').forEach(img => {
-        img.classList.remove('active');
-    });
+    <script>
+        document.querySelectorAll('.slider-nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const track = document.getElementById(btn.dataset.target);
+                const card = track.querySelector('.upcoming-book-card');
+                if (!card) return;
 
-    thumb.classList.add('active');
-}
-</script>
-
-<script>
-document.querySelectorAll('.slider-nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const track = document.getElementById(btn.dataset.target);
-        const card = track.querySelector('.upcoming-book-card');
-        if (!card) return;
-
-        const scrollAmount = card.offsetWidth + 16;
-        track.scrollBy({
-            left: btn.classList.contains('next-btn') ? scrollAmount : -scrollAmount,
-            behavior: 'smooth'
+                const scrollAmount = card.offsetWidth + 16;
+                track.scrollBy({
+                    left: btn.classList.contains('next-btn') ? scrollAmount : -scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
         });
-    });
-});
-</script>
-
-
+    </script>
 
 {% endblock %}
