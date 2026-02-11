@@ -174,7 +174,10 @@ def service_redirect(request):
 
         # Redirect based on service code
         if service_code == "L01":
-            return redirect("L01:index")
+            # return redirect("L01:index")
+            return redirect('http://vdb.nmmclibrary.in/L01/index')
+            # return redirect('http://127.0.0.1:8000/L01/index')
+            # return redirect('http://3.111.76.175/L01/index')
         elif service_code == "L02":
             return redirect("L02:index")
         else:
@@ -198,16 +201,26 @@ def set_library_session_and_login(request):
         if request.method == 'POST':
             library_code = request.POST.get('library_code')
             library_code_decrypted = dec(library_code)
-            if library_code:
+
+            if library_code_decrypted:
                 request.session['library_db'] = library_code_decrypted
-        return redirect('Login')  # actual login page
+
+                # SIMPLE IF CONDITION
+                if library_code_decrypted == 'L01':
+                    return redirect('http://vdb.nmmclibrary.in/Login')
+                    # return redirect('http://127.0.0.1:8000/Login')
+                    # return redirect('http://3.111.76.175/Login')
+
+                # default login
+                return redirect('Login')
+
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name if tb else 'library_list'
+        fun = tb[0].name if tb else 'set_library_session_and_login'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
-        print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
+
     
 def library_list_index(request):
     Db.closeConnection()
