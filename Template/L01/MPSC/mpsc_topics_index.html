@@ -89,14 +89,8 @@
       transform: translateY(-4px);
     }
 
-    /* ===== Topic Image ===== */
-    .topic-card .topic-img {
-      width: 100%;
-      height: 150px; /* ✅ slightly reduced to fit everything perfectly */
-      {% comment %} object-fit: cover; {% endcomment %}
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
+ 
+    
 
     /* ===== Topic Info ===== */
     .topic-info {
@@ -120,6 +114,7 @@
     /* ===== Fixed Button (Always visible at bottom of card) ===== */
     .topic-btn-container {
       position: absolute;
+      margin-top: 20px;
       bottom: 10px;
       left: 0;
       right: 0;
@@ -145,14 +140,15 @@
     /* ===== Enhanced Topic Image Styling ===== */
     .topic-card .topic-img {
       width: 100%;
-      height: 170px; /* consistent image height */
-      {% comment %} object-fit: cover; /* crops image nicely */ {% endcomment %}
+      height: auto;              /* ✅ allow natural height */
+      max-height: none;          /* ✅ no restriction */
       border-radius: 8px;
       margin-bottom: 10px;
-      border: 1px solid #dbe3ec; /* subtle border for neatness */
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: none;              /* optional */
+      box-shadow: none;          /* optional */
+      display: block;
     }
+
 
     /* Hover effect for professional polish */
     .topic-card:hover .topic-img {
@@ -184,6 +180,75 @@
     .topic-img-container img:empty + .topic-img-container::before {
       display: block;
     }
+
+    .topic-img {
+      max-width: 95%;
+      max-height: 100%;
+      display: block;
+    }
+
+    .topic-img-wrapper {
+      width: 100%;
+      aspect-ratio: 3 / 4;       /* 👈 book-like ratio */
+      background: #f5f7fa;       /* soft neutral background */
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ================= MOBILE RESPONSIVE FIX ================= */
+
+    /* Tablets */
+    @media (max-width: 992px) {
+      .topics-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Large phones */
+    @media (max-width: 768px) {
+      .topics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .topic-card {
+        min-height: auto;
+      }
+
+      .subjects-section .subjects-title {
+        font-size: 1.4rem;
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+      .topics-grid {
+        grid-template-columns: 1fr; /* ✅ single column */
+      }
+
+      .topic-card {
+        padding: 12px;
+      }
+
+      .topic-name {
+        font-size: 0.9rem;
+      }
+
+      .topic-btn {
+        width: 90%;
+        font-size: 0.85rem;
+      }
+
+      /* Remove absolute button on mobile */
+      .topic-btn-container {
+        position: static;
+        margin-top: 12px;
+      }
+    }
+
+
 
 
     {% comment %} /* 🌟 Breadcrumb Styling */
@@ -271,17 +336,20 @@
                       {% for topic in sdata.topics %}
                       <div class="topic-card">
                         {% if topic.topic_image_url %}
-                        <img
-                          src="{{ topic.topic_image_url }}"
-                          alt="{{ topic.topic_name }}"
-                          class="topic-img"
-                        >
+                        <div class="topic-img-wrapper">
+                          <img
+                            src="{{ topic.topic_image_url }}"
+                            alt="{{ topic.topic_name }}"
+                            class="topic-img"
+                          >
+                        </div>
+
                         {% endif %}
                         <div class="topic-info">
                           <p class="topic-name"><strong>{{ topic.topic_name }}</strong></p>
-                          {% if topic.topic_reference %}
+                          {% comment %} {% if topic.topic_reference %}
                           <p class="topic-ref">{{ topic.topic_reference }}</p>
-                          {% endif %}
+                          {% endif %} {% endcomment %}
                         </div>
 
                         <!-- ✅ Fixed Bottom Button -->
@@ -388,7 +456,7 @@
     </script>
 
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% comment %} <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> {% endcomment %}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     {% comment %} {% block extra_javascript %} {% endcomment %}

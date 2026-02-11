@@ -56,137 +56,200 @@
   }
 
   /* ===== Accordion Body ===== */
-  .subjects-section .accordion-body {
-    background-color: #ffffff;
-    padding: 25px;
-    border-radius: 8px;
-  }
+    .subjects-section .accordion-body {
+      background-color: #ffffff;
+      padding: 25px;
+      border-radius: 8px;
+    }
 
-  /* ===== Topics Grid (6 per row, auto-fit layout) ===== */
-  .topics-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr); /* ✅ exactly 6 cards per row */
-    gap: 15px;
-    justify-items: center;
-    align-items: stretch;
-  }
+    /* ===== Topics Grid (6 per row, auto-fit layout) ===== */
+    .topics-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr); /* ✅ exactly 6 cards per row */
+      gap: 15px;
+      justify-items: center;
+      align-items: stretch;
+    }
 
-  /* ===== Topic Card ===== */
-  .topic-card {
-    background-color: #f7f9fc;
-    border: 1px solid #dbe3ec;
-    border-radius: 10px;
-    padding: 10px;
-    width: 100%;
-    text-align: center;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-    position: relative; /* ✅ needed for bottom-fixed button */
-    min-height: 300px; /* ensures consistent height */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
+    /* ===== Topic Card ===== */
+    .topic-card {
+      background-color: #f7f9fc;
+      border: 1px solid #dbe3ec;
+      border-radius: 10px;
+      padding: 10px;
+      width: 100%;
+      text-align: center;
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+      position: relative; /* ✅ needed for bottom-fixed button */
+      min-height: 300px; /* ensures consistent height */
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
 
-  .topic-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0);
-    transform: translateY(-4px);
-  }
+    .topic-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0);
+      transform: translateY(-4px);
+    }
 
-  /* ===== Topic Image ===== */
-  .topic-card .topic-img {
-    width: 100%;
-    height: 150px; /* ✅ slightly reduced to fit everything perfectly */
-    {% comment %} object-fit: cover; {% endcomment %}
-    border-radius: 8px;
-    margin-bottom: 8px;
-  }
+ 
+    
 
-  /* ===== Topic Info ===== */
-  .topic-info {
-    flex-grow: 1; /* pushes button to bottom */
-  }
+    /* ===== Topic Info ===== */
+    .topic-info {
+      flex-grow: 1; /* pushes button to bottom */
+    }
 
-  .topic-name {
-    color: #002b5c;
-    font-weight: bold;
-    font-size: 0.8rem;
-    margin-bottom: 4px;
-  }
+    .topic-name {
+      color: #002b5c;
+      font-weight: bold;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
 
-  .topic-ref {
-    color: #000;
-    font-size: 0.7rem;
-    font-style: italic;
-    margin-bottom: 25px; /* space for bottom button */
-  }
+    .topic-ref {
+      color: #000;
+      font-size: 0.7rem;
+      font-style: italic;
+      margin-bottom: 25px; /* space for bottom button */
+    }
 
-  /* ===== Fixed Button (Always visible at bottom of card) ===== */
-  .topic-btn-container {
-    position: absolute;
-    bottom: 10px;
-    left: 0;
-    right: 0;
-    text-align: center;
-  }
+    /* ===== Fixed Button (Always visible at bottom of card) ===== */
+    .topic-btn-container {
+      position: absolute;
+      margin-top: 20px;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
 
-  .topic-btn {
-    display: inline-block;
-    padding: 6px 14px;
-    background-color: #003366;
-    color: #fff;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.25s ease;
-  }
+    .topic-btn {
+      display: inline-block;
+      padding: 6px 14px;
+      background-color: #003366;
+      color: #fff;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.25s ease;
+    }
 
-  .topic-btn:hover {
-    background-color: #0055aa;
-  }
+    .topic-btn:hover {
+      background-color: #0055aa;
+    }
 
-  /* ===== Enhanced Topic Image Styling ===== */
-  .topic-card .topic-img {
-    width: 100%;
-    height: 170px; /* consistent image height */
-    {% comment %} object-fit: cover; /* crops image nicely */ {% endcomment %}
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #dbe3ec; /* subtle border for neatness */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
+    /* ===== Enhanced Topic Image Styling ===== */
+    .topic-card .topic-img {
+      width: 100%;
+      height: auto;              /* ✅ allow natural height */
+      max-height: none;          /* ✅ no restriction */
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: none;              /* optional */
+      box-shadow: none;          /* optional */
+      display: block;
+    }
 
-  /* Hover effect for professional polish */
-  .topic-card:hover .topic-img {
-    transform: scale(1.03);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  }
 
-  /* Container to handle image alignment and overflow cleanly */
-  .topic-img-container {
-    width: 100%;
-    height: 130px;
-    overflow: hidden;
-    border-radius: 8px;
-    background-color: #f0f4f8; /* fallback background for missing images */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+    /* Hover effect for professional polish */
+    .topic-card:hover .topic-img {
+      transform: scale(1.03);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
 
-  /* Optional placeholder style (if image not found) */
-  .topic-img-container::before {
-    content: "No Image";
-    color: #999;
-    font-size: 0.85rem;
-    font-style: italic;
-    display: none;
-  }
+    /* Container to handle image alignment and overflow cleanly */
+    .topic-img-container {
+      width: 100%;
+      height: 130px;
+      overflow: hidden;
+      border-radius: 8px;
+      background-color: #f0f4f8; /* fallback background for missing images */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  .topic-img-container img:empty + .topic-img-container::before {
-    display: block;
-  }
+    /* Optional placeholder style (if image not found) */
+    .topic-img-container::before {
+      content: "No Image";
+      color: #999;
+      font-size: 0.85rem;
+      font-style: italic;
+      display: none;
+    }
+
+    .topic-img-container img:empty + .topic-img-container::before {
+      display: block;
+    }
+
+    .topic-img {
+      max-width: 95%;
+      max-height: 100%;
+      display: block;
+    }
+
+    .topic-img-wrapper {
+      width: 100%;
+      aspect-ratio: 3 / 4;       /* 👈 book-like ratio */
+      background: #f5f7fa;       /* soft neutral background */
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ================= MOBILE RESPONSIVE FIX ================= */
+
+    /* Tablets */
+    @media (max-width: 992px) {
+      .topics-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Large phones */
+    @media (max-width: 768px) {
+      .topics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .topic-card {
+        min-height: auto;
+      }
+
+      .subjects-section .subjects-title {
+        font-size: 1.4rem;
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+      .topics-grid {
+        grid-template-columns: 1fr; /* ✅ single column */
+      }
+
+      .topic-card {
+        padding: 12px;
+      }
+
+      .topic-name {
+        font-size: 0.9rem;
+      }
+
+      .topic-btn {
+        width: 90%;
+        font-size: 0.85rem;
+      }
+
+      /* Remove absolute button on mobile */
+      .topic-btn-container {
+        position: static;
+        margin-top: 12px;
+      }
+    }
 
 
   {% comment %} /* 🌟 Breadcrumb Styling */
@@ -330,17 +393,19 @@
                   {% for topic in sdata.topics %}
                   <div class="topic-card">
                     {% if topic.topic_image_url %}
-                    <img
-                      src="{{ topic.topic_image_url }}"
-                      alt="{{ topic.topic_name }}"
-                      class="topic-img"
-                    >
+                    <div class="topic-img-wrapper">
+                          <img
+                            src="{{ topic.topic_image_url }}"
+                            alt="{{ topic.topic_name }}"
+                            class="topic-img"
+                          >
+                        </div>
                     {% endif %}
                     <div class="topic-info">
                       <p class="topic-name"><strong>{{ topic.topic_name }}</strong></p>
-                      {% if topic.topic_reference %}
+                      {% comment %} {% if topic.topic_reference %}
                       <p class="topic-ref">{{ topic.topic_reference }}</p>
-                      {% endif %}
+                      {% endif %} {% endcomment %}
                     </div>
 
                     <!-- ✅ Fixed Bottom Button -->
