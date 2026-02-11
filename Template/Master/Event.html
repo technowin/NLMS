@@ -1,0 +1,712 @@
+{% extends "Shared/landingPageLayout.html" %}
+{% load static %}
+
+{% block content %}
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Font: Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+<style>
+    .image-preview-item {
+        transition: transform 0.2s;
+    }
+    .image-preview-item:hover {
+        transform: scale(1.05);
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1.25rem 1.5rem;
+    }
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    /* Initially hide date fields and library field */
+    #libraryField,
+    #singleDateField,
+    #multipleDateField {
+        display: none;
+    }
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="eventForm">
+                        {% csrf_token %}
+                        
+                        <!-- Scope Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Event Scope *</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="radio" name="scope" id="scope_all" value="all" class="form-check-input" 
+                                               {% if is_edit and event.scope == 'all' %}checked{% endif %}>
+                                        <label class="form-check-label" for="scope_all">
+                                            All Libraries
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="radio" name="scope" id="scope_specific" value="specific" class="form-check-input"
+                                               {% if is_edit and event.scope == 'specific' %}checked{% endif %}>
+                                        <label class="form-check-label" for="scope_specific">
+                                            Specific Library
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Library Dropdown (conditionally shown) -->
+                        <div class="mb-4" id="libraryField">
+                            <label for="library" class="form-label">Library *</label>
+                            <select name="library" id="library" class="form-control">
+                                <option value="">Select Library</option>
+                                {% for library in libraries %}
+                                <option value="{{ library.id }}" {% if is_edit and event.library.id == library.id %}selected{% endif %}>
+                                    {{ library.library_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div id="libraryError" class="error-message"></div>
+                        </div>
+
+                        <!-- Event Name -->
+                        <div class="mb-4">
+                            <label for="event_name" class="form-label">Event Name *</label>
+                            <input type="text" name="event_name" id="event_name" class="form-control" 
+                                   value="{% if is_edit %}{{ event.event_name }}{% endif %}" required>
+                            <div id="eventNameError" class="error-message"></div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description *</label>
+                            <textarea name="description" id="description" class="form-control" rows="4" required>
+                                {% if is_edit %}{{ event.description }}{% endif %}
+                            </textarea>
+                            <div id="descriptionError" class="error-message"></div>
+                        </div>
+
+                        <!-- Event Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Event Type *</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input type="radio" name="event_type" id="event_type_single" value="single" 
+                                               class="form-check-input" {% if is_edit and event.event_type == 'single' %}checked{% endif %}>
+                                        <label class="form-check-label" for="event_type_single">
+                                            Single Day
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input type="radio" name="event_type" id="event_type_multiple" value="multiple" 
+                                               class="form-check-input" {% if is_edit and event.event_type == 'multiple' %}checked{% endif %}>
+                                        <label class="form-check-label" for="event_type_multiple">
+                                            Multiple Days
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Fields -->
+                        <div class="row mb-4">
+                            <!-- Single Date -->
+                            <div class="col-md-4" id="singleDateField">
+                                <label for="date" class="form-label">Date *</label>
+                                <input type="date" name="date" id="date" class="form-control" 
+                                       value="{% if is_edit and event.date %}{{ event.date|date:'Y-m-d' }}{% endif %}">
+                                <div id="dateError" class="error-message"></div>
+                            </div>
+                            
+                            <!-- Multiple Dates -->
+                            <div class="col-md-8" id="multipleDateField">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="from_date" class="form-label">From Date *</label>
+                                        <input type="date" name="from_date" id="from_date" class="form-control" 
+                                               value="{% if is_edit and event.from_date %}{{ event.from_date|date:'Y-m-d' }}{% endif %}">
+                                        <div id="fromDateError" class="error-message"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="to_date" class="form-label">To Date *</label>
+                                        <input type="date" name="to_date" id="to_date" class="form-control" 
+                                               value="{% if is_edit and event.to_date %}{{ event.to_date|date:'Y-m-d' }}{% endif %}">
+                                        <div id="toDateError" class="error-message"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Time and Location -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="start_time" class="form-label">Start Time *</label>
+                                <input type="time" name="start_time" id="start_time" class="form-control" 
+                                       value="{% if is_edit and event.start_time %}{{ event.start_time|time:'H:i' }}{% endif %}" required>
+                                <div id="startTimeError" class="error-message"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="end_time" class="form-label">End Time *</label>
+                                <input type="time" name="end_time" id="end_time" class="form-control" 
+                                       value="{% if is_edit and event.end_time %}{{ event.end_time|time:'H:i' }}{% endif %}" required>
+                                <div id="endTimeError" class="error-message"></div>
+                            </div>
+                            <div class="col-md-8">
+                                <label for="location" class="form-label">Location *</label>
+                                <textarea name="location" id="location" class="form-control" rows="3" required>
+                                    {% if is_edit %}{{ event.location }}{% endif %}
+                                </textarea>
+                                <div id="locationError" class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <!-- Images Upload -->
+                       <!-- Images Upload section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Event Images</label>
+                            <input type="file" name="images" id="images" class="form-control" 
+                                multiple accept="image/*">
+                            <small class="text-muted">Max file size: 4 MB. Only images allowed. You can select multiple images.</small>
+                            
+                            <!-- Image Preview Area -->
+                            <div id="imagePreview" class="mt-3 d-flex flex-wrap gap-2">
+                                {% if is_edit and existing_images %}
+                                    {% for img in existing_images %}
+                                    <div class="image-preview-item position-relative" data-image-id="{{ img.id }}">
+                                        {% if img.url %}
+                                        <img src="{{ img.url }}" alt="Existing Image" 
+                                            class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                                        {% else %}
+                                        <div class="img-thumbnail d-flex align-items-center justify-content-center" 
+                                            style="width: 100px; height: 100px; background-color: #f8f9fa;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 remove-existing-image" 
+                                                style="transform: translate(50%, -50%); font-size: 0.8rem; padding: 0.1rem 0.3rem;">
+                                            ×
+                                        </button>
+                                        <input type="hidden" name="existing_images" value="{{ img.id }}">
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div id="imagesError" class="error-message"></div>
+                        </div>
+
+                        <!-- PDF Upload section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Event PDFs</label>
+                            <input type="file" name="pdfs" id="pdfs" class="form-control" 
+                                multiple accept=".pdf">
+                            <small class="text-muted">Max file size: 4 MB. Only PDF files allowed. You can select multiple PDFs.</small>
+                            
+                            <!-- PDF Preview Area -->
+                            <div id="pdfPreview" class="mt-3">
+                                {% if is_edit and existing_pdfs %}
+                                    <div class="list-group">
+                                        {% for pdf in existing_pdfs %}
+                                        <div class="list-group-item" data-pdf-id="{{ pdf.id }}">
+                                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                            {{ pdf.filename }}
+                                            <span class="badge bg-secondary ms-2">Existing</span>
+                                            {% if pdf.url %}
+                                            <a href="{{ pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary float-end me-2">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger float-end remove-existing-pdf">
+                                                <i class="bi bi-trash"></i> Remove
+                                            </button>
+                                            <input type="hidden" name="existing_pdfs" value="{{ pdf.id }}">
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div id="pdfsError" class="error-message"></div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'event_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if is_edit %}Update{% else %}Create{% endif %} Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to show/hide library field based on scope selection
+    function toggleLibraryField() {
+        const libraryField = document.getElementById('libraryField');
+        const scopeRadios = document.querySelectorAll('input[name="scope"]');
+        let selectedScope = '';
+        
+        // Find selected scope
+        scopeRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedScope = radio.value;
+            }
+        });
+        
+        // Show/hide library field
+        if (selectedScope === 'specific') {
+            libraryField.style.display = 'block';
+            document.getElementById('library').required = true;
+        } else {
+            libraryField.style.display = 'none';
+            document.getElementById('library').required = false;
+        }
+    }
+    
+    // Function to show/hide date fields based on event type
+    function toggleDateFields() {
+        const singleDateField = document.getElementById('singleDateField');
+        const multipleDateField = document.getElementById('multipleDateField');
+        const eventTypeRadios = document.querySelectorAll('input[name="event_type"]');
+        let selectedEventType = '';
+        
+        // Find selected event type
+        eventTypeRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedEventType = radio.value;
+            }
+        });
+        
+        // Show/hide appropriate date fields
+        if (selectedEventType === 'single') {
+            singleDateField.style.display = 'block';
+            multipleDateField.style.display = 'none';
+            
+            // Set required attributes
+            document.getElementById('date').required = true;
+            document.getElementById('from_date').required = false;
+            document.getElementById('to_date').required = false;
+        } else if (selectedEventType === 'multiple') {
+            singleDateField.style.display = 'none';
+            multipleDateField.style.display = 'block';
+            
+            // Set required attributes
+            document.getElementById('date').required = false;
+            document.getElementById('from_date').required = true;
+            document.getElementById('to_date').required = true;
+        }
+    }
+    
+    // Attach event listeners to scope radio buttons
+    const scopeRadios = document.querySelectorAll('input[name="scope"]');
+    scopeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleLibraryField);
+    });
+    
+    // Attach event listeners to event type radio buttons
+    const eventTypeRadios = document.querySelectorAll('input[name="event_type"]');
+    eventTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleDateFields);
+    });
+    
+    // Initialize the form state
+    toggleLibraryField();
+    toggleDateFields();
+    
+    // Image preview functionality
+    const imageInput = document.getElementById('images');
+    if (imageInput) {
+        imageInput.addEventListener('change', function(event) {
+            previewImages(event);
+        });
+    }
+    
+    // PDF preview functionality
+    const pdfInput = document.getElementById('pdfs');
+    if (pdfInput) {
+        pdfInput.addEventListener('change', function(event) {
+            previewPDFs(event);
+        });
+    }
+    
+    // Remove existing image
+    document.querySelectorAll('.remove-existing-image').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = this.closest('.image-preview-item');
+            const imageId = container.dataset.imageId;
+            
+            // Create a hidden input to mark this image for deletion
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete_images';
+            deleteInput.value = imageId;
+            document.getElementById('eventForm').appendChild(deleteInput);
+            
+            // Remove the container
+            container.remove();
+        });
+    });
+    
+    // Remove existing PDF
+    document.querySelectorAll('.remove-existing-pdf').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = this.closest('.list-group-item');
+            const pdfId = container.dataset.pdfId;
+            
+            // Create a hidden input to mark this PDF for deletion
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete_pdfs';
+            deleteInput.value = pdfId;
+            document.getElementById('eventForm').appendChild(deleteInput);
+            
+            // Remove the container
+            container.remove();
+        });
+    });
+    
+    // Form validation
+    document.getElementById('eventForm').addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Clear all error messages
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.textContent = '';
+        });
+        
+        // Validate scope
+        const scopeSelected = document.querySelector('input[name="scope"]:checked');
+        if (!scopeSelected) {
+            document.getElementById('libraryError').textContent = 'Please select event scope';
+            isValid = false;
+        }
+        
+        // Validate library if scope is specific
+        if (scopeSelected && scopeSelected.value === 'specific') {
+            const library = document.getElementById('library');
+            if (!library.value) {
+                document.getElementById('libraryError').textContent = 'Please select a library for specific events';
+                isValid = false;
+            }
+        }
+        
+        // Validate event name
+        const eventName = document.getElementById('event_name');
+        if (!eventName.value.trim()) {
+            document.getElementById('eventNameError').textContent = 'Event name is required';
+            isValid = false;
+        }
+        
+        // Validate description
+        const description = document.getElementById('description');
+        if (!description.value.trim()) {
+            document.getElementById('descriptionError').textContent = 'Description is required';
+            isValid = false;
+        }
+        
+        // Validate event type
+        const eventTypeSelected = document.querySelector('input[name="event_type"]:checked');
+        if (!eventTypeSelected) {
+            // Show error near date fields
+            document.getElementById('dateError').textContent = 'Please select event type';
+            document.getElementById('fromDateError').textContent = 'Please select event type';
+            isValid = false;
+        }
+        
+        // Validate dates based on event type
+        if (eventTypeSelected) {
+            if (eventTypeSelected.value === 'single') {
+                const date = document.getElementById('date');
+                if (!date.value) {
+                    document.getElementById('dateError').textContent = 'Date is required for single day events';
+                    isValid = false;
+                }
+            } else if (eventTypeSelected.value === 'multiple') {
+                const fromDate = document.getElementById('from_date');
+                const toDate = document.getElementById('to_date');
+                
+                if (!fromDate.value || !toDate.value) {
+                    document.getElementById('fromDateError').textContent = 'Both dates are required for multiple day events';
+                    isValid = false;
+                } else if (new Date(fromDate.value) > new Date(toDate.value)) {
+                    document.getElementById('toDateError').textContent = 'To Date must be after From Date';
+                    isValid = false;
+                }
+            }
+        }
+        
+        // Validate time
+        const startTime = document.getElementById('start_time');
+        const endTime = document.getElementById('end_time');
+        if (!startTime.value || !endTime.value) {
+            document.getElementById('startTimeError').textContent = 'Both start and end time are required';
+            isValid = false;
+        } else if (startTime.value >= endTime.value) {
+            document.getElementById('endTimeError').textContent = 'End time must be after start time';
+            isValid = false;
+        }
+        
+        // Validate location
+        const location = document.getElementById('location');
+        if (!location.value.trim()) {
+            document.getElementById('locationError').textContent = 'Location is required';
+            isValid = false;
+        }
+        
+        // Validate file sizes
+        const imageFiles = document.getElementById('images').files;
+        for (let file of imageFiles) {
+            if (file.size > 4 * 1024 * 1024) {
+                document.getElementById('imagesError').textContent = `${file.name} exceeds 4MB size limit`;
+                isValid = false;
+                break;
+            }
+            if (!file.type.startsWith('image/')) {
+                document.getElementById('imagesError').textContent = `${file.name} is not an image file`;
+                isValid = false;
+                break;
+            }
+        }
+        
+        const pdfFiles = document.getElementById('pdfs').files;
+        for (let file of pdfFiles) {
+            if (file.size > 4 * 1024 * 1024) {
+                document.getElementById('pdfsError').textContent = `${file.name} exceeds 4MB size limit`;
+                isValid = false;
+                break;
+            }
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                document.getElementById('pdfsError').textContent = `${file.name} is not a PDF file`;
+                isValid = false;
+                break;
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+});
+
+// Image preview function
+function previewImages(event) {
+    const preview = document.getElementById('imagePreview');
+    const files = event.target.files;
+    
+    // Clear only the "new" previews (ones added in this session), 
+    // but keep "existing" ones (from database) AND newly uploaded previews from previous selections
+    
+    // Find all preview items
+    const allPreviewItems = preview.querySelectorAll('.image-preview-item');
+    
+    // Only remove "new" previews that were added in previous selections (not "existing" from DB)
+    allPreviewItems.forEach(item => {
+        // Check if this is a "new" preview (not from database)
+        const isExistingFromDB = item.querySelector('.badge.bg-secondary'); // Has "Existing" badge
+        const isNewPreview = item.querySelector('.remove-new-image'); // Has new image remove button
+        
+        // Remove only if it's a new preview (has remove-new-image button)
+        if (!isExistingFromDB && isNewPreview) {
+            item.remove();
+        }
+    });
+    
+    // Add new previews
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            // Create a unique ID for this new file preview
+            const uniqueId = 'new_' + Date.now() + '_' + i;
+            
+            const container = document.createElement('div');
+            container.className = 'image-preview-item position-relative d-inline-block me-2 mb-2';
+            container.setAttribute('data-file-id', uniqueId);
+            container.innerHTML = `
+                <img src="${e.target.result}" class="img-thumbnail" 
+                     style="width: 100px; height: 100px; object-fit: cover;">
+                
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 remove-new-image"
+                        data-file-id="${uniqueId}"
+                        style="transform: translate(50%, -50%); font-size: 0.8rem; padding: 0.1rem 0.3rem;">
+                    ×
+                </button>
+            `;
+            
+            // Add remove functionality for new images
+            const removeBtn = container.querySelector('.remove-new-image');
+            removeBtn.addEventListener('click', function() {
+                const fileId = this.getAttribute('data-file-id');
+                removeFileFromInput('images', fileId);
+                container.remove();
+            });
+            
+            preview.appendChild(container);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+// Function to remove file from input by index
+// Function to remove file from input by unique ID
+function removeFileFromInput(inputName, fileId) {
+    const input = document.getElementById(inputName);
+    if (!input || !input.files) return;
+    
+    // Find the index of the file to remove by matching unique IDs
+    // We need to track which file corresponds to which preview
+    const dataTransfer = new DataTransfer();
+    let removed = false;
+    
+    // Track all new file previews and their indices
+    const newPreviews = document.querySelectorAll(`.image-preview-item[data-file-id^="new_"]`);
+    const fileIdToIndexMap = {};
+    
+    // Create mapping of file IDs to indices
+    newPreviews.forEach((preview, index) => {
+        const id = preview.getAttribute('data-file-id');
+        if (id && id.startsWith('new_')) {
+            fileIdToIndexMap[id] = index;
+        }
+    });
+    
+    // Get the index to remove from the map
+    const indexToRemove = fileIdToIndexMap[fileId];
+    
+    if (indexToRemove !== undefined) {
+        // Add all files except the one at the indexToRemove
+        for (let i = 0; i < input.files.length; i++) {
+            if (i !== indexToRemove) {
+                dataTransfer.items.add(input.files[i]);
+            }
+        }
+        
+        // Update the input files
+        input.files = dataTransfer.files;
+        
+        // Update the data-file-id attributes for remaining previews
+        updateNewPreviewIds(inputName);
+    }
+}
+
+// Function to update IDs of new previews after removal
+function updateNewPreviewIds(inputName) {
+    const input = document.getElementById(inputName);
+    const newPreviews = document.querySelectorAll(`.image-preview-item[data-file-id^="new_"]`);
+    
+    // Reassign IDs based on current order
+    newPreviews.forEach((preview, index) => {
+        const newId = 'new_' + Date.now() + '_' + index;
+        preview.setAttribute('data-file-id', newId);
+        const removeBtn = preview.querySelector('.remove-new-image');
+        if (removeBtn) {
+            removeBtn.setAttribute('data-file-id', newId);
+        }
+    });
+}
+
+// PDF preview function
+function previewPDFs(event) {
+    const preview = document.getElementById('pdfPreview');
+    const files = event.target.files;
+    
+    // Clear only new previews
+    const existingItems = preview.querySelectorAll('.list-group-item');
+    existingItems.forEach(item => {
+        if (!item.querySelector('.badge.bg-secondary')) {
+            item.remove();
+        }
+    });
+    
+    // Create a container for new PDFs if it doesn't exist
+    let newPDFsContainer = preview.querySelector('.new-pdfs-container');
+    if (!newPDFsContainer) {
+        newPDFsContainer = document.createElement('div');
+        newPDFsContainer.className = 'list-group new-pdfs-container';
+        preview.appendChild(newPDFsContainer);
+    } else {
+        // Clear previous new previews
+        newPDFsContainer.innerHTML = '';
+    }
+    
+    // Add new previews
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        const item = document.createElement('div');
+        item.className = 'list-group-item mb-2';
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                    <span class="text-truncate" style="max-width: 200px; display: inline-block;">
+                        ${file.name}
+                    </span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-new-pdf" data-file-index="${i}">
+                    <i class="bi bi-trash"></i> Remove
+                </button>
+            </div>
+        `;
+        
+        // Add event listener to remove button
+        const removeBtn = item.querySelector('.remove-new-pdf');
+        removeBtn.addEventListener('click', function() {
+            const fileIndex = parseInt(this.dataset.fileIndex);
+            removeFileFromInput('pdfs', fileIndex);
+            item.remove();
+        });
+        
+        newPDFsContainer.appendChild(item);
+    }
+}
+</script>
+{% endblock %} 

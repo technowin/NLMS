@@ -114,23 +114,26 @@ class FileStorageService:
             return self._normalize_path_for_db(saved_path)
     
     def _save_local(self, file, save_path):
-        """
-        Save file to local filesystem (used by local, test, and as fallback)
-        """
-        # Build full local path
-        full_path = os.path.join(settings.MEDIA_ROOT, save_path)
-        print(f"[FileStorageService] Saving locally: {full_path}")
-        
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        
-        # Save file
-        with open(full_path, 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-        
-        print(f"[FileStorageService] Saved locally: {save_path}")
-        return save_path
+        try:
+            """
+            Save file to local filesystem (used by local, test, and as fallback)
+            """
+            # Build full local path
+            full_path = os.path.join(settings.MEDIA_ROOT, save_path)
+            print(f"[FileStorageService] Saving locally: {full_path}")
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            
+            # Save file
+            with open(full_path, 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+            
+            print(f"[FileStorageService] Saved locally: {save_path}")
+            return save_path
+        except Exception as e:
+            print(f"Error: {e}")
     
     def get_file_url(self, file_path):
         """
