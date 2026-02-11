@@ -28,13 +28,27 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Processing Status</label>
-                                <select class="form-control status-select" name="processing_status[]" multiple></select>
+                                <select class="form-control processing_status-select" name="processing_status[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in processing_status %}
+                                        <option value="{{ s.status_id }}">
+                                            {{ s.status_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Shelf Location</label>
-                                <select class="form-control location-select" name="shelf_location[]" multiple></select>
+                                <select class="form-control location-select" name="shelf_location[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in slocationss %}
+                                        <option value="{{ s.location_id }}">
+                                            {{ s.location_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -43,7 +57,14 @@
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label class="form-label">Current Status</label>
-                                <select class="form-control status-select" name="current_status[]" multiple></select>
+                                <select class="form-control current_status-select" name="current_status[]" multiple>
+                                    <option value="">--Select--</option>
+                                    {% for s in current_status %}
+                                        <option value="{{ s.status_id }}">
+                                            {{ s.status_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>

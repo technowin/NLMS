@@ -238,12 +238,12 @@ def Login(request):
                     user.session_key = None
                     user.save()
 
-        import secrets
-        from django.contrib.auth import login as log
-        log(request, user)
-        token = secrets.token_hex(32)
-        request.session["login_token"] = token
-        user.session_key = token
+        # import secrets
+        # from django.contrib.auth import login as log
+        # log(request, user)
+        # token = secrets.token_hex(32)
+        # request.session["login_token"] = token
+        # user.session_key = token
         user.is_logged_in = True
         user.last_activity = timezone.now()
         user.save()

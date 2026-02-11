@@ -222,10 +222,70 @@ class BookReportView(ReportBaseView, TemplateView):
             catalogues = BookCatalog.objects.using(db).filter(status_id=1).values_list('cat_ref_num', 'title')[:100]
             review_form.fields['catalogue'].choices = [(c[0], c[1]) for c in catalogues]
             return_log_form.fields['catalog'].choices = [(c[0], c[1]) for c in catalogues]
+
+            
             
         except Exception as e:
             print(f"Error loading filter options: {e}")
+
+        # Subjects for catalogue filter
+        subjects = SubjectTypeMaster.objects.using(db).filter(
+            is_active=1
+        ).values('id', 'subjectNameEnglish')
+        # Material Type
+        material_type = MaterialTypeMaster.objects.using(db).filter(
+            is_active=1
+        ).values('id', 'materialNameEnglish')
         
+        # Conditions
+        conditions = ConditionAtEntryMaster.objects.using(db).filter(
+            is_active=1
+        ).values('condition_id', 'condition_at_entry')
+        
+        # Funding sources
+        sources = FundingSourceMaster.objects.using(db).filter(
+            is_active=1
+        ).values('source_id', 'funding_source_name')
+        
+        # Locations
+        locations = ResourceLocationMaster.objects.using(db).filter(
+            is_active=1
+        ).values('location_id', 'location_name')
+        
+        # Suppliers
+        suppliers = SupplierMaster.objects.using(db).filter(
+            is_active=1
+        ).values('supplier_id', 'supplier_name')
+        
+        # Processing Status
+        processing_status = status_master.objects.using(db).filter(
+            is_active=1,status_type="Inventory"
+        ).values('status_id', 'status_name')
+        # Current Status
+        current_status = status_master.objects.using(db).filter(
+            is_active=1,status_type="Circulation Status"
+        ).values('status_id', 'status_name')
+        # Libraries
+        libraries = tbl_librarymasterL01.objects.using(db).filter(
+            is_active=1
+        ).values('library_code', 'library_name')
+        
+        # Catalogues for review filter
+        catalogues = BookCatalog.objects.using(db).filter(
+            status_id=1
+        ).values('cat_ref_num', 'title')[:100]
+
+        context['subjects'] = subjects
+        context['material_type'] = material_type
+        context['conditions'] = conditions
+        context['sources'] = sources
+        context['locations'] = locations
+        context['suppliers'] = suppliers
+        context['processing_status'] = processing_status
+        context['current_status'] = current_status
+        context['libraries'] = libraries
+        context['catalogues '] = catalogues
+
         context['catalogue_form'] = catalogue_form
         context['accession_form'] = accession_form
         context['circulation_form'] = circulation_form
@@ -465,14 +525,14 @@ class TabDataView(ReportBaseView):
         # Apply filters
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(acquisition_date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(acquisition_date__lte=to_date)
             except:
                 pass
@@ -562,14 +622,14 @@ class TabDataView(ReportBaseView):
         # Apply filters
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(date_processed__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(date_processed__lte=to_date)
             except:
                 pass
@@ -637,28 +697,28 @@ class TabDataView(ReportBaseView):
         # Apply date filters
         if filters.get('issue_from_date'):
             try:
-                issue_from_date = datetime.strptime(filters['issue_from_date'], '%Y-%m-%d').date()
+                issue_from_date = parse_month_start(filters['issue_from_date']) 
                 qs = qs.filter(issue_date__gte=issue_from_date)
             except:
                 pass
         
         if filters.get('issue_to_date'):
             try:
-                issue_to_date = datetime.strptime(filters['issue_to_date'], '%Y-%m-%d').date()
+                issue_to_date = parse_month_start(filters['issue_to_date'])
                 qs = qs.filter(issue_date__lte=issue_to_date)
             except:
                 pass
         
         if filters.get('due_from_date'):
             try:
-                due_from_date = datetime.strptime(filters['due_from_date'], '%Y-%m-%d').date()
+                due_from_date = parse_month_start(filters['due_from_date']) 
                 qs = qs.filter(due_date__gte=due_from_date)
             except:
                 pass
         
         if filters.get('due_to_date'):
             try:
-                due_to_date = datetime.strptime(filters['due_to_date'], '%Y-%m-%d').date()
+                due_to_date = parse_month_start(filters['due_to_date']) 
                 qs = qs.filter(due_date__lte=due_to_date)
             except:
                 pass
@@ -751,42 +811,42 @@ class TabDataView(ReportBaseView):
         # Apply all date filters
         if filters.get('issue_from_date'):
             try:
-                issue_from_date = datetime.strptime(filters['issue_from_date'], '%Y-%m-%d').date()
+                issue_from_date = parse_month_start(filters['issue_from_date']) 
                 qs = qs.filter(issue_date__gte=issue_from_date)
             except:
                 pass
         
         if filters.get('issue_to_date'):
             try:
-                issue_to_date = datetime.strptime(filters['issue_to_date'], '%Y-%m-%d').date()
+                issue_to_date = parse_month_start(filters['issue_to_date']) 
                 qs = qs.filter(issue_date__lte=issue_to_date)
             except:
                 pass
         
         if filters.get('due_from_date'):
             try:
-                due_from_date = datetime.strptime(filters['due_from_date'], '%Y-%m-%d').date()
+                due_from_date = parse_month_start(filters['due_from_date']) 
                 qs = qs.filter(due_date__gte=due_from_date)
             except:
                 pass
         
         if filters.get('due_to_date'):
             try:
-                due_to_date = datetime.strptime(filters['due_to_date'], '%Y-%m-%d').date()
+                due_to_date = parse_month_start(filters['due_to_date']) 
                 qs = qs.filter(due_date__lte=due_to_date)
             except:
                 pass
         
         if filters.get('return_from_date'):
             try:
-                return_from_date = datetime.strptime(filters['return_from_date'], '%Y-%m-%d').date()
+                return_from_date = parse_month_start(filters['return_from_date'])
                 qs = qs.filter(return_date__gte=return_from_date)
             except:
                 pass
         
         if filters.get('return_to_date'):
             try:
-                return_to_date = datetime.strptime(filters['return_to_date'], '%Y-%m-%d').date()
+                return_to_date = parse_month_start(filters['return_to_date'])
                 qs = qs.filter(return_date__lte=return_to_date)
             except:
                 pass
@@ -987,14 +1047,14 @@ class TabDataView(ReportBaseView):
         # Apply filters
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(created_at__date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(created_at__date__lte=to_date)
             except:
                 pass
@@ -1039,14 +1099,14 @@ class TabDataView(ReportBaseView):
         
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(created_at__date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(created_at__date__lte=to_date)
             except:
                 pass
@@ -1082,14 +1142,14 @@ class TabDataView(ReportBaseView):
         
         if filters.get('from_date'):
             try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
+                from_date = parse_month_start(filters['from_date']) 
                 qs = qs.filter(created_at__date__gte=from_date)
             except:
                 pass
         
         if filters.get('to_date'):
             try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
+                to_date = parse_month_start(filters['to_date']) 
                 qs = qs.filter(created_at__date__lte=to_date)
             except:
                 pass
@@ -1155,6 +1215,16 @@ class GetBookOptionsView(ReportBaseView):
                 is_active=1
             ).values('supplier_id', 'supplier_name')
             
+            # Processing Status
+            processing_status = status_master.objects.using(db).filter(
+                is_active=1,status_type="Inventory"
+            ).values('status_id', 'status_name')
+
+            # Current Status
+            current_status = status_master.objects.using(db).filter(
+                is_active=1,status_type="Circulation Status"
+            ).values('status_id', 'status_name')
+
             # Libraries
             libraries = tbl_librarymasterL01.objects.using(db).filter(
                 is_active=1
@@ -1169,6 +1239,8 @@ class GetBookOptionsView(ReportBaseView):
             # Return empty arrays on error
             subjects = []
             statuses = []
+            processing_status = []
+            current_status = []
             material_type = []
             conditions = []
             sources = []
@@ -1180,6 +1252,8 @@ class GetBookOptionsView(ReportBaseView):
         return JsonResponse({
             'subjects': list(subjects),
             'statuses': list(statuses),
+            'processing_status': list(processing_status),
+            'current_status': list(current_status),
             'material_type': list(material_type),
             'conditions': list(conditions),
             'sources': list(sources),

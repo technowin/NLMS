@@ -99,172 +99,188 @@ from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
 from NLMS.access_control import no_direct_access
 
-@no_direct_access
 def index(request):
-    # Get the library code from session
-    library_code = request.session.get('library_db', None)
+    Db.closeConnection()
+    m = Db.get_connection()
+    cursor = m.cursor()
+    try:
+        # Get the library code from session
+        library_code = request.session.get('library_db', None)
 
-    if library_code:
-        library_details = LibraryMaster.objects.using('default').filter(
-            is_active=1, 
-            library_code=library_code
-        )
+        if library_code:
+                
+            library_details = LibraryMaster.objects.using('default').filter(
+                is_active=1, 
+                library_code=library_code
+            )
 
-        for lilo in library_details:
+            for lilo in library_details:
 
-            encrypted_library_code = enc(lilo.library_code)
-            lilo.libraries = encrypted_library_code
-            
-            image_urls = []
+                encrypted_library_code = enc(lilo.library_code)
+                lilo.libraries = encrypted_library_code
+                
+                image_urls = []
 
-            if lilo.image_url:
-                image_paths = [p.strip() for p in lilo.image_url.split(",") if p.strip()]
-                for path in image_paths:
-                    image_urls.append(file_storage_service.get_file_url(path))
+                if lilo.image_url:
+                    image_paths = [p.strip() for p in lilo.image_url.split(",") if p.strip()]
+                    for path in image_paths:
+                        image_urls.append(file_storage_service.get_file_url(path))
 
-            # ✅ attach list to object
-            lilo.image_urls = image_urls
+                # ✅ attach list to object
+                lilo.image_urls = image_urls
 
-            # ✅ first image (for big preview)
-            lilo.main_image = image_urls[0] if image_urls else ""
-            lilo.library_address = ""
-            if lilo.location:
-                lilo.library_address = lilo.location.address or ""
+                # ✅ first image (for big preview)
+                lilo.main_image = image_urls[0] if image_urls else ""
+                lilo.library_address = ""
+                if lilo.location:
+                    lilo.library_address = lilo.location.address or ""
 
+                # -------------------------------------------
+                # FETCH RECENT 5 BOOKS
+                # -------------------------------------------
+                books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
+
+                lilo.books = [
+                    {
+                        "title": book.title or "Untitled",
+                        "subtitle": book.subtitle or "",
+                        "author": book.author or "Unknown",
+                        "publisher": book.publisher or "",
+                        "isbn_issn": book.isbn_issn or "",
+                        "edition": book.edition or "",
+                        "publication_place": book.publication_place or "",
+                        "year_of_publication": book.year_of_publication or "N/A",
+                        "pages": book.pages or "",
+                        "language": book.language or "Unknown",
+                        "front_page_photo": file_storage_service.get_file_url(book.front_page_photo) if book.front_page_photo else "",
+                        "last_page_photo": file_storage_service.get_file_url(book.last_page_photo) if book.last_page_photo else "",
+                        "remarks": book.remarks or "",
+                        "description": book.remarks or "No description available.",
+                        "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
+                        "encrypted_cat_ref_num": enc(str(book.cat_ref_num)),
+                    }
+                    for book in books
+                ]
+
+                # -------------------------------------------
+                # FETCH RECENT 5 EBOOKS
+                # -------------------------------------------
+                ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
+
+                lilo.ebooks = [
+                    {
+                        "eb_title": ebook.eb_title or "Untitled",
+                        "eb_subtitle": ebook.eb_subtitle or "",
+                        "eb_author": ebook.eb_author or "Unknown",
+                        "eb_publisher": ebook.eb_publisher or "",
+                        "eb_isbn_issn": ebook.eb_isbn_issn or "",
+                        "eb_edition": ebook.eb_edition or "",
+                        "eb_publication_place": ebook.eb_publication_place or "",
+                        "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
+                        "eb_pages": ebook.eb_pages or "",
+                        "eb_language": ebook.eb_language or "Unknown",
+                        "eb_front_page_photo": file_storage_service.get_file_url(ebook.eb_front_page_photo) if ebook.eb_front_page_photo else "",
+                        "eb_last_page_photo": file_storage_service.get_file_url(ebook.eb_last_page_photo) if ebook.eb_last_page_photo else "",
+                        "remarks": ebook.remarks or "",
+                        "description": ebook.eb_keywords or "No description available.",
+                        "eb_pdf_url": ebook.eb_pdf_url or "",
+                        "encrypted_ebook_id": enc(str(ebook.ebook_id)),
+                        "encrypted_pdf_url": enc(ebook.eb_pdf_url or ""),
+                    }
+                    for ebook in ebooks
+                ]
+
+            library = library_details.first()
+            library = library_details.select_related('location').first()
+
+            library_address = ""
+            if library and library.location:
+                library_address = library.location.address or ""
+            library_name = library_details.first().library_name if library_details.exists() else ""
+            # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
+            library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
+
+        else:
             # -------------------------------------------
-            # FETCH RECENT 5 BOOKS
+            # WHEN NO LIBRARY IS SELECTED
             # -------------------------------------------
-            books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
+            library_details = LibraryMaster.objects.using('default').filter(is_active=1)
 
-            lilo.books = [
-                {
-                    "title": book.title or "Untitled",
-                    "subtitle": book.subtitle or "",
-                    "author": book.author or "Unknown",
-                    "publisher": book.publisher or "",
-                    "isbn_issn": book.isbn_issn or "",
-                    "edition": book.edition or "",
-                    "publication_place": book.publication_place or "",
-                    "year_of_publication": book.year_of_publication or "N/A",
-                    "pages": book.pages or "",
-                    "language": book.language or "Unknown",
-                    "front_page_photo": file_storage_service.get_file_url(book.front_page_photo) if book.front_page_photo else "",
-                    "last_page_photo": file_storage_service.get_file_url(book.last_page_photo) if book.last_page_photo else "",
-                    "remarks": book.remarks or "",
-                    "description": book.remarks or "No description available.",
-                    "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
-                    "encrypted_cat_ref_num": enc(str(book.cat_ref_num)),
-                }
-                for book in books
-            ]
+            for lilo in library_details:
 
-            # -------------------------------------------
-            # FETCH RECENT 5 EBOOKS
-            # -------------------------------------------
-            ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
+                # --- Books fetch ---
+                books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
 
-            lilo.ebooks = [
-                {
-                    "eb_title": ebook.eb_title or "Untitled",
-                    "eb_subtitle": ebook.eb_subtitle or "",
-                    "eb_author": ebook.eb_author or "Unknown",
-                    "eb_publisher": ebook.eb_publisher or "",
-                    "eb_isbn_issn": ebook.eb_isbn_issn or "",
-                    "eb_edition": ebook.eb_edition or "",
-                    "eb_publication_place": ebook.eb_publication_place or "",
-                    "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
-                    "eb_pages": ebook.eb_pages or "",
-                    "eb_language": ebook.eb_language or "Unknown",
-                    "eb_front_page_photo": file_storage_service.get_file_url(ebook.eb_front_page_photo) if ebook.eb_front_page_photo else "",
-                    "eb_last_page_photo": file_storage_service.get_file_url(ebook.eb_last_page_photo) if ebook.eb_last_page_photo else "",
-                    "remarks": ebook.remarks or "",
-                    "description": ebook.eb_keywords or "No description available.",
-                    "eb_pdf_url": ebook.eb_pdf_url or "",
-                    "encrypted_ebook_id": enc(str(ebook.ebook_id)),
-                    "encrypted_pdf_url": enc(ebook.eb_pdf_url or ""),
-                }
-                for ebook in ebooks
-            ]
+                lilo.books = [
+                    {
+                        "title": book.title or "Untitled",
+                        "subtitle": book.subtitle or "",
+                        "author": book.author or "Unknown",
+                        "publisher": book.publisher or "",
+                        "isbn_issn": book.isbn_issn or "",
+                        "edition": book.edition or "",
+                        "publication_place": book.publication_place or "",
+                        "year_of_publication": book.year_of_publication or "N/A",
+                        "pages": book.pages or "",
+                        "language": book.language or "Unknown",
+                        "front_page_photo":  file_storage_service.get_file_url(book.front_page_photo) if book.front_page_photo else "",
+                        "last_page_photo":  file_storage_service.get_file_url(book.last_page_photo) if book.last_page_photo else "",
+                        "remarks": book.remarks or "",
+                        "description": book.remarks or "No description available.",
+                        "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
+                        "encrypted_cat_ref_num": enc(str(book.cat_ref_num)),
+                    }
+                    for book in books
+                ]
 
-        library = library_details.first()
-        library = library_details.select_related('location').first()
+                # --- eBooks fetch ---
+                ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
 
-        library_address = ""
-        if library and library.location:
-            library_address = library.location.address or ""
-        library_name = library_details.first().library_name if library_details.exists() else ""
-        # library_name =(library.library_name_mar if library and library.library_name_mar else library.library_name if library else "")
-        library_name_mar = library_details.first().library_name_mar if library_details.exists() else ""
+                lilo.ebooks = [
+                    {
+                        "eb_title": ebook.eb_title or "Untitled",
+                        "eb_subtitle": ebook.eb_subtitle or "",
+                        "eb_author": ebook.eb_author or "Unknown",
+                        "eb_publisher": ebook.eb_publisher or "",
+                        "eb_isbn_issn": ebook.eb_isbn_issn or "",
+                        "eb_edition": ebook.eb_edition or "",
+                        "eb_publication_place": ebook.eb_publication_place or "",
+                        "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
+                        "eb_pages": ebook.eb_pages or "",
+                        "eb_language": ebook.eb_language or "Unknown",
+                        "eb_front_page_photo":  file_storage_service.get_file_url(ebook.eb_front_page_photo) if ebook.eb_front_page_photo else "",
+                        "eb_last_page_photo":  file_storage_service.get_file_url(ebook.eb_last_page_photo) if ebook.eb_last_page_photo else "",
+                        "remarks": ebook.remarks or "",
+                        "description": ebook.eb_keywords or "No description available.",
+                        "eb_pdf_url": ebook.eb_pdf_url or "",
+                        "encrypted_ebook_id": enc(str(ebook.ebook_id)),
+                        "encrypted_pdf_url": enc(ebook.eb_pdf_url or ""),
+                    }
+                    for ebook in ebooks
+                ]
 
-    else:
-        # -------------------------------------------
-        # WHEN NO LIBRARY IS SELECTED
-        # -------------------------------------------
-        library_details = LibraryMaster.objects.using('default').filter(is_active=1)
+            library_name = ""
 
-        for lilo in library_details:
-
-            # --- Books fetch ---
-            books = BookCatalog.objects.filter(status_id=1).order_by('-cat_ref_num')[:5]
-
-            lilo.books = [
-                {
-                    "title": book.title or "Untitled",
-                    "subtitle": book.subtitle or "",
-                    "author": book.author or "Unknown",
-                    "publisher": book.publisher or "",
-                    "isbn_issn": book.isbn_issn or "",
-                    "edition": book.edition or "",
-                    "publication_place": book.publication_place or "",
-                    "year_of_publication": book.year_of_publication or "N/A",
-                    "pages": book.pages or "",
-                    "language": book.language or "Unknown",
-                    "front_page_photo":  file_storage_service.get_file_url(book.front_page_photo) if book.front_page_photo else "",
-                    "last_page_photo":  file_storage_service.get_file_url(book.last_page_photo) if book.last_page_photo else "",
-                    "remarks": book.remarks or "",
-                    "description": book.remarks or "No description available.",
-                    "ebook_available": book.ebook_available or "No",   # ⭐ ADDED LINE
-                    "encrypted_cat_ref_num": enc(str(book.cat_ref_num)),
-                }
-                for book in books
-            ]
-
-            # --- eBooks fetch ---
-            ebooks = LibraryEbook.objects.filter(eb_status_id=1).order_by('-ebook_id')[:5]
-
-            lilo.ebooks = [
-                {
-                    "eb_title": ebook.eb_title or "Untitled",
-                    "eb_subtitle": ebook.eb_subtitle or "",
-                    "eb_author": ebook.eb_author or "Unknown",
-                    "eb_publisher": ebook.eb_publisher or "",
-                    "eb_isbn_issn": ebook.eb_isbn_issn or "",
-                    "eb_edition": ebook.eb_edition or "",
-                    "eb_publication_place": ebook.eb_publication_place or "",
-                    "eb_year_of_publication": ebook.eb_year_of_publication or "N/A",
-                    "eb_pages": ebook.eb_pages or "",
-                    "eb_language": ebook.eb_language or "Unknown",
-                    "eb_front_page_photo":  file_storage_service.get_file_url(ebook.eb_front_page_photo) if ebook.eb_front_page_photo else "",
-                    "eb_last_page_photo":  file_storage_service.get_file_url(ebook.eb_last_page_photo) if ebook.eb_last_page_photo else "",
-                    "remarks": ebook.remarks or "",
-                    "description": ebook.eb_keywords or "No description available.",
-                    "eb_pdf_url": ebook.eb_pdf_url or "",
-                    "encrypted_ebook_id": enc(str(ebook.ebook_id)),
-                    "encrypted_pdf_url": enc(ebook.eb_pdf_url or ""),
-                }
-                for ebook in ebooks
-            ]
-
-        library_name = ""
-
-    return render(request, "L01/index.html", {
-        'libraries': library_details,
-        'library_name': library_name,
-        'library_name_mar':library_name_mar,
-        'library_address': library_address,
-        'MEDIA_URL': settings.MEDIA_URL
-    })
+        return render(request, "L01/index.html", {
+            'libraries': library_details,
+            'library_name': library_name,
+            'library_name_mar':library_name_mar,
+            'library_address': library_address,
+            'library_code': library_code,
+            'MEDIA_URL': settings.MEDIA_URL
+        })
     
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': str(e)}, status=500)
+        
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name if tb else 'library_list'
+        cursor.callproc("stp_error_log", [fun, str(e), ''])
+        print(f"error: {e}")
+        messages.error(request, 'Oops...! Something went wrong!')
+        return redirect("index")
+        
 def check_user_id(request):
     Db.closeConnection()
     m = Db.get_connection()

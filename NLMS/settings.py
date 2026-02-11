@@ -73,7 +73,7 @@ if ENVIRONMENT == 'local':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', 'www.nmmclibrary.in']
+ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
 
 # SITE_URL configuration
 if ENVIRONMENT == 'local':
@@ -120,9 +120,16 @@ DATABASES = {
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # safest default
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_SAMESITE = 'lax'
 SESSION_COOKIE_SECURE = True  # True only if HTTPS
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+if ENVIRONMENT == 'production':
+    SESSION_COOKIE_DOMAIN = ".nmmclibrary.in"
+    CSRF_COOKIE_DOMAIN = ".nmmclibrary.in"
+else:
+    SESSION_COOKIE_DOMAIN = None
+    CSRF_COOKIE_DOMAIN = None
 
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 CRISPY_TEMPLATE_PACK = "bootstrap5"

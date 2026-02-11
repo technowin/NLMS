@@ -22,8 +22,24 @@ def library_list(request):
     Db.closeConnection()
     m = Db.get_connection()
     cursor = m.cursor()
-    
     try:
+        
+        host = request.get_host().split(':')[0]
+
+        if host.endswith("nmmclibrary.in"):
+            subdomain = host.replace(".nmmclibrary.in", "")
+
+            if subdomain == "vdb":
+                library_code = "L01"
+            else:
+                library_code = None
+
+            if library_code:
+                request.session['library_db'] = library_code
+                request.session.modified = True
+                set_current_service(library_code)
+                return redirect(f"{library_code}:index")
+        
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
         
@@ -136,7 +152,7 @@ def library_list(request):
         
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
-  
+
 def service_redirect(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -144,6 +160,9 @@ def service_redirect(request):
     try:
         # Get the library code from POST
         service_code_decrypted = request.POST.get('library_code')
+        if not service_code_decrypted:
+            return redirect("library_list")
+
         service_code = dec(service_code_decrypted)
 
         # Save to session
@@ -155,7 +174,14 @@ def service_redirect(request):
 
         # Redirect based on service code
         if service_code == "L01":
-            return redirect("L01:index")
+            
+            if settings.ENVIRONMENT == 'local':
+                return redirect("http://127.0.0.1:8000/L01/index")
+            elif settings.ENVIRONMENT == 'test':
+                return redirect("http://3.111.76.175/L01/index")
+            else:  # production
+                return redirect("http://vdb.nmmclibrary.in/L01/index")
+
         elif service_code == "L02":
             return redirect("L02:index")
         else:
@@ -163,7 +189,6 @@ def service_redirect(request):
     except Exception as e:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': str(e)}, status=500)
-        
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else 'library_list'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
@@ -179,16 +204,30 @@ def set_library_session_and_login(request):
         if request.method == 'POST':
             library_code = request.POST.get('library_code')
             library_code_decrypted = dec(library_code)
-            if library_code:
+
+            if library_code_decrypted:
                 request.session['library_db'] = library_code_decrypted
-        return redirect('Login')  # actual login page
+
+                # SIMPLE IF CONDITION
+                if library_code_decrypted == 'L01':
+                    
+                    if settings.ENVIRONMENT == 'local':
+                        return redirect("http://127.0.0.1:8000/Login")
+                    elif settings.ENVIRONMENT == 'test':
+                        return redirect("http://3.111.76.175/Login")
+                    else:  # production
+                        return redirect("http://vdb.nmmclibrary.in/Login")  
+
+                # default login
+                return redirect('Login')
+
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name if tb else 'library_list'
+        fun = tb[0].name if tb else 'set_library_session_and_login'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
-        print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
+
     
 def library_list_index(request):
     Db.closeConnection()
@@ -733,3 +772,4 @@ def download_sop(request):
         
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("library_list")
+    
