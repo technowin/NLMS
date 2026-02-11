@@ -192,9 +192,9 @@
                             </div>
                             <div class="col-md-8">
                                 <label for="location" class="form-label">Location *</label>
-                                <input type ="text" name="location" id="location" class="form-control" required>
+                                <input type ="text" name="location" id="location" class="form-control" required
                                 {% comment %} <textarea name="location" id="location" class="form-control" rows="3" required> {% endcomment %}
-                                    {% if is_edit %}{{ event.location }}{% endif %}
+                                    {% if is_edit %}{{ event.location }}{% endif %}>
                                 {% comment %} </textarea> {% endcomment %}
                                 <div id="locationError" class="error-message"></div>
                             </div>
