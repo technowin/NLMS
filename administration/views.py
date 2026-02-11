@@ -174,8 +174,8 @@ def service_redirect(request):
 
         # Redirect based on service code
         if service_code == "L01":
-            # return redirect("L01:index")
-            return redirect('http://vdb.nmmclibrary.in/L01/index')
+            return redirect("L01:index")
+            # return redirect('http://vdb.nmmclibrary.in/L01/index')
             # return redirect('http://127.0.0.1:8000/L01/index')
             # return redirect('http://3.111.76.175/L01/index')
         elif service_code == "L02":
@@ -207,7 +207,8 @@ def set_library_session_and_login(request):
 
                 # SIMPLE IF CONDITION
                 if library_code_decrypted == 'L01':
-                    return redirect('http://vdb.nmmclibrary.in/Login')
+                    return redirect('Login')
+                    # return redirect('http://vdb.nmmclibrary.in/Login')
                     # return redirect('http://127.0.0.1:8000/Login')
                     # return redirect('http://3.111.76.175/Login')
 

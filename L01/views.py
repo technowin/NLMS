@@ -108,12 +108,6 @@ def index(request):
         library_code = request.session.get('library_db', None)
 
         if library_code:
-            path = request.path  # /L01/index
-            if path.startswith('/L01'):
-                library_code = 'L01'
-                request.session['library_db'] = 'L01'
-                
-            library_code = request.session.get('library_db', None)
                 
             library_details = LibraryMaster.objects.using('default').filter(
                 is_active=1, 
