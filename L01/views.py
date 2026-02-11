@@ -265,6 +265,7 @@ def index(request):
             'library_name': library_name,
             'library_name_mar':library_name_mar,
             'library_address': library_address,
+            'library_code': library_code,
             'MEDIA_URL': settings.MEDIA_URL
         })
     
