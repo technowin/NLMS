@@ -754,8 +754,22 @@ def download_sop(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("library_list")
     
+from django.db.models import Prefetch
+from django.db.models.functions import Coalesce
+
+
 def event_list(request):
-    from django.db.models.functions import Coalesce
+
+    image_prefetch = Prefetch(
+        'images',
+        queryset=EventImage.objects.using('default')
+    )
+
+    pdf_prefetch = Prefetch(
+        'pdfs',
+        queryset=EventPDF.objects.using('default')
+    )
+
     events = (
         LibraryEvent.objects.using('default')
         .filter(library__isnull=True)
@@ -763,7 +777,7 @@ def event_list(request):
             event_order_date=Coalesce('date', 'from_date')
         )
         .order_by('event_order_date')
-        .prefetch_related('images', 'pdfs')
+        .prefetch_related(image_prefetch, pdf_prefetch)
     )
 
     events_data = []
@@ -805,8 +819,6 @@ def event_list(request):
             "pdfs": pdfs,
         })
 
-
     return render(request, "administration/event_list.html", {
         "events": events_data
     })
-    
