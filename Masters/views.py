@@ -6350,7 +6350,7 @@ def edit_event(request, pk):
         # Get existing files for preview
         existing_images = event.images.all()
         existing_pdfs = event.pdfs.all()
-        libraries = LibraryMaster.objects.all()
+        libraries = LibraryMaster.objects.using('default').all()
 
         images_with_urls = []
         for img in existing_images:
