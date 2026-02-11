@@ -755,10 +755,16 @@ def download_sop(request):
         return redirect("library_list")
     
 def event_list(request):
-
-    events = LibraryEvent.objects.using('default') \
-        .filter(library__isnull=True) \
+    from django.db.models.functions import Coalesce
+    events = (
+        LibraryEvent.objects.using('default')
+        .filter(library__isnull=True)
+        .annotate(
+            event_order_date=Coalesce('date', 'from_date')
+        )
+        .order_by('event_order_date')
         .prefetch_related('images', 'pdfs')
+    )
 
     events_data = []
 
