@@ -1180,6 +1180,146 @@ input:checked + .toggle-slider:before {
     width: 100%;          /* auto scale */
     min-width: 110px;     /* safety for text */
 }
+
+/* ================= MOBILE RESPONSIVE FIX ================= */
+
+/* Tablet */
+@media (max-width: 992px) {
+
+    .search-layout {
+        flex-direction: column;
+        height: auto;
+        max-height: none;
+    }
+
+    .search-controls-panel {
+        flex: unset;
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .results-panel {
+        height: auto;
+        max-height: none;
+    }
+
+    .results-container .book-gallery {
+        grid-template-columns: repeat(4, 1fr); /* 4 per row tablet */
+    }
+}
+
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    .main-container {
+        padding: 10px;
+    }
+
+    .search-layout {
+        flex-direction: column;
+        gap: 15px;
+        height: auto;
+        max-height: none;
+    }
+
+    /* LEFT PANEL FULL WIDTH */
+    .search-controls-panel {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    .search-section {
+        padding: 12px;
+    }
+
+    /* REMOVE FIXED KEYBOARD HEIGHT */
+    .keyboard-container {
+        height: auto;
+        min-height: unset;
+        max-height: unset;
+    }
+
+    /* RESULTS */
+    .results-panel {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    .results-container {
+        overflow: visible;
+    }
+
+    /* BOOK GRID RESPONSIVE */
+    .results-container .book-gallery {
+        grid-template-columns: repeat(2, 1fr); /* 2 per row mobile */
+        gap: 15px;
+        padding: 10px;
+    }
+
+    .book-item {
+        min-width: unset;
+    }
+
+    .book-image-container {
+        height: 160px;
+    }
+
+    .book-title {
+        font-size: 0.9rem;
+    }
+
+    /* BUTTONS FULL WIDTH */
+    .mode-buttons,
+    .search-tabs,
+    .language-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .mode-btn,
+    .search-tab,
+    .lang-btn {
+        width: 100%;
+    }
+
+    .quick-actions {
+        flex-direction: column;
+    }
+
+    .quick-actions button {
+        width: 100%;
+    }
+}
+
+
+/* Small Mobile */
+@media (max-width: 480px) {
+
+    .results-container .book-gallery {
+        grid-template-columns: 1fr; /* 1 per row small screens */
+    }
+
+    .book-image-container {
+        height: 180px;
+    }
+
+    .form-input {
+        font-size: 14px;
+    }
+
+    .btn {
+        font-size: 14px;
+        padding: 10px;
+    }
+}
+
 </style>
 
 <!-- ================= MAIN CONTAINER ================= -->
