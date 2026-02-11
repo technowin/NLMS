@@ -451,6 +451,7 @@ class LibraryEvent(models.Model):
     location = models.TextField(verbose_name="Location")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=1)
     
     def __str__(self):
         return self.event_name

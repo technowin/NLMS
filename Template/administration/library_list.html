@@ -668,6 +668,179 @@
         }
         */
     </style>
+    <style>
+            /* ================================
+        EVENT CORNER CONTAINER (LEFT)
+        ================================ */
+        .event-corner-container {
+            position: absolute;
+            top: 30px;
+            left: 30px; /* LEFT SIDE */
+            z-index: 100;
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+
+        /* ================================
+        EVENT BUTTON
+        ================================ */
+        .event-corner-button {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 12px 18px;
+            text-decoration: none;
+            color: #2c3e50;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            max-width: 280px;
+            backdrop-filter: blur(5px);
+        }
+
+
+        /* ================================
+        HOVER EFFECT
+        ================================ */
+        .event-corner-button:hover {
+            transform: translateY(-3px) translateX(3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            border-color: #D4AF37;
+            background: white;
+            color: #B8860B;
+        }
+
+
+        /* ================================
+        ICON
+        ================================ */
+        .event-corner-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 12px;
+            flex-shrink: 0;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #D4AF37, #B8860B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+
+        /* Icon Hover */
+        .event-corner-button:hover .event-corner-icon {
+            transform: scale(1.1);
+            border-color: #D4AF37;
+            background: linear-gradient(135deg, #B8860B, #D4AF37);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+
+        /* ================================
+        TEXT
+        ================================ */
+        .event-corner-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .event-corner-text span {
+            display: block;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            color: inherit;
+            line-height: 1.2;
+        }
+
+        .event-corner-text small {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 500;
+            opacity: 0.9;
+            line-height: 1.2;
+        }
+
+
+        /* Text Hover */
+        .event-corner-button:hover .event-corner-text span {
+            color: #D4AF37;
+            text-shadow: 0 1px 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .event-corner-button:hover .event-corner-text small {
+            color: #B8860B;
+        }
+
+
+        /* ================================
+        ANIMATION
+        ================================ */
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+
+        /* ================================
+        RESPONSIVE (TABLET)
+        ================================ */
+        @media (max-width: 992px) {
+
+            .event-corner-container {
+                top: 20px;
+                left: 20px;
+            }
+
+            .event-corner-button {
+                max-width: 240px;
+                padding: 10px 14px;
+            }
+
+            .event-corner-text span {
+                font-size: 0.95rem;
+            }
+
+            .event-corner-text small {
+                font-size: 0.75rem;
+            }
+
+            .event-corner-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 1.3rem;
+            }
+        }
+
+
+        /* ================================
+        HIDE ON MOBILE
+        ================================ */
+        @media (max-width: 767px) {
+
+            .event-corner-container {
+                display: none !important;
+            }
+
+        }
+
+
+
+    </style>
 
     <section class="hero-section" id="hero-english"
         style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
@@ -686,6 +859,19 @@
         </div> {% endcomment %}
 
         <!-- SWD Button - TOP RIGHT CORNER -->
+
+        <div class="event-corner-container">
+             <a href="{% url 'event_list' %}" class="event-corner-button">
+                <div class="event-corner-icon">
+                    🎉
+                </div>
+                <div class="event-corner-text">
+                    <span>Events</span>
+                    <small>View Details</small>
+                </div>
+            </a>
+        </div>
+
         <div class="swd-corner-container">
             <a href="{% url 'swd_libraries' %}" class="swd-corner-button">
                 <div class="swd-corner-icon">
@@ -775,6 +961,19 @@
         </div> {% endcomment %}
 
         <!-- SWD Button - TOP RIGHT CORNER -->
+
+         <div class="event-corner-container">
+            <a href="{% url 'event_list' %}" class="event-corner-button">
+                <div class="event-corner-icon">
+                    🎉
+                </div>
+                <div class="event-corner-text">
+                    <span>कार्यक्रम</span>
+                    <small>तपशील पहा</small>
+                </div>
+            </a>
+        </div>
+
         <div class="swd-corner-container">
             <a href="{% url 'swd_libraries' %}" class="swd-corner-button">
                 <div class="swd-corner-icon">

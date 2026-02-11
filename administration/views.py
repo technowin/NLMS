@@ -23,42 +23,30 @@ def library_list(request):
     m = Db.get_connection()
     cursor = m.cursor()
     try:
-        
         host = request.get_host().split(':')[0]
-
         if host.endswith("nmmclibrary.in"):
             subdomain = host.replace(".nmmclibrary.in", "")
-
             if subdomain == "vdb":
                 library_code = "L01"
             else:
                 library_code = None
-
             if library_code:
                 request.session['library_db'] = library_code
                 request.session.modified = True
                 set_current_service(library_code)
                 return redirect(f"{library_code}:index")
-        
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
-        
+
         # Add encrypted library code and membership link status to ALL libraries
         for lilo in all_libraries:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
-            
-            # Default empty image
             lilo.main_image = ""
-
             if lilo.image_url:
-                # ✅ Take first image only
                 first_image_path = lilo.image_url.split(",")[0].strip()
-
                 if first_image_path:
                     lilo.main_image = file_storage_service.get_file_url(first_image_path)
-
-            # Check if membership_page_link exists and is not empty/blank
             has_membership_link = bool(
                 lilo.membership_page_link and 
                 str(lilo.membership_page_link).strip() != '' and
@@ -70,28 +58,23 @@ def library_list(request):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             page = request.GET.get('page', 1)
             paginator = Paginator(all_libraries, 6)  # CHANGED: 6 per page
-            
             try:
                 libraries_page = paginator.page(page)
             except (PageNotAnInteger, EmptyPage):
                 libraries_page = paginator.page(1)
             
-            # Prepare data for JSON response
             libraries_data = []
             for library in libraries_page:
                 
                 first_image_path = ""
                 if library.image_url:
                     first_image_path = library.image_url.split(",")[0].strip()
-
-                # ✅ Convert to FULL URL using storage service
                 first_image_url = file_storage_service.get_file_url(first_image_path)
                 has_membership_link = bool(
                     library.membership_page_link and 
                     str(library.membership_page_link).strip() != '' and
                     str(library.membership_page_link).strip() != 'None'
                 )
-                
                 libraries_data.append({
                     'id': library.id,
                     'library_name': library.library_name,
@@ -103,7 +86,6 @@ def library_list(request):
                     'libraries': library.libraries,  # encrypted code
                     'has_membership_link': has_membership_link
                 })
-            
             return JsonResponse({
                 'libraries': libraries_data,
                 'has_next': libraries_page.has_next(),
@@ -112,7 +94,6 @@ def library_list(request):
                 'total_pages': paginator.num_pages,
                 'total_count': paginator.count
             })
-        
         # Regular request
         paginator = Paginator(all_libraries, 6)  # CHANGED: 6 per page
         page = request.GET.get('page', 1)
@@ -773,3 +754,71 @@ def download_sop(request):
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("library_list")
     
+from django.db.models import Prefetch
+from django.db.models.functions import Coalesce
+
+
+def event_list(request):
+
+    image_prefetch = Prefetch(
+        'images',
+        queryset=EventImage.objects.using('default')
+    )
+
+    pdf_prefetch = Prefetch(
+        'pdfs',
+        queryset=EventPDF.objects.using('default')
+    )
+
+    events = (
+        LibraryEvent.objects.using('default')
+        .filter(library__isnull=True)
+        .annotate(
+            event_order_date=Coalesce('date', 'from_date')
+        )
+        .order_by('event_order_date')
+        .prefetch_related(image_prefetch, pdf_prefetch)
+    )
+
+    events_data = []
+
+    for event in events:
+
+        # Images
+        images = [
+            file_storage_service.get_file_url(img.image)
+            for img in event.images.all()
+            if img.image
+        ]
+
+        # PDFs
+        pdfs = [
+            {
+                "name": pdf.pdf_file.split("/")[-1],
+                "url": file_storage_service.get_file_url(pdf.pdf_file)
+            }
+            for pdf in event.pdfs.all()
+            if pdf.pdf_file
+        ]
+
+        # Date
+        if event.event_type == "single":
+            date_text = event.date.strftime("%d %b %Y") if event.date else ""
+        else:
+            date_text = f"{event.from_date.strftime('%d %b %Y')} - {event.to_date.strftime('%d %b %Y')}"
+
+        events_data.append({
+            "id": event.id,
+            "name": event.event_name,
+            "description": event.description,
+            "date": date_text,
+            "start_time": event.start_time.strftime("%H:%M") if event.start_time else "",
+            "end_time": event.end_time.strftime("%H:%M") if event.end_time else "",
+            "location": event.location,
+            "images": images,
+            "pdfs": pdfs,
+        })
+
+    return render(request, "administration/event_list.html", {
+        "events": events_data
+    })

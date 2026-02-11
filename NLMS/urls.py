@@ -232,10 +232,10 @@ urlpatterns = [
     path('download-sop/', download_sop, name='download_sop'),
     path('mini-system/', include('mini_system.urls')),
 
-    path('events/', event_list, name='event_list'),
+    path('event_index/', event_index, name='event_index'),
     path('events/create/', create_event, name='create_event'),
     path('events/<int:pk>/edit/', edit_event, name='edit_event'),
-
+    path('event_list/', event_list, name='event_list'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
