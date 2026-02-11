@@ -1288,37 +1288,30 @@ function processExportAll() {
     window.location.href = `/books/export-all-data/?${params.toString()}`;
     $('#exportOptionsModal').modal('hide');
 }
-
 function applyTabFilters(tab, formId) {
     const $form = $('#' + formId);
     const filters = {};
 
     // --------------------------------------------------
-    // 1. Normal inputs (date, text, single select)
+    // 1. Collect normal inputs (text, date, single select)
     // --------------------------------------------------
-    $form.find('input, select').not('[multiple]').each(function () {
-        if (this.name && this.value) {
-            filters[this.name] = this.value;
+    const formData = $form.serializeArray();
+    console.log(formData);
+
+    formData.forEach(item => {
+        if (!item.value) return;
+
+        if (item.name.endsWith('[]')) {
+            const key = item.name.replace('[]', '');
+            if (!filters[key]) filters[key] = [];
+            filters[key].push(item.value);
+        } else {
+            filters[item.name] = item.value;
         }
     });
-   
-    // --------------------------------------------------
-    // 2. MULTI selects (Selectize – dynamic or static)
-    // --------------------------------------------------
-    $form.find('select[multiple]').each(function () {
-        const name = this.name.replace('[]', '');
 
-        if (this.selectize) {
-            const values = this.selectize.getValue(); // array or string
-
-            if (values && values.length > 0) {
-                filters[name] = Array.isArray(values) ? values : [values];
-            }
-        }
-    });
-    console.log(filters);
     // --------------------------------------------------
-    // 3. Save & reload
+    // 2. Save filters & update UI
     // --------------------------------------------------
     tabFilters[tab] = filters;
     updateFilterBadge(tab, Object.keys(filters).length);
@@ -1326,13 +1319,14 @@ function applyTabFilters(tab, formId) {
     $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
     loadTabData(tab);
 }
+
 function clearTabFilters(tab, formId) {
     const $form = $('#' + formId);
 
     // Reset normal inputs
     $form[0].reset();
 
-    // Clear selectize
+    // Clear selectize multi-selects
     $form.find('select[multiple]').each(function () {
         if (this.selectize) {
             this.selectize.clear(true);
@@ -1345,6 +1339,7 @@ function clearTabFilters(tab, formId) {
     $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
     loadTabData(tab);
 }
+
 
 
 
