@@ -152,7 +152,7 @@ def library_list(request):
         
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
-  
+
 def service_redirect(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -174,10 +174,14 @@ def service_redirect(request):
 
         # Redirect based on service code
         if service_code == "L01":
-            # return redirect("L01:index")
-            return redirect('http://vdb.nmmclibrary.in/L01/index')
-            # return redirect('http://127.0.0.1:8000/L01/index')
-            # return redirect('http://3.111.76.175/L01/index')
+            
+            if settings.ENVIRONMENT == 'local':
+                return redirect("http://127.0.0.1:8000/L01/index")
+            elif settings.ENVIRONMENT == 'test':
+                return redirect("http://3.111.76.175/L01/index")
+            else:  # production
+                return redirect("http://vdb.nmmclibrary.in/L01/index")
+
         elif service_code == "L02":
             return redirect("L02:index")
         else:
@@ -206,10 +210,13 @@ def set_library_session_and_login(request):
 
                 # SIMPLE IF CONDITION
                 if library_code_decrypted == 'L01':
-                    # return redirect('Login')
-                    return redirect('http://vdb.nmmclibrary.in/Login')
-                    # return redirect('http://127.0.0.1:8000/Login')
-                    # return redirect('http://3.111.76.175/Login')
+                    
+                    if settings.ENVIRONMENT == 'local':
+                        return redirect("http://127.0.0.1:8000/Login")
+                    elif settings.ENVIRONMENT == 'test':
+                        return redirect("http://3.111.76.175/Login")
+                    else:  # production
+                        return redirect("http://vdb.nmmclibrary.in/Login")  
 
                 # default login
                 return redirect('Login')
