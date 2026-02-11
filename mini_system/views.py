@@ -17,8 +17,6 @@ def home(request):
     """Main simulation interface"""
     issued_books = IssuedBook.objects.filter(is_active=True)
     recent_scans = ExitScan.objects.all()[:10]
-    
-    # Statistics
     total_scans = ExitScan.objects.count()
     total_alarms = ExitScan.objects.filter(alarm_triggered=True).count()
     active_issued = issued_books.count()

@@ -1,9 +1,14 @@
 from django.db import models
 from django.utils import timezone
 
+from L01.models import MembershipDetails
+from Masters.models import BookCatalog
+
 class IssuedBook(models.Model):
     """Books issued in the mini system"""
     book_rfid = models.CharField(max_length=50, unique=True, primary_key=True)
+    member = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE, null=True, blank=True)
+    book = models.ForeignKey(BookCatalog,on_delete=models.CASCADE, null=True, blank=True)
     user_rfid = models.CharField(max_length=50)
     user_name = models.CharField(max_length=100, default="Test User")
     book_title = models.CharField(max_length=200, default="Test Book")
@@ -21,6 +26,8 @@ class IssuedBook(models.Model):
 class ExitScan(models.Model):
     """Records of books scanned at exit gate"""
     book_rfid = models.CharField(max_length=50)
+    member = models.ForeignKey(MembershipDetails,on_delete=models.CASCADE, null=True, blank=True)
+    book = models.ForeignKey(BookCatalog,on_delete=models.CASCADE, null=True, blank=True)
     book_title = models.CharField(max_length=200, blank=True)
     user_name = models.CharField(max_length=100, blank=True)
     scan_time = models.DateTimeField(default=timezone.now)

@@ -8,6 +8,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import authenticate, login ,logout,get_user_model
 from Account.forms import RegistrationForm
 from Account.models import *
+from Masters.forms import LibraryEventForm
 from Masters.models import *
 from L01.models import *
 import Db 
@@ -5931,7 +5932,6 @@ def competitive_book_index(request):
     """
     Index page for Competitive Books (Topics & Chapters)
     """
-    
     if not request.user.is_authenticated:
         # Clear any session flags
         if '_session_expired' in request.session:
@@ -6068,3 +6068,427 @@ def edit_competitive_book(request, enc_chapter_no):
             "subject": topic.subject_id
         }
     )
+
+def event_list(request):
+
+    try:
+
+        events = LibraryEvent.objects.prefetch_related("images")\
+                                     .order_by("-created_at")
+        for event in events:
+            first_image = event.images.first()
+
+            if first_image and first_image.image:
+                event.thumbnail = file_storage_service.get_file_url(
+                    first_image.image
+                )
+            else:
+                event.thumbnail = None
+        context = {
+            "events": events,
+            "title": "Library Events"
+        }
+        return render(request, "Master/Event_list.html", context)
+    except Exception as e:
+        tb = traceback.extract_tb(e.__traceback__)
+        fun = tb[0].name
+        callproc("stp_error_log", [fun, str(e), request.user])
+        messages.error(request, "Oops...! Something went wrong!")
+        return redirect("event_list")
+
+
+def create_event(request):
+    if request.method == 'POST':
+        # Get form data
+        scope = request.POST.get('scope')
+        library_id = request.POST.get('library')
+        event_name = request.POST.get('event_name')
+        description = request.POST.get('description')
+        event_type = request.POST.get('event_type')
+        date = request.POST.get('date')
+        from_date = request.POST.get('from_date')
+        to_date = request.POST.get('to_date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        location = request.POST.get('location')
+        errors = []
+        
+        if not scope:
+            errors.append('Event scope is required')
+        if scope == 'specific' and not library_id:
+            errors.append('Library is required for specific events')
+        if not event_name:
+            errors.append('Event name is required')
+        if not description:
+            errors.append('Description is required')
+        if not event_type:
+            errors.append('Event type is required')
+        if event_type == 'single' and not date:
+            errors.append('Date is required for single day events')
+        if event_type == 'multiple' and (not from_date or not to_date):
+            errors.append('Both From Date and To Date are required for multiple day events')
+        if not start_time or not end_time:
+            errors.append('Both start time and end time are required')
+        if start_time and end_time and start_time >= end_time:
+            errors.append('End time must be after start time')
+        if not location:
+            errors.append('Location is required')
+        
+        # Validate file sizes and types
+        images = request.FILES.getlist('images')
+        pdfs = request.FILES.getlist('pdfs')
+        
+        for image in images:
+            if image.size > 4 * 1024 * 1024:
+                errors.append(f'{image.name} is too large. Maximum size is 4MB.')
+            if not image.content_type.startswith('image/'):
+                errors.append(f'{image.name} is not a valid image file.')
+        
+        for pdf in pdfs:
+            if pdf.size > 4 * 1024 * 1024:
+                errors.append(f'{pdf.name} is too large. Maximum size is 4MB.')
+            if pdf.content_type != 'application/pdf' and not pdf.name.lower().endswith('.pdf'):
+                errors.append(f'{pdf.name} is not a valid PDF file.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            
+            # Re-render form with entered data
+            libraries = LibraryMaster.objects.all()
+            context = {
+                'libraries': libraries,
+                'scope': scope,
+                'library_id': library_id,
+                'event_name': event_name,
+                'description': description,
+                'event_type': event_type,
+                'date': date,
+                'from_date': from_date,
+                'to_date': to_date,
+                'start_time': start_time,
+                'end_time': end_time,
+                'location': location,
+                'title': 'Create New Event',
+                'is_edit': False,
+            }
+            return render(request, 'Master/Event.html', context)
+        
+        # Create event
+        try:
+            event = LibraryEvent(
+                scope=scope,
+                library_id=library_id if scope == 'specific' else None,
+                event_name=event_name,
+                description=description,
+                event_type=event_type,
+                date=date if event_type == 'single' else None,
+                from_date=from_date if event_type == 'multiple' else None,
+                to_date=to_date if event_type == 'multiple' else None,
+                start_time=start_time,
+                end_time=end_time,
+                location=location
+            )
+            event.save()
+            
+            # Save images
+            for image in images:
+
+                filename = f"{uuid.uuid4().hex}_{image.name}"
+                save_path = f"events/{event.id}/images/{filename}"
+
+                saved_file_path = file_storage_service.save_file(
+                    image,
+                    save_path
+                )
+
+                EventImage.objects.create(
+                    event=event,
+                    image=saved_file_path
+                )
+            
+            # Save PDFs
+            for pdf in pdfs:
+
+                filename = f"{uuid.uuid4().hex}_{pdf.name}"
+                save_path = f"events/{event.id}/pdfs/{filename}"
+
+                saved_file_path = file_storage_service.save_file(
+                    pdf,
+                    save_path
+                )
+
+                EventPDF.objects.create(
+                    event=event,
+                    pdf_file=saved_file_path
+                )
+
+            
+            messages.success(request, 'Event created successfully!')
+            return redirect('event_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating event: {str(e)}')
+            libraries = LibraryMaster.objects.all()
+            context = {
+                'libraries': libraries,
+                'scope': scope,
+                'library_id': library_id,
+                'event_name': event_name,
+                'description': description,
+                'event_type': event_type,
+                'date': date,
+                'from_date': from_date,
+                'to_date': to_date,
+                'start_time': start_time,
+                'end_time': end_time,
+                'location': location,
+                'title': 'Create New Event',
+                'is_edit': False,
+            }
+            return render(request, 'Master/Event.html', context)
+    
+    else:  # GET request
+        libraries = LibraryMaster.objects.all()
+        context = {
+            'libraries': libraries,
+            'title': 'Create New Event',
+            'is_edit': False,
+        }
+        return render(request, 'Master/Event.html', context)
+
+def edit_event(request, pk):
+    event = get_object_or_404(LibraryEvent, pk=pk)
+    
+    if request.method == 'POST':
+        # Get form data
+        scope = request.POST.get('scope')
+        library_id = request.POST.get('library')
+        event_name = request.POST.get('event_name')
+        description = request.POST.get('description')
+        event_type = request.POST.get('event_type')
+        date = request.POST.get('date')
+        from_date = request.POST.get('from_date')
+        to_date = request.POST.get('to_date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        location = request.POST.get('location')
+        
+        # Get files to delete
+        delete_images = request.POST.getlist('delete_images')
+        delete_pdfs = request.POST.getlist('delete_pdfs')
+    
+        
+        # Validate required fields
+        errors = []
+        
+        if not scope:
+            errors.append('Event scope is required')
+        if scope == 'specific' and not library_id:
+            errors.append('Library is required for specific events')
+        if not event_name:
+            errors.append('Event name is required')
+        if not description:
+            errors.append('Description is required')
+        if not event_type:
+            errors.append('Event type is required')
+        if event_type == 'single' and not date:
+            errors.append('Date is required for single day events')
+        if event_type == 'multiple' and (not from_date or not to_date):
+            errors.append('Both From Date and To Date are required for multiple day events')
+        if not start_time or not end_time:
+            errors.append('Both start time and end time are required')
+        if start_time and end_time and start_time >= end_time:
+            errors.append('End time must be after start time')
+        if not location:
+            errors.append('Location is required')
+        
+        # Validate file sizes and types
+        images = request.FILES.getlist('images')
+        pdfs = request.FILES.getlist('pdfs')
+        
+        for image in images:
+            if image.size > 4 * 1024 * 1024:
+                errors.append(f'{image.name} is too large. Maximum size is 4MB.')
+            if not image.content_type.startswith('image/'):
+                errors.append(f'{image.name} is not a valid image file.')
+        
+        for pdf in pdfs:
+            if pdf.size > 4 * 1024 * 1024:
+                errors.append(f'{pdf.name} is too large. Maximum size is 4MB.')
+            if pdf.content_type != 'application/pdf' and not pdf.name.lower().endswith('.pdf'):
+                errors.append(f'{pdf.name} is not a valid PDF file.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            
+            # Get existing files for re-rendering
+            existing_images = event.images.all()
+            existing_pdfs = event.pdfs.all()
+            libraries = LibraryMaster.objects.all()
+            
+            context = {
+                'event': event,
+                'libraries': libraries,
+                'existing_images': existing_images,
+                'existing_pdfs': existing_pdfs,
+                'scope': scope,
+                'library_id': library_id,
+                'event_name': event_name,
+                'description': description,
+                'event_type': event_type,
+                'date': date,
+                'from_date': from_date,
+                'to_date': to_date,
+                'start_time': start_time,
+                'end_time': end_time,
+                'location': location,
+                'title': 'Edit Event',
+                'is_edit': True,
+            }
+            return render(request, 'Master/Event.html', context)
+        
+        # Update event
+        try:
+            event.scope = scope
+            event.library_id = library_id if scope == 'specific' else None
+            event.event_name = event_name
+            event.description = description
+            event.event_type = event_type
+            event.date = date if event_type == 'single' else None
+            event.from_date = from_date if event_type == 'multiple' else None
+            event.to_date = to_date if event_type == 'multiple' else None
+            event.start_time = start_time
+            event.end_time = end_time
+            event.location = location
+            event.save()
+            
+            # Delete marked images
+            for image_id in delete_images:
+                try:
+                    event_image = EventImage.objects.get(id=image_id, event=event)
+                    
+                    # Delete file using file storage service
+                    if event_image.image:
+                        file_storage_service.delete_file(event_image.image)
+                    
+                    # Delete database record
+                    event_image.delete()
+                except EventImage.DoesNotExist:
+                    pass
+            
+            # Delete marked PDFs
+            for pdf_id in delete_pdfs:
+                try:
+                    event_pdf = EventPDF.objects.get(id=pdf_id, event=event)
+                    
+                    # Delete file using file storage service
+                    if event_pdf.pdf_file:
+                        file_storage_service.delete_file(event_pdf.pdf_file)
+                    
+                    # Delete database record
+                    event_pdf.delete()
+                except EventPDF.DoesNotExist:
+                    pass
+            
+            # Save new images
+            for image in images:
+
+                filename = f"{uuid.uuid4().hex}_{image.name}"
+                save_path = f"events/{event.id}/images/{filename}"
+
+                saved_file_path = file_storage_service.save_file(
+                    image,
+                    save_path
+                )
+
+                EventImage.objects.create(
+                    event=event,
+                    image=saved_file_path
+                )
+            
+            # Save new PDFs
+            for pdf in pdfs:
+
+                filename = f"{uuid.uuid4().hex}_{pdf.name}"
+                save_path = f"events/{event.id}/pdfs/{filename}"
+
+                saved_file_path = file_storage_service.save_file(
+                    pdf,
+                    save_path
+                )
+
+                EventPDF.objects.create(
+                    event=event,
+                    pdf_file=saved_file_path
+                )
+
+            
+            messages.success(request, 'Event updated successfully!')
+            return redirect('event_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating event: {str(e)}')
+            
+            # Get existing files for re-rendering
+            existing_images = event.images.all()
+            existing_pdfs = event.pdfs.all()
+            libraries = LibraryMaster.objects.all()
+            
+            context = {
+                'event': event,
+                'libraries': libraries,
+                'existing_images': existing_images,
+                'existing_pdfs': existing_pdfs,
+                'scope': scope,
+                'library_id': library_id,
+                'event_name': event_name,
+                'description': description,
+                'event_type': event_type,
+                'date': date,
+                'from_date': from_date,
+                'to_date': to_date,
+                'start_time': start_time,
+                'end_time': end_time,
+                'location': location,
+                'title': 'Edit Event',
+                'is_edit': True,
+            }
+            return render(request, 'Master/Event.html', context)
+    
+    else:  # GET request
+        # Get existing files for preview
+        existing_images = event.images.all()
+        existing_pdfs = event.pdfs.all()
+        libraries = LibraryMaster.objects.all()
+
+        images_with_urls = []
+        for img in existing_images:
+            images_with_urls.append({
+                'id': img.id,
+                'image': img.image,  # This is the path stored in DB
+                'url': file_storage_service.get_file_url(img.image) if img.image else None,
+                'uploaded_at': img.uploaded_at
+            })
+        
+        pdfs_with_urls = []
+        for pdf in existing_pdfs:
+            pdfs_with_urls.append({
+                'id': pdf.id,
+                'pdf_file': pdf.pdf_file,  # This is the path stored in DB
+                'url': file_storage_service.get_file_url(pdf.pdf_file) if pdf.pdf_file else None,
+                'uploaded_at': pdf.uploaded_at,
+                'filename': os.path.basename(pdf.pdf_file) if pdf.pdf_file else 'PDF File'
+            })
+        
+        
+        context = {
+            'event': event,
+            'libraries': libraries,
+            "existing_images": images_with_urls,
+            "existing_pdfs": pdfs_with_urls,
+            'title': 'Edit Event',
+            'is_edit': True,
+        }
+        return render(request, 'Master/Event.html', context)

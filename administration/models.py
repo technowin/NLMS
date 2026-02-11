@@ -7,9 +7,9 @@ class LibraryMaster(models.Model):
     library_code = models.TextField(null=True, blank=True)
     library_name = models.TextField(null=True, blank=True)
     library_name_mar = models.TextField(null=True, blank=True)
-    location = models.ForeignKey(LibraryLocationMaster, on_delete=models.SET_NULL, related_name="libraries", db_column="location_id", null=True, blank=True)
-    parent_ward = models.ForeignKey(WardMaster, on_delete=models.SET_NULL, related_name="ward_libraries", db_column="ward_id", null=True, blank=True)
-    library_accounting_code = models.ForeignKey(WardMaster, on_delete=models.SET_NULL, related_name="ward_accounting_code", db_column="accounting_id", null=True, blank=True)
+    location = models.ForeignKey('Masters.LibraryLocationMaster', on_delete=models.SET_NULL, related_name="libraries", db_column="location_id", null=True, blank=True)
+    parent_ward = models.ForeignKey('Masters.WardMaster', on_delete=models.SET_NULL, related_name="ward_libraries", db_column="ward_id", null=True, blank=True)
+    library_accounting_code = models.ForeignKey('Masters.WardMaster', on_delete=models.SET_NULL, related_name="ward_accounting_code", db_column="accounting_id", null=True, blank=True)
     landing_page_link = models.TextField(null=True, blank=True)
     about_library = models.TextField(null=True, blank=True)
     library_rules = models.TextField(null=True, blank=True)
@@ -38,3 +38,5 @@ class LibraryMaster(models.Model):
 
     def __str__(self):
         return f"{self.library_name} ({self.library_code})"
+    
+
