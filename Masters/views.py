@@ -6069,11 +6069,11 @@ def edit_competitive_book(request, enc_chapter_no):
         }
     )
 
-def event_list(request):
+def event_index(request):
 
     try:
 
-        events = LibraryEvent.objects.prefetch_related("images")\
+        events = LibraryEvent.objects.using('default').prefetch_related("images")\
                                      .order_by("-created_at")
         for event in events:
             first_image = event.images.first()
@@ -6155,7 +6155,7 @@ def create_event(request):
                 messages.error(request, error)
             
             # Re-render form with entered data
-            libraries = LibraryMaster.objects.all()
+            libraries = LibraryMaster.objects.using('default').all()
             context = {
                 'libraries': libraries,
                 'scope': scope,
@@ -6218,14 +6218,14 @@ def create_event(request):
                     save_path
                 )
 
-                EventPDF.objects.create(
+                EventPDF.objects.using('default').create(
                     event=event,
                     pdf_file=saved_file_path
                 )
 
             
             messages.success(request, 'Event created successfully!')
-            return redirect('event_list')
+            return redirect('event_index')
             
         except Exception as e:
             messages.error(request, f'Error creating event: {str(e)}')
@@ -6326,7 +6326,7 @@ def edit_event(request, pk):
             # Get existing files for re-rendering
             existing_images = event.images.all()
             existing_pdfs = event.pdfs.all()
-            libraries = LibraryMaster.objects.all()
+            libraries = LibraryMaster.objects.using('default').all()
             
             context = {
                 'event': event,
@@ -6419,14 +6419,14 @@ def edit_event(request, pk):
                     save_path
                 )
 
-                EventPDF.objects.create(
+                EventPDF.objects.using('default').create(
                     event=event,
                     pdf_file=saved_file_path
                 )
 
             
             messages.success(request, 'Event updated successfully!')
-            return redirect('event_list')
+            return redirect('event_index')
             
         except Exception as e:
             messages.error(request, f'Error updating event: {str(e)}')
@@ -6434,7 +6434,7 @@ def edit_event(request, pk):
             # Get existing files for re-rendering
             existing_images = event.images.all()
             existing_pdfs = event.pdfs.all()
-            libraries = LibraryMaster.objects.all()
+            libraries = LibraryMaster.objects.using('default').all()
             
             context = {
                 'event': event,
