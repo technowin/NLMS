@@ -120,8 +120,11 @@ class ReportBaseView(LoginRequiredMixin, View):
             # Apply filters
             if filters:
                 if filters.get('language'):
-                    qs = qs.filter(language=filters['language'])
-                
+                    if filters['language'] == "Hindi":
+                        qs = qs.filter(language="हिंदी")
+                    elif filters['language'] == "Marathi":
+                        qs = qs.filter(language="मराठी")
+                    else: qs = qs.filter(language=filters['language'])
                 if filters.get('resource_type') == 'ebook':
                     qs = qs.filter(ebook_available='Yes')
                 elif filters.get('resource_type') == 'book':
