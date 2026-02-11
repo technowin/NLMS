@@ -2,6 +2,7 @@ from warnings import filters
 from django.conf import settings
 from django.forms import DateField
 from django.shortcuts import render
+from datetime import datetime, time
 
 # Create your views here.
 # reports/views.py
@@ -26,7 +27,6 @@ from .forms import *
 from L01.models import *
 from Account.models import CustomUser 
 
-from datetime import date
 import calendar
 from django.db.models import Q, F, Value
 from django.db.models.functions import Coalesce
@@ -120,8 +120,11 @@ class ReportBaseView(LoginRequiredMixin, View):
             # Apply filters
             if filters:
                 if filters.get('language'):
-                    qs = qs.filter(language=filters['language'])
-                
+                    if filters['language'] == "Hindi":
+                        qs = qs.filter(language="हिंदी")
+                    elif filters['language'] == "Marathi":
+                        qs = qs.filter(language="मराठी")
+                    else: qs = qs.filter(language=filters['language'])
                 if filters.get('resource_type') == 'ebook':
                     qs = qs.filter(ebook_available='Yes')
                 elif filters.get('resource_type') == 'book':
@@ -429,20 +432,22 @@ class TabDataView(ReportBaseView):
             # Get books in this category
             qs = qs.filter(subject_id__in=book_ids)
         
-        # Apply additional filters
-        if filters.get('from_date'):
-            try:
-                from_date = datetime.strptime(filters['from_date'], '%Y-%m-%d').date()
-                qs = qs.filter(created_at__date__gte=from_date)
-            except:
-                pass
+        # Apply  filters
+
+
+        from datetime import datetime, timedelta
+        from_date = filters.get('from_date')
+        to_date = filters.get('to_date')
         
-        if filters.get('to_date'):
-            try:
-                to_date = datetime.strptime(filters['to_date'], '%Y-%m-%d').date()
-                qs = qs.filter(created_at__date__lte=to_date)
-            except:
-                pass
+        if from_date:
+            from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
+            qs = qs.filter(created_at__gte=from_datetime)
+
+        if to_date:
+            # Add 1 day to include full end date
+            to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
+            qs = qs.filter(created_at__lt=to_datetime)
+
         
         if filters.get('language'):
             languages = filters['language'] if isinstance(filters['language'], list) else [filters['language']]
@@ -524,18 +529,10 @@ class TabDataView(ReportBaseView):
         
         # Apply filters
         if filters.get('from_date'):
-            try:
-                from_date = parse_month_start(filters['from_date']) 
-                qs = qs.filter(acquisition_date__gte=from_date)
-            except:
-                pass
-        
+            qs = qs.filter(acquisition_date__gte=filters['from_date'])
+
         if filters.get('to_date'):
-            try:
-                to_date = parse_month_start(filters['to_date']) 
-                qs = qs.filter(acquisition_date__lte=to_date)
-            except:
-                pass
+            qs = qs.filter(acquisition_date__lte=filters['to_date'])
         
         if filters.get('condition'):
             conditions = filters['condition'] if isinstance(filters['condition'], list) else [filters['condition']]
@@ -620,20 +617,13 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(bookcatalog_id__in=catalog_ids)
         
         # Apply filters
+
         if filters.get('from_date'):
-            try:
-                from_date = parse_month_start(filters['from_date']) 
-                qs = qs.filter(date_processed__gte=from_date)
-            except:
-                pass
-        
+            qs = qs.filter(date_processed__gte=filters['from_date'])
+
         if filters.get('to_date'):
-            try:
-                to_date = parse_month_start(filters['to_date']) 
-                qs = qs.filter(date_processed__lte=to_date)
-            except:
-                pass
-        
+            qs = qs.filter(date_processed__lte=filters['to_date'])
+
         if filters.get('processing_status'):
             statuses = filters['processing_status'] if isinstance(filters['processing_status'], list) else [filters['processing_status']]
             qs = qs.filter(processing_status_id__in=statuses)
@@ -696,32 +686,17 @@ class TabDataView(ReportBaseView):
         
         # Apply date filters
         if filters.get('issue_from_date'):
-            try:
-                issue_from_date = parse_month_start(filters['issue_from_date']) 
-                qs = qs.filter(issue_date__gte=issue_from_date)
-            except:
-                pass
-        
+            qs = qs.filter(issue_date__gte=filters['issue_from_date'])
+
         if filters.get('issue_to_date'):
-            try:
-                issue_to_date = parse_month_start(filters['issue_to_date'])
-                qs = qs.filter(issue_date__lte=issue_to_date)
-            except:
-                pass
-        
+            qs = qs.filter(issue_date__lte=filters['issue_to_date'])
+
         if filters.get('due_from_date'):
-            try:
-                due_from_date = parse_month_start(filters['due_from_date']) 
-                qs = qs.filter(due_date__gte=due_from_date)
-            except:
-                pass
-        
+            qs = qs.filter(due_date__gte=filters['due_from_date'])
+
         if filters.get('due_to_date'):
-            try:
-                due_to_date = parse_month_start(filters['due_to_date']) 
-                qs = qs.filter(due_date__lte=due_to_date)
-            except:
-                pass
+            qs = qs.filter(due_date__lte=filters['due_to_date'])
+        
         
         # Apply overdue filter
         today = date.today()
@@ -810,46 +785,23 @@ class TabDataView(ReportBaseView):
         
         # Apply all date filters
         if filters.get('issue_from_date'):
-            try:
-                issue_from_date = parse_month_start(filters['issue_from_date']) 
-                qs = qs.filter(issue_date__gte=issue_from_date)
-            except:
-                pass
-        
+            qs = qs.filter(issue_date__gte=filters['issue_from_date'])
+
         if filters.get('issue_to_date'):
-            try:
-                issue_to_date = parse_month_start(filters['issue_to_date']) 
-                qs = qs.filter(issue_date__lte=issue_to_date)
-            except:
-                pass
-        
+            qs = qs.filter(issue_date__lte=filters['issue_to_date'])
+
         if filters.get('due_from_date'):
-            try:
-                due_from_date = parse_month_start(filters['due_from_date']) 
-                qs = qs.filter(due_date__gte=due_from_date)
-            except:
-                pass
-        
+            qs = qs.filter(due_date__gte=filters['due_from_date'])
+
         if filters.get('due_to_date'):
-            try:
-                due_to_date = parse_month_start(filters['due_to_date']) 
-                qs = qs.filter(due_date__lte=due_to_date)
-            except:
-                pass
+            qs = qs.filter(due_date__lte=filters['due_to_date'])
         
         if filters.get('return_from_date'):
-            try:
-                return_from_date = parse_month_start(filters['return_from_date'])
-                qs = qs.filter(return_date__gte=return_from_date)
-            except:
-                pass
-        
+            qs = qs.filter(return_date__gte=filters['return_from_date'])
+
         if filters.get('return_to_date'):
-            try:
-                return_to_date = parse_month_start(filters['return_to_date'])
-                qs = qs.filter(return_date__lte=return_to_date)
-            except:
-                pass
+            qs = qs.filter(return_date__lte=filters['return_to_date'])
+
         
         # Apply other filters
         if filters.get('book_fine') == 'yes':
@@ -1045,19 +997,19 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(cat_rem_num_id__in=catalog_ids)
         
         # Apply filters
-        if filters.get('from_date'):
-            try:
-                from_date = parse_month_start(filters['from_date']) 
-                qs = qs.filter(created_at__date__gte=from_date)
-            except:
-                pass
+
+        from datetime import datetime, timedelta
+        from_date = filters.get('from_date')
+        to_date = filters.get('to_date')
         
-        if filters.get('to_date'):
-            try:
-                to_date = parse_month_start(filters['to_date']) 
-                qs = qs.filter(created_at__date__lte=to_date)
-            except:
-                pass
+        if from_date:
+            from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
+            qs = qs.filter(created_at__gte=from_datetime)
+
+        if to_date:
+            # Add 1 day to include full end date
+            to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
+            qs = qs.filter(created_at__lt=to_datetime)
         
         if filters.get('is_shelved') == 'true':
             qs = qs.filter(is_shelved=True)
@@ -1097,19 +1049,18 @@ class TabDataView(ReportBaseView):
         if filters.get('isbn'):
             qs = qs.filter(isbn__icontains=filters['isbn'])
         
-        if filters.get('from_date'):
-            try:
-                from_date = parse_month_start(filters['from_date']) 
-                qs = qs.filter(created_at__date__gte=from_date)
-            except:
-                pass
+        from datetime import datetime, timedelta
+        from_date = filters.get('from_date')
+        to_date = filters.get('to_date')
         
-        if filters.get('to_date'):
-            try:
-                to_date = parse_month_start(filters['to_date']) 
-                qs = qs.filter(created_at__date__lte=to_date)
-            except:
-                pass
+        if from_date:
+            from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
+            qs = qs.filter(created_at__gte=from_datetime)
+
+        if to_date:
+            # Add 1 day to include full end date
+            to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
+            qs = qs.filter(created_at__lt=to_datetime)
         
         qs = qs.prefetch_related('google_details')
         
@@ -1140,19 +1091,18 @@ class TabDataView(ReportBaseView):
         if filters.get('isbn'):
             qs = qs.filter(isbn__icontains=filters['isbn'])
         
-        if filters.get('from_date'):
-            try:
-                from_date = parse_month_start(filters['from_date']) 
-                qs = qs.filter(created_at__date__gte=from_date)
-            except:
-                pass
+        from datetime import datetime, timedelta
+        from_date = filters.get('from_date')
+        to_date = filters.get('to_date')
         
-        if filters.get('to_date'):
-            try:
-                to_date = parse_month_start(filters['to_date']) 
-                qs = qs.filter(created_at__date__lte=to_date)
-            except:
-                pass
+        if from_date:
+            from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
+            qs = qs.filter(created_at__gte=from_datetime)
+
+        if to_date:
+            # Add 1 day to include full end date
+            to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
+            qs = qs.filter(created_at__lt=to_datetime)
         
         qs = qs.prefetch_related('loc_details')
         
@@ -3183,7 +3133,7 @@ class ExportReportView(ReportBaseView):
                         db=db,
                         book_ids=book_ids,
                         list_type=list_type,
-                        filters=tab_filters.get(export_type, {})
+                        filters=tab_filters
                     )
 
             # ----------------------------------
