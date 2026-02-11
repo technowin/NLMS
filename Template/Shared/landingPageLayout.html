@@ -245,13 +245,17 @@
                             <li class="nav-item">
                                 <a href="{% url 'swd_libraries' %}">Library Information</a>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="{% url 'L01:mpsc_ebooks_index' %}">Maharashtra Public Service Commission(MPSC)</a></li>
-                                    <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
-                                </ul>
-                            </li>
+                            
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                                <li class="nav-item dropdown">
+                                    <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="{% url 'L01:mpsc_ebooks_index' %}">Maharashtra Public Service Commission(MPSC)</a></li>
+                                        <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
+                                    </ul>
+                                </li>
+                            {% endif %}
+
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item">
                                     <a href="{% url 'L01:view_ebook_catalogue' %}">Search Books</a>
@@ -298,13 +302,15 @@
                             <li class="nav-item">
                                 <a href="{% url 'swd_libraries' %}">ग्रंथालय माहिती</a>
                             </li>
-                            <li class="nav-item dropdown">
-                                <a href="javascript:void(0);" class="dropbtn">परीक्षा तयारी ▾</a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="{% url 'L01:mpsc_ebooks_index' %}">महाराष्ट्र लोकसेवा आयोग (MPSC)</a></li>
-                                    <li><a href="{% url 'L01:upsc_ebook_index' %}">केंद्रीय लोकसेवा आयोग (UPSC)</a></li>
-                                </ul>
-                            </li>
+                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                                <li class="nav-item dropdown">
+                                    <a href="javascript:void(0);" class="dropbtn">परीक्षा तयारी ▾</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="{% url 'L01:mpsc_ebooks_index' %}">महाराष्ट्र लोकसेवा आयोग (MPSC)</a></li>
+                                        <li><a href="{% url 'L01:upsc_ebook_index' %}">केंद्रीय लोकसेवा आयोग (UPSC)</a></li>
+                                    </ul>
+                                </li>
+                            {% endif %}
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item">
                                     <a href="{% url 'L01:view_ebook_catalogue' %}">पुस्तके शोधा</a>
