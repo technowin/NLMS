@@ -123,8 +123,13 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'lax'
 SESSION_COOKIE_SECURE = True  # True only if HTTPS
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_COOKIE_DOMAIN = ".nmmclibrary.in"
-CSRF_COOKIE_DOMAIN = ".nmmclibrary.in"
+
+if ENVIRONMENT == 'production':
+    SESSION_COOKIE_DOMAIN = ".nmmclibrary.in"
+    CSRF_COOKIE_DOMAIN = ".nmmclibrary.in"
+else:
+    SESSION_COOKIE_DOMAIN = None
+    CSRF_COOKIE_DOMAIN = None
 
 # http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
 CRISPY_TEMPLATE_PACK = "bootstrap5"
