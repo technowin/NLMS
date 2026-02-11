@@ -43,7 +43,7 @@
                                 <label class="form-label">Shelf Location</label>
                                 <select class="form-control location-select" name="shelf_location[]" multiple>
                                     <option value="">--Select--</option>
-                                    {% for s in slocationss %}
+                                    {% for s in locations %}
                                         <option value="{{ s.location_id }}">
                                             {{ s.location_name }}
                                         </option>

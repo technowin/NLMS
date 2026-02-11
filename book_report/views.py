@@ -1,99 +1,39 @@
-from warnings import filters
-from django.conf import settings
-from django.forms import DateField
-from django.shortcuts import render
-from datetime import datetime, time
-
-# Create your views here.
 # reports/views.py
+
+import os
 import json
+import calendar
+import tempfile
+from io import BytesIO
+from datetime import date, datetime, time, timedelta
+
+import pandas as pd
+import xlsxwriter
+
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, F, Value, CharField
-from django.db.models.functions import Concat, ExtractMonth
-from django.core.paginator import Paginator
-from django.utils import timezone
-from httpcore import request
-import pandas as pd
-from io import BytesIO
-import xlsxwriter
-
-from book_report.models import *
-
-from .forms import *
-from L01.models import *
-from Account.models import CustomUser 
-
-import calendar
-from django.db.models import Q, F, Value
-from django.db.models.functions import Coalesce
-
-from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-import tempfile
-import os
+from django.utils import timezone
+from django.core.paginator import Paginator
 from django.core.files.storage import FileSystemStorage
-from django.db import transaction
-from django.db.models import Q
+from django.contrib import messages
+from django.db import transaction, connection
+from django.db.models import (
+    Q, F, Value, CharField, IntegerField, Func, DateField
+)
+from django.db.models.functions import (
+    Concat, Now, Cast, Coalesce, ExtractMonth
+)
 
-def parse_month_start(month_str):
-    y, m = map(int, month_str.split('-'))
-    return date(y, m, 1)
-
-def parse_month_end(month_str):
-    y, m = map(int, month_str.split('-'))
-    last_day = calendar.monthrange(y, m)[1]
-    return date(y, m, last_day)
-
-
-import json
-import tempfile
-import os
-import pandas as pd
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
-from django.views import View
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, F, Value, CharField, IntegerField, Func
-from django.db.models.functions import Concat, Now, Cast, Coalesce
-from django.core.paginator import Paginator
-from django.utils import timezone
-from django.db import connection
-from datetime import date, timedelta
-import calendar
-import xlsxwriter
-from io import BytesIO
-
-from .forms import *
+from book_report.models import *
 from L01.models import *
-
-import json
-import tempfile
-import os
-import pandas as pd
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
-from django.views import View
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, F, Value, CharField, IntegerField, Func, DateField
-from django.db.models.functions import Concat, Now, Cast, Coalesce
-from django.core.paginator import Paginator
-from django.utils import timezone
-from django.db import connection
-from datetime import date, timedelta, datetime
-import calendar
-import xlsxwriter
-from io import BytesIO
-
+from Account.models import CustomUser
 from .forms import *
-from L01.models import *
-from django.conf import settings
 
 class ReportBaseView(LoginRequiredMixin, View):
     """Base view for handling dynamic database selection"""
@@ -287,7 +227,7 @@ class BookReportView(ReportBaseView, TemplateView):
         context['processing_status'] = processing_status
         context['current_status'] = current_status
         context['libraries'] = libraries
-        context['catalogues '] = catalogues
+        context['catalogues'] = catalogues
 
         context['catalogue_form'] = catalogue_form
         context['accession_form'] = accession_form
@@ -540,7 +480,7 @@ class TabDataView(ReportBaseView):
         
         if filters.get('source'):
             sources = filters['source'] if isinstance(filters['source'], list) else [filters['source']]
-            qs = qs.filter(source_id__in=sources)
+            qs = qs.filter(funding_source__in=sources)
         
         if filters.get('location'):
             locations = filters['location'] if isinstance(filters['location'], list) else [filters['location']]
