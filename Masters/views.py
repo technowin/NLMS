@@ -6069,13 +6069,26 @@ def edit_competitive_book(request, enc_chapter_no):
         }
     )
 
+from django.db.models import Prefetch
+
 def event_index(request):
-
     try:
-
-        events = LibraryEvent.objects.using('default').prefetch_related("images")\
-                                     .order_by("-created_at")
+        image_prefetch = Prefetch(
+            'images',
+            queryset=EventImage.objects.using('default')
+        )
+        pdf_prefetch = Prefetch(
+            'pdfs',
+            queryset=EventPDF.objects.using('default')
+        )
+        events = (
+            LibraryEvent.objects.using('default')
+            .prefetch_related(image_prefetch, pdf_prefetch)
+            .order_by("-created_at")
+        )
         for event in events:
+
+            # First image as thumbnail
             first_image = event.images.first()
 
             if first_image and first_image.image:
@@ -6084,15 +6097,18 @@ def event_index(request):
                 )
             else:
                 event.thumbnail = None
+
         context = {
             "events": events,
             "title": "Library Events"
         }
+
         return render(request, "Master/Event_list.html", context)
+
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
-        callproc("stp_error_log", [fun, str(e), request.user])
+        callproc("stp_error_log", [fun, str(e), ''])
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("event_list")
 
