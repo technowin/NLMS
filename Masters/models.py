@@ -1,6 +1,9 @@
 from django.db import models
 from django.db import models
 from Account.models import *
+from django.core.validators import FileExtensionValidator
+
+from administration.models import LibraryMaster
 
 
 class status_master(models.Model):
@@ -426,4 +429,64 @@ class VisitorActivity(models.Model):
     class Meta:
         db_table = 'tbl_visitor_activity'
 
+class LibraryEvent(models.Model):
+    EVENT_TYPE_CHOICES = [
+        ('single', 'Single Day Event'),
+        ('multiple', 'Multiple Day Event'),
+    ]
+    SCOPE_CHOICES = [
+        ('all', 'For All Libraries'),
+        ('specific', 'For Specific Library'),
+    ]
+    library = models.ForeignKey(LibraryMaster,on_delete=models.CASCADE,null=True,blank=True,verbose_name="Library")
+    scope = models.CharField(max_length=20,choices=SCOPE_CHOICES,default='all',verbose_name="Event Scope")
+    event_name = models.CharField( max_length=255,verbose_name="Event Name")
+    description = models.TextField( verbose_name="Description")
+    event_type = models.CharField(max_length=20,choices=EVENT_TYPE_CHOICES,default='single',verbose_name="Event Type")
+    date = models.DateField(null=True,blank=True,verbose_name="Date")
+    from_date = models.DateField(null=True,blank=True,verbose_name="From Date")
+    to_date = models.DateField(null=True, blank=True, verbose_name="To Date")
+    start_time = models.TimeField(verbose_name="Start Time", null=True,blank=True)
+    end_time = models.TimeField(verbose_name="End Time", null=True,blank=True)
+    location = models.TextField(verbose_name="Location")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.event_name
+    
+    class Meta:
+        verbose_name = "Library Event"
+        verbose_name_plural = "Library Events"
+
+    class Meta:
+        db_table = "tbl_library_event"
+
+
+class EventImage(models.Model):
+    event = models.ForeignKey(LibraryEvent,on_delete=models.CASCADE,related_name='images')
+    image = models.CharField(max_length=500,verbose_name="Event Image Path")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Image for {self.event.event_name}"
+    
+    class Meta:
+        verbose_name = "Event Image"
+        verbose_name_plural = "Event Images"
+        db_table = "tbl_library_event_image"
+
+
+class EventPDF(models.Model):
+    event = models.ForeignKey(LibraryEvent,on_delete=models.CASCADE,related_name='pdfs')
+    pdf_file = models.CharField( max_length=500,verbose_name="Event PDF Path")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"PDF for {self.event.event_name}"
+    
+    class Meta:
+        verbose_name = "Event PDF"
+        verbose_name_plural = "Event PDFs"
+        db_table = "tbl_library_event_pdf"
     

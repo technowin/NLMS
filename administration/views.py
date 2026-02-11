@@ -152,7 +152,7 @@ def library_list(request):
         
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
-  
+
 def service_redirect(request):
     Db.closeConnection()
     m = Db.get_connection()
@@ -174,7 +174,14 @@ def service_redirect(request):
 
         # Redirect based on service code
         if service_code == "L01":
-            return redirect("L01:index")
+            
+            if settings.ENVIRONMENT == 'local':
+                return redirect("http://127.0.0.1:8000/L01/index")
+            elif settings.ENVIRONMENT == 'test':
+                return redirect("http://3.111.76.175/L01/index")
+            else:  # production
+                return redirect("http://vdb.nmmclibrary.in/L01/index")
+
         elif service_code == "L02":
             return redirect("L02:index")
         else:
@@ -182,7 +189,6 @@ def service_redirect(request):
     except Exception as e:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': str(e)}, status=500)
-        
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else 'library_list'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
@@ -198,16 +204,30 @@ def set_library_session_and_login(request):
         if request.method == 'POST':
             library_code = request.POST.get('library_code')
             library_code_decrypted = dec(library_code)
-            if library_code:
+
+            if library_code_decrypted:
                 request.session['library_db'] = library_code_decrypted
-        return redirect('Login')  # actual login page
+
+                # SIMPLE IF CONDITION
+                if library_code_decrypted == 'L01':
+                    
+                    if settings.ENVIRONMENT == 'local':
+                        return redirect("http://127.0.0.1:8000/Login")
+                    elif settings.ENVIRONMENT == 'test':
+                        return redirect("http://3.111.76.175/Login")
+                    else:  # production
+                        return redirect("http://vdb.nmmclibrary.in/Login")  
+
+                # default login
+                return redirect('Login')
+
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
-        fun = tb[0].name if tb else 'library_list'
+        fun = tb[0].name if tb else 'set_library_session_and_login'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
-        print(f"error: {e}")
         messages.error(request, 'Oops...! Something went wrong!')
         return redirect("Meta_Index")
+
     
 def library_list_index(request):
     Db.closeConnection()
