@@ -6216,7 +6216,8 @@ def create_event(request):
         return render(request, 'Master/Event.html', context)
 
 def edit_event(request, pk):
-    event = get_object_or_404(LibraryEvent, pk=pk)
+    event = get_object_or_404(LibraryEvent.objects.using('default'), pk=pk).id
+
     
     if request.method == 'POST':
         # Get form data
@@ -6348,36 +6349,56 @@ def edit_event(request, pk):
     
     else:  # GET request
         # Get existing files for preview
+        event = LibraryEvent.objects.using('default').get(id=event)
+
+        # Prefetch images and PDFs using 'default' database
+        image_prefetch = Prefetch(
+            'images',
+            queryset=EventImage.objects.using('default')
+        )
+
+        pdf_prefetch = Prefetch(
+            'pdfs',
+            queryset=EventPDF.objects.using('default')
+        )
+
+        # Query libraries
+        libraries = LibraryMaster.objects.using('default').all()
+
+        # Prefetch related images and PDFs
+        event = LibraryEvent.objects.using('default') \
+            .prefetch_related(image_prefetch, pdf_prefetch) \
+            .get(id=event.id)
+
         existing_images = event.images.all()
         existing_pdfs = event.pdfs.all()
-        libraries = LibraryMaster.objects.using('default').all()
 
         images_with_urls = []
         for img in existing_images:
             images_with_urls.append({
                 'id': img.id,
-                'image': img.image,  # This is the path stored in DB
+                'image': img.image,  # Path stored in DB
                 'url': file_storage_service.get_file_url(img.image) if img.image else None,
                 'uploaded_at': img.uploaded_at
             })
-        
+
         pdfs_with_urls = []
         for pdf in existing_pdfs:
             pdfs_with_urls.append({
                 'id': pdf.id,
-                'pdf_file': pdf.pdf_file,  # This is the path stored in DB
+                'pdf_file': pdf.pdf_file,  # Path stored in DB
                 'url': file_storage_service.get_file_url(pdf.pdf_file) if pdf.pdf_file else None,
                 'uploaded_at': pdf.uploaded_at,
                 'filename': os.path.basename(pdf.pdf_file) if pdf.pdf_file else 'PDF File'
             })
-        
-        
+
         context = {
             'event': event,
             'libraries': libraries,
-            "existing_images": images_with_urls,
-            "existing_pdfs": pdfs_with_urls,
+            'existing_images': images_with_urls,
+            'existing_pdfs': pdfs_with_urls,
             'title': 'Edit Event',
             'is_edit': True,
         }
+
         return render(request, 'Master/Event.html', context)
