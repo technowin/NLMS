@@ -106,9 +106,11 @@ def index(request):
     try:
         # Get the library code from session
         library_code = request.session.get('library_db', None)
-
+        lib = get_object_or_404(
+            LibraryMaster.objects.using('default'),
+            library_code=library_code
+        )
         if library_code:
-                
             library_details = LibraryMaster.objects.using('default').filter(
                 is_active=1, 
                 library_code=library_code
@@ -134,6 +136,30 @@ def index(request):
                 lilo.library_address = ""
                 if lilo.location:
                     lilo.library_address = lilo.location.address or ""
+
+                now = timezone.now()
+                next_24_hours = now + timedelta(hours=24)
+
+                upcoming_events = LibraryEvent.objects.using('default').filter(
+
+                    Q(
+                        event_type="single",
+                        date__isnull=False,
+                        date__range=[now.date(), next_24_hours.date()]
+                    )
+
+                    |
+
+                    Q(
+                        event_type="multiple",
+                        from_date__isnull=False,
+                        from_date__range=[now.date(), next_24_hours.date()]
+                    )
+
+                )
+                upcoming_events = upcoming_events.filter(library=lib)
+                has_upcoming_event = upcoming_events.exists()
+                upcoming_count = upcoming_events.count()
 
                 # -------------------------------------------
                 # FETCH RECENT 5 BOOKS
@@ -267,6 +293,8 @@ def index(request):
             'library_name_mar':library_name_mar,
             'library_address': library_address,
             'library_code': library_code,
+            "has_upcoming_event": has_upcoming_event,
+            'upcoming_count':upcoming_count,
             'MEDIA_URL': settings.MEDIA_URL
         })
     

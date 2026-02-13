@@ -6127,11 +6127,8 @@ def create_event(request):
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
         location = request.POST.get('location')
-        # Validate file sizes and types
         images = request.FILES.getlist('images')
         pdfs = request.FILES.getlist('pdfs')
-        
-        
         # Create event
         try:
             event = LibraryEvent(
@@ -6216,11 +6213,10 @@ def create_event(request):
         return render(request, 'Master/Event.html', context)
 
 def edit_event(request, pk):
-    event = get_object_or_404(LibraryEvent.objects.using('default'), pk=pk).id
+    event = get_object_or_404(LibraryEvent.objects.using('default'), pk=pk)
 
-    
     if request.method == 'POST':
-        # Get form data
+
         scope = request.POST.get('scope')
         library_id = request.POST.get('library')
         event_name = request.POST.get('event_name')
@@ -6235,54 +6231,79 @@ def edit_event(request, pk):
 
         images = request.FILES.getlist('images')
         pdfs = request.FILES.getlist('pdfs')
-        
-        # Get files to delete
+
         delete_images = request.POST.getlist('delete_images')
         delete_pdfs = request.POST.getlist('delete_pdfs')
-    
+
         try:
+
+            # ================= UPDATE EVENT =================
+
             event.scope = scope
-            event.library_id = library_id if scope == 'specific' else None
+
+            if scope == 'specific':
+                event.library_id = library_id
+            else:
+                event.library = None
+
             event.event_name = event_name
             event.description = description
             event.event_type = event_type
-            event.date = date if event_type == 'single' else None
-            event.from_date = from_date if event_type == 'multiple' else None
-            event.to_date = to_date if event_type == 'multiple' else None
+
+            if event_type == 'single':
+                event.date = date
+                event.from_date = None
+                event.to_date = None
+
+            elif event_type == 'multiple':
+                event.date = None
+                event.from_date = from_date
+                event.to_date = to_date
+
             event.start_time = start_time
             event.end_time = end_time
             event.location = location
+
             event.save()
-            
-            # Delete marked images
+
+            # ================= DELETE IMAGES =================
+
             for image_id in delete_images:
+
                 try:
-                    event_image = EventImage.objects.get(id=image_id, event=event)
-                    
-                    # Delete file using file storage service
+                    event_image = EventImage.objects.get(
+                        id=image_id,
+                        event=event
+                    )
+
                     if event_image.image:
                         file_storage_service.delete_file(event_image.image)
-                    
-                    # Delete database record
+
                     event_image.delete()
+
                 except EventImage.DoesNotExist:
                     pass
-            
-            # Delete marked PDFs
+
+            # ================= DELETE PDFS =================
+
             for pdf_id in delete_pdfs:
+
                 try:
-                    event_pdf = EventPDF.objects.get(id=pdf_id, event=event)
-                    
-                    # Delete file using file storage service
+                    event_pdf = EventPDF.objects.get(
+                        id=pdf_id,
+                        event=event
+                    )
+
                     if event_pdf.pdf_file:
                         file_storage_service.delete_file(event_pdf.pdf_file)
-                    
-                    # Delete database record
+
                     event_pdf.delete()
+
                 except EventPDF.DoesNotExist:
                     pass
-            
-            # Save new images
+
+            # ================= SAVE NEW IMAGES =================
+
             for image in images:
 
                 filename = image.name
@@ -6297,8 +6318,9 @@ def edit_event(request, pk):
                     event=event,
                     image=saved_file_path
                 )
-            
-            # Save new PDFs
+
+            # ================= SAVE NEW PDFS =================
+
             for pdf in pdfs:
 
                 filename = pdf.name
@@ -6314,18 +6336,17 @@ def edit_event(request, pk):
                     pdf_file=saved_file_path
                 )
 
-            
             messages.success(request, 'Event updated successfully!')
             return redirect('event_index')
-            
+
         except Exception as e:
+
             messages.error(request, f'Error updating event: {str(e)}')
-            
-            # Get existing files for re-rendering
+
             existing_images = event.images.all()
             existing_pdfs = event.pdfs.all()
             libraries = LibraryMaster.objects.using('default').all()
-            
+
             context = {
                 'event': event,
                 'libraries': libraries,
@@ -6345,11 +6366,12 @@ def edit_event(request, pk):
                 'title': 'Edit Event',
                 'is_edit': True,
             }
+
             return render(request, 'Master/Event.html', context)
     
     else:  # GET request
         # Get existing files for preview
-        event = LibraryEvent.objects.using('default').get(id=event)
+        event = LibraryEvent.objects.using('default').get(id=event.id)
 
         # Prefetch images and PDFs using 'default' database
         image_prefetch = Prefetch(

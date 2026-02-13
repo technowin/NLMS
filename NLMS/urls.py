@@ -236,6 +236,7 @@ urlpatterns = [
     path('events/create/', create_event, name='create_event'),
     path('events/<int:pk>/edit/', edit_event, name='edit_event'),
     path('event_list/', event_list, name='event_list'),
+    path('library-events/', library_event_list, name='library_event_list'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

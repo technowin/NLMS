@@ -1,3 +1,4 @@
+from datetime import timedelta
 import traceback
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -37,6 +38,24 @@ def library_list(request):
                 return redirect(f"{library_code}:index")
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+        now = timezone.now()
+        next_24_hours = now + timedelta(hours=24)
+        upcoming_events = LibraryEvent.objects.using('default').filter(
+            Q(
+                event_type="single",
+                date__isnull=False,
+                date__range=[now.date(), next_24_hours.date()]
+            )
+            |
+            Q(
+                event_type="multiple",
+                from_date__isnull=False,
+                from_date__range=[now.date(), next_24_hours.date()]
+            )
+        )
+        upcoming_events = upcoming_events.filter(library__isnull=True)
+        has_upcoming_event = upcoming_events.exists()
+        upcoming_count = upcoming_events.count()
 
         # Add encrypted library code and membership link status to ALL libraries
         for lilo in all_libraries:
@@ -119,6 +138,8 @@ def library_list(request):
             'MEDIA_URL': settings.MEDIA_URL,
             'total_pages': paginator.num_pages,
             'total_count': paginator.count,
+            "has_upcoming_event": has_upcoming_event,
+            'upcoming_count':upcoming_count,
             'initial_has_membership': initial_has_membership  # Add this
         })
     
@@ -773,6 +794,91 @@ def event_list(request):
     events = (
         LibraryEvent.objects.using('default')
         .filter(library__isnull=True)
+        .annotate(
+            event_order_date=Coalesce('date', 'from_date')
+        )
+        .order_by('event_order_date')
+        .prefetch_related(image_prefetch, pdf_prefetch)
+    )
+
+    events_data = []
+
+    for event in events:
+
+        # Images
+        images = [
+            file_storage_service.get_file_url(img.image)
+            for img in event.images.all()
+            if img.image
+        ]
+
+        # PDFs
+        pdfs = [
+            {
+                "name": pdf.pdf_file.split("/")[-1],
+                "url": file_storage_service.get_file_url(pdf.pdf_file)
+            }
+            for pdf in event.pdfs.all()
+            if pdf.pdf_file
+        ]
+
+        # Date
+        if event.event_type == "single":
+            date_text = event.date.strftime("%d %b %Y") if event.date else ""
+        else:
+            date_text = f"{event.from_date.strftime('%d %b %Y')} - {event.to_date.strftime('%d %b %Y')}"
+
+        events_data.append({
+            "id": event.id,
+            "name": event.event_name,
+            "description": event.description,
+            "date": date_text,
+            "start_time": event.start_time.strftime("%H:%M") if event.start_time else "",
+            "end_time": event.end_time.strftime("%H:%M") if event.end_time else "",
+            "location": event.location,
+            "images": images,
+            "pdfs": pdfs,
+        })
+
+    return render(request, "administration/event_list.html", {
+        "events": events_data
+    })
+
+def library_event_list(request):
+
+    # Get library_code from session
+    library_code = request.session.get('library_db')
+
+    if not library_code:
+        return render(request, "administration/event_list.html", {
+            "events": []
+        })
+
+    # Get Library Object
+    try:
+        library_obj = LibraryMaster.objects.using('default').get(
+            library_code=library_code
+        )
+    except LibraryMaster.DoesNotExist:
+        return render(request, "administration/event_list.html", {
+            "events": []
+        })
+
+    # Prefetch
+    image_prefetch = Prefetch(
+        'images',
+        queryset=EventImage.objects.using('default')
+    )
+
+    pdf_prefetch = Prefetch(
+        'pdfs',
+        queryset=EventPDF.objects.using('default')
+    )
+
+    # Get Events of This Library
+    events = (
+        LibraryEvent.objects.using('default')
+        .filter(library=library_obj)   # <-- Main Change
         .annotate(
             event_order_date=Coalesce('date', 'from_date')
         )
