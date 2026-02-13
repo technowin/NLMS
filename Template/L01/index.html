@@ -696,6 +696,105 @@
 
 
 </style>
+<style>
+
+    /* Main Button */
+    .event-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        padding: 10px 16px;
+
+        border-radius: 8px;
+
+        background: #f5f5f5;
+        color: #333;
+
+        text-decoration: none;
+        font-weight: 600;
+
+        transition: all 0.3s ease;
+    }
+
+
+    /* When Notification Exists */
+    .notify-active {
+        background: linear-gradient(135deg, #ff9800, #ff6f00);
+        color: #fff !important;
+
+        animation: glowPulse 1.8s infinite;
+    }
+
+
+    /* Smooth Glow */
+    @keyframes glowPulse {
+        0% {
+            box-shadow:
+                0 0 6px rgba(255,152,0,0.5),
+                0 0 12px rgba(255,152,0,0.3);
+        }
+
+        50% {
+            box-shadow:
+                0 0 14px rgba(255,152,0,0.9),
+                0 0 28px rgba(255,152,0,0.7);
+        }
+
+        100% {
+            box-shadow:
+                0 0 6px rgba(255,152,0,0.5),
+                0 0 12px rgba(255,152,0,0.3);
+        }
+    }
+
+
+    /* Icon Wrapper */
+    .icon-wrap {
+        position: relative;
+        font-size: 16px;
+    }
+
+
+    /* Badge */
+    .notify-badge {
+        position: absolute;
+
+        top: -5px;
+        right: -5px;
+
+        min-width: 18px;
+        height: 18px;
+
+        background: #ff1744;
+
+        color: white;
+
+        font-size: 11px;
+        font-weight: bold;
+
+        border-radius: 50%;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0 4px;
+
+        border: 2px solid white;
+
+        box-shadow: 0 0 6px rgba(255,23,68,0.8);
+    }
+
+
+    /* Hover Effect */
+    .event-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    }
+
+</style>
 
 {% comment %} <div>
     Library Code is this :- {{library_code}}
@@ -765,6 +864,20 @@
                             <i class="fa fa-id-card"></i> Membership Rules
                         </button>
                     {% endif %}
+                       <a href="{% url 'library_event_list' %}"
+                            class="rule-btn event-btn {% if upcoming_count > 0 %}notify-active{% endif %}"
+                            title="{{ upcoming_count }} upcoming events">
+
+                                <span class="icon-wrap">
+                                    <i class="fa fa-calendar"></i>
+                                </span>
+
+                                <span class="btn-text">Events</span>
+
+                                {% if upcoming_count > 0 %}
+                                    <span class="notify-badge">{{ upcoming_count }}</span>
+                                {% endif %}
+                        </a>
                 </div>
 
                 <div class="library-social-icons">
