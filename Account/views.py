@@ -289,6 +289,7 @@ def Login(request):
         # ------------------------------------------
         # Get membership info
         # ------------------------------------------
+        user_obj = CustomUser.objects.using(db_alias).filter(username=username).first()
         member = MembershipDetails.objects.using(db_alias).filter(user_id=username).first()
 
         membership_id = None
@@ -299,15 +300,36 @@ def Login(request):
             except MembershipMaster.DoesNotExist:
                 membership_id = None
                 
+        # if str(user.role_id) == '3' and member:
+        #     try:
+        #         login_session = MemberLoginSession.objects.using(db_alias).create(
+        #             member=member,   # ✅ pass MembershipDetails instance
+        #             ip_address=request.META.get('REMOTE_ADDR'),
+        #             created_by=str(user_obj.id)
+        #         )
+
+        #         request.session['login_session_id'] = login_session.id
+
+        #     except Exception as e:
+        #         print(f"Error creating MemberLoginSession: {e}")
+
         if str(user.role_id) == '3' and member:
             try:
-                login_session = MemberLoginSession.objects.using('L01').create(
-                    member=member,   # ✅ pass MembershipDetails instance
-                    ip_address=request.META.get('REMOTE_ADDR'),
-                    created_by=str(user.id)
-                )
-
-                request.session['login_session_id'] = login_session.id
+                # IMPORTANT: Fetch the member again using the 'L01' database
+                # to ensure it's from the correct database for the relation
+                member_for_session = MembershipDetails.objects.using('L01').filter(
+                    user_id=username
+                ).first()
+                
+                if member_for_session:
+                    login_session = MemberLoginSession.objects.using('L01').create(
+                        member=member_for_session,  # Use member from L01 database
+                        ip_address=request.META.get('REMOTE_ADDR'),
+                        created_by=str(user.id)
+                    )
+                    request.session['login_session_id'] = login_session.id
+                else:
+                    print(f"Member not found in L01 database for username: {username}")
 
             except Exception as e:
                 print(f"Error creating MemberLoginSession: {e}")
@@ -322,25 +344,25 @@ def Login(request):
             request.session.set_expiry(0)
             return redirect("L01:membership_dashboard")
 
-        # Membership expired
-        if member and today > member.to_date:
-            request.session["sweet_alert"] = {
-                "title": "Membership Expired",
-                "text": "आपली सदस्यता संपलेली आहे. कृपया नूतनीकरण करा.",
-                "icon": "warning"
-            }
-            request.session.set_expiry(0)
-            return redirect("L01:membership_dashboard")
+        if membership_id not in [5, 6]:
+            if member and today > member.to_date:
+                request.session["sweet_alert"] = {
+                    "title": "Membership Expired",
+                    "text": "आपली सदस्यता संपलेली आहे. कृपया नूतनीकरण करा.",
+                    "icon": "warning"
+                }
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
 
-        # Membership not started yet
-        if member and today < member.from_date:
-            request.session["sweet_alert"] = {
-                "title": "Membership Not Active Yet",
-                "text": "आपली सदस्यता अद्याप सुरू झालेली नाही.",
-                "icon": "info"
-            }
-            request.session.set_expiry(0)
-            return redirect("L01:membership_dashboard")
+            # Membership not started yet
+            if member and today < member.from_date:
+                request.session["sweet_alert"] = {
+                    "title": "Membership Not Active Yet",
+                    "text": "आपली सदस्यता अद्याप सुरू झालेली नाही.",
+                    "icon": "info"
+                }
+                request.session.set_expiry(0)
+                return redirect("L01:membership_dashboard")
             
         if membership_id == 8:
 
