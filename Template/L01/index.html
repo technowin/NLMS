@@ -865,7 +865,7 @@
                         </button>
                     {% endif %}
                        <a href="{% url 'library_event_list' %}"
-                            class="rule-btn event-btn {% if upcoming_count > 0 %}notify-active{% endif %}"
+                            class="rule-btn {% if upcoming_count > 0 %}notify-active{% endif %}"
                             title="{{ upcoming_count }} upcoming events">
 
                                 <span class="icon-wrap">
