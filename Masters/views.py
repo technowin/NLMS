@@ -6112,7 +6112,7 @@ def event_index(request):
         messages.error(request, "Oops...! Something went wrong!")
         return redirect("event_list")
 
-
+@login_required
 def create_event(request):
     if request.method == 'POST':
         # Get form data
@@ -6212,6 +6212,7 @@ def create_event(request):
         }
         return render(request, 'Master/Event.html', context)
 
+@login_required
 def edit_event(request, pk):
     event = get_object_or_404(LibraryEvent.objects.using('default'), pk=pk)
 
