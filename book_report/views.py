@@ -1153,6 +1153,111 @@ class GetBookOptionsView(ReportBaseView):
             'catalogues': list(catalogues),
         })
 
+def normalize_export_filters(filters, db=None):
+   
+    FILTER_MODEL_MAP = {
+
+        # 🔽 Catalogue Filters
+
+        'subject': {
+            'model': SubjectTypeMaster,
+            'pk': 'id',
+            'label': 'subjectNameEnglish',
+            'extra_filter': {'is_active': 1}
+        },
+        'material_type': {
+            'model': MaterialTypeMaster,
+            'pk': 'id',
+            'label': 'materialNameEnglish',
+            'extra_filter': {'is_active': 1}
+        },
+        'condition': {
+            'model': ConditionAtEntryMaster,
+            'pk': 'condition_id',
+            'label': 'condition_at_entry',
+            'extra_filter': {'is_active': 1}
+        },
+        'funding_source': {
+            'model': FundingSourceMaster,
+            'pk': 'source_id',
+            'label': 'funding_source_name',
+            'extra_filter': {'is_active': 1}
+        },
+        'location': {
+            'model': ResourceLocationMaster,
+            'pk': 'location_id',
+            'label': 'location_name',
+            'extra_filter': {'is_active': 1}
+        },
+        'supplier': {
+            'model': SupplierMaster,
+            'pk': 'supplier_id',
+            'label': 'supplier_name',
+            'extra_filter': {'is_active': 1}
+        },
+        'processing_status': {
+            'model': status_master,
+            'pk': 'status_id',
+            'label': 'status_name',
+            'extra_filter': {'is_active': 1, 'status_type': 'Inventory'}
+        },
+        'current_status': {
+            'model': status_master,
+            'pk': 'status_id',
+            'label': 'status_name',
+            'extra_filter': {'is_active': 1, 'status_type': 'Circulation Status'}
+        },
+        'library': {
+            'model': tbl_librarymasterL01,
+            'pk': 'library_code',
+            'label': 'library_name',
+            'extra_filter': {'is_active': 1}
+        },
+        'catalogue': {
+            'model': BookCatalog,
+            'pk': 'cat_ref_num',
+            'label': 'title',
+            'extra_filter': {'status_id': 1}
+        },
+    }
+
+    normalized_filters = {}
+
+    for key, value in filters.items():
+
+        if not value:
+            normalized_filters[key] = value
+            continue
+
+        if key in FILTER_MODEL_MAP:
+
+            cfg = FILTER_MODEL_MAP[key]
+            model = cfg['model']
+            pk_field = cfg['pk']
+            label_field = cfg['label']
+            extra_filter = cfg.get('extra_filter', {})
+
+            ids = value if isinstance(value, (list, tuple)) else [value]
+
+            lookup = {f"{pk_field}__in": ids}
+            lookup.update(extra_filter)
+
+            qs = model.objects
+            if db:
+                qs = qs.using(db)
+
+            names = list(
+                qs.filter(**lookup)
+                  .values_list(label_field, flat=True)
+            )
+
+            normalized_filters[key] = ", ".join(map(str, names))
+
+        else:
+            normalized_filters[key] = value
+
+    return normalized_filters
+
 def export_catalogue_to_excel(writer, db, book_ids, list_type, filters):
 
     # --------------------------------------------------
@@ -1277,6 +1382,9 @@ def export_catalogue_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -1285,8 +1393,7 @@ def export_catalogue_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -1467,6 +1574,9 @@ def export_accession_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -1475,8 +1585,7 @@ def export_accession_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -1652,6 +1761,9 @@ def export_circulation_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -1659,8 +1771,7 @@ def export_circulation_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -1841,6 +1952,9 @@ def export_loan_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -1848,8 +1962,7 @@ def export_loan_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -2039,6 +2152,9 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -2046,8 +2162,7 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -2229,6 +2344,9 @@ def export_supplier_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -2236,8 +2354,7 @@ def export_supplier_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -2416,6 +2533,9 @@ def export_review_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -2423,8 +2543,7 @@ def export_review_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -2598,6 +2717,9 @@ def export_return_log_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
@@ -2605,8 +2727,7 @@ def export_return_log_to_excel(writer, db, book_ids, list_type, filters):
 
     col = 1
     worksheet.write(3, col, f'List Type: {list_type.title()}')
-    col += 1
-    worksheet.write(3, col, f'Selected Records: {len(book_ids)}')
+    
     col += 1
 
     for key, value in filters.items():
@@ -2772,6 +2893,9 @@ def export_google_metadata_to_excel(writer, db, book_ids, list_type, filters):
         f'Generated on: {timezone.now().strftime("%d-%m-%Y %H:%M")}',
         subtitle_format
     )
+
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
 
     # --------------------------------------------------
     # Applied Filters
@@ -2943,6 +3067,9 @@ def export_loc_metadata_to_excel(writer, db, book_ids, list_type, filters):
         subtitle_format
     )
 
+    # Convert filter IDs → names (ONLY for display)
+    filters = normalize_export_filters(filters)
+    
     # --------------------------------------------------
     # Applied Filters
     # --------------------------------------------------
