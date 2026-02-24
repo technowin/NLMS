@@ -886,27 +886,34 @@
     <script>
         $(document).ready(function () {
 
-            // ---------- Track clicks ----------
+            // ---------- Track clicks (EXCLUDE PDF LINKS) ----------
             $('a').on('click', function (e) {
-                e.preventDefault();   // ⛔ STOP navigation
-
                 let href = $(this).attr('href');
+                
+                // Check if it's a PDF link - if yes, let it open normally
+                if (href && href.toLowerCase().includes('.pdf')) {
+                    return; // Do nothing, let the browser handle it normally
+                }
+                
+                // For non-PDF links, track and handle manually
+                e.preventDefault();
+                
                 let page = $(this).text().trim() || href;
-
-                $.ajax({
-                    type: "POST",
-                    url: "{% url 'track_click' %}",
-                    data: JSON.stringify({ page: page }),
-                    contentType: "application/json",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    complete: function () {
-                        if (href && href !== "#") {
-                            window.location.href = href; // ✅ Navigate AFTER save
+                
+                if (href && href !== "#") {
+                    $.ajax({
+                        type: "POST",
+                        url: "{% url 'track_click' %}",
+                        data: JSON.stringify({ page: page }),
+                        contentType: "application/json",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        complete: function () {
+                            window.location.href = href;
                         }
-                    }
-                });
+                    });
+                }
             });
 
             // ---------- Show popup after 5 minutes ----------
@@ -915,7 +922,6 @@
                 modal.show();
             }, 300000);
 
-            // Submit lead form
             // Submit lead form
             $('#leadForm').on('submit', function (e) {
                 e.preventDefault();
