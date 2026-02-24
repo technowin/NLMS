@@ -275,7 +275,33 @@
                                     <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">Login</button>
                                 </li>
                             {% endif %}
-                            
+
+                            <!-- Right Aligned PDF Links -->
+                            <li class="nav-item ms-auto d-flex align-items-center gap-3">
+                                <a href="{% static 'images/Vishnudas bhave Library PDF.pdf' %}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="pdf-link fs-5" 
+                                title="Vishnudas Bhave Library">
+                                    <i class="fas fa-file-pdf fa-lg"></i>
+                                </a>
+
+                                <a href="{% static 'images/Library Staff Dashboard PDF.pdf' %}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="pdf-link fs-5" 
+                                title="Library Staff Dashboard">
+                                    <i class="fas fa-file-pdf fa-lg"></i>
+                                </a>
+
+                                <a href="{% static 'images/Membership Deshboard PDF.pdf' %}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="pdf-link fs-5" 
+                                title="Membership Dashboard">
+                                    <i class="fas fa-file-pdf fa-lg"></i>
+                                </a>
+                            </li>
                             
 
                             <li class="icon">
@@ -331,6 +357,32 @@
                                     <button class="member-login-btn" onclick="window.location.href='{% url 'Account' %}'">लॉगिन</button>
                                 </li>
                             {% endif %}
+
+                            <li class="nav-item ms-auto d-flex align-items-center gap-3">
+                                <a href="{% static 'images/Vishnudas bhave Library PDF.pdf' %}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="pdf-link fs-4" 
+                                title="विष्णुदास भावे ग्रंथालय">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+
+                                <a href="{% static 'images/Library Staff Dashboard PDF.pdf' %}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="pdf-link fs-4" 
+                                title="ग्रंथालय कर्मचारी डॅशबोर्ड">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+
+                                <a href="{% static 'images/Membership Deshboard PDF.pdf' %}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="pdf-link fs-4" 
+                                title="सदस्य डॅशबोर्ड">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                            </li>
 
                             <li class="icon">
                                 <a href="javascript:void(0);" onclick="toggleNavbar('navbar-marathi')">☰</a>

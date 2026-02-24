@@ -2584,3 +2584,13 @@ footer .footer-container {
     background-color: #015296 !important; /* Primary */
     color: #ffffff !important;           /* White text */
 }
+
+.pdf-link {
+    transition: 0.3s ease;
+    color: #fff;
+}
+
+.pdf-link:hover {
+    transform: scale(1.2);
+    color: #ffffff !important;
+}
