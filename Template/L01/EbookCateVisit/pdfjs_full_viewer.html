@@ -1,0 +1,361 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ebook_title }} - ई-पुस्तक वाचक</title>
+    
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        /* Full screen setup */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #525659;
+        }
+        
+        /* Canvas container */
+        #pdf-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: auto;
+            background: #525659;
+            text-align: center;
+        }
+        
+        /* PDF pages */
+        .pdf-page {
+            margin: 10px auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            background: white;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border-radius: 50px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .loading i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Navigation controls (minimal) */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 50px;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+            user-select: none;
+        }
+        
+        #controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 5px;
+        }
+        
+        #controls button:hover {
+            color: #727CF5;
+        }
+        
+        #controls button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        #page-info {
+            margin: 0 10px;
+        }
+        
+        /* Zoom controls */
+        #zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10000;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 50px;
+            color: white;
+            display: flex;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+        }
+        
+        #zoom-controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 5px;
+        }
+        
+        #zoom-controls button:hover {
+            color: #727CF5;
+        }
+        
+        #zoom-level {
+            margin: 0 10px;
+            min-width: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading indicator -->
+    <div id="loading" class="loading">
+        <i class="ri-loader-4-line"></i>
+        <span>पुस्तक उघडत आहे...</span>
+    </div>
+
+    <!-- PDF container (where pages will be rendered) -->
+    <div id="pdf-container"></div>
+
+    <!-- Minimal navigation controls -->
+    <div id="controls" style="display: none;">
+        <button id="prev-page" disabled>◀</button>
+        <span id="page-info">1 / 1</span>
+        <button id="next-page" disabled>▶</button>
+    </div>
+
+    <!-- Zoom controls -->
+    <div id="zoom-controls" style="display: none;">
+        <button id="zoom-out">−</button>
+        <span id="zoom-level">100%</span>
+        <button id="zoom-in">+</button>
+    </div>
+
+    <!-- Load PDF.js from CDN (more reliable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <script>
+        // Set worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Configuration
+        const pdfUrl = "{% url 'L01:serve_secure_pdf' %}?token={{ pdf_token }}";
+        
+        // State
+        let pdfDoc = null;
+        let pageNum = 1;
+        let scale = 1.5;
+        let totalPages = 0;
+        
+        // DOM elements
+        const container = document.getElementById('pdf-container');
+        const loading = document.getElementById('loading');
+        const controls = document.getElementById('controls');
+        const zoomControls = document.getElementById('zoom-controls');
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+        const zoomIn = document.getElementById('zoom-in');
+        const zoomOut = document.getElementById('zoom-out');
+        const zoomLevel = document.getElementById('zoom-level');
+        
+        // Load PDF
+        pdfjsLib.getDocument(pdfUrl).promise.then(function(doc) {
+            pdfDoc = doc;
+            totalPages = doc.numPages;
+            
+            // Show controls
+            controls.style.display = 'flex';
+            zoomControls.style.display = 'flex';
+            
+            // Update page info
+            pageInfo.textContent = `1 / ${totalPages}`;
+            
+            // Enable/disable buttons based on page count
+            if (totalPages > 1) {
+                nextBtn.disabled = false;
+            }
+            
+            // Render first page
+            renderPage(pageNum);
+            
+        }).catch(function(error) {
+            console.error('Error loading PDF:', error);
+            loading.innerHTML = '<i class="ri-error-warning-line"></i> पीडीएफ उघडण्यात त्रुटी';
+        });
+        
+        // Render a specific page
+        function renderPage(num) {
+            loading.style.display = 'flex';
+            
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale: scale });
+                
+                // Create canvas for this page
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-page';
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Clear container and add canvas
+                container.innerHTML = '';
+                container.appendChild(canvas);
+                
+                // Render page
+                const renderContext = {
+                    canvasContext: canvas.getContext('2d'),
+                    viewport: viewport
+                };
+                
+                return page.render(renderContext).promise.then(function() {
+                    loading.style.display = 'none';
+                    
+                    // Update buttons
+                    prevBtn.disabled = (num <= 1);
+                    nextBtn.disabled = (num >= totalPages);
+                    
+                    // Update page info
+                    pageInfo.textContent = `${num} / ${totalPages}`;
+                    pageNum = num;
+                });
+            });
+        }
+        
+        // Event listeners for navigation
+        prevBtn.addEventListener('click', function() {
+            if (pageNum > 1) {
+                renderPage(pageNum - 1);
+            }
+        });
+        
+        nextBtn.addEventListener('click', function() {
+            if (pageNum < totalPages) {
+                renderPage(pageNum + 1);
+            }
+        });
+        
+        // Zoom controls
+        zoomIn.addEventListener('click', function() {
+            scale += 0.25;
+            zoomLevel.textContent = Math.round(scale * 100 / 1.5) + '%';
+            renderPage(pageNum);
+        });
+        
+        zoomOut.addEventListener('click', function() {
+            if (scale > 0.5) {
+                scale -= 0.25;
+                zoomLevel.textContent = Math.round(scale * 100 / 1.5) + '%';
+                renderPage(pageNum);
+            }
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            // Prevent ALL keyboard shortcuts
+            if (e.ctrlKey || e.metaKey || e.altKey) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Allow only page navigation with arrow keys
+            if (e.key === 'ArrowLeft') {
+                if (pageNum > 1) renderPage(pageNum - 1);
+                e.preventDefault();
+            }
+            else if (e.key === 'ArrowRight') {
+                if (pageNum < totalPages) renderPage(pageNum + 1);
+                e.preventDefault();
+            }
+            else {
+                // Block all other keys
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Block right-click completely
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Block all mouse buttons except left click
+        document.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) { // Not left click
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Block drag and drop
+        document.addEventListener('dragstart', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+        
+        // Block copy/paste
+        document.addEventListener('copy', (e) => e.preventDefault());
+        document.addEventListener('cut', (e) => e.preventDefault());
+        document.addEventListener('paste', (e) => e.preventDefault());
+        
+        // Override print
+        window.print = function() {
+            alert('प्रिंट करण्याची परवानगी नाही');
+            return false;
+        };
+        
+        // Block F12 and DevTools keys
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+                (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        console.log('✅ PDF.js loaded - all downloads/prints blocked');
+        
+        // Hide loading after 3 seconds even if PDF doesn't load
+        setTimeout(() => {
+            if (loading.style.display !== 'none') {
+                loading.innerHTML = '<i class="ri-error-warning-line"></i> कृपया पृष्ठ रीफ्रेश करा';
+                setTimeout(() => loading.style.display = 'none', 3000);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

@@ -331,53 +331,53 @@
 
 {% block content %}
 
-<div class="row g-3">
+    <div class="row g-3">
 
-    <!-- 📱 MOBILE SUBJECT DROPDOWN -->
-    <div class="col-12 d-md-none">
-        <select id="mobileSubjectSelect" class="form-select">
-            {% for subject in subjects %}
-            <option value="{{ subject.id_enc }}">
-                {{ subject.subjectNameMarathi }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <!-- LEFT: SUBJECT SIDEBAR -->
-    <div class="col-lg-2 col-md-3 d-none d-md-block" id="subject-sidebar">
-        <ul class="nav flex-column">
-            {% for subject in subjects %}
-            <li class="nav-item">
-                <a class="nav-link {% if forloop.first %}active{% endif %}"
-                   data-subject-id="{{ subject.id_enc }}">
+        <!-- 📱 MOBILE SUBJECT DROPDOWN -->
+        <div class="col-12 d-md-none">
+            <select id="mobileSubjectSelect" class="form-select">
+                {% for subject in subjects %}
+                <option value="{{ subject.id_enc }}">
                     {{ subject.subjectNameMarathi }}
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <!-- RIGHT: EBOOK RESULTS (FULL WIDTH) -->
-    <div class="col-lg-10 col-md-9 col-12" id="books-column">
-
-        <!-- Search -->
-        <div class="input-group mb-3">
-            <span class="input-group-text">🔍</span>
-            <input type="text"
-                   id="ebookSearch"
-                   class="form-control"
-                   placeholder="ई-पुस्तक शोधा…">
+                </option>
+                {% endfor %}
+            </select>
         </div>
 
-        <!-- Ebooks -->
-        <div id="books-container">
-            {% include "L01/EbookCateVisit/ebook_list_partial.html" %}
+        <!-- LEFT: SUBJECT SIDEBAR -->
+        <div class="col-lg-2 col-md-3 d-none d-md-block" id="subject-sidebar">
+            <ul class="nav flex-column">
+                {% for subject in subjects %}
+                <li class="nav-item">
+                    <a class="nav-link {% if forloop.first %}active{% endif %}"
+                    data-subject-id="{{ subject.id_enc }}">
+                        {{ subject.subjectNameMarathi }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- RIGHT: EBOOK RESULTS (FULL WIDTH) -->
+        <div class="col-lg-10 col-md-9 col-12" id="books-column">
+
+            <!-- Search -->
+            <div class="input-group mb-3">
+                <span class="input-group-text">🔍</span>
+                <input type="text"
+                    id="ebookSearch"
+                    class="form-control"
+                    placeholder="ई-पुस्तक शोधा…">
+            </div>
+
+            <!-- Ebooks -->
+            <div id="books-container">
+                {% include "L01/EbookCateVisit/ebook_list_partial.html" %}
+            </div>
+
         </div>
 
     </div>
-
-</div>
 
 {% endblock %}
 

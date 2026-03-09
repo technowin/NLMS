@@ -268,7 +268,7 @@
                                 <a href="{% url 'swd_libraries' %}">Library Information</a>
                             </li>
                             
-                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                            {% comment %} {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item dropdown">
                                     <a href="javascript:void(0);" class="dropbtn">Examination Preparations ▾</a>
                                     <ul class="dropdown-menu">
@@ -276,7 +276,7 @@
                                         <li><a href="{% url 'L01:upsc_ebook_index' %}">Union Public Service Commission (UPSC)</a></li>
                                     </ul>
                                 </li>
-                            {% endif %}
+                            {% endif %} {% endcomment %}
 
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item">
@@ -344,7 +344,7 @@
                             <li class="nav-item">
                                 <a href="{% url 'swd_libraries' %}">ग्रंथालय माहिती</a>
                             </li>
-                            {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                            {% comment %} {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item dropdown">
                                     <a href="javascript:void(0);" class="dropbtn">परीक्षा तयारी ▾</a>
                                     <ul class="dropdown-menu">
@@ -352,7 +352,7 @@
                                         <li><a href="{% url 'L01:upsc_ebook_index' %}">केंद्रीय लोकसेवा आयोग (UPSC)</a></li>
                                     </ul>
                                 </li>
-                            {% endif %}
+                            {% endif %} {% endcomment %}
                             {% if request.session.library_db and request.path != '/'  and membership_page_link%}
                                 <li class="nav-item">
                                     <a href="{% url 'L01:view_ebook_catalogue' %}">पुस्तके शोधा</a>

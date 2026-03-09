@@ -98,6 +98,9 @@ from django.db.models import Subquery, OuterRef
 from .models import LibraryLocationMaster
 # Part First While Filling Membership Form
 from NLMS.access_control import no_direct_access
+import hashlib
+import hmac
+import time
 
 def index(request):
     Db.closeConnection()
@@ -6763,35 +6766,156 @@ from django.http import FileResponse, Http404
 from django.conf import settings
 import os
 
-@login_required
+import hashlib
+import hmac
+import time
+import os
+from django.conf import settings
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.core.files.storage import default_storage
+import mimetypes
+
+def generate_pdf_token(ebook_id):
+    """
+    Generate a secure one-time token for PDF access
+    """
+    timestamp = str(int(time.time()))
+    data = f"{ebook_id}:{timestamp}"
+    
+    signature = hmac.new(
+        key=settings.SECRET_KEY.encode('utf-8'),
+        msg=data.encode('utf-8'),
+        digestmod=hashlib.sha256
+    ).hexdigest()[:16]  # Take first 16 chars for shorter token
+    
+    token = f"{timestamp}:{signature}"
+    return token
+
+def verify_pdf_token(token, ebook_id):
+    """
+    Verify if token is valid and not expired (5 minute expiry)
+    """
+    try:
+        timestamp, signature = token.split(':')
+        
+        # Check if expired (5 minutes)
+        if int(timestamp) < int(time.time()) - 300:
+            return False
+        
+        # Verify signature
+        expected_data = f"{ebook_id}:{timestamp}"
+        expected_signature = hmac.new(
+            key=settings.SECRET_KEY.encode('utf-8'),
+            msg=expected_data.encode('utf-8'),
+            digestmod=hashlib.sha256
+        ).hexdigest()[:16]
+        
+        return hmac.compare_digest(signature, expected_signature)
+        
+    except (ValueError, KeyError, IndexError):
+        return False
+
 def read_ebook_secure(request):
-    """Stream ebook through Django using FileStorageService"""
     try:
         token = request.GET.get('token')
         if not token:
-            raise Http404("Invalid access token")
+            messages.error(request, "Invalid request.")
+            return redirect('L01:visit_ebook_catalogue')
         
-        ebook_id = dec(str(token))
-        ebook = get_object_or_404(LibraryEbook, pk=ebook_id)
-
+        # Decrypt the ebook ID
+        ebook_id = dec(token)
+        ebook = LibraryEbook.objects.get(ebook_id=ebook_id)
+        
         if not ebook.eb_pdf_url:
-            raise Http404("E-Book file not found")
+            messages.error(request, "PDF not available.")
+            return redirect('L01:visit_ebook_catalogue')
+        
+        # Generate a secure token for PDF access
+        pdf_token = generate_pdf_token(ebook_id)
+        
+        # Store in session with a simpler structure
+        request.session[f'pdf_token_{pdf_token}'] = {
+            'ebook_id': ebook_id,
+            'path': ebook.eb_pdf_url,
+            'expires': time.time() + 300  # 5 minutes
+        }
+        
+        context = {
+            'pdf_token': pdf_token,
+            'ebook_id': ebook_id,
+            'ebook_title': ebook.eb_title,
+        }
+        return render(request, 'L01/EbookCateVisit/pdfjs_full_viewer.html', context)
+        
+    except Exception as e:
+        print("PDF VIEW ERROR:", e)
+        messages.error(request, "Error loading PDF.")
+        return redirect('L01:visit_ebook_catalogue')
 
-        # ✅ Stream through Django (no redirect to direct URLs)
+def serve_secure_pdf(request):
+    """
+    Serve PDF file securely with download prevention
+    """
+    print("\n" + "="*50)
+    print("serve_secure_pdf CALLED at:", time.strftime("%Y-%m-%d %H:%M:%S"))
+    print("="*50)
+    
+    try:
+        token = request.GET.get('token')
+        
+        print(f"Token: {token}")
+        print(f"All session keys: {list(request.session.keys())}")
+        
+        if not token:
+            print("ERROR: Missing token")
+            return HttpResponse("Invalid request", status=400)
+        
+        # Get ebook_id from session using token as key
+        session_key = f'pdf_token_{token}'
+        session_data = request.session.get(session_key)
+        
+        if not session_data:
+            print(f"ERROR: Token {token} not found in session")
+            return HttpResponse("Invalid or expired token", status=403)
+        
+        ebook_id = session_data.get('ebook_id')
+        print(f"Found ebook_id from session: {ebook_id}")
+        
+        if not ebook_id:
+            print("ERROR: No ebook_id in session data")
+            return HttpResponse("Invalid session data", status=403)
+        
+        # Get ebook
+        ebook = LibraryEbook.objects.get(ebook_id=ebook_id)
+        print(f"Ebook found: {ebook.eb_title}")
+        print(f"PDF URL: {ebook.eb_pdf_url}")
+        
+        if not ebook.eb_pdf_url:
+            print("ERROR: No PDF URL")
+            return HttpResponse("PDF not found", status=404)
+        
+        # Clean up session (optional - remove after use)
+        del request.session[session_key]
+        
+        # Use your existing file_storage_service to stream the PDF
+        print("Streaming PDF with file_storage_service")
         filename = f"{ebook.eb_title or 'ebook'}.pdf"
         return file_storage_service.get_secure_stream_response(
             ebook.eb_pdf_url,
             filename=filename,
             content_type='application/pdf'
         )
-            
-    except FileNotFoundError:
-        raise Http404("E-Book file not found")
-    except ValueError as e:
-        raise Http404(str(e))
+        
+    except LibraryEbook.DoesNotExist:
+        print(f"ERROR: Ebook not found")
+        return HttpResponse("Ebook not found", status=404)
     except Exception as e:
-        print(f"[read_ebook_secure] Error: {str(e)}")
-        raise Http404("Invalid access or file not found")
+        print(f"ERROR in serve_secure_pdf: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return HttpResponse(f"Error: {str(e)}", status=500)
 
 # for tv display view and api
 
@@ -11226,8 +11350,18 @@ def visit_ebook_catalogue(request):
             messages.warning(request, "Session expired. Please login again.")
             return render(request, "L01/EbookCateVisit/visit_ebook_catalogue.html", {})
 
-        # --- SUBJECTS ---
-        subjects_qs = SubjectTypeMaster.objects.filter(is_active=1)
+        # --- SUBJECTS (ONLY THOSE WITH EBOOKS) ---
+        # Get distinct subject IDs that have ebooks
+        subjects_with_ebooks_ids = LibraryEbook.objects.filter(
+            eb_subject__isnull=False  # Ensure subject exists
+        ).values_list('eb_subject_id', flat=True).distinct()
+        
+        # Get the actual subject objects for those IDs
+        subjects_qs = SubjectTypeMaster.objects.filter(
+            id__in=subjects_with_ebooks_ids,
+            is_active=1
+        ).order_by('subjectNameMarathi')  # Optional: order alphabetically
+        
         subjects = []
         for s in subjects_qs:
             s.id_enc = enc(str(s.id))
@@ -11235,7 +11369,7 @@ def visit_ebook_catalogue(request):
 
         first_subject = subjects[0] if subjects else None
 
-        # --- EBOOKS BY SUBJECT ---
+        # --- EBOOKS BY SUBJECT (if any subject exists) ---
         if first_subject:
             ebooks = (
                 LibraryEbook.objects
@@ -11394,6 +11528,7 @@ def get_ebooks_by_subject(request):
             {'error': 'Failed to fetch ebooks'},
             status=500
         )
+
 @login_required
 def view_ebook_detail(request):
     try:
@@ -11542,6 +11677,7 @@ def kiosk_competitive_exam_type(request, competitive_id=None):
         "MEDIA_URL": settings.MEDIA_URL,
         "competitive_exams": competitive_exams
     })
+
 # def kiosk_competitive_exam_type(request):
     
 #     competitive_id = request.GET.get('competitive_id', None)
