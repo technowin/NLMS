@@ -220,16 +220,27 @@ def set_library_session_and_login(request):
                     else:  # production
                         return redirect("http://vdb.nmmclibrary.in/Login")  
 
-                # default login
-                return redirect('Login')
+                else:
+                    # For all other libraries without login access
+                    messages.warning(request, '⚠️ Online login is currently not available for this library.')
+                    return redirect('library_list')  # Redirect to the library list page
+
+            else:
+                # If library code decryption fails
+                messages.error(request, '❌ Invalid library selection. Please try again.')
+                return redirect('library_list')
+
+        else:
+            # If not POST request
+            messages.error(request, 'Invalid request method.')
+            return redirect('library_list')
 
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else 'set_library_session_and_login'
         cursor.callproc("stp_error_log", [fun, str(e), ''])
-        messages.error(request, 'Oops...! Something went wrong!')
-        return redirect("Meta_Index")
-
+        messages.error(request, 'Oops...! Something went wrong! Please try again later.')
+        return redirect("library_list")
     
 def library_list_index(request):
     Db.closeConnection()

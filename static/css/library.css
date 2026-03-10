@@ -2594,3 +2594,76 @@ footer .footer-container {
     transform: scale(1.2);
     color: #ffffff !important;
 }
+
+/* NMMC Library Link Styling */
+    .nmmc-library-link {
+        display: flex;
+        align-items: center;
+        margin-left: 20px;
+    }
+    
+    .library-link {
+        color: #015296;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(1, 82, 150, 0.3);
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .library-link:hover {
+        background: #015296;
+        color: white;
+        border-color: #015296;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(1, 82, 150, 0.3);
+    }
+    
+    .library-link:active {
+        transform: translateY(0);
+    }
+    
+    /* For the English header version */
+    #head-english .nmmc-library-link .library-link {
+        color: #015296;
+    }
+    
+    #head-english .nmmc-library-link .library-link:hover {
+        background: #015296;
+        color: white;
+    }
+    
+    /* Desktop only - hide on mobile and tablet */
+    .desktop-only {
+        display: flex;
+    }
+    
+    /* Hide on tablets (768px to 991px) and mobile (below 768px) */
+    @media (max-width: 991px) {
+        .desktop-only {
+            display: none !important;
+        }
+    }
+    
+    /* If you want to show only on desktop (992px and above) */
+    @media (min-width: 992px) {
+        .desktop-only {
+            display: flex !important;
+        }
+    }
+    
+    /* Responsive adjustments for when it is visible */
+    @media (min-width: 992px) and (max-width: 1200px) {
+        .nmmc-library-link {
+            margin-left: 10px;
+        }
+        
+        .library-link {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+        }
+    }

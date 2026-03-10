@@ -15,6 +15,10 @@
 
             <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
 
+            <!-- Add to head section - after Bootstrap CSS -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/css/selectize.default.min.css">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css">
+
             <!-- Your CSS -->
             <link href="{% static 'css/library.css' %}" rel="stylesheet">
             {% block extra_css %}
@@ -168,9 +172,16 @@
                     <!-- Add this contact info section -->
                     <div class="headerContactInfo">
                         <div class="contact-itemm email">contact@nmmc.gov.in</div>
-                        {% comment %} <div class="contact-itemm phone">+91 22 2756 1234</div>
-                        <div class="contact-itemm helpline">1800-222-999</div> {% endcomment %}
                     </div>
+                    
+                    {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                        <!-- NMMC Library Link - Hidden on mobile and tablet -->
+                        <div class="nmmc-library-link desktop-only">
+                            <a href="https://www.nmmclibrary.in/" target="_blank" class="library-link" title="NMMC Library">
+                                NMMC Library
+                            </a>
+                        </div>
+                    {% endif %}
                     
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="Increase Font Size">A+</button>
@@ -195,6 +206,15 @@
                         {% comment %} <div class="contact-itemm phone">+९१ २२ २७५६ १२३४</div>
                         <div class="contact-itemm helpline">१८००-२२२-९९९</div> {% endcomment %}
                     </div>
+                    
+                    {% if request.session.library_db and request.path != '/'  and membership_page_link%}
+                        <!-- NMMC Library Link - Hidden on mobile and tablet, Marathi text -->
+                        <div class="nmmc-library-link desktop-only">
+                            <a href="https://www.nmmclibrary.in/" target="_blank" class="library-link" title="नवी मुंबई महानगरपालिका ग्रंथालय">
+                                नवी मुंबई महानगरपालिका ग्रंथालय
+                            </a>
+                        </div>
+                    {% endif %}
                     
                     <div class="fontControlContainer">
                         <button onclick="increaseFont()" class="fontControlBtn" title="अक्षर आकार वाढवा">अ+</button>
@@ -670,7 +690,9 @@
         </button>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
+        <!-- Add before closing body tag - after other scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/js/selectize.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
     </body>
 
     <script>
