@@ -521,19 +521,113 @@
 
 {% block content %}
     <div class="container-fluid mt-4">
+        
         <!-- Search Bar -->
         <div class="search-wrapper">
-            <div class="">
+            <div class="container">
                 <div class="row justify-content-center">
                     <div class="col-lg-8 col-md-10">
-                        <div class="position-relative">
-                            <input type="text" id="bookSearch" class="form-control search-box" 
-                                placeholder="🔍 पुस्तकाचे नाव किंवा लेखकाचे नाव शोधा...">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <!-- Search Input (takes most of the space) -->
+                            <div class="flex-grow-1" style="min-width: 250px;">
+                                <input type="text" id="bookSearch" class="form-control search-box" 
+                                    placeholder="🔍 पुस्तकाचे नाव किंवा लेखकाचे नाव शोधा...">
+                            </div>
+                            
+                            <!-- Search Book Button (separate, right-aligned) -->
+                            <a href="{% url 'L01:view_ebook_catalogue' %}" class="btn btn-primary search-book-btn" onclick="searchBooks()">
+                                <i class="fas fa-search"></i> पुस्तक शोधा
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <script>
+            function searchBooks() {
+                var searchTerm = document.getElementById('bookSearch').value;
+                if (searchTerm.trim() !== '') {
+                    // Store the search term in session storage
+                    sessionStorage.setItem('lastSearch', searchTerm);
+                    // Optional: Show a message or perform additional actions
+                    console.log('Searching for: ' + searchTerm);
+                }
+            }
+        </script>
+
+        <style>
+            .search-wrapper {
+                padding: 20px 0;
+                background-color: #f8f9fa;
+                border-radius: 12px;
+                margin-bottom: 20px;
+            }
+            
+            .search-box {
+                border-radius: 8px;
+                border: 2px solid #e0e0e0;
+                padding: 12px 20px;
+                font-size: 16px;
+                width: 100%;
+                transition: all 0.3s ease;
+            }
+            
+            .search-box:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+                outline: none;
+            }
+            
+            .search-book-btn {
+                border-radius: 8px;
+                padding: 12px 24px;
+                font-size: 16px;
+                font-weight: 500;
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                border: none;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            
+            .search-book-btn:hover {
+                background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+                color: white;
+                text-decoration: none;
+            }
+            
+            .search-book-btn i {
+                font-size: 18px;
+            }
+            
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .search-wrapper {
+                    padding: 15px;
+                }
+                
+                .search-book-btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+                
+                .flex-grow-1 {
+                    width: 100% !important;
+                }
+            }
+            
+            /* Gap utility */
+            .gap-3 {
+                gap: 1rem;
+            }
+        </style>
         
         <div class="">
             <div class="row g-4">
