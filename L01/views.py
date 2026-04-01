@@ -5017,7 +5017,7 @@ def index_book_search(request):
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
-        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
+        language = request.POST.get("language", "").strip()
 
         if not query:
             return JsonResponse(
@@ -5032,24 +5032,24 @@ def index_book_search(request):
         if language:
             results = results.filter(language__iexact=language)
 
-        # 🔤 STEP 2: INDEX SEARCH → ALWAYS STARTS WITH
+        # 🔤 STEP 2: INDEX SEARCH → CHANGE TO icontains FOR PARTIAL MATCHING
         if search_type in ["", "title", "books"]:
-            results = results.filter(title__istartswith=query)
+            results = results.filter(title__icontains=query)  # ✅ Changed
 
         elif search_type == "author":
-            results = results.filter(author__istartswith=query)
+            results = results.filter(author__icontains=query)  # ✅ Changed
 
         elif search_type == "publisher":
-            results = results.filter(publisher__istartswith=query)
+            results = results.filter(publisher__icontains=query)  # ✅ Changed
 
         elif search_type == "keyword":
-            results = results.filter(keywords__istartswith=query)
+            results = results.filter(keywords__icontains=query)  # ✅ Changed
 
         elif search_type == "year":
             year_filters = Q()
             if query.isdigit():
                 year_filters |= Q(year_of_publication=int(query))
-            year_filters |= Q(publication_year__istartswith=query)
+            year_filters |= Q(publication_year__icontains=query)  # ✅ Changed
             results = results.filter(year_filters)
 
         else:
@@ -5081,7 +5081,6 @@ def index_book_search(request):
             front = r.get("front_page_photo")
             back = r.get("last_page_photo")
 
-            # get full URL from storage service
             r["front_page_photo"] = (
                 file_storage_service.get_file_url(front) if front else ""
             )
@@ -5103,7 +5102,6 @@ def index_book_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-    
 
 @csrf_exempt
 def libraryebook_search(request):
@@ -5208,8 +5206,6 @@ def libraryebook_search(request):
             status=500
         )
 
-
-
 @csrf_exempt
 def index_ebook_search(request):
     try:
@@ -5221,7 +5217,7 @@ def index_ebook_search(request):
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
-        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
+        language = request.POST.get("language", "").strip()
 
         if not query:
             return JsonResponse(
@@ -5236,27 +5232,27 @@ def index_ebook_search(request):
         if language:
             results = results.filter(eb_language__iexact=language)
 
-        # 🔤 STEP 2: FIRST-LETTER SEARCH
+        # 🔤 STEP 2: FIRST-LETTER SEARCH → CHANGE TO icontains
         if search_type in ["title", "book", "ebook", ""]:
-            results = results.filter(eb_title__istartswith=query)
+            results = results.filter(eb_title__icontains=query)  # ✅ Changed
 
         elif search_type == "author":
             results = results.filter(
-                Q(eb_author__istartswith=query) |
-                Q(eb_other_authors__istartswith=query)
+                Q(eb_author__icontains=query) |  # ✅ Changed
+                Q(eb_other_authors__icontains=query)  # ✅ Changed
             )
 
         elif search_type == "publisher":
-            results = results.filter(eb_publisher__istartswith=query)
+            results = results.filter(eb_publisher__icontains=query)  # ✅ Changed
 
         elif search_type == "keyword":
-            results = results.filter(eb_keywords__istartswith=query)
+            results = results.filter(eb_keywords__icontains=query)  # ✅ Changed
 
         elif search_type in ["isbn", "issn"]:
-            results = results.filter(eb_isbn_issn__istartswith=query)
+            results = results.filter(eb_isbn_issn__icontains=query)  # ✅ Changed
 
         elif search_type == "year":
-            results = results.filter(eb_year_of_publication__istartswith=query)
+            results = results.filter(eb_year_of_publication__icontains=query)  # ✅ Changed
 
         else:
             return JsonResponse(
@@ -5290,7 +5286,7 @@ def index_ebook_search(request):
                 request.build_absolute_uri(f"/media/{front}") if front else ""
             )
 
-            r["eb_last_page_photo"] = (                              # ✅ ADD
+            r["eb_last_page_photo"] = (
                 request.build_absolute_uri(f"/media/{back}") if back else ""
             )
 
@@ -5308,7 +5304,7 @@ def index_ebook_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-    
+
 @csrf_exempt
 def open_pdf(request):
     encrypted_pdf = request.GET.get("pdf")
