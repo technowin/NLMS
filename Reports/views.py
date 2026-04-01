@@ -581,7 +581,7 @@ def payment_report(request):
                         )
                         
                         if not reports.exists():
-                            return HttpResponse("या दिनांकासाठी कोणताही अहवाल उपलब्ध नाही. / No reports found for the selected date.", content_type="text/plain")
+                            return HttpResponse("No reports found for the selected date.", content_type="text/plain")
                         
                         # Set date range for display
                         from_date = selected_date
@@ -596,7 +596,7 @@ def payment_report(request):
                     else:
                         # ---------- MONTH RANGE REPORT ----------
                         if not from_month or not to_month:
-                            return HttpResponse("कृपया महिना श्रेणी निवडा. / Please select month range.", content_type="text/plain")
+                            return HttpResponse("lease select month range.", content_type="text/plain")
                         
                         # Parse months
                         from_date = datetime.strptime(from_month + "-01", "%Y-%m-%d").date()
@@ -615,7 +615,7 @@ def payment_report(request):
                         )
                         
                         if not reports.exists():
-                            return HttpResponse("निवडलेल्या महिन्यांसाठी कोणताही अहवाल उपलब्ध नाही. / No reports found for the selected months.", content_type="text/plain")
+                            return HttpResponse("No reports found for the selected months.", content_type="text/plain")
                         
                         # Parse month/year for display
                         from_year, from_month_num = map(int, from_month.split("-"))
