@@ -4903,7 +4903,6 @@ def view_ebook_catalogue(request):
         "MEDIA_URL": settings.MEDIA_URL
     })
 
-@no_direct_access
 @csrf_exempt
 def bookcatalog_search(request):
     try:
@@ -4912,7 +4911,7 @@ def bookcatalog_search(request):
 
         query = request.POST.get("query", "").strip()
         search_type = request.POST.get("searchType", "").strip().lower()
-        language = request.POST.get("language", "").strip()   # ✅ ADD THIS
+        language = request.POST.get("language", "").strip()
 
         if not query or not search_type:
             return JsonResponse(
@@ -4929,10 +4928,12 @@ def bookcatalog_search(request):
 
         # 🔍 STEP 2: APPLY SEARCH FILTER
         if search_type in ["title", "books"]:
-            results = results.filter(title__istartswith=query)
+            # ✅ Changed from istartswith to icontains for partial matching
+            results = results.filter(title__icontains=query)
 
         elif search_type == "author":
-            results = results.filter(author__istartswith=query)
+            # ✅ Changed from istartswith to icontains for partial matching
+            results = results.filter(author__icontains=query)
 
         elif search_type == "publisher":
             results = results.filter(publisher__icontains=query)
@@ -5004,7 +5005,6 @@ def bookcatalog_search(request):
             {"error": "An unexpected error occurred.", "details": str(e)},
             status=500
         )
-    
 
 @csrf_exempt
 def index_book_search(request):
