@@ -399,6 +399,8 @@ class CirculationTransaction(models.Model):
     fine_paid_date = models.DateField(blank=True, null=True)
     transaction_type = models.CharField(max_length=20, blank=True, null=True)
     transaction_status = models.CharField(max_length=20, blank=True, null=True)
+    book_extended = models.IntegerField(default=0) 
+    extended_on = models.DateField(null=True, blank=True)
     issued_by = models.TextField(null=True, blank=True)
     received_by = models.TextField(null=True, blank=True)
     membership_code = models.TextField(blank=True, null=True)
@@ -411,6 +413,73 @@ class CirculationTransaction(models.Model):
 
     class Meta:
         db_table = "tbl_circulation_transaction"
+
+class CirculationTransactionHistory(models.Model):
+    """
+    History table for CirculationTransaction - tracks all changes
+    """
+    id = models.AutoField(primary_key=True)
+    
+    # Foreign key to original transaction
+    original_transaction = models.ForeignKey(
+        CirculationTransaction,
+        on_delete=models.CASCADE,
+        db_column="original_transaction_id",
+        related_name="history_records"
+    )
+    
+    # All original fields from CirculationTransaction
+    catalog = models.ForeignKey(BookCatalog, on_delete=models.SET_NULL, null=True, blank=True, db_column="cat_ref_num", related_name="history_transactions")
+    accession = models.ForeignKey(BookAccession, on_delete=models.CASCADE, db_column="accession_id", related_name="history_transactions")
+    circulation = models.ForeignKey(CirculationCopyStatus, on_delete=models.SET_NULL, null=True, blank=True, db_column="copy_status_id", related_name="history_transactions")
+    member = models.ForeignKey(MembershipDetails, on_delete=models.CASCADE, db_column="member_id", related_name="history_transactions")
+    barcode = models.CharField(max_length=50, blank=True, null=True)
+    issue_date = models.DateField(blank=True, null=True)
+    due_date = models.DateField(blank=True, null=True)
+    return_date = models.DateField(blank=True, null=True)
+    days_overdue_count = models.IntegerField(default=0)
+    book_fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    total_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    fine_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    adjusted_fine = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, default=0)
+    fine_status = models.CharField(max_length=20, blank=True, null=True)
+    fine_paid_date = models.DateField(blank=True, null=True)
+    transaction_type = models.CharField(max_length=20, blank=True, null=True)
+    transaction_status = models.CharField(max_length=20, blank=True, null=True)
+    book_extended = models.IntegerField(default=0)
+    extended_on = models.DateField(null=True, blank=True)
+    issued_by = models.TextField(null=True, blank=True)
+    received_by = models.TextField(null=True, blank=True)
+    membership_code = models.TextField(blank=True, null=True)
+    return_condition = models.ForeignKey(status_master, on_delete=models.SET_NULL, null=True, blank=True, related_name="history_transactions")
+    remarks = models.TextField(blank=True, null=True)
+    
+    # History specific fields
+    change_type = models.CharField(max_length=20, choices=[
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+        ('EXTEND', 'Extend'),
+        ('RETURN', 'Return'),
+        ('DELETE', 'Delete')
+    ], default='UPDATE')
+    
+    change_reason = models.TextField(blank=True, null=True)  # Why was this change made?
+    
+    # Audit fields
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        db_table = "tbl_circulation_transaction_history"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['original_transaction', '-created_at']),
+            models.Index(fields=['barcode', '-created_at']),
+            models.Index(fields=['member', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"History for Transaction {self.original_transaction_id} - {self.change_type} at {self.created_at}"
 
 class PaymentReport(models.Model):
     id = models.AutoField(primary_key=True)

@@ -17,7 +17,6 @@ from django.http import HttpResponse, JsonResponse
 from NLMS.encryption import *
 from Account.db_utils import callproc
 import re
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 import json
@@ -101,6 +100,8 @@ from NLMS.access_control import no_direct_access
 import hashlib
 import hmac
 import time
+from datetime import timedelta
+
 
 def index(request):
     Db.closeConnection()
@@ -5832,7 +5833,6 @@ def get_member_detail(request, membership_code):
 #     except Exception as e:
 #         return render(request, 'error.html', {'error': str(e)})
 
-@no_direct_access
 def membership_dashboard(request):
     # Generate or retrieve your key (ensure it's secure and private)
     
@@ -5853,7 +5853,7 @@ def membership_dashboard(request):
         breadcrumb = request.POST.get("breadcrumb")
         if not breadcrumb:
             breadcrumb = 0
-        member_id = get_object_or_404(MembershipDetails, user_id = username)
+        member_id = get_object_or_404(MembershipDetails, user_id=username)
         today = timezone.now().date()
         
         # Calculate due soon threshold (2 days from now)
@@ -5870,7 +5870,22 @@ def membership_dashboard(request):
             # Encrypt the cat_ref_num (catalog reference number)
             cat_ref_num = str(transaction.catalog.cat_ref_num)
             encrypted_cat_ref_num = enc(cat_ref_num)  # Encrypt and convert to string
-
+            
+            # Get membership details for extension check
+            membership = transaction.member.membership if transaction.member else None
+            
+            # Check if book can be extended
+            can_extend = (
+                transaction.due_date == today and  # Must be due date
+                transaction.book_extended == 0 and  # Not extended yet
+                transaction.member.isactive == 1 and  # Membership active
+                transaction.member.to_date and  # Has expiry date
+                transaction.member.to_date >= today and  # Not expired
+                membership and  # Has membership type
+                membership.days and  # Has days field
+                membership.days > 0  # Days > 0
+            )
+            
             book_data = {
                 'transaction': transaction,
                 'title': transaction.catalog.title if transaction.catalog else 'Unknown Title',
@@ -5878,9 +5893,18 @@ def membership_dashboard(request):
                 'issue_date': transaction.issue_date,
                 'due_date': transaction.due_date,
                 'cover_image': get_book_cover(transaction.catalog) if transaction.catalog else None,
-                'encrypted_cat_ref_num': encrypted_cat_ref_num  # Send the encrypted value to the template
+                'encrypted_cat_ref_num': encrypted_cat_ref_num,  # ✅ Now defined
+                'can_extend': can_extend  # Helper for template
             }
             latest_books.append(book_data)
+        
+        # Calculate statistics (you might already have these)
+        currently_borrowed = len(transactions)
+        due_soon = sum(1 for t in transactions if t.due_date <= due_soon_threshold and t.due_date >= today and not t.return_date)
+        overdue = sum(1 for t in transactions if t.due_date < today and not t.return_date)
+        
+        # Check membership active status
+        membership_active = member_id.isactive == 1 and member_id.to_date and member_id.to_date >= today
         
         context = {
             'username': username,
@@ -5889,12 +5913,214 @@ def membership_dashboard(request):
             'breadcrumb': breadcrumb,
             'pending_action': pending_action, 
             'sweet_alert': sweet_alert,
+            'currently_borrowed': currently_borrowed,
+            'due_soon': due_soon,
+            'overdue': overdue,
+            'membership_active': membership_active,
         }
         
         return render(request, 'L01/Dashboard/member_dashboard.html', context)
         
     except Exception as e:
         return render(request, 'error.html', {'error': str(e)})
+
+from django.db import transaction as db_transaction  # Import this at the top
+
+@csrf_exempt
+def extend_book(request):
+    """
+    Extend book due date by membership days
+    Only allowed on the due date, only once per book
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    try:
+        # Get username directly from session
+        username = request.session["username"]
+        
+    except KeyError:
+        return JsonResponse({'success': False, 'message': 'कृपया लॉगिन करा'}, status=401)
+    
+    try:
+        # Handle both JSON and form data
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            transaction_id = data.get('transaction_id')
+            encrypted_cat_ref_num = data.get('encrypted_cat_ref_num')
+        else:
+            # Handle form data (default jQuery AJAX)
+            transaction_id = request.POST.get('transaction_id')
+            encrypted_cat_ref_num = request.POST.get('encrypted_cat_ref_num')
+        
+        if not transaction_id:
+            return JsonResponse({'success': False, 'message': 'व्यवहार क्रमांक आवश्यक आहे'}, status=400)
+        
+        # Get the transaction
+        circ_transaction = CirculationTransaction.objects.get(id=transaction_id)
+        
+        # Verify that the logged-in user is the one who borrowed this book
+        if circ_transaction.member.user_id != username:
+            return JsonResponse({
+                'success': False,
+                'message': 'तुम्हाला हे पुस्तक वाढवण्याची परवानगी नाही.'
+            })
+        
+        # Check if book is already extended
+        if circ_transaction.book_extended == 1:
+            return JsonResponse({
+                'success': False,
+                'message': 'या पुस्तकाची मुदतवाढ आधीच करण्यात आली आहे.'
+            })
+        
+        # Check if it's exactly the due date
+        today = timezone.now().date()
+        if circ_transaction.due_date != today:
+            due_date_formatted = format_date_marathi(circ_transaction.due_date)
+            return JsonResponse({
+                'success': False,
+                'message': f'हे पुस्तक फक्त नियत दिनांकी ({due_date_formatted}) वाढवता येईल.'
+            })
+        
+        # Get member details
+        member = circ_transaction.member
+        
+        # Check if membership is active
+        if not member.isactive:
+            return JsonResponse({
+                'success': False,
+                'message': 'तुमची सदस्यता सक्रिय नाही. कृपया सदस्यता नूतनीकरण करा.'
+            })
+        
+        # Check membership expiry date
+        if member.to_date and member.to_date < today:
+            expiry_date_formatted = format_date_marathi(member.to_date)
+            return JsonResponse({
+                'success': False,
+                'message': f'तुमची सदस्यता {expiry_date_formatted} रोजी संपली आहे. कृपया सदस्यता नूतनीकरण करा.'
+            })
+        
+        # Get membership type and days to extend
+        membership = member.membership
+        if not membership or not membership.days:
+            return JsonResponse({
+                'success': False,
+                'message': 'सदस्यता प्रकारासाठी मुदतवाढ दिवस उपलब्ध नाहीत.'
+            })
+        
+        # Calculate new due date
+        extension_days = membership.days
+        original_due_date = circ_transaction.due_date
+        new_due_date = circ_transaction.due_date + timedelta(days=extension_days)
+        
+        # Check if new due date exceeds membership expiry
+        if member.to_date and new_due_date > member.to_date:
+            expiry_date_formatted = format_date_marathi(member.to_date)
+            new_due_date_formatted = format_date_marathi(new_due_date)
+            
+            return JsonResponse({
+                'success': False,
+                'message': f'तुमची सदस्यता {expiry_date_formatted} रोजी संपत आहे. {new_due_date_formatted} पर्यंत पुस्तक वाढवता येत नाही.'
+            })
+        
+        # ✅ Use db_transaction.atomic() - NOT transaction.atomic()
+        with db_transaction.atomic():
+            # Save current state to history BEFORE updating
+            CirculationTransactionHistory.objects.create(
+                original_transaction=circ_transaction,
+                catalog=circ_transaction.catalog,
+                accession=circ_transaction.accession,
+                circulation=circ_transaction.circulation,
+                member=circ_transaction.member,
+                barcode=circ_transaction.barcode,
+                issue_date=circ_transaction.issue_date,
+                due_date=circ_transaction.due_date,  # Original due date
+                return_date=circ_transaction.return_date,
+                days_overdue_count=circ_transaction.days_overdue_count,
+                book_fine_amount=circ_transaction.book_fine_amount,
+                total_fine=circ_transaction.total_fine,
+                fine_amount=circ_transaction.fine_amount,
+                adjusted_fine=circ_transaction.adjusted_fine,
+                fine_status=circ_transaction.fine_status,
+                fine_paid_date=circ_transaction.fine_paid_date,
+                transaction_type=circ_transaction.transaction_type,
+                transaction_status=circ_transaction.transaction_status,
+                book_extended=circ_transaction.book_extended,
+                extended_on=circ_transaction.extended_on,
+                issued_by=circ_transaction.issued_by,
+                received_by=circ_transaction.received_by,
+                membership_code=circ_transaction.membership_code,
+                return_condition=circ_transaction.return_condition,
+                remarks=circ_transaction.remarks,
+                change_type='EXTEND',
+                change_reason=f'Book extended by {extension_days} days. Original due: {original_due_date}, New due: {new_due_date}',
+                created_by=username
+            )
+            
+            # Now update the transaction
+            circ_transaction.due_date = new_due_date
+            circ_transaction.book_extended = 1
+            circ_transaction.extended_on = today
+            circ_transaction.updated_at = timezone.now()
+            circ_transaction.updated_by = username
+            
+            # Add remark about extension
+            extension_remark = f"Book extended by {extension_days} days on {today} by {username}. New due date: {new_due_date}"
+            if circ_transaction.remarks:
+                circ_transaction.remarks += f"\n{extension_remark}"
+            else:
+                circ_transaction.remarks = extension_remark
+            
+            circ_transaction.save()
+        
+        # Format new due date for success message
+        new_due_date_formatted = format_date_marathi(new_due_date)
+        
+        # Prepare response data
+        response_data = {
+            'success': True,
+            'message': f'पुस्तक यशस्वीरित्या वाढवले! नवीन नियत दिनांक: {new_due_date_formatted}',
+            'new_due_date': new_due_date.strftime("%Y-%m-%d"),
+            'new_due_date_formatted': new_due_date_formatted,
+            'extended': True
+        }
+        
+        return JsonResponse(response_data)
+        
+    except CirculationTransaction.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'व्यवहार आढळला नाही. कृपया पृष्ठ रिफ्रेश करून पुन्हा प्रयत्न करा.'
+        }, status=404)
+    
+    except Exception as e:
+        print(f"Error in extend_book: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': 'काहीतरी त्रुटी आली. कृपया पुन्हा प्रयत्न करा.'
+        }, status=500)
+
+def format_date_marathi(date_obj):
+    """
+    Format date in Marathi language
+    """
+    if not date_obj:
+        return ""
+    
+    # Marathi month names
+    marathi_months = {
+        1: 'जानेवारी', 2: 'फेब्रुवारी', 3: 'मार्च', 4: 'एप्रिल',
+        5: 'मे', 6: 'जून', 7: 'जुलै', 8: 'ऑगस्ट',
+        9: 'सप्टेंबर', 10: 'ऑक्टोबर', 11: 'नोव्हेंबर', 12: 'डिसेंबर'
+    }
+    
+    day = date_obj.day
+    month = date_obj.month
+    year = date_obj.year
+    
+    return f"{day} {marathi_months[month]} {year}"
 
 def get_book_cover(catalog):
     """

@@ -81,114 +81,148 @@
         </div>
 
         <!-- Currently Reading Section -->
-    <div class="row mb-4" id="currently-reading"> 
-    <div class="col-12">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-transparent border-0 py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <!-- Left side with membership card button -->
-                    <div class="d-flex align-items-center">
-                        <h5 class="card-title mb-0 section-title fw-bold me-3">
-                            <i class="bi bi-bookmark-check me-2"></i>Currently Reading
-                        </h5>
-                        <a href="{% url 'L01:membership_card' %}" 
-                           class="btn btn-outline-primary btn-sm rounded-pill d-flex align-items-center">
-                            <i class="bi bi-credit-card me-2"></i>
-                            View Membership Card
-                        </a>
-                    </div>
-                    
-                    <!-- Right side with book count badge -->
-                    {% comment %} <span class="badge bg-primary rounded-pill px-3 py-2">{{ latest_books|length }} books</span> {% endcomment %}
-                </div>
-            </div>
-            <div class="card-body p-4">
-                {% if latest_books %}
-                <div class="row g-4">
-                    {% for book in latest_books %}
-                    <div class="col-lg-6 col-xl-4">
-                        <div class="card book-card h-100 shadow-sm border-0 position-relative overflow-hidden">
-                            <div class="card-body p-3">
-                                <div class="row g-3 align-items-center">
-                                    <!-- Book Cover -->
-                                    <div class="col-4">
-                                        <div class="book-cover-container position-relative">
-                                            <div class="book-cover-wrapper rounded overflow-hidden">
-                                                <img src="{{ book.cover_image }}" 
-                                                    alt="{{ book.title }}" 
-                                                    class="img-fluid book-cover"
-                                                    onerror="this.onerror=null; this.src='{% static 'images/default-book-cover.jpg' %}'">
-                                            </div>
-                                            <div class="book-status-badge position-absolute top-0 end-0 m-1">
-                                                {% if book.due_date < today %}
-                                                <span class="badge bg-danger rounded-pill">Overdue</span>
-                                                {% elif book.due_date <= today|add:2 %}
-                                                <span class="badge bg-warning rounded-pill">Due Soon</span>
-                                                {% else %}
-                                                <span class="badge bg-success rounded-pill">On Track</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Book Details -->
-                                    <div class="col-8">
-                                        <h6 class="book-title mb-2 fw-bold">{{ book.title|truncatewords:6 }}</h6>
-                                        <p class="book-author text-muted small mb-3">
-                                            <i class="bi bi-person me-1"></i>{{ book.author|default:"Unknown Author"|truncatewords:3 }}
-                                        </p>
-                                        
-                                        <div class="book-details small mb-3">
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span class="text-muted">Issued:</span>
-                                                <span class="fw-medium">{{ book.issue_date|date:"M d, Y" }}</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Due:</span>
-                                                <span class="{% if book.due_date < today %}text-danger{% elif book.due_date <= today|add:2 %}text-warning{% else %}text-success{% endif %} fw-bold">
-                                                    {{ book.due_date|date:"M d, Y" }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="d-grid">
-                                           <form action="{% url 'L01:view_book_detail' %}" method="GET" style="display: inline;">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="cat_ref_num" value="{{ book.encrypted_cat_ref_num }}">
-                                                    <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill">
-                                                        <i class="bi bi-star me-1"></i>Add Review
-                                                    </button>
-                                                </form>
-
-                                        </div>
-                                    </div>
-                                </div>
+        <div class="row mb-4" id="currently-reading"> 
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <!-- Left side with membership card button -->
+                            <div class="d-flex align-items-center">
+                                <h5 class="card-title mb-0 section-title fw-bold me-3">
+                                    <i class="bi bi-bookmark-check me-2"></i>Currently Reading
+                                </h5>
+                                <a href="{% url 'L01:membership_card' %}" 
+                                class="btn btn-outline-primary btn-sm rounded-pill d-flex align-items-center">
+                                    <i class="bi bi-credit-card me-2"></i>
+                                    View Membership Card
+                                </a>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="card-body p-4">
+                        {% if latest_books %}
+                            <div class="row g-4">
+                                {% for book in latest_books %}
+                                    <div class="col-lg-6 col-xl-4">
+                                        <div class="card book-card h-100 shadow-sm border-0 position-relative overflow-hidden">
+                                            <div class="card-body p-3">
+                                                <div class="row g-3 align-items-center">
+                                                    <!-- Book Cover -->
+                                                    <div class="col-4">
+                                                        <div class="book-cover-container position-relative">
+                                                            <div class="book-cover-wrapper rounded overflow-hidden">
+                                                                <img src="{{ book.cover_image }}" 
+                                                                    alt="{{ book.title }}" 
+                                                                    class="img-fluid book-cover"
+                                                                    onerror="this.onerror=null; this.src='{% static 'images/default-book-cover.jpg' %}'">
+                                                            </div>
+                                                            <div class="book-status-badge position-absolute top-0 end-0 m-1">
+                                                                {% if book.transaction.book_extended %}
+                                                                    <span class="badge bg-info rounded-pill" style="background: linear-gradient(135deg, #0d9488, #14b8a6) !important;">
+                                                                        <i class="bi bi-calendar-check me-1"></i>Extended
+                                                                    </span>
+                                                                {% elif book.due_date < today %}
+                                                                    <span class="badge bg-danger rounded-pill">Overdue</span>
+                                                                {% elif book.due_date == today %}
+                                                                    <span class="badge bg-warning rounded-pill">Due Today</span>
+                                                                {% elif book.due_date <= today|add:2 %}
+                                                                    <span class="badge bg-warning rounded-pill">Due Soon</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-success rounded-pill">On Track</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Book Details -->
+                                                    <div class="col-8">
+                                                        <h6 class="book-title mb-2 fw-bold">{{ book.title|truncatewords:6 }}</h6>
+                                                        <p class="book-author text-muted small mb-3">
+                                                            <i class="bi bi-person me-1"></i>{{ book.author|default:"Unknown Author"|truncatewords:3 }}
+                                                        </p>
+                                                        
+                                                        <div class="book-details small mb-3">
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span class="text-muted">Issued:</span>
+                                                                <span class="fw-medium">{{ book.issue_date|date:"M d, Y" }}</span>
+                                                            </div>
+                                                            <div class="d-flex justify-content-between">
+                                                                <span class="text-muted">Due:</span>
+                                                                <span class="{% if book.due_date < today %}text-danger{% elif book.due_date == today %}text-warning{% else %}text-success{% endif %} fw-bold">
+                                                                    {{ book.due_date|date:"M d, Y" }}
+                                                                    {% if book.transaction.book_extended %}
+                                                                        <small class="text-info ms-1">
+                                                                            <i class="bi bi-arrow-repeat"></i> Extended
+                                                                        </small>
+                                                                    {% endif %}
+                                                                </span>
+                                                            </div>
+                                                            {% if book.transaction.extended_on %}
+                                                                <div class="d-flex justify-content-between mt-2 pt-1 border-top">
+                                                                    <span class="text-muted small">Extended on:</span>
+                                                                    <span class="small text-info">{{ book.transaction.extended_on|date:"M d, Y" }}</span>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <div class="d-flex gap-2">
+                                                            <form action="{% url 'L01:view_book_detail' %}" method="GET" style="display: inline;">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="cat_ref_num" value="{{ book.encrypted_cat_ref_num }}">
+                                                                <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill">
+                                                                    <i class="bi bi-star me-1"></i>Add Review
+                                                                </button>
+                                                            </form>
+                                                            
+                                                            <!-- Extend Book Button - Show only on due date, if not already extended, and membership active -->
+                                                            {% if membership_active and book.due_date == today and not book.transaction.book_extended %}
+                                                                <button type="button" 
+                                                                        class="btn btn-warning btn-sm rounded-pill extend-book-btn"
+                                                                        data-transaction-id="{{ book.transaction.id }}"
+                                                                        data-book-title="{{ book.title }}"
+                                                                        data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num }}">
+                                                                    <i class="bi bi-calendar-plus me-1"></i>Extend Book
+                                                                </button>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Show "Extended" badge for already extended books -->
+                                                            {% if book.transaction.book_extended %}
+                                                                <button type="button" 
+                                                                        class="btn btn-info btn-sm rounded-pill" 
+                                                                        disabled
+                                                                        style="background: linear-gradient(135deg, #0d9488, #14b8a6); border: none; opacity: 0.8;">
+                                                                    <i class="bi bi-check-circle me-1"></i>Extended
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5 empty-state">
+                                <i class="bi bi-book-x display-4 text-muted mb-3"></i>
+                                <h6 class="text-muted fw-bold">No books currently borrowed</h6>
+                                <p class="text-muted mb-4 small">Visit our library to discover exciting books!</p>
+                                
+                                {% if membership_active %}
+                                    <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-md rounded-pill">
+                                        <i class="bi bi-search me-1"></i>Browse Collection
+                                    </a>
+                                {% else %}
+                                    <div class="alert alert-warning d-inline-block px-4 py-2 rounded-pill">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        Your membership is inactive. Please renew to borrow books.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-                {% else %}
-                <div class="text-center py-5 empty-state">
-                    <i class="bi bi-book-x display-4 text-muted mb-3"></i>
-                    <h6 class="text-muted fw-bold">No books currently borrowed</h6>
-                    <p class="text-muted mb-4 small">Visit our library to discover exciting books!</p>
-                    
-                    {% if membership_active %}
-                        <a href="{% url 'L01:show_Library_catalogue' %}" class="btn btn-primary btn-md rounded-pill">
-                            <i class="bi bi-search me-1"></i>Browse Collection
-                        </a>
-                    {% else %}
-                        <div class="alert alert-warning d-inline-block px-4 py-2 rounded-pill">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            Your membership is inactive. Please renew to borrow books.
-                        </div>
-                    {% endif %}
-                </div>
-                {% endif %}
             </div>
         </div>
-    </div>
-</div>
 
         <!-- Quick Actions Section -->
         <div class="row">
@@ -342,1217 +376,1330 @@
         </div>
     </div>
 
+    <style>
 
-<style>
-
-    .table-responsive {
-        overflow-x: hidden; /* removes horizontal scroll */
-    }
-    /* Add this to your stylesheet */
-    .toast-container {
-        animation: slideInRight 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    }
-
-    #actionToast {
-        min-width: 320px;
-        max-width: 400px;
-        border: none;
-        border-radius: 12px;
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        box-shadow: 
-            0 10px 25px rgba(0, 0, 0, 0.15),
-            0 5px 10px rgba(0, 0, 0, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    #actionToast .toast-header {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        padding: 12px 16px;
-        position: relative;
-    }
-
-    #actionToast .toast-header::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, 
-            rgba(255, 255, 255, 0.6) 0%, 
-            rgba(255, 255, 255, 0.2) 50%, 
-            rgba(255, 255, 255, 0.6) 100%);
-    }
-
-    #actionToast .toast-body {
-        padding: 20px 16px;
-        color: #374151;
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }
-
-    #actionToast .toast-body p {
-        margin: 0;
-        padding: 12px;
-        background: rgba(243, 244, 246, 0.5);
-        border-radius: 8px;
-        border-left: 3px solid #4f46e5;
-    }
-
-    #actionToast .btn {
-        font-size: 0.85rem;
-        font-weight: 500;
-        padding: 8px 16px;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-        border-width: 2px;
-    }
-
-    #actionToast .btn-outline-secondary {
-        color: #6b7280;
-        border-color: #d1d5db;
-        background: transparent;
-    }
-
-    #actionToast .btn-outline-secondary:hover {
-        background: #f3f4f6;
-        border-color: #9ca3af;
-        color: #374151;
-        transform: translateY(-1px);
-    }
-
-    #actionToast .btn-success {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        border: none;
-        color: white;
-        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
-    }
-
-    #actionToast .btn-success:hover {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
-    }
-
-    #actionToast .btn-close {
-        opacity: 0.8;
-        transition: opacity 0.2s ease;
-        filter: brightness(0) invert(1);
-    }
-
-    #actionToast .btn-close:hover {
-        opacity: 1;
-        transform: scale(1.1);
-    }
-
-    /* Progress bar for auto-hide */
-    #actionToast::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #4f46e5, #7c3aed);
-        border-radius: 0 0 12px 12px;
-        animation: progressBar 20s linear forwards;
-    }
-
-    /* Responsive design */
-    @media (max-width: 576px) {
+        .table-responsive {
+            overflow-x: hidden; /* removes horizontal scroll */
+        }
+        /* Add this to your stylesheet */
         .toast-container {
-            width: 100%;
-            padding: 0 16px;
-            position: fixed !important;
-            top: auto !important;
-            bottom: 20px !important;
-            right: 0 !important;
-            left: 0 !important;
-            transform: none !important;
+            animation: slideInRight 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         }
-        
+
         #actionToast {
-            min-width: auto;
-            width: 100%;
-            max-width: 100%;
+            min-width: 320px;
+            max-width: 400px;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.15),
+                0 5px 10px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-    }
 
-    /* Animations */
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
+        #actionToast .toast-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 16px;
+            position: relative;
         }
-        to {
-            transform: translateX(0);
+
+        #actionToast .toast-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0.6) 0%, 
+                rgba(255, 255, 255, 0.2) 50%, 
+                rgba(255, 255, 255, 0.6) 100%);
+        }
+
+        #actionToast .toast-body {
+            padding: 20px 16px;
+            color: #374151;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        #actionToast .toast-body p {
+            margin: 0;
+            padding: 12px;
+            background: rgba(243, 244, 246, 0.5);
+            border-radius: 8px;
+            border-left: 3px solid #4f46e5;
+        }
+
+        #actionToast .btn {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            border-width: 2px;
+        }
+
+        #actionToast .btn-outline-secondary {
+            color: #6b7280;
+            border-color: #d1d5db;
+            background: transparent;
+        }
+
+        #actionToast .btn-outline-secondary:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+            transform: translateY(-1px);
+        }
+
+        #actionToast .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
+        }
+
+        #actionToast .btn-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        #actionToast .btn-close {
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+            filter: brightness(0) invert(1);
+        }
+
+        #actionToast .btn-close:hover {
             opacity: 1;
+            transform: scale(1.1);
         }
-    }
 
-    @keyframes progressBar {
-        from {
-            width: 100%;
+        /* Progress bar for auto-hide */
+        #actionToast::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            border-radius: 0 0 12px 12px;
+            animation: progressBar 20s linear forwards;
         }
-        to {
-            width: 0%;
+
+        /* Responsive design */
+        @media (max-width: 576px) {
+            .toast-container {
+                width: 100%;
+                padding: 0 16px;
+                position: fixed !important;
+                top: auto !important;
+                bottom: 20px !important;
+                right: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+            }
+            
+            #actionToast {
+                min-width: auto;
+                width: 100%;
+                max-width: 100%;
+            }
         }
-    }
 
-    /* Hover effect for the entire toast */
-    #actionToast:hover {
-        transform: translateX(-5px);
-        transition: transform 0.3s ease;
-    }
-    /* ===== CSS Variables for Light Theme Only ===== */
-    :root {
-        /* Using Bootstrap's CSS variables for theme responsiveness */
-        --bg-primary: linear-gradient(135deg, var(--bs-light) 0%, #e2d9f3 100%);
-        --card-bg: var(--bs-body-bg);
-        --card-border: var(--bs-border-color);
-        --text-primary: var(--bs-body-color);
-        --text-secondary: var(--bs-secondary-color);
-        --text-muted: var(--bs-secondary-color);
-        --shadow-color: rgba(var(--bs-dark-rgb), 0.1);
-        --hover-shadow: rgba(var(--bs-dark-rgb), 0.15);
-        --table-bg: var(--bs-tertiary-bg);
-        --table-hover: rgba(128, 90, 213, 0.05);
-        
-        /* PURPLE Gradients */
-        --primary-gradient: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
-        --secondary-gradient: linear-gradient(135deg, #d53f8c 0%, #9f7aea 100%);
-        --success-gradient: linear-gradient(135deg, #38a169 0%, #68d391 100%);
-        --warning-gradient: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%);
-        
-        /* Transitions */
-        --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        --card-shadow: 0 8px 32px var(--shadow-color);
-    }
-
-    /* Dark theme adjustments */
-    [data-bs-theme="dark"] {
-        --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e1a2f 100%);
-        --shadow-color: rgba(0, 0, 0, 0.3);
-        --hover-shadow: rgba(0, 0, 0, 0.4);
-        --table-hover: rgba(128, 90, 213, 0.1);
-    }
-
-    /* ===== Base Styles ===== */
-    body {
-        font-family: 'Inter', sans-serif;
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        min-height: 100vh;
-        transition: background 0.3s ease;
-    }
-
-    .card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        transition: var(--transition-smooth);
-        color: var(--text-primary);
-        box-shadow: var(--card-shadow);
-    }
-
-    .card-header {
-        background: transparent;
-        border-bottom: 1px solid var(--card-border);
-    }
-
-    .card-title, .card-subtitle, .card-text {
-        color: var(--text-primary);
-    }
-
-    .text-muted {
-        color: var(--text-muted) !important;
-    }
-
-    /* ===== Welcome Card Enhancements ===== */
-    .welcome-card {
-        background: var(--primary-gradient);
-        border: none;
-        color: white !important;
-        position: relative;
-        animation: slideInDown 0.6s ease-out;
-        overflow: hidden;
-    }
-
-    .welcome-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
-        animation: shimmer 3s infinite;
-    }
-
-    .welcome-background {
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        opacity: 0.3;
-    }
-
-    .welcome-title {
-        font-family: 'Merriweather', serif;
-        font-size: 2rem;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .welcome-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-
-    .membership-link {
-        color: #ffd700;
-        text-decoration: none;
-        font-weight: 600;
-        position: relative;
-        transition: var(--transition-smooth);
-    }
-
-    .membership-link::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 0;
-        height: 2px;
-        background: #ffd700;
-        transition: width 0.3s ease;
-    }
-
-    .membership-link:hover {
-        color: #fff;
-        transform: translateY(-1px);
-    }
-
-    .membership-link:hover::after {
-        width: 100%;
-    }
-
-    /* ===== Statistics Cards ===== */
-    .stat-card {
-        border-radius: 20px;
-        position: relative;
-        transition: var(--transition-smooth);
-        cursor: pointer;
-        overflow: hidden;
-        box-shadow: var(--card-shadow);
-    }
-
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        border-radius: 4px 4px 0 0;
-    }
-
-    .stat-card-primary::before { background: var(--primary-gradient); }
-    .stat-card-warning::before { background: var(--warning-gradient); }
-    .stat-card-danger::before { background: var(--secondary-gradient); }
-
-    .stat-card:hover {
-        transform: translateY(-10px) scale(1.02);
-        box-shadow: 0 20px 40px var(--hover-shadow);
-    }
-
-    .stat-card .card-title {
-        font-size: 3.5rem;
-        font-weight: 800;
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .stat-card-warning .card-title { background: var(--warning-gradient); -webkit-background-clip: text; }
-    .stat-card-danger .card-title { background: var(--secondary-gradient); -webkit-background-clip: text; }
-
-    .stat-icon {
-        width: 70px;
-        height: 70px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        background: var(--primary-gradient);
-        color: white;
-        box-shadow: 0 4px 15px rgba(128, 90, 213, 0.4);
-        transition: var(--transition-smooth);
-    }
-
-    .stat-card:hover .stat-icon {
-        transform: rotate(15deg) scale(1.1);
-    }
-
-    .stat-card-warning .stat-icon {
-        background: var(--warning-gradient);
-        box-shadow: 0 4px 15px rgba(214, 158, 46, 0.4);
-    }
-
-    .stat-card-danger .stat-icon {
-        background: var(--secondary-gradient);
-        box-shadow: 0 4px 15px rgba(213, 63, 140, 0.4);
-    }
-
-    /* ===== Currently Reading Cards ===== */
-    .section-title {
-        font-family: 'Merriweather', serif;
-        font-size: 1.5rem;
-        position: relative;
-        display: inline-block;
-        color: var(--text-primary);
-    }
-
-    .section-title::after {
-        content: '';
-        position: absolute;
-        bottom: -8px;
-        left: 0;
-        width: 60px;
-        height: 4px;
-        background: var(--primary-gradient);
-        border-radius: 2px;
-    }
-
-    /* Book Card Styles */
-    .book-card {
-        border: none;
-        border-radius: 16px;
-        background: var(--card-bg);
-        overflow: hidden;
-        transition: var(--transition-smooth);
-        position: relative;
-        animation: fadeInUp 0.5s ease-out backwards;
-        box-shadow: 0 4px 6px rgba(var(--bs-dark-rgb), 0.1);
-        border-left: 3px solid #805ad5;
-    }
-
-    .book-card:nth-child(2) { animation-delay: 0.1s; }
-    .book-card:nth-child(3) { animation-delay: 0.2s; }
-
-    .book-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--primary-gradient);
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 0.4s ease;
-    }
-
-    .book-card:hover::before {
-        transform: scaleX(1);
-    }
-
-    .book-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px var(--hover-shadow);
-    }
-
-    .book-cover-container {
-        position: relative;
-        overflow: hidden;
-        border-radius: 12px;
-        box-shadow: 0 10px 20px rgba(var(--bs-dark-rgb), 0.1);
-    }
-
-    .book-cover-wrapper {
-        overflow: hidden;
-        border-radius: 12px;
-        aspect-ratio: 3/4;
-    }
-
-    .book-cover {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .book-card:hover .book-cover {
-        transform: scale(1.1);
-    }
-
-    .book-status-badge {
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-    }
-
-    .book-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        line-height: 1.4;
-        color: var(--text-primary);
-        transition: color 0.3s ease;
-    }
-
-    .book-card:hover .book-title {
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .book-author {
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-    }
-
-    .book-details {
-        background: var(--table-bg);
-        border-radius: 12px;
-        padding: 12px;
-        border: 1px solid var(--card-border);
-    }
-
-    /* ===== Empty State ===== */
-    .empty-state {
-        animation: fadeIn 0.8s ease-out;
-        padding: 1.5rem 0;
-    }
-
-    .empty-state i {
-        font-size: 2rem;
-        opacity: 0.3;
-        animation: float 3s ease-in-out infinite;
-        color: var(--text-muted);
-        margin-bottom: 0.75rem;
-    }
-
-    .empty-state .btn {
-        padding: 0.25rem 1rem;
-        font-size: 0.75rem;
-        border-radius: 15px;
-        transition: var(--transition-smooth);
-        font-weight: 500;
-        height: 32px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .empty-state .btn i {
-        font-size: 0.875rem;
-        margin-right: 0.5rem;
-        margin-bottom: 0;
-        animation: none;
-        color: inherit;
-    }
-
-    .empty-state .btn-primary {
-        background: var(--primary-gradient);
-        border: none;
-        min-width: 140px;
-    }
-
-    .empty-state .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
-    }
-
-    .empty-state h6 {
-        font-size: 0.95rem;
-        margin-bottom: 0.5rem;
-        color: var(--text-primary);
-    }
-
-    .empty-state p {
-        font-size: 0.8rem;
-        margin-bottom: 0.75rem;
-        color: var(--text-muted);
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-    }
-
-    /* ===== QUICK ACTION CARDS ===== */
-    .action-btn {
-        border-radius: 16px;
-        padding: 1.5rem;
-        transition: var(--transition-smooth);
-        position: relative;
-        overflow: hidden;
-        border: none;
-        color: white;
-        box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
-    }
-
-    .action-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.6s;
-    }
-
-    .action-btn:hover::before {
-        left: 100%;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(128, 90, 213, 0.4);
-    }
-
-    .btn-primary.action-btn,
-    .btn-outline-primary.action-btn {
-        background: var(--primary-gradient);
-        border: none;
-        color: white;
-    }
-
-    .btn-primary.action-btn .bi-search,
-    .btn-outline-primary.action-btn .bi-clock-history {
-        color: white;
-        font-size: 1.75rem;
-        transition: var(--transition-smooth);
-    }
-
-    .btn-primary.action-btn .fw-bold,
-    .btn-outline-primary.action-btn .fw-bold {
-        color: white;
-    }
-
-    .btn-primary.action-btn .opacity-75,
-    .btn-outline-primary.action-btn .opacity-75 {
-        color: rgba(255, 255, 255, 0.9);
-    }
-
-    .btn-primary.action-btn:hover,
-    .btn-outline-primary.action-btn:hover {
-        background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
-        transform: translateY(-5px) scale(1.02);
-    }
-
-    .btn-primary.action-btn:hover .bi-search {
-        transform: scale(1.1) rotate(5deg);
-    }
-
-    .btn-outline-primary.action-btn:hover .bi-clock-history {
-        transform: scale(1.1) rotate(-5deg);
-    }
-
-    .btn-primary.action-btn .bi-arrow-right,
-    .btn-outline-primary.action-btn .bi-arrow-right {
-        color: white;
-        transition: transform 0.3s ease;
-    }
-
-    .btn-primary.action-btn:hover .bi-arrow-right,
-    .btn-outline-primary.action-btn:hover .bi-arrow-right {
-        transform: translateX(3px);
-    }
-
-    /* ===== Modal Enhancements ===== */
-    .modal-content {
-        border: none;
-        border-radius: 24px;
-        overflow: hidden;
-        animation: modalSlideIn 0.4s ease-out;
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        color: var(--text-primary);
-    }
-
-    @keyframes modalSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-50px) scale(0.9);
+        /* Animations */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
+
+        @keyframes progressBar {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0%;
+            }
         }
-    }
 
-    .modal-header {
-        background: var(--primary-gradient);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-    }
-
-    .modal-title {
-        color: white;
-    }
-
-    .modal-footer {
-        border-top: 1px solid var(--card-border);
-        background: var(--table-bg);
-    }
-
-    .table {
-        color: var(--text-primary);
-        background: var(--card-bg);
-    }
-
-    .table thead th {
-        background: var(--table-bg);
-        border-bottom: 2px solid var(--card-border);
-        color: var(--text-primary);
-    }
-
-    .table tbody tr {
-        background: var(--card-bg);
-        border-bottom: 1px solid var(--card-border);
-        transition: all 0.3s ease;
-    }
-
-    .table tbody tr:hover {
-        background: var(--table-hover);
-        transform: translateX(5px);
-    }
-
-    #historyTable tbody tr {
-        border-left: 3px solid transparent;
-        transition: all 0.3s ease;
-    }
-
-    #historyTable tbody tr:hover {
-        border-left-color: #805ad5;
-        background: linear-gradient(90deg, var(--table-hover) 0%, transparent 100%);
-    }
-
-    /* ===== Badges ===== */
-    .badge {
-        transition: all 0.3s ease;
-        border: 1px solid transparent;
-        font-weight: 500;
-    }
-
-    .badge:hover {
-        transform: scale(1.05);
-        border-color: currentColor;
-    }
-
-    /* ===== Animations ===== */
-    @keyframes slideInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-30px);
+        /* Hover effect for the entire toast */
+        #actionToast:hover {
+            transform: translateX(-5px);
+            transition: transform 0.3s ease;
         }
-        to {
-            opacity: 1;
-            transform: translateY(0);
+        /* ===== CSS Variables for Light Theme Only ===== */
+        :root {
+            /* Using Bootstrap's CSS variables for theme responsiveness */
+            --bg-primary: linear-gradient(135deg, var(--bs-light) 0%, #e2d9f3 100%);
+            --card-bg: var(--bs-body-bg);
+            --card-border: var(--bs-border-color);
+            --text-primary: var(--bs-body-color);
+            --text-secondary: var(--bs-secondary-color);
+            --text-muted: var(--bs-secondary-color);
+            --shadow-color: rgba(var(--bs-dark-rgb), 0.1);
+            --hover-shadow: rgba(var(--bs-dark-rgb), 0.15);
+            --table-bg: var(--bs-tertiary-bg);
+            --table-hover: rgba(128, 90, 213, 0.05);
+            
+            /* PURPLE Gradients */
+            --primary-gradient: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+            --secondary-gradient: linear-gradient(135deg, #d53f8c 0%, #9f7aea 100%);
+            --success-gradient: linear-gradient(135deg, #38a169 0%, #68d391 100%);
+            --warning-gradient: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%);
+            
+            /* Transitions */
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --card-shadow: 0 8px 32px var(--shadow-color);
         }
-    }
 
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
+        /* Dark theme adjustments */
+        [data-bs-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e1a2f 100%);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --hover-shadow: rgba(0, 0, 0, 0.4);
+            --table-hover: rgba(128, 90, 213, 0.1);
         }
-        to {
-            opacity: 1;
-            transform: translateY(0);
+
+        /* ===== Base Styles ===== */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s ease;
         }
-    }
 
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: var(--transition-smooth);
+            color: var(--text-primary);
+            box-shadow: var(--card-shadow);
+        }
 
-    @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--card-border);
+        }
 
-    /* ===== Loading Animation ===== */
-    .spinner-border {
-        width: 3rem;
-        height: 3rem;
-        border-width: 0.25em;
-    }
+        .card-title, .card-subtitle, .card-text {
+            color: var(--text-primary);
+        }
 
-    .spinner-border.text-primary {
-        border-color: #805ad5 !important;
-        border-right-color: transparent !important;
-    }
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
 
-    /* ===== Button Styling ===== */
-    .btn {
-        border-radius: 12px;
-        transition: var(--transition-smooth);
-        font-weight: 500;
-    }
+        /* ===== Welcome Card Enhancements ===== */
+        .welcome-card {
+            background: var(--primary-gradient);
+            border: none;
+            color: white !important;
+            position: relative;
+            animation: slideInDown 0.6s ease-out;
+            overflow: hidden;
+        }
 
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px var(--hover-shadow);
-    }
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
 
-    /* Purple-themed button overrides */
-    .btn-primary {
-        background: var(--primary-gradient);
-        border-color: transparent;
-    }
+        .welcome-background {
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0.3;
+        }
 
-    .btn-primary:hover {
-        background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
-        border-color: transparent;
-    }
-
-    .btn-outline-primary {
-        color: #805ad5;
-        border-color: #805ad5;
-    }
-
-    .btn-outline-primary:hover {
-        background: var(--primary-gradient);
-        border-color: transparent;
-        color: white;
-    }
-
-    /* ===== Scrollbar Styling ===== */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: var(--table-bg);
-        border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: var(--primary-gradient);
-        border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
-    }
-
-    /* ===== Responsive Design ===== */
-    @media (max-width: 768px) {
         .welcome-title {
-            font-size: 1.5rem;
+            font-family: 'Merriweather', serif;
+            font-size: 2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        
+
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .membership-link {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: 600;
+            position: relative;
+            transition: var(--transition-smooth);
+        }
+
+        .membership-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #ffd700;
+            transition: width 0.3s ease;
+        }
+
+        .membership-link:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .membership-link:hover::after {
+            width: 100%;
+        }
+
+        /* ===== Statistics Cards ===== */
+        .stat-card {
+            border-radius: 20px;
+            position: relative;
+            transition: var(--transition-smooth);
+            cursor: pointer;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .stat-card-primary::before { background: var(--primary-gradient); }
+        .stat-card-warning::before { background: var(--warning-gradient); }
+        .stat-card-danger::before { background: var(--secondary-gradient); }
+
+        .stat-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px var(--hover-shadow);
+        }
+
         .stat-card .card-title {
-            font-size: 2.5rem;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        
+
+        .stat-card-warning .card-title { background: var(--warning-gradient); -webkit-background-clip: text; }
+        .stat-card-danger .card-title { background: var(--secondary-gradient); -webkit-background-clip: text; }
+
         .stat-icon {
-            width: 50px;
-            height: 50px;
-            font-size: 1.5rem;
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(128, 90, 213, 0.4);
+            transition: var(--transition-smooth);
         }
-        
+
+        .stat-card:hover .stat-icon {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .stat-card-warning .stat-icon {
+            background: var(--warning-gradient);
+            box-shadow: 0 4px 15px rgba(214, 158, 46, 0.4);
+        }
+
+        .stat-card-danger .stat-icon {
+            background: var(--secondary-gradient);
+            box-shadow: 0 4px 15px rgba(213, 63, 140, 0.4);
+        }
+
+        /* ===== Currently Reading Cards ===== */
         .section-title {
-            font-size: 1.3rem;
+            font-family: 'Merriweather', serif;
+            font-size: 1.5rem;
+            position: relative;
+            display: inline-block;
+            color: var(--text-primary);
         }
-        
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: var(--primary-gradient);
+            border-radius: 2px;
+        }
+
+        /* Book Card Styles */
         .book-card {
-            margin-bottom: 1rem;
+            border: none;
+            border-radius: 16px;
+            background: var(--card-bg);
+            overflow: hidden;
+            transition: var(--transition-smooth);
+            position: relative;
+            animation: fadeInUp 0.5s ease-out backwards;
+            box-shadow: 0 4px 6px rgba(var(--bs-dark-rgb), 0.1);
+            border-left: 3px solid #805ad5;
         }
-        
-        .action-btn {
-            padding: 1.25rem;
-        }
-        
-        .action-btn .bi-search,
-        .action-btn .bi-clock-history {
-            font-size: 1.5rem;
-        }
-        
-        .empty-state .btn {
-            padding: 0.2rem 0.8rem;
-            font-size: 0.7rem;
-            height: 28px;
-            min-width: 120px;
-        }
-        
-        .empty-state i {
-            font-size: 1.75rem;
-        }
-    }
 
-    @media (max-width: 576px) {
-        .display-6 {
-            font-size: 1.8rem;
+        .book-card:nth-child(2) { animation-delay: 0.1s; }
+        .book-card:nth-child(3) { animation-delay: 0.2s; }
+
+        .book-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
         }
-        
-        .welcome-card .card-body {
-            padding: 1.5rem !important;
+
+        .book-card:hover::before {
+            transform: scaleX(1);
         }
-        
-        .stat-card .card-body {
-            padding: 1.5rem !important;
+
+        .book-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px var(--hover-shadow);
         }
-        
+
+        .book-cover-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(var(--bs-dark-rgb), 0.1);
+        }
+
         .book-cover-wrapper {
-            aspect-ratio: 2/3;
+            overflow: hidden;
+            border-radius: 12px;
+            aspect-ratio: 3/4;
         }
-        
+
+        .book-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .book-card:hover .book-cover {
+            transform: scale(1.1);
+        }
+
+        .book-status-badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .book-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+        }
+
+        .book-card:hover .book-title {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .book-author {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .book-details {
+            background: var(--table-bg);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            animation: fadeIn 0.8s ease-out;
+            padding: 1.5rem 0;
+        }
+
         .empty-state i {
-            font-size: 1.5rem;
+            font-size: 2rem;
+            opacity: 0.3;
+            animation: float 3s ease-in-out infinite;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
         }
-        
+
         .empty-state .btn {
-            padding: 0.15rem 0.7rem;
-            font-size: 0.65rem;
-            height: 26px;
-            min-width: 110px;
+            padding: 0.25rem 1rem;
+            font-size: 0.75rem;
+            border-radius: 15px;
+            transition: var(--transition-smooth);
+            font-weight: 500;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
-        
+
+        .empty-state .btn i {
+            font-size: 0.875rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0;
+            animation: none;
+            color: inherit;
+        }
+
+        .empty-state .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            min-width: 140px;
+        }
+
+        .empty-state .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
+        }
+
+        .empty-state h6 {
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* ===== QUICK ACTION CARDS ===== */
         .action-btn {
-            padding: 1rem;
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
         }
-        
-        .action-btn .bi-search,
-        .action-btn .bi-clock-history {
-            font-size: 1.25rem;
-            margin-right: 0.75rem;
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
         }
-    }
 
-    /* ===== Additional Purple Accents ===== */
-    .border-primary {
-        border-color: #805ad5 !important;
-    }
-
-    .text-primary {
-        color: #805ad5 !important;
-    }
-
-    .bg-primary {
-        background-color: #805ad5 !important;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Load history when modal is shown
-        const historyModal = document.getElementById('historyModal');
-        if (historyModal) {
-            historyModal.addEventListener('show.bs.modal', function() {
-                loadBorrowingHistory();
-            });
+        .action-btn:hover::before {
+            left: 100%;
         }
-    });
 
-    function loadBorrowingHistory() {
-        const tbody = document.querySelector('#historyTable tbody');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const noHistory = document.getElementById('noHistory');
-        
-        // Show loading, hide other elements
-        loadingSpinner.classList.remove('d-none');
-        noHistory.classList.add('d-none');
-        tbody.innerHTML = '';
-        
-        // Make AJAX request to get borrowing history
-        fetch('{% url "L01:get_borrowing_history" %}')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                loadingSpinner.classList.add('d-none');
-                
-                if (data.success && data.history.length > 0) {
-                    // Populate table with history data
-                    data.history.forEach(item => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="fw-medium">${item.book_title || 'Unknown Title'}</td>
-                            <td>${item.author || 'Unknown Author'}</td>
-                            <td>${item.issue_date}</td>
-                            <td>${item.return_date || 'Not Returned'}</td>
-                            <td>
-                                <span class="badge ${getStatusBadgeClass(item.status)}">
-                                    ${item.status || 'Unknown'}
-                                </span>
-                            </td>
-                            <td>${item.return_condition || 'N/A'}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                } else {
-                    noHistory.classList.remove('d-none');
-                }
-            })
-            .catch(error => {
-                console.error('Error loading history:', error);
-                loadingSpinner.classList.add('d-none');
-                noHistory.classList.remove('d-none');
-                noHistory.innerHTML = `
-                    <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2"></i>
-                    <h6 class="text-danger">Error loading history</h6>
-                    <p class="text-muted small">Please try again later.</p>
-                `;
-            });
-    }
-
-    function getStatusBadgeClass(status) {
-        if (!status) return 'bg-secondary';
-        
-        const statusLower = status.toLowerCase();
-        if (statusLower.includes('return') || statusLower.includes('complete')) {
-            return 'bg-success';
-        } else if (statusLower.includes('overdue')) {
-            return 'bg-danger';
-        } else if (statusLower.includes('due') || statusLower.includes('soon')) {
-            return 'bg-warning';
-        } else {
-            return 'bg-primary';
+        .action-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(128, 90, 213, 0.4);
         }
-    }
-</script>
 
-<script>
-
-   // Add smooth scroll to membership link
-    document.addEventListener('DOMContentLoaded', function() {
-        const membershipLink = document.querySelector('.membership-link');
-        if (membershipLink) {
-            membershipLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Add loading animation
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
-                this.style.pointerEvents = 'none';
-                
-                setTimeout(() => {
-                    window.location.href = this.href;
-                }, 300);
-            });
+        .btn-primary.action-btn,
+        .btn-outline-primary.action-btn {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
         }
-        
-        // Add intersection observer for scroll animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-in');
-                }
-            });
-        }, observerOptions);
-        
-        // Observe all cards for scroll animations
-        document.querySelectorAll('.stat-card, .book-card').forEach(card => {
-            observer.observe(card);
+
+        .btn-primary.action-btn .bi-search,
+        .btn-outline-primary.action-btn .bi-clock-history {
+            color: white;
+            font-size: 1.75rem;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-primary.action-btn .fw-bold,
+        .btn-outline-primary.action-btn .fw-bold {
+            color: white;
+        }
+
+        .btn-primary.action-btn .opacity-75,
+        .btn-outline-primary.action-btn .opacity-75 {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-primary.action-btn:hover,
+        .btn-outline-primary.action-btn:hover {
+            background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .btn-primary.action-btn:hover .bi-search {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .btn-outline-primary.action-btn:hover .bi-clock-history {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .btn-primary.action-btn .bi-arrow-right,
+        .btn-outline-primary.action-btn .bi-arrow-right {
+            color: white;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-primary.action-btn:hover .bi-arrow-right,
+        .btn-outline-primary.action-btn:hover .bi-arrow-right {
+            transform: translateX(3px);
+        }
+
+        /* ===== Modal Enhancements ===== */
+        .modal-content {
+            border: none;
+            border-radius: 24px;
+            overflow: hidden;
+            animation: modalSlideIn 0.4s ease-out;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            background: var(--primary-gradient);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .modal-title {
+            color: white;
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--card-border);
+            background: var(--table-bg);
+        }
+
+        .table {
+            color: var(--text-primary);
+            background: var(--card-bg);
+        }
+
+        .table thead th {
+            background: var(--table-bg);
+            border-bottom: 2px solid var(--card-border);
+            color: var(--text-primary);
+        }
+
+        .table tbody tr {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
+            transition: all 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background: var(--table-hover);
+            transform: translateX(5px);
+        }
+
+        #historyTable tbody tr {
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        #historyTable tbody tr:hover {
+            border-left-color: #805ad5;
+            background: linear-gradient(90deg, var(--table-hover) 0%, transparent 100%);
+        }
+
+        /* ===== Badges ===== */
+        .badge {
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+
+        .badge:hover {
+            transform: scale(1.05);
+            border-color: currentColor;
+        }
+
+        /* ===== Animations ===== */
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* ===== Loading Animation ===== */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.25em;
+        }
+
+        .spinner-border.text-primary {
+            border-color: #805ad5 !important;
+            border-right-color: transparent !important;
+        }
+
+        /* ===== Button Styling ===== */
+        .btn {
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--hover-shadow);
+        }
+
+        /* Purple-themed button overrides */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border-color: transparent;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
+            border-color: transparent;
+        }
+
+        .btn-outline-primary {
+            color: #805ad5;
+            border-color: #805ad5;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: white;
+        }
+
+        /* ===== Scrollbar Styling ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--table-bg);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #6b46c1 0%, #805ad5 100%);
+        }
+
+        /* ===== Responsive Design ===== */
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card .card-title {
+                font-size: 2.5rem;
+            }
+            
+            .stat-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+            }
+            
+            .book-card {
+                margin-bottom: 1rem;
+            }
+            
+            .action-btn {
+                padding: 1.25rem;
+            }
+            
+            .action-btn .bi-search,
+            .action-btn .bi-clock-history {
+                font-size: 1.5rem;
+            }
+            
+            .empty-state .btn {
+                padding: 0.2rem 0.8rem;
+                font-size: 0.7rem;
+                height: 28px;
+                min-width: 120px;
+            }
+            
+            .empty-state i {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .display-6 {
+                font-size: 1.8rem;
+            }
+            
+            .welcome-card .card-body {
+                padding: 1.5rem !important;
+            }
+            
+            .stat-card .card-body {
+                padding: 1.5rem !important;
+            }
+            
+            .book-cover-wrapper {
+                aspect-ratio: 2/3;
+            }
+            
+            .empty-state i {
+                font-size: 1.5rem;
+            }
+            
+            .empty-state .btn {
+                padding: 0.15rem 0.7rem;
+                font-size: 0.65rem;
+                height: 26px;
+                min-width: 110px;
+            }
+            
+            .action-btn {
+                padding: 1rem;
+            }
+            
+            .action-btn .bi-search,
+            .action-btn .bi-clock-history {
+                font-size: 1.25rem;
+                margin-right: 0.75rem;
+            }
+        }
+
+        /* ===== Additional Purple Accents ===== */
+        .border-primary {
+            border-color: #805ad5 !important;
+        }
+
+        .text-primary {
+            color: #805ad5 !important;
+        }
+
+        .bg-primary {
+            background-color: #805ad5 !important;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load history when modal is shown
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal) {
+                historyModal.addEventListener('show.bs.modal', function() {
+                    loadBorrowingHistory();
+                });
+            }
         });
-        
-        // Add hover effect to table rows in modal
-        const historyModal = document.getElementById('historyModal');
-        if (historyModal) {
-            historyModal.addEventListener('shown.bs.modal', function() {
-                const tableRows = document.querySelectorAll('#historyTable tbody tr');
-                tableRows.forEach(row => {
-                    row.addEventListener('mouseenter', function() {
-                        this.style.transition = 'all 0.3s ease';
+
+        function loadBorrowingHistory() {
+            const tbody = document.querySelector('#historyTable tbody');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const noHistory = document.getElementById('noHistory');
+            
+            // Show loading, hide other elements
+            loadingSpinner.classList.remove('d-none');
+            noHistory.classList.add('d-none');
+            tbody.innerHTML = '';
+            
+            // Make AJAX request to get borrowing history
+            fetch('{% url "L01:get_borrowing_history" %}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    loadingSpinner.classList.add('d-none');
+                    
+                    if (data.success && data.history.length > 0) {
+                        // Populate table with history data
+                        data.history.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td class="fw-medium">${item.book_title || 'Unknown Title'}</td>
+                                <td>${item.author || 'Unknown Author'}</td>
+                                <td>${item.issue_date}</td>
+                                <td>${item.return_date || 'Not Returned'}</td>
+                                <td>
+                                    <span class="badge ${getStatusBadgeClass(item.status)}">
+                                        ${item.status || 'Unknown'}
+                                    </span>
+                                </td>
+                                <td>${item.return_condition || 'N/A'}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        noHistory.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading history:', error);
+                    loadingSpinner.classList.add('d-none');
+                    noHistory.classList.remove('d-none');
+                    noHistory.innerHTML = `
+                        <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2"></i>
+                        <h6 class="text-danger">Error loading history</h6>
+                        <p class="text-muted small">Please try again later.</p>
+                    `;
+                });
+        }
+
+        function getStatusBadgeClass(status) {
+            if (!status) return 'bg-secondary';
+            
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('return') || statusLower.includes('complete')) {
+                return 'bg-success';
+            } else if (statusLower.includes('overdue')) {
+                return 'bg-danger';
+            } else if (statusLower.includes('due') || statusLower.includes('soon')) {
+                return 'bg-warning';
+            } else {
+                return 'bg-primary';
+            }
+        }
+    </script>
+
+    <script>
+
+    // Add smooth scroll to membership link
+        document.addEventListener('DOMContentLoaded', function() {
+            const membershipLink = document.querySelector('.membership-link');
+            if (membershipLink) {
+                membershipLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Add loading animation
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
+                    this.style.pointerEvents = 'none';
+                    
+                    setTimeout(() => {
+                        window.location.href = this.href;
+                    }, 300);
+                });
+            }
+            
+            // Add intersection observer for scroll animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe all cards for scroll animations
+            document.querySelectorAll('.stat-card, .book-card').forEach(card => {
+                observer.observe(card);
+            });
+            
+            // Add hover effect to table rows in modal
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal) {
+                historyModal.addEventListener('shown.bs.modal', function() {
+                    const tableRows = document.querySelectorAll('#historyTable tbody tr');
+                    tableRows.forEach(row => {
+                        row.addEventListener('mouseenter', function() {
+                            this.style.transition = 'all 0.3s ease';
+                        });
                     });
                 });
-            });
-        }
-    });
-</script>
-
-<script>
-    // Back to Top Button
-    const backToTopButton = document.getElementById('backToTop');
-    
-    window.addEventListener('scroll', () => {
-        if (window.pageYOffset > 300) {
-            backToTopButton.classList.add('active');
-        } else {
-            backToTopButton.classList.remove('active');
-        }
-    });
-    
-    backToTopButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
+            }
         });
-    });
-</script>
+    </script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        debugger
-        const toastEl = document.getElementById("actionToast");
+    <script>
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
 
-      
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            debugger
+            const toastEl = document.getElementById("actionToast");
 
-        if (toastEl && typeof bootstrap !== "undefined") {
-            const toast = new bootstrap.Toast(toastEl, {
-                delay: 30000,
-                autohide: true
+        
+
+            if (toastEl && typeof bootstrap !== "undefined") {
+                const toast = new bootstrap.Toast(toastEl, {
+                    delay: 30000,
+                    autohide: true
+                });
+
+                toast.show();
+
+                // ✅ When toast auto-hides → clear session
+                toastEl.addEventListener('hidden.bs.toast', function () {
+                        fetch("{% url 'L01:clear_pending_action' %}", {
+                            method: "POST",
+                            headers: {
+                                "X-CSRFToken": "{{ csrf_token }}"
+                            }
+                        });
+                    });
+
+                // Pause on hover
+                toastEl.addEventListener('mouseenter', function () {
+                    this.style.setProperty('--progress-animation-play-state', 'paused');
+                });
+
+                toastEl.addEventListener('mouseleave', function () {
+                    this.style.setProperty('--progress-animation-play-state', 'running');
+                });
+
+                // Button click animation
+                toastEl.querySelectorAll('button').forEach(button => {
+                    button.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            this.style.transform = '';
+                        }, 150);
+                    });
+                });
+            }
+        });
+
+        function openBook() {
+            const actionType = "{{ pending_action.type }}";
+            const actionUrl  = "{{ pending_action.url }}";
+
+            if (!actionUrl) return;
+
+            fetch("{% url 'L01:clear_pending_action' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            }).finally(() => {
+                if (actionType === "pdf") {
+                    window.open("{% url 'L01:open_pdf' %}?pdf=" + actionUrl, "_blank");
+                } else {
+                    window.location.href = actionUrl;
+                }
+            });
+        }
+
+
+        function cancelAction() {
+            fetch("{% url 'L01:clear_pending_action' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Session not cleared");
+                }
+
+                const toastEl = document.getElementById('actionToast');
+                const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                toast.hide();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Unable to cancel action. Please try again.");
+            });
+        }
+    </script>
+
+    {% if sweet_alert %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                Swal.fire({
+                title: "{{ sweet_alert.title }}",
+                text: "{{ sweet_alert.text }}",
+                icon: "{{ sweet_alert.icon }}",
+                confirmButtonText: "OK"
+                });
+            });
+        </script>
+    {% endif %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const breadcrumbEl = document.getElementById("breadcrumb");
+            const breadcrumb = breadcrumbEl ? breadcrumbEl.value : "0";
+
+            // 🚫 If breadcrumb == 1 → DO NOTHING
+            if (breadcrumb === "1") {
+                return;
+            }
+
+            const modalEl = document.getElementById("memberlogoutModal");
+            const modal = new bootstrap.Modal(modalEl);
+            let modalOpen = false;
+
+            // Push fake history state
+            history.pushState(null, null, location.href);
+
+            window.addEventListener("popstate", function () {
+
+                if (!modalOpen) {
+                    modalOpen = true;
+                    modal.show();
+
+                    // Keep user on same page
+                    history.pushState(null, null, location.href);
+                }
             });
 
-            toast.show();
+            document.getElementById("stayBtn").addEventListener("click", function () {
+                modalOpen = false;
+                modal.hide();
+                history.pushState(null, null, location.href);
+            });
 
-             // ✅ When toast auto-hides → clear session
-            toastEl.addEventListener('hidden.bs.toast', function () {
-                    fetch("{% url 'L01:clear_pending_action' %}", {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token }}"
+            document.getElementById("logoutBtn").addEventListener("click", function () {
+                window.location.href = "/logout";
+            });
+
+        });
+    </script>
+
+    {% comment %} Extend Book Functionality {% endcomment %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attach click event to all extend book buttons
+            document.querySelectorAll('.extend-book-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    debugger;
+                    const transactionId = this.getAttribute('data-transaction-id');
+                    const bookTitle = this.getAttribute('data-book-title');
+                    const encryptedCatRefNum = this.getAttribute('data-encrypted-cat-ref-num');
+                    
+                    // Show SweetAlert confirmation in Marathi
+                    Swal.fire({
+                        title: 'पुस्तक मुदतवाढ',
+                        html: `
+                            <div class="text-start">
+                                <p><strong>पुस्तक:</strong> ${bookTitle}</p>
+                                <p>तुम्हाला या पुस्तकाची मुदतवाढ करायची आहे का?</p>
+                                <p class="text-warning mt-2"><small>नियमानुसार फक्त एकदाच मुदतवाढ घेता येईल.</small></p>
+                            </div>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'होय, वाढवा',
+                        cancelButtonText: 'नको',
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Show loading state
+                            Swal.fire({
+                                title: 'प्रक्रिया सुरू आहे...',
+                                text: 'कृपया प्रतीक्षा करा',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                            debugger;
+                            // Make AJAX request to extend book using jQuery
+                            $.ajax({
+                                url: "{% url 'L01:extend_book' %}",
+                                type: "POST",
+                                data: {
+                                    transaction_id: transactionId,
+                                    encrypted_cat_ref_num: encryptedCatRefNum,
+                                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                                },
+                                dataType: "json",
+                                success: function(data) {
+                                    if (data.success) {
+                                        // Show success message with auto dismiss (3 seconds)
+                                        Swal.fire({
+                                            title: 'यशस्वी!',
+                                            text: data.message,
+                                            icon: 'success',
+                                            showConfirmButton: false,
+                                            timer: 3000,
+                                            timerProgressBar: true,
+                                            didOpen: (toast) => {
+                                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                            }
+                                        }).then(() => {
+                                            // Reload the page after toast closes
+                                            location.reload();
+                                        });
+                                    } else {
+                                        // Show error message with auto dismiss (4 seconds)
+                                        Swal.fire({
+                                            title: 'अयशस्वी!',
+                                            text: data.message,
+                                            icon: 'error',
+                                            showConfirmButton: false,
+                                            timer: 4000,
+                                            timerProgressBar: true,
+                                            didOpen: (toast) => {
+                                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                            }
+                                        });
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Error:', error);
+                                    let errorMessage = 'काहीतरी चूक झाली. कृपया पुन्हा प्रयत्न करा.';
+                                    
+                                    // Try to get error message from response
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMessage = xhr.responseJSON.message;
+                                    }
+                                    
+                                    // Show error message with auto dismiss (4 seconds)
+                                    Swal.fire({
+                                        title: 'त्रुटी!',
+                                        text: errorMessage,
+                                        icon: 'error',
+                                        showConfirmButton: false,
+                                        timer: 4000,
+                                        timerProgressBar: true,
+                                        didOpen: (toast) => {
+                                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                        }
+                                    });
+                                }
+                            });
                         }
                     });
                 });
-
-            // Pause on hover
-            toastEl.addEventListener('mouseenter', function () {
-                this.style.setProperty('--progress-animation-play-state', 'paused');
             });
-
-            toastEl.addEventListener('mouseleave', function () {
-                this.style.setProperty('--progress-animation-play-state', 'running');
-            });
-
-            // Button click animation
-            toastEl.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 150);
-                });
-            });
-        }
-    });
-
-    function openBook() {
-        const actionType = "{{ pending_action.type }}";
-        const actionUrl  = "{{ pending_action.url }}";
-
-        if (!actionUrl) return;
-
-        fetch("{% url 'L01:clear_pending_action' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": "{{ csrf_token }}"
-            }
-        }).finally(() => {
-            if (actionType === "pdf") {
-                window.open("{% url 'L01:open_pdf' %}?pdf=" + actionUrl, "_blank");
-            } else {
-                window.location.href = actionUrl;
-            }
         });
-    }
-
-
-    function cancelAction() {
-        fetch("{% url 'L01:clear_pending_action' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": "{{ csrf_token }}",
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Session not cleared");
-            }
-
-            const toastEl = document.getElementById('actionToast');
-            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-            toast.hide();
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Unable to cancel action. Please try again.");
-        });
-    }
-</script>
-
-{% if sweet_alert %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    Swal.fire({
-      title: "{{ sweet_alert.title }}",
-      text: "{{ sweet_alert.text }}",
-      icon: "{{ sweet_alert.icon }}",
-      confirmButtonText: "OK"
-    });
-  });
-</script>
-{% endif %}
-
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const breadcrumbEl = document.getElementById("breadcrumb");
-    const breadcrumb = breadcrumbEl ? breadcrumbEl.value : "0";
-
-    // 🚫 If breadcrumb == 1 → DO NOTHING
-    if (breadcrumb === "1") {
-        return;
-    }
-
-    const modalEl = document.getElementById("memberlogoutModal");
-    const modal = new bootstrap.Modal(modalEl);
-    let modalOpen = false;
-
-    // Push fake history state
-    history.pushState(null, null, location.href);
-
-    window.addEventListener("popstate", function () {
-
-        if (!modalOpen) {
-            modalOpen = true;
-            modal.show();
-
-            // Keep user on same page
-            history.pushState(null, null, location.href);
-        }
-    });
-
-    document.getElementById("stayBtn").addEventListener("click", function () {
-        modalOpen = false;
-        modal.hide();
-        history.pushState(null, null, location.href);
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", function () {
-        window.location.href = "/logout";
-    });
-
-});
-</script>
-
+    </script>
 
 {% endblock %}
 

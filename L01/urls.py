@@ -92,6 +92,7 @@ urlpatterns = [
     path('get-member-details/<str:membership_code>/', get_member_detail, name='get_member_detail'),
 
     path('membership_dashboard/', membership_dashboard, name='membership_dashboard'),
+    path('extend_book/', extend_book, name='extend_book'),
     path('get-borrowing-history/',get_borrowing_history, name='get_borrowing_history'),
     
     path("save-eod-log/", save_eod_log, name="save_eod_log"),
