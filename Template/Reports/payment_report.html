@@ -717,40 +717,71 @@
                         <input type="hidden" name="from_month" id="formFromMonth">
                         <input type="hidden" name="to_month" id="formToMonth">
                         <input type="hidden" name="report_type" id="reportType">
+                        <input type="hidden" name="single_date" id="singleDate">
 
                         <div class="modal-body" style="font-size:1.05rem; color:#333;">
-                        <div class="row g-4">
-                            <!-- From Month -->
-                            <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">
-                                पासून महिना आणि वर्ष <span class="text-danger">*</span>
-                            </label>
-                            <input type="month" id="fromMonth" name="from_month" class="form-control shadow-sm"
-                                    required>
+                            
+                            <!-- Radio buttons to select report type -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary mb-2">अहवाल प्रकार / Report Type:</label>
+                                <div class="d-flex gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="report_range_type" id="rangeType" value="range" checked>
+                                        <label class="form-check-label" for="rangeType">
+                                            महिना श्रेणी / Month Range
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="report_range_type" id="singleDateType" value="single">
+                                        <label class="form-check-label" for="singleDateType">
+                                            एकल दिनांक / Single Date
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- To Month -->
-                            <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">
-                                पर्यंत महिना आणि वर्ष <span class="text-danger">*</span>
-                            </label>
-                            <input type="month" id="toMonth" name="to_month" class="form-control shadow-sm"
-                                    required>
+                            <!-- Month Range Section -->
+                            <div id="monthRangeSection">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            पासून महिना आणि वर्ष <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="month" id="fromMonth" name="from_month_input" class="form-control shadow-sm" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            पर्यंत महिना आणि वर्ष <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="month" id="toMonth" name="to_month_input" class="form-control shadow-sm" required>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+
+                            <!-- Single Date Section (hidden by default) -->
+                            <div id="singleDateSection" style="display: none;">
+                                <div class="row g-4">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-semibold text-secondary">
+                                            दिनांक निवडा / Select Date <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="date" id="singleDateInput" name="single_date_input" class="form-control shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Footer Buttons -->
                         <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn text-white px-4" style="background:#28a745;" id="generatePdfBtn" disabled>
-                            <i class="bi bi-file-earmark-pdf"></i> PDF तयार करा
-                        </button>
-                        <button type="button" class="btn text-white px-4" style="background:#198754;" id="generateExcelBtn" disabled>
-                            <i class="bi bi-file-earmark-excel"></i> Excel तयार करा
-                        </button>
-                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal" id="goBackBtn">
-                            मागे जा
-                        </button>
+                            <button type="button" class="btn text-white px-4" style="background:#28a745;" id="generatePdfBtn" disabled>
+                                <i class="bi bi-file-earmark-pdf"></i> PDF तयार करा
+                            </button>
+                            <button type="button" class="btn text-white px-4" style="background:#198754;" id="generateExcelBtn" disabled>
+                                <i class="bi bi-file-earmark-excel"></i> Excel तयार करा
+                            </button>
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal" id="goBackBtn">
+                                मागे जा
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -1132,58 +1163,125 @@
             const excelBtn = $("#generateExcelBtn");
             const fromInput = $("#fromMonth");
             const toInput = $("#toMonth");
+            const singleDateInput = $("#singleDateInput");
+            const rangeTypeRadio = $("#rangeType");
+            const singleDateTypeRadio = $("#singleDateType");
+            const monthRangeSection = $("#monthRangeSection");
+            const singleDateSection = $("#singleDateSection");
 
-            // Enable/Disable Buttons
-            function toggleButtons() {
-                const fromVal = fromInput.val().trim();
-                pdfBtn.prop("disabled", fromVal === "");
-                excelBtn.prop("disabled", fromVal === "");
+            // Function to toggle between month range and single date sections
+            function toggleReportSections() {
+                if (rangeTypeRadio.is(":checked")) {
+                    monthRangeSection.show();
+                    singleDateSection.hide();
+                    // Clear single date input
+                    singleDateInput.val("");
+                    // Enable month range validation
+                    fromInput.prop("required", true);
+                    toInput.prop("required", true);
+                    singleDateInput.prop("required", false);
+                    toggleButtons();
+                } else {
+                    monthRangeSection.hide();
+                    singleDateSection.show();
+                    // Clear month range inputs
+                    fromInput.val("");
+                    toInput.val("");
+                    // Enable single date validation
+                    fromInput.prop("required", false);
+                    toInput.prop("required", false);
+                    singleDateInput.prop("required", true);
+                    toggleButtons();
+                }
             }
 
-            // Clear modal inputs
+            // Enable/Disable Buttons based on input
+            function toggleButtons() {
+                if (rangeTypeRadio.is(":checked")) {
+                    const fromVal = fromInput.val().trim();
+                    const toVal = toInput.val().trim();
+                    const isValid = fromVal !== "" && toVal !== "";
+                    pdfBtn.prop("disabled", !isValid);
+                    excelBtn.prop("disabled", !isValid);
+                } else {
+                    const singleDateVal = singleDateInput.val().trim();
+                    const isValid = singleDateVal !== "";
+                    pdfBtn.prop("disabled", !isValid);
+                    excelBtn.prop("disabled", !isValid);
+                }
+            }
+
+            // Clear modal fields
             function clearModalFields() {
                 fromInput.val("");
                 toInput.val("");
+                singleDateInput.val("");
                 pdfBtn.prop("disabled", true);
                 excelBtn.prop("disabled", true);
+                // Reset to month range by default
+                rangeTypeRadio.prop("checked", true);
+                toggleReportSections();
             }
 
-            fromInput.on("change input", toggleButtons);
+            // Validate inputs before submission
+            function validateInputs() {
+                if (rangeTypeRadio.is(":checked")) {
+                    const fromVal = fromInput.val().trim();
+                    const toVal = toInput.val().trim();
 
-            // Validate months before submission
-            function validateMonths() {
-                const fromVal = fromInput.val().trim();
-                const toVal = toInput.val().trim();
-
-                if (fromVal === "" || toVal === "") {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "सूचना",
-                        text: "कृपया दोन्ही - पासून आणि पर्यंत महिने निवडा!",
-                        confirmButtonText: "ठीक आहे",
-                        confirmButtonColor: "#727cf5"
-                    });
-                    return false;
+                    if (fromVal === "" || toVal === "") {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "सूचना",
+                            text: "कृपया दोन्ही - पासून आणि पर्यंत महिने निवडा!",
+                            confirmButtonText: "ठीक आहे",
+                            confirmButtonColor: "#727cf5"
+                        });
+                        return false;
+                    }
+                    if (toVal < fromVal) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "अवैध श्रेणी",
+                            text: "‘पर्यंत’ महिना ‘पासून’ महिन्यापेक्षा आधी असू शकत नाही!",
+                            confirmButtonText: "ठीक आहे",
+                            confirmButtonColor: "#727cf5"
+                        });
+                        return false;
+                    }
+                    return true;
+                } else {
+                    const singleDateVal = singleDateInput.val().trim();
+                    if (singleDateVal === "") {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "सूचना",
+                            text: "कृपया दिनांक निवडा!",
+                            confirmButtonText: "ठीक आहे",
+                            confirmButtonColor: "#727cf5"
+                        });
+                        return false;
+                    }
+                    return true;
                 }
-                if (toVal < fromVal) {
-                    Swal.fire({
-                        icon: "error",
-                        title: "अवैध श्रेणी",
-                        text: "‘पर्यंत’ महिना ‘पासून’ महिन्यापेक्षा आधी असू शकत नाही!",
-                        confirmButtonText: "ठीक आहे",
-                        confirmButtonColor: "#727cf5"
-                    });
-                    return false;
-                }
-                return true;
             }
 
-            // Unified handler
+            // Handle report submission
             function handleReportSubmit(type) {
-                if (!validateMonths()) return;
+                if (!validateInputs()) return;
 
-                $("#formFromMonth").val(fromInput.val());
-                $("#formToMonth").val(toInput.val());
+                if (rangeTypeRadio.is(":checked")) {
+                    // Month range submission
+                    $("#formFromMonth").val(fromInput.val());
+                    $("#formToMonth").val(toInput.val());
+                    $("#singleDate").val(""); // Clear single date
+                } else {
+                    // Single date submission
+                    $("#formFromMonth").val(""); // Clear month range
+                    $("#formToMonth").val("");
+                    $("#singleDate").val(singleDateInput.val());
+                }
+
                 $("#reportType").val(type);
 
                 Swal.fire({
@@ -1196,14 +1294,20 @@
                     confirmButtonColor: "#727cf5"
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        console.log("✅ Submitting form with type:", type);
-                        $("#paymentReportFormSecondReport")[0].submit(); // submit native form
+                        $("#paymentReportFormSecondReport")[0].submit();
                         setTimeout(() => {
                             $("#paymentReportModalForSecondReport").modal("hide");
                         }, 300);
                     }
                 });
             }
+
+            // Event Listeners
+            rangeTypeRadio.on("change", toggleReportSections);
+            singleDateTypeRadio.on("change", toggleReportSections);
+            fromInput.on("change input", toggleButtons);
+            toInput.on("change input", toggleButtons);
+            singleDateInput.on("change input", toggleButtons);
 
             // Button Clicks
             pdfBtn.on("click", (e) => { e.preventDefault(); handleReportSubmit("pdf"); });
@@ -1214,6 +1318,9 @@
 
             // Clear when "मागे जा" clicked
             $("#goBackBtn").on("click", clearModalFields);
+
+            // Initialize
+            toggleReportSections();
         });
     </script>
 
