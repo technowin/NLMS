@@ -340,7 +340,10 @@ def check_aadhar(request):
             return JsonResponse({"exists": False, "error": "Invalid Aadhar format (must be 12 digits)."})
 
         # Check if Aadhar already exists in the database
-        exists = MembershipDetails.objects.filter(aadhar_no=aadhar_no).exists()
+        exists = MembershipDetails.objects.filter(
+            aadhar_no=aadhar_no, 
+            isactive=1
+        ).exists()
 
         return JsonResponse({"exists": exists})
 
@@ -1670,7 +1673,8 @@ def membership_form_view(request):
                             fine_to_use = adjusted_amount_float
                         
                         # Calculate total amount
-                        total_amount = deposit + entry_fees + total_subscription + fine_to_use
+                        # total_amount = deposit + entry_fees + total_subscription + fine_to_use
+                        total_amount = total_subscription + fine_to_use
                         
                         # ✅ STEP 3: MODIFY ACTION if gap fine exists
                         # Check if any fine components exist
@@ -1688,8 +1692,8 @@ def membership_form_view(request):
                             payment_method="Cash/Cheque/Other",
                             
                             # Amounts from MembershipDetails table
-                            deposit_amount=deposit,
-                            entry_fee_amount=entry_fees,
+                            deposit_amount=0,
+                            entry_fee_amount=0,
                             
                             # Subscription from MembershipDetails
                             monthly_subscription_amount=monthly_subscription,
@@ -2293,7 +2297,8 @@ def membership_payment_index(request):
                     mem.is_expired = False
                 
                 # Check if eligible for renewal (expired AND no pending books AND not lifetime)
-                if mem.is_expired and not mem.has_pending_books:
+                # if mem.is_expired and not mem.has_pending_books:
+                if mem.is_expired:
                     renewal_candidates.append(mem)
             
             # Get first renewal candidate
@@ -2950,14 +2955,13 @@ def membership_form_cancellation(request):
                 return redirect("L01:membership_payment_index")
 
             elif action_by == "librarian":
-                # ✅ Check if member has any pending books before approving cancellation
+                # ✅ Check for pending books
                 has_pending_books = CirculationTransaction.objects.filter(
                     member=membership,
                     return_date__isnull=True
                 ).exists()
                 
                 if has_pending_books:
-                    # Count pending books for better error message
                     pending_count = CirculationTransaction.objects.filter(
                         member=membership,
                         return_date__isnull=True
@@ -2965,7 +2969,7 @@ def membership_form_cancellation(request):
                     
                     return JsonResponse({
                         "success": False, 
-                        "message": f"सदस्यत्व रद्द करणे शक्य नाही. सदस्याच्या नावावर अजूनही {pending_count} पुस्तक/पुस्तके परत केलेली नाहीत. कृपया प्रथम सर्व पुस्तके परत करा."
+                        "message": f"सदस्यत्व रद्द करणे शक्य नाही. सदस्याच्या नावावर अजूनही {pending_count} पुस्तक/पुस्तके परत केलेली नाहीत."
                     })
                 
                 # ✅ Check if already cancelled
@@ -2975,27 +2979,95 @@ def membership_form_cancellation(request):
                         "message": "हे सदस्यत्व आधीच रद्द केले गेले आहे."
                     })
                 
-                # ✅ Get the correct cancelled status
                 cancelled_status = StatusMaster.objects.filter(status_code__iexact="APP_CANCEL").first()
                 if not cancelled_status:
-                    raise Exception("APP_CANCEL status not found in StatusMaster.")
+                    raise Exception("APP_CANCEL status not found.")
                 
                 current_time = timezone.now()
+                old_membership_id = membership.id
                 
-                # ✅ Step 2: Librarian confirms cancellation & deactivates user + membership
+                # ✅ Store original values before modification
+                original_membership_code = membership.membership_code
+                original_aadhar_no = membership.aadhar_no
+                original_user_id = membership.user_id
+                
+                # ✅ Step 1: UPDATE with _can suffix on unique fields
                 membership.status = cancelled_status
-                membership.updated_by = user_id  # librarian's ID (for audit)
+                membership.actionperformed = "Membership Cancelled"
+                membership.reviewed = user_id
+                membership.reviewed_at = current_time
+                membership.updated_by = user_id
+                membership.isactive = 0
                 membership.remarks = "Cancellation Approved by Librarian"
                 
-                # ✅ Update audit trail fields
-                membership.actionperformed = "Membership Cancelled"  # What action was performed
-                membership.reviewed = user_id  # Who reviewed/approved the cancellation
-                membership.reviewed_at = current_time  # When it was reviewed/approved
+                # ✅ Append _can to unique fields to free up for future use
+                if membership.membership_code:
+                    membership.membership_code = f"{membership.membership_code}_can"
                 
-                membership.save()
+                membership.save()  # ✅ Trigger fires - OLD state goes to history
                 
-                # ✅ Deactivate the member's user account (not librarian's)
-                member_user = CustomUser.objects.filter(username=membership.user_id).first()
+                # ✅ Step 2: Manually insert FINAL CANCELLED state into history (with original values)
+                MembershipDetailsHistory.objects.create(
+                    membership_id=old_membership_id,
+                    membershipmaster_id=membership.membership_id if membership.membership else None,
+                    status_id=cancelled_status.id,
+                    member_type_id=membership.member_type_id,
+                    first_name=membership.first_name,
+                    middle_name=membership.middle_name,
+                    last_name=membership.last_name,
+                    first_name_mar=membership.first_name_mar,
+                    middle_name_mar=membership.middle_name_mar,
+                    last_name_mar=membership.last_name_mar,
+                    ward=membership.ward,
+                    other_ward=membership.other_ward,
+                    pincode=membership.pincode,
+                    library_name=membership.library_name,
+                    library_name_mar=membership.library_name_mar,
+                    local_address=membership.local_address,
+                    mobile_no=membership.mobile_no,
+                    occupation=membership.occupation,
+                    office_phone=membership.office_phone,
+                    education=membership.education,
+                    institute_name=membership.institute_name,
+                    recommender_details=membership.recommender_details,
+                    dob=membership.dob,
+                    aadhar_no=original_aadhar_no,  # ✅ Use original value
+                    user_id=original_user_id,  # ✅ Use original value
+                    membership_duration=membership.membership_duration,
+                    from_date=membership.from_date,
+                    to_date=membership.to_date,
+                    deposit=membership.deposit,
+                    entry_fees=membership.entry_fees,
+                    subscription=membership.subscription,
+                    email=membership.email,
+                    is_resident_of_nmmc=membership.is_resident_of_nmmc,
+                    address_same_as_aadhar=membership.address_same_as_aadhar,
+                    remarks="Membership Cancelled by Librarian",
+                    gap_months=membership.gap_months,
+                    gap_fine=membership.gap_fine,
+                    late_fee=membership.late_fee,
+                    fine_calculated_at=membership.fine_calculated_at,
+                    total_fine_membership=membership.total_fine_membership,
+                    gap_period_from=membership.gap_period_from,
+                    gap_period_to=membership.gap_period_to,
+                    gap_subscription_delay=membership.gap_subscription_delay,
+                    actionperformed="Membership Cancelled",
+                    reviewed=user_id,
+                    reviewed_at=current_time,
+                    membership_start_date=membership.membership_start_date,
+                    isactive=0,
+                    membership_code=original_membership_code,  # ✅ Use original value
+                    membership_renew=membership.membership_renew,
+                    created_at=membership.created_at,
+                    created_by=membership.created_by,
+                    updated_at=current_time,
+                    updated_by=user_id,
+                    changed_by=user_id,
+                    changed_at=current_time
+                )
+                
+                # ✅ Deactivate user account
+                member_user = CustomUser.objects.filter(username=original_user_id).first()
                 if member_user:
                     member_user.is_active = False
                     member_user.save()
@@ -3004,7 +3076,7 @@ def membership_form_cancellation(request):
                     "success": True, 
                     "message": "सदस्यत्व यशस्वीपणे रद्द केले गेले आहे. ठेव रकमेची परतावा प्रक्रिया सुरू केली गेली आहे."
                 })
-
+            
     except Exception as e:
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name if tb else "membership_form_cancellation"
