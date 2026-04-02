@@ -139,7 +139,7 @@ class MembershipDetails(models.Model):
     dob = models.DateField(null=True, blank=True)
     membership = models.ForeignKey(MembershipMaster, on_delete=models.CASCADE, db_column="membershipmaster_id", related_name="membership_holders")
     status = models.ForeignKey(StatusMaster, on_delete=models.CASCADE, db_column="status_id", related_name="memberships")
-    aadhar_no = models.CharField(max_length=12, unique=True)
+    aadhar_no = models.CharField(max_length=12)
     user_id = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=255)
     member_type = models.ForeignKey(parameter_master_L01, on_delete=models.SET_NULL, null=True, blank=True, db_column="member_type_id", related_name="membership_types")
