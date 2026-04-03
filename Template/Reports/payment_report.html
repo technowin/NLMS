@@ -844,6 +844,7 @@
                 orderCellsTop: true,
                 fixedHeader: true,
                 pageLength: 10,
+                order: [],  // ✅ Disable default sorting - keep backend order
                 initComplete: function () {
                     var api = this.api();
 
@@ -1065,7 +1066,7 @@
                         summaryData.push({ key: "दंड रक्कम (Fine Amount)", value: data.fine_total.toFixed(2) });
 
                         // 🔹 Add final total row
-                        const overall = grandTotal + data.deposit_total + data.fine_total;
+                        const overall = data.entry_fees + grandTotal + data.deposit_total + data.fine_total;
                         rows += `
                             <tr class="table-success fw-bold">
                                 <td>एकूण रक्कम (Grand Total)</td>

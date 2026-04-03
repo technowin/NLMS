@@ -463,7 +463,9 @@ def payment_report(request):
             library_name = tbl_librarymasterL01.objects.using(library_code).filter(is_active=True).first()
             library_name_mar = library_name.library_name_mar if library_name else ''
 
-            reports = PaymentReport.objects.all().order_by('-generated_date')
+            # reports = PaymentReport.objects.all().order_by('-generated_date')
+            reports = PaymentReport.objects.all().order_by('-id')
+
 
             for rep in reports:
                 # encrypted id for links
