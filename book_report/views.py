@@ -420,9 +420,7 @@ class TabDataView(ReportBaseView):
             # Get books in this category
             qs = qs.filter(subject_id__in=book_ids)
         
-        # Apply  filters
-
-
+        # Apply filters
         from datetime import datetime, timedelta
         from_date = filters.get('from_date')
         to_date = filters.get('to_date')
@@ -435,7 +433,6 @@ class TabDataView(ReportBaseView):
             # Add 1 day to include full end date
             to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
             qs = qs.filter(created_at__lt=to_datetime)
-
         
         if filters.get('language'):
             languages = filters['language'] if isinstance(filters['language'], list) else [filters['language']]
@@ -455,6 +452,32 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(Q(ebook_available__isnull=True) | Q(ebook_available='No'))
         
         qs = qs.select_related('subject', 'material')
+        
+        # Helper function to get user name from user ID
+        def get_user_name(user_id):
+            if not user_id:
+                return ''
+            try:
+                # Try to get from auth user model
+                from django.contrib.auth.models import User
+                # Check if user_id is numeric
+                if str(user_id).isdigit():
+                    user = User.objects.using(db).filter(id=int(user_id)).first()
+                    if user:
+                        return user.get_full_name() or user.username
+            except:
+                pass
+            try:
+                # Try membership details
+                from L01.models import MembershipDetails
+                if str(user_id).isdigit():
+                    member = MembershipDetails.objects.using(db).filter(id=int(user_id)).first()
+                    if member:
+                        return f"{member.first_name or ''} {member.last_name or ''}".strip()
+            except:
+                pass
+            # Return original value if no match found
+            return str(user_id)
         
         data = []
         for catalog in qs:
@@ -484,9 +507,9 @@ class TabDataView(ReportBaseView):
                 'ebook_available': catalog.ebook_available or 'No',
                 'ebook_id': catalog.ebook_id or '',
                 'created_at': catalog.created_at.strftime('%Y-%m-%d %H:%M') if catalog.created_at else '',
-                'created_by': catalog.created_by or '',
+                'created_by': get_user_name(catalog.created_by),  # CHANGED: Now shows name instead of ID
                 'updated_at': catalog.updated_at.strftime('%Y-%m-%d %H:%M') if catalog.updated_at else '',
-                'updated_by': catalog.updated_by or '',
+                'updated_by': get_user_name(catalog.updated_by),  # CHANGED: Now shows name instead of ID
             })
         
         return {'data': data, 'total': len(data)}
@@ -542,10 +565,6 @@ class TabDataView(ReportBaseView):
             suppliers = filters['supplier'] if isinstance(filters['supplier'], list) else [filters['supplier']]
             qs = qs.filter(supplier_id__in=suppliers)
         
-        # qs = qs.select_related(
-        #     'catalog_ref_no', 'condition_at_entry', 'source', 
-        #     'location', 'status', 'supplier', 'currency'
-        # )
         def apply_fk_filter(qs, field, value):
             if value:
                 values = value if isinstance(value, list) else [value]
@@ -557,6 +576,32 @@ class TabDataView(ReportBaseView):
         qs = apply_fk_filter(qs, 'location_id', filters.get('location'))
         qs = apply_fk_filter(qs, 'status_id', filters.get('status'))
         qs = apply_fk_filter(qs, 'supplier_id', filters.get('supplier'))
+
+        # Helper function to get user name from user ID
+        def get_user_name(user_id):
+            if not user_id:
+                return ''
+            try:
+                # Try to get from auth user model
+                from django.contrib.auth.models import User
+                # Check if user_id is numeric
+                if str(user_id).isdigit():
+                    user = User.objects.using(db).filter(id=int(user_id)).first()
+                    if user:
+                        return user.get_full_name() or user.username
+            except:
+                pass
+            try:
+                # Try membership details
+                from L01.models import MembershipDetails
+                if str(user_id).isdigit():
+                    member = MembershipDetails.objects.using(db).filter(id=int(user_id)).first()
+                    if member:
+                        return f"{member.first_name or ''} {member.last_name or ''}".strip()
+            except:
+                pass
+            # Return original value if no match found
+            return str(user_id)
 
         data = []
         for acc in qs:
@@ -571,9 +616,9 @@ class TabDataView(ReportBaseView):
                 'price': float(acc.price) if acc.price else 0.0,
                 'remarks': acc.remarks or '',
                 'created_at': acc.created_at.strftime('%Y-%m-%d %H:%M') if acc.created_at else '',
-                'created_by': acc.created_by or '',
+                'created_by': get_user_name(acc.created_by),  # CHANGED: Now shows name instead of ID
                 'updated_at': acc.updated_at.strftime('%Y-%m-%d %H:%M') if acc.updated_at else '',
-                'updated_by': acc.updated_by or '',
+                'updated_by': get_user_name(acc.updated_by),  # CHANGED: Now shows name instead of ID
                 'condition_name': acc.condition_at_entry.condition_at_entry if acc.condition_at_entry else '',
                 'currency_name': acc.currency.currency_name if acc.currency else '',
                 'source_name': acc.funding_source.funding_source_name if acc.funding_source else '',
@@ -605,7 +650,6 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(bookcatalog_id__in=catalog_ids)
         
         # Apply filters
-
         if filters.get('from_date'):
             qs = qs.filter(date_processed__gte=filters['from_date'])
 
@@ -629,6 +673,32 @@ class TabDataView(ReportBaseView):
             'processing_status', 'current_status'
         )
         
+        # Helper function to get user name from user ID
+        def get_user_name(user_id):
+            if not user_id:
+                return ''
+            try:
+                # Try to get from auth user model
+                from django.contrib.auth.models import User
+                # Check if user_id is numeric
+                if str(user_id).isdigit():
+                    user = User.objects.using(db).filter(id=int(user_id)).first()
+                    if user:
+                        return user.get_full_name() or user.username
+            except:
+                pass
+            try:
+                # Try membership details
+                from L01.models import MembershipDetails
+                if str(user_id).isdigit():
+                    member = MembershipDetails.objects.using(db).filter(id=int(user_id)).first()
+                    if member:
+                        return f"{member.first_name or ''} {member.last_name or ''}".strip()
+            except:
+                pass
+            # Return original value if no match found
+            return str(user_id)
+        
         data = []
         for circulation in qs:
             data.append({
@@ -641,9 +711,9 @@ class TabDataView(ReportBaseView):
                 'shelf_location': circulation.shelf_location.location_name if circulation.shelf_location else '',
                 'remarks': circulation.remarks or '',
                 'created_at': circulation.created_at.strftime('%Y-%m-%d %H:%M') if circulation.created_at else '',
-                'created_by': circulation.created_by or '',
+                'created_by': get_user_name(circulation.created_by),  # CHANGED: Now shows name instead of ID
                 'updated_at': circulation.updated_at.strftime('%Y-%m-%d %H:%M') if circulation.updated_at else '',
-                'updated_by': circulation.updated_by or '',
+                'updated_by': get_user_name(circulation.updated_by),  # CHANGED: Now shows name instead of ID
                 'current_status': circulation.current_status.status_name if circulation.current_status else '',
             })
         
@@ -684,7 +754,6 @@ class TabDataView(ReportBaseView):
 
         if filters.get('due_to_date'):
             qs = qs.filter(due_date__lte=filters['due_to_date'])
-        
         
         # Apply overdue filter
         today = date.today()
@@ -732,6 +801,32 @@ class TabDataView(ReportBaseView):
             )
         )
         
+        # Helper function to get user name from user ID
+        def get_user_name(user_id):
+            if not user_id:
+                return ''
+            try:
+                # Try to get from auth user model
+                from django.contrib.auth.models import User
+                # Check if user_id is numeric
+                if str(user_id).isdigit():
+                    user = User.objects.using(db).filter(id=int(user_id)).first()
+                    if user:
+                        return user.get_full_name() or user.username
+            except:
+                pass
+            try:
+                # Try membership details
+                from L01.models import MembershipDetails
+                if str(user_id).isdigit():
+                    member = MembershipDetails.objects.using(db).filter(id=int(user_id)).first()
+                    if member:
+                        return f"{member.first_name or ''} {member.last_name or ''}".strip()
+            except:
+                pass
+            # Return original value if no match found
+            return str(user_id)
+        
         data = []
         for transaction in qs:
             data.append({
@@ -746,9 +841,10 @@ class TabDataView(ReportBaseView):
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
                 'days_overdue_count': transaction.overdue_days if transaction.overdue_days and transaction.overdue_days > 0 else 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
-                'issued_by': transaction.issued_by or '',
+                'issued_by': get_user_name(transaction.issued_by),  # CHANGED: Now shows name instead of ID
                 'remarks': transaction.remarks or '',
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
+                'created_by': get_user_name(transaction.created_by),  # ADDED: Now shows name instead of ID (if needed in loan tab)
             })
         
         return {'data': data, 'total': len(data)}
@@ -789,7 +885,6 @@ class TabDataView(ReportBaseView):
 
         if filters.get('return_to_date'):
             qs = qs.filter(return_date__lte=filters['return_to_date'])
-
         
         # Apply other filters
         if filters.get('book_fine') == 'yes':
@@ -817,9 +912,36 @@ class TabDataView(ReportBaseView):
             )
         )
         
+        # Helper function to get user name from user ID
+        def get_user_name(user_id):
+            if not user_id:
+                return ''
+            try:
+                # Try to get from auth user model
+                from django.contrib.auth.models import User
+                # Check if user_id is numeric
+                if str(user_id).isdigit():
+                    user = User.objects.using(db).filter(id=int(user_id)).first()
+                    if user:
+                        return user.get_full_name() or user.username
+            except:
+                pass
+            try:
+                # Try membership details
+                from L01.models import MembershipDetails  # Update import path as needed
+                if str(user_id).isdigit():
+                    member = MembershipDetails.objects.using(db).filter(id=int(user_id)).first()
+                    if member:
+                        return f"{member.first_name or ''} {member.last_name or ''}".strip()
+            except:
+                pass
+            # Return original value if no match found
+            return str(user_id)
+        
         data = []
         for transaction in qs:
             data.append({
+                # Basic info - order matches HTML table
                 'barcode': transaction.barcode or '',
                 'accession_id': transaction.accession.accession_no if transaction.accession else '',
                 'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
@@ -827,10 +949,10 @@ class TabDataView(ReportBaseView):
                 'membership_code': transaction.membership_code or '',
                 'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
                 'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'issued_by': transaction.issued_by or '',
+                'issued_by': get_user_name(transaction.issued_by),
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                'received_by': transaction.received_by or '',
+                'received_by': get_user_name(transaction.received_by),
                 'days_overdue_count': transaction.late_days if transaction.late_days and transaction.late_days > 0 else 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
                 'book_fine_amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0.0,
@@ -838,6 +960,9 @@ class TabDataView(ReportBaseView):
                 'adjusted_fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0.0,
                 'fine_status': transaction.fine_status or '',
                 'fine_paid_date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
+                'extended_on': transaction.extended_on.strftime('%Y-%m-%d') if transaction.extended_on else '',  # NEW FIELD
+                'created_by': get_user_name(transaction.created_by),  # Now shows name instead of ID
+                'updated_by': get_user_name(transaction.updated_by),  # Now shows name instead of ID
                 'remarks': transaction.remarks or '',
                 'updated_at': transaction.updated_at.strftime('%Y-%m-%d %H:%M') if transaction.updated_at else '',
             })
@@ -2097,14 +2222,16 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
             'Barcode': item.get('barcode', ''),
             'Accession No': item.get('accession_id', ''),
             'Catalogue Ref No': item.get('cat_ref_num', ''),
+            'Book Title': item.get('book_title', ''),  # Added book title
             'Member Name': item.get('member_name', ''),
             'Membership Code': item.get('membership_code', ''),
             'Issue Date': item.get('issue_date', ''),
             'Due Date': item.get('due_date', ''),
-            'Issued By': item.get('issued_by', ''),
+            'Issued By': item.get('issued_by', ''),  # Now shows name instead of ID
             'Created At': item.get('created_at', ''),
+            'Created By': item.get('created_by', ''),  # Added created_by with name
             'Return Date': item.get('return_date', ''),
-            'Received By': item.get('received_by', ''),
+            'Received By': item.get('received_by', ''),  # Now shows name instead of ID
             'Days Overdue': item.get('days_overdue_count', 0),
             'Book Fine Amount': item.get('book_fine_amount', 0.0),
             'Loss Fine Amount': item.get('fine_amount', 0.0),
@@ -2112,8 +2239,10 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
             'Adjusted Fine': item.get('adjusted_fine', 0.0),
             'Fine Status': item.get('fine_status', ''),
             'Fine Paid Date': item.get('fine_paid_date', ''),
+            'Extended On': item.get('extended_on', ''),  # NEW COLUMN
             'Remarks': item.get('remarks', ''),
             'Updated At': item.get('updated_at', ''),
+            'Updated By': item.get('updated_by', ''),  # Added updated_by with name
         })
 
     df = pd.DataFrame(rows)
@@ -2183,6 +2312,16 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
         'num_format': '#,##0.00'
     })
 
+    date_format = workbook.add_format({
+        'border': 1,
+        'num_format': 'dd-mm-yyyy'
+    })
+
+    datetime_format = workbook.add_format({
+        'border': 1,
+        'num_format': 'dd-mm-yyyy hh:mm'
+    })
+
     # --------------------------------------------------
     # Report Title
     # --------------------------------------------------
@@ -2237,7 +2376,13 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
         'Total Fine',
         'Adjusted Fine'
     ]
-    money_col_indexes = [df.columns.get_loc(c) for c in money_columns]
+    money_col_indexes = [df.columns.get_loc(c) for c in money_columns if c in df.columns]
+
+    date_columns = ['Issue Date', 'Due Date', 'Return Date', 'Fine Paid Date', 'Extended On']
+    date_col_indexes = [df.columns.get_loc(c) for c in date_columns if c in df.columns]
+
+    datetime_columns = ['Created At', 'Updated At']
+    datetime_col_indexes = [df.columns.get_loc(c) for c in datetime_columns if c in df.columns]
 
     for row_idx in range(len(df)):
         excel_row = start_row + 1 + row_idx
@@ -2245,9 +2390,28 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
 
         for col_idx in range(total_columns):
             value = df.iloc[row_idx, col_idx]
+            column_name = df.columns[col_idx]
 
             if col_idx in money_col_indexes:
                 worksheet.write(excel_row, col_idx, value, money_format)
+            elif col_idx in date_col_indexes:
+                # Try to parse date if it's a string
+                if value and isinstance(value, str):
+                    try:
+                        from datetime import datetime
+                        value = datetime.strptime(value, '%Y-%m-%d')
+                    except:
+                        pass
+                worksheet.write(excel_row, col_idx, value, date_format)
+            elif col_idx in datetime_col_indexes:
+                # Try to parse datetime if it's a string
+                if value and isinstance(value, str):
+                    try:
+                        from datetime import datetime
+                        value = datetime.strptime(value, '%Y-%m-%d %H:%M')
+                    except:
+                        pass
+                worksheet.write(excel_row, col_idx, value, datetime_format)
             else:
                 worksheet.write(excel_row, col_idx, value, row_format)
 
@@ -2259,7 +2423,11 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
             df[column].astype(str).map(len).max() if not df.empty else 10,
             len(column)
         )
-        worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
+        # Set wider width for certain columns
+        if column in ['Book Title', 'Remarks', 'Member Name']:
+            worksheet.set_column(col_idx, col_idx, min(max_len + 5, 60))
+        else:
+            worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
 
     # --------------------------------------------------
     # Freeze Header & Enable AutoFilter

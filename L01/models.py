@@ -380,6 +380,7 @@ class CirculationCopyStatus(models.Model):
     
     def __str__(self):
         return f"{self.barcode or 'No Barcode'} ({self.current_status or 'Unknown'})"
+    
 class CirculationTransaction(models.Model):
     id = models.AutoField(primary_key=True)
     catalog = models.ForeignKey(BookCatalog,on_delete=models.SET_NULL,null=True,blank=True,db_column="cat_ref_num",related_name="transactions")  # All transactions for this catalog/book title

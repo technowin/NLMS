@@ -1017,7 +1017,6 @@ function convertToTableRow(tabName, item) {
 
             
         case 'circulation-transaction':
-
             const transactionOverdue = item.days_overdue_count || 0;
             let transactionOverdueBadge = '<span class="badge bg-success">On time</span>';
 
@@ -1025,7 +1024,7 @@ function convertToTableRow(tabName, item) {
                 transactionOverdueBadge =
                     `<span class="badge bg-danger">${transactionOverdue} days</span>`;
             }
-        
+
             let fineStatusBadge = '';
             if (item.fine_status) {
                 if (item.fine_status === 'Paid') {
@@ -1036,28 +1035,32 @@ function convertToTableRow(tabName, item) {
                     fineStatusBadge = '<span class="badge fine-unpaid">Unpaid</span>';
                 }
             }
-        
+
+            // IMPORTANT: Must match the 23 columns in your HTML table
             return [
-                item.barcode || '',
-                item.accession_id || '',
-                item.cat_ref_num || '',
-                item.member_name || '',
-                item.membership_code || '',
-                item.issue_date || '',
-                item.due_date || '',
-                item.issued_by || '',
-                item.created_at || '',
-                item.return_date || '',
-                item.received_by || '',
-                transactionOverdueBadge,
-                item.fine_amount ? 'â‚¹' + parseFloat(item.fine_amount).toFixed(2) : 'â‚¹0.00',
-                item.book_fine_amount ? 'â‚¹' + parseFloat(item.book_fine_amount).toFixed(2) : 'â‚¹0.00',
-                item.total_fine ? 'â‚¹' + parseFloat(item.total_fine).toFixed(2) : 'â‚¹0.00',
-                item.adjusted_fine ? 'â‚¹' + parseFloat(item.adjusted_fine).toFixed(2) : 'â‚¹0.00',
-                fineStatusBadge,
-                item.fine_paid_date || '',
-                item.remarks || '',
-                item.updated_at || ''
+                item.barcode || '',                          // Barcode
+                item.accession_id || '',                     // Accession No
+                item.cat_ref_num || '',                      // Catalog Ref No
+                item.member_name || '',                      // Member Name
+                item.membership_code || '',                  // Membership Code
+                item.issue_date || '',                       // Issue Date
+                item.due_date || '',                         // Due Date
+                item.issued_by || '',                        // Issued By
+                item.created_at || '',                       // Created At
+                item.return_date || '',                      // Return Date
+                item.received_by || '',                      // Received By
+                transactionOverdueBadge,                     // Days Overdue
+                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',      // Fine Amount
+                item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',  // Book Fine
+                item.total_fine ? '₹' + parseFloat(item.total_fine).toFixed(2) : '₹0.00',        // Total Fine
+                item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',  // Adjusted Fine
+                fineStatusBadge,                             // Fine Status
+                item.fine_paid_date || '',                   // Fine Paid Date
+                item.extended_on || '',                      // Extended On (NEW)
+                item.created_by || '',                       // Created By (NEW - shows name)
+                item.updated_by || '',                       // Updated By (NEW - shows name)
+                item.remarks || '',                          // Remarks
+                item.updated_at || ''                        // Updated At
             ];
 
             
