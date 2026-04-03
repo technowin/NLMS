@@ -105,6 +105,92 @@ class ReportBaseView(LoginRequiredMixin, View):
         
         return qs.select_related('membership', 'status', 'member_type')
 
+    def get_user_name(self, db, user_value):
+        """Get user full name from user ID or username"""
+        if not user_value:
+            return ''
+        
+        # If it's already a string that looks like a name, return it
+        if isinstance(user_value, str) and not user_value.isdigit():
+            return user_value
+        
+        try:
+            # Try to convert to int if it's a numeric string
+            user_id_int = int(user_value) if isinstance(user_value, str) else user_value
+            
+            # Try CustomUser model first
+            try:
+                from Account.models import CustomUser
+                user = CustomUser.objects.using(db).filter(id=user_id_int).first()
+                if user:
+                    return user.full_name or user.username or str(user_value)
+            except ImportError:
+                pass
+            
+            # Try Django's default User model
+            try:
+                from django.contrib.auth.models import User
+                user = User.objects.using(db).filter(id=user_id_int).first()
+                if user:
+                    return user.get_full_name() or user.username or str(user_value)
+            except:
+                pass
+            
+            return str(user_value)
+        except (ValueError, TypeError):
+            # If it's not a number, return as is (it might already be a name)
+            return str(user_value) if user_value else ''
+    
+    def get_bulk_user_names(self, db, user_values):
+        """Get multiple user names in one query for efficiency"""
+        if not user_values:
+            return {}
+        
+        user_map = {}
+        numeric_ids = []
+        string_values = []
+        
+        # Separate numeric IDs from string values
+        for val in user_values:
+            if val:
+                # Check if the value is a numeric string (like "2", "10", etc.)
+                if isinstance(val, str) and val.isdigit():
+                    numeric_ids.append(int(val))
+                elif isinstance(val, int):
+                    numeric_ids.append(val)
+                else:
+                    # This might already be a username
+                    string_values.append(val)
+                    user_map[val] = val  # Store as-is for now
+        
+        if numeric_ids:
+            # Try CustomUser model
+            try:
+                from Account.models import CustomUser
+                users = CustomUser.objects.using(db).filter(id__in=numeric_ids)
+                for user in users:
+                    user_map[user.id] = user.full_name or user.username or str(user.id)
+            except ImportError:
+                pass
+            
+            # Try Django's default User model for remaining IDs
+            remaining_ids = [uid for uid in numeric_ids if uid not in user_map]
+            if remaining_ids:
+                try:
+                    from django.contrib.auth.models import User
+                    users = User.objects.using(db).filter(id__in=remaining_ids)
+                    for user in users:
+                        user_map[user.id] = user.get_full_name() or user.username or str(user.id)
+                except:
+                    pass
+            
+            # For any numeric IDs not found, return the ID as string
+            for uid in numeric_ids:
+                if uid not in user_map:
+                    user_map[uid] = str(uid)
+        
+        return user_map
+    
 class MemberReportView(ReportBaseView, TemplateView):
     """Main member report view"""
     template_name = 'library_reports/member_report.html'
@@ -253,141 +339,150 @@ class TabDataView(ReportBaseView):
     """AJAX endpoint for tab data"""
     
     def get(self, request, tab_name):
-        member_ids = request.GET.getlist('member_ids[]')
-        filters_json = request.GET.get('filters', '{}')
-        
         try:
-            filters = json.loads(filters_json)
-        except:
-            filters = {}
+            member_ids = request.GET.getlist('member_ids[]')
+            filters_json = request.GET.get('filters', '{}')
+            
+            try:
+                filters = json.loads(filters_json)
+            except:
+                filters = {}
+            
+            db = self.get_library_db()
+            
+            if tab_name == 'member-details':
+                data = self.get_member_details_data(db, member_ids, filters)
+            elif tab_name == 'membership-details':
+                data = self.get_membership_details_data(db, member_ids, filters)
+            elif tab_name == 'loan':
+                data = self.get_loan_data(db, member_ids, filters)
+            elif tab_name == 'transactions':
+                data = self.get_transaction_data(db, member_ids, filters)
+            elif tab_name == 'physical-visit':
+                data = self.get_physical_visit_data(db, member_ids, filters)
+            elif tab_name == 'virtual-usage':
+                data = self.get_virtual_usage_data(db, member_ids, filters)
+            elif tab_name == 'payments':
+                data = self.get_payment_data(db, member_ids, filters)
+            else:
+                return JsonResponse({'error': 'Invalid tab'}, status=400)
+            
+            return JsonResponse(data)
         
-        db = self.get_library_db()
-        
-        if tab_name == 'member-details':
-            data = self.get_member_details_data(db, member_ids, filters)
-        elif tab_name == 'membership-details':
-            data = self.get_membership_details_data(db, member_ids, filters)
-        elif tab_name == 'loan':
-            data = self.get_loan_data(db, member_ids, filters)
-        elif tab_name == 'transactions':
-            data = self.get_transaction_data(db, member_ids, filters)
-        elif tab_name == 'physical-visit':
-            data = self.get_physical_visit_data(db, member_ids, filters)
-        elif tab_name == 'virtual-usage':
-            data = self.get_virtual_usage_data(db, member_ids, filters)
-        elif tab_name == 'payments':
-            data = self.get_payment_data(db, member_ids, filters)
-        else:
-            return JsonResponse({'error': 'Invalid tab'}, status=400)
-        
-        return JsonResponse(data)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
     
     def get_member_details_data(self, db, member_ids, filters):
-        qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+        try:
+            qs = MembershipDetails.objects.using(db).filter(id__in=member_ids)
+            
+            # Apply filters
+            if filters.get('membership_month_from'):
+                start_date = parse_month_start(filters['membership_month_from'])
+                qs = qs.filter(from_date__gte=start_date)
+            if filters.get('membership_month_to'):
+                end_date = parse_month_end(filters['membership_month_to'])
+                qs = qs.filter(from_date__lte=end_date)
+            if filters.get('membership_type'):
+                qs = qs.filter(membership_id__in=filters['membership_type'])
+            if filters.get('member_type'):
+                qs = qs.filter(member_type_id__in=filters['member_type'])
+            if filters.get('ward'):
+                qs = qs.filter(ward__in=filters['ward'])
+            if filters.get('status'):
+                qs = qs.filter(status_id__in=filters['status'])
+            if filters.get('renewal_due_month'):
+                start = parse_month_start(filters['renewal_due_month'])
+                end = parse_month_end(filters['renewal_due_month'])
+                qs = qs.filter(to_date__range=(start, end))
+            
+            def get_user_name(user_id):
+                if not user_id:
+                    return ''
+                try:
+                    from Account.models import CustomUser
+                    # Convert to int if it's a digit string
+                    if str(user_id).isdigit():
+                        user = CustomUser.objects.using(db).filter(id=int(user_id)).first()
+                    else:
+                        user = CustomUser.objects.using(db).filter(username=user_id).first()
+                    if user:
+                        return user.full_name or user.username or str(user_id)
+                    return str(user_id)
+                except Exception as e:
+                    print(f"Error getting user name for {user_id}: {e}")
+                    return str(user_id)
+            
+            data = []
+            for member in qs:
+                data.append({
+                    'first_name': member.first_name or '',
+                    'middle_name': member.middle_name or '',
+                    'last_name': member.last_name or '',
+                    'first_name_mar': member.first_name_mar or '',
+                    'last_name_mar': member.last_name_mar or '',
+                    'middle_name_mar': member.middle_name_mar or '',
+                    'membershipmaster_id': member.membership.id if member.membership else '',
+                    'member_type': member.member_type.parameter_name if member.member_type else '',
+                    'membership_code': member.membership_code or '',
+                    'membership_date': member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
+                    'renewal_from_date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
+                    'renewal_to_date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
+                    'user_id': member.user_id or '',
+                    'ward': member.ward or '',
+                    'pincode': member.pincode or '',
+                    'local_address': member.local_address or '',
+                    'mobile_no': member.mobile_no or '',
+                    'email': member.email or '',
+                    'occupation': member.occupation or '',
+                    'office_phone': member.office_phone or '',
+                    'education': member.education or '',
+                    'institute_name': member.institute_name or '',
+                    'recommender_details': member.recommender_details or '',
+                    'dob': member.dob.strftime('%Y-%m-%d') if member.dob else '',
+                    'aadhar_no': member.aadhar_no or '',
+                    'address_same_as_aadhar': 'Yes' if member.address_same_as_aadhar == 1 else 'No',
+                    'is_resident_of_nmmc': 'Yes' if member.is_resident_of_nmmc == 1 else 'No',
+                    'status': 'Active' if member.isactive == 1 else 'Inactive',
+                    'created_at': member.created_at.strftime('%Y-%m-%d %H:%M') if member.created_at else '',
+                    'created_by': get_user_name(member.created_by),
+                    'updated_at': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
+                    'updated_by': get_user_name(member.updated_by),
+                    'approved_by': get_user_name(member.reviewed),
+                    'approved_date': member.reviewed_at.strftime('%Y-%m-%d %H:%M') if member.reviewed_at else '',
+                })
+            
+            return {'data': data}
         
-        # Apply filters
-        if filters.get('membership_month_from'):
-            start_date = parse_month_start(filters['membership_month_from'])
-            qs = qs.filter(from_date__gte=start_date)
-        if filters.get('membership_month_to'):
-            end_date = parse_month_end(filters['membership_month_to'])
-            qs = qs.filter(from_date__lte=end_date)
-        if filters.get('membership_type'):
-            qs = qs.filter(membership_id__in=filters['membership_type'])
-        if filters.get('member_type'):
-            qs = qs.filter(member_type_id__in=filters['member_type'])
-        if filters.get('ward'):
-            qs = qs.filter(ward__in=filters['ward'])
-        if filters.get('status'):
-            qs = qs.filter(status_id__in=filters['status'])
-        if filters.get('renewal_due_month'):
-            start = parse_month_start(filters['renewal_due_month'])
-            end = parse_month_end(filters['renewal_due_month'])
-            qs = qs.filter(to_date__range=(start, end))
-
-        
-        data = []
-        for member in qs:
-            data.append({
-                'first_name': member.first_name,
-                'middle_name': member.middle_name,
-                'last_name': member.last_name,
-                'first_name_mar': member.first_name_mar,
-                'last_name_mar': member.last_name_mar,
-                'middle_name_mar': member.middle_name_mar,
-                'membershipmaster_id': member.membership.id if member.membership else '',
-                'member_type': member.member_type.parameter_name if member.member_type else '',
-                'membership_code': member.membership_code,
-                'membership_date': member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
-                'renewal_from_date': member.from_date.strftime('%Y-%m-%d') if member.from_date else '',
-                'renewal_to_date': member.to_date.strftime('%Y-%m-%d') if member.to_date else '',
-                'user_id': member.user_id,
-                'ward': member.ward,
-                'pincode': member.pincode,
-                'local_address': member.local_address,
-                'mobile_no': member.mobile_no,
-                'email': member.email,
-                'occupation': member.occupation,
-                'office_phone': member.office_phone,
-                'education': member.education,
-                'institute_name': member.institute_name,
-                'recommender_details': member.recommender_details,
-                'dob': member.dob.strftime('%Y-%m-%d') if member.dob else '',
-                'aadhar_no': member.aadhar_no,
-                'address_same_as_aadhar': 'Yes' if member.address_same_as_aadhar == 1 else 'No',
-                'is_resident_of_nmmc': 'Yes' if member.is_resident_of_nmmc == 1 else 'No',
-                'status': 'Active' if member.isactive == 1 else 'Inactive',
-                'created_at': member.created_at.strftime('%Y-%m-%d %H:%M') if member.created_at else '',
-                'created_by': member.created_by,
-                'updated_at': member.updated_at.strftime('%Y-%m-%d %H:%M') if member.updated_at else '',
-                'updated_by': member.updated_by,
-                'approved_by': member.reviewed,
-                'approved_date': member.reviewed_at.strftime('%Y-%m-%d %H:%M') if member.reviewed_at else '',
-            })
-        
-        return {'data': data}
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {'data': [], 'error': str(e)}
     
     def get_membership_details_data(self, db, member_ids, filters):
-
         base_filter = Q()
 
         # Date filters
         if filters.get('from_date'):
             base_filter &= Q(from_date__gte=filters['from_date'])
-
         if filters.get('to_date'):
             base_filter &= Q(to_date__lte=filters['to_date'])
-
-        # Action Performed
         if filters.get('action_performed'):
             base_filter &= Q(actionperformed__in=filters['action_performed'])
-
-        # Membership Type
         if filters.get('membership_type'):
-            mt_ids = [
-                int(x) for x in filters['membership_type']
-                if str(x).isdigit()
-            ]
+            mt_ids = [int(x) for x in filters['membership_type'] if str(x).isdigit()]
             base_filter &= Q(membership_id__in=mt_ids)
-
-        # Gap Period Filter
+        
         gap_filter = filters.get('gap_period')
-
         if gap_filter == 'only':
-            # Only members who have gap
             base_filter &= Q(gap_months__gt=0)
-
         elif gap_filter == 'exclude':
-            # Don’t include members with gap (i.e., no gap)
             base_filter &= Q(gap_months=0)
-
-        # Apply filters at DB level
-        # current_qs = (
-        #     MembershipDetails.objects
-        #     .using(db)
-        #     .filter(id__in=member_ids)
-        #     .filter(base_filter)
-        # )
 
         history_qs = (
             MembershipDetailsHistory.objects
@@ -395,25 +490,50 @@ class TabDataView(ReportBaseView):
             .filter(membership_id__in=member_ids)
             .filter(base_filter)
         )
+        
+        # Collect user IDs for changed_by
+        user_ids = set()
+        for history in history_qs:
+            if history.changed_by and str(history.changed_by).isdigit():
+                user_ids.add(int(history.changed_by))
+        
+        # Get user names
+        user_names = {}
+        if user_ids:
+            try:
+                from Account.models import CustomUser
+                users = CustomUser.objects.using(db).filter(id__in=user_ids)
+                for user in users:
+                    user_names[user.id] = user.full_name or user.username or str(user.id)
+            except ImportError:
+                pass
+            
+            for uid in user_ids:
+                if uid not in user_names:
+                    user_names[uid] = str(uid)
+        
+        def get_name(value):
+            if not value:
+                return ''
+            if str(value).isdigit():
+                return user_names.get(int(value), value)
+            return value
 
         data = []
-
         def fmt_date(d):
             return d.strftime('%Y-%m-%d') if d else ''
-
         def fmt_dt(d):
             return d.strftime('%Y-%m-%d %H:%M') if d else ''
 
-        # History data
         for history in history_qs:
             data.append({
-                'first_name': history.first_name,
-                'middle_name': history.middle_name,
-                'last_name': history.last_name,
-                'first_name_mar': history.first_name_mar,
-                'middle_name_mar': history.middle_name_mar,
-                'last_name_mar': history.last_name_mar,
-                'actionperformed': history.actionperformed,
+                'first_name': history.first_name or '',
+                'middle_name': history.middle_name or '',
+                'last_name': history.last_name or '',
+                'first_name_mar': history.first_name_mar or '',
+                'middle_name_mar': history.middle_name_mar or '',
+                'last_name_mar': history.last_name_mar or '',
+                'actionperformed': history.actionperformed or '',
                 'from_date': fmt_date(history.from_date),
                 'to_date': fmt_date(history.to_date),
                 'deposit': float(history.deposit or 0),
@@ -425,237 +545,242 @@ class TabDataView(ReportBaseView):
                 'gap_months': history.gap_months or 0,
                 'late_fee': float(history.late_fee or 0),
                 'changed_at': fmt_dt(history.changed_at),
-                'changed_by': history.changed_by,
+                'changed_by': get_name(history.changed_by),
                 'membership_type_id': history.membership_id,
-            })
-
-        return {'data': data}
-
-    def get_loan_data(self, db, member_ids, filters):
-        qs = CirculationTransaction.objects.using(db).filter(
-            member_id__in=member_ids,
-            transaction_type__in=['Offline', 'Online'],
-            return_date__isnull=True,   # only not-returned books
-            due_date__isnull=False
-        ).select_related('catalog', 'accession', 'member')
-
-        from datetime import date, timedelta
-        from django.db.models import Q
-        
-        today = date.today()
-
-        
-        # Apply filters
-        if filters.get('from_date'):
-            qs = qs.filter(issue_date__gte=filters['from_date'])
-        if filters.get('to_date'):
-            qs = qs.filter(issue_date__lte=filters['to_date'])
-
-        overdue_filter = filters.get('overdue')
-
-        if overdue_filter == '0_3':
-            qs = qs.filter(
-                due_date__lt=today,
-                due_date__gte=today - timedelta(days=3)
-            )
-
-        elif overdue_filter == '4_7':
-            qs = qs.filter(
-                due_date__lt=today - timedelta(days=3),
-                due_date__gte=today - timedelta(days=7)
-            )
-
-        elif overdue_filter == '1_month':
-            qs = qs.filter(
-                due_date__lt=today - timedelta(days=30)
-            )
-
-        elif overdue_filter == '3_month':
-            qs = qs.filter(
-                due_date__lt=today - timedelta(days=90)
-            )
-        
-        elif overdue_filter == '6_month':
-            qs = qs.filter(
-                due_date__lt=today - timedelta(days=180)
-            )
-
-        if filters.get('fine_status') == 'paid':
-            qs = qs.filter(fine_status__iexact='Paid')
-        elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(
-            Q(fine_status__iexact='Unpaid') |
-            Q(fine_amount__gt=0, fine_paid_date__isnull=True)
-        )
-        
-        membership_type = filters.get('membership_type')
-        if membership_type:
-            if not isinstance(membership_type, (list, tuple)):
-                membership_type = [membership_type]
-
-            qs = qs.filter(member__member_type_id__in=membership_type)
-
-        from django.db.models import IntegerField, Func
-        from django.db.models.functions import Now
-
-        qs = qs.annotate(
-            overdue_days=Func(
-                Now(),
-                F('due_date'),
-                function='DATEDIFF',
-                output_field=IntegerField()
-            )
-        )
-
-        from Account.models import CustomUser 
-        data = []
-        for transaction in qs:
-            data.append({
-                'membership_code': transaction.member.membership_code if transaction.member else '',
-                'barcode': transaction.barcode,
-                'accession_id': transaction.accession.accession_id if transaction.accession else '',
-                'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
-                'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
-                'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                # 'days_overdue_count': transaction.days_overdue_count or 0,
-                'days_overdue_count': transaction.overdue_days or 0,
-                'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
-                'issued_by':  CustomUser.objects.using(db).filter(id=transaction.issued_by).only('full_name').first().full_name if transaction.issued_by else '',
-                'remarks': transaction.remarks,
-                'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
             })
         
         return {'data': data}
     
-    def get_transaction_data(self, db, member_ids, filters):
-        qs = CirculationTransaction.objects.using(db).filter(
-            member_id__in=member_ids
-        ).select_related('catalog', 'accession', 'member')
-        
-        # if filters.get('from_date'):
-        #     qs = qs.filter(issue_date__gte=filters['from_date'])
-        # if filters.get('to_date'):
-        #     qs = qs.filter(issue_date__lte=filters['to_date'])
-
-        if filters.get('from_date'):
-            start_date = parse_month_start(filters['from_date'])
-            qs = qs.filter(issue_date__gte=start_date)
-        if filters.get('to_date'):
-            end_date = parse_month_end(filters['to_date'])
-            qs = qs.filter(issue_date__lte=end_date)
-        
-        from datetime import timedelta
-        from django.db.models import F
-
-        late_filter = filters.get('late_returns')
-
-        if late_filter:
-            # Only returned books
-            qs = qs.filter(
-                return_date__isnull=False,
+    def get_loan_data(self, db, member_ids, filters):
+        try:
+            qs = CirculationTransaction.objects.using(db).filter(
+                member_id__in=member_ids,
+                transaction_type__in=['Offline', 'Online'],
+                return_date__isnull=True,
                 due_date__isnull=False
+            ).select_related('catalog', 'accession', 'member')
+            
+            # Apply filters
+            from datetime import date, timedelta
+            from django.db.models import Q
+            
+            today = date.today()
+            
+            if filters.get('from_date'):
+                qs = qs.filter(issue_date__gte=filters['from_date'])
+            if filters.get('to_date'):
+                qs = qs.filter(issue_date__lte=filters['to_date'])
+            
+            overdue_filter = filters.get('overdue')
+            if overdue_filter == '0_3':
+                qs = qs.filter(due_date__lt=today, due_date__gte=today - timedelta(days=3))
+            elif overdue_filter == '4_7':
+                qs = qs.filter(due_date__lt=today - timedelta(days=3), due_date__gte=today - timedelta(days=7))
+            elif overdue_filter == '1_month':
+                qs = qs.filter(due_date__lt=today - timedelta(days=30))
+            elif overdue_filter == '3_month':
+                qs = qs.filter(due_date__lt=today - timedelta(days=90))
+            elif overdue_filter == '6_month':
+                qs = qs.filter(due_date__lt=today - timedelta(days=180))
+            
+            if filters.get('fine_status') == 'paid':
+                qs = qs.filter(fine_status__iexact='Paid')
+            elif filters.get('fine_status') == 'not_paid':
+                qs = qs.filter(Q(fine_status__iexact='Unpaid') | Q(fine_amount__gt=0, fine_paid_date__isnull=True))
+            
+            membership_type = filters.get('membership_type')
+            if membership_type:
+                if not isinstance(membership_type, (list, tuple)):
+                    membership_type = [membership_type]
+                qs = qs.filter(member__member_type_id__in=membership_type)
+            
+            from django.db.models import IntegerField, Func
+            from django.db.models.functions import Now
+            
+            qs = qs.annotate(
+                overdue_days=Func(
+                    Now(),
+                    F('due_date'),
+                    function='DATEDIFF',
+                    output_field=IntegerField()
+                )
             )
-
-            if late_filter == '0_3':
-                qs = qs.filter(
-                    return_date__gt=F('due_date'),
-                    return_date__lte=F('due_date') + timedelta(days=3)
-                )
-
-            elif late_filter == '4_7':
-                qs = qs.filter(
-                    return_date__gt=F('due_date') + timedelta(days=3),
-                    return_date__lte=F('due_date') + timedelta(days=7)
-                )
-
-            elif late_filter == '1_month':
-                qs = qs.filter(
-                    return_date__gt=F('due_date') + timedelta(days=30)
-                )
-
-            elif late_filter == '3_month':
-                qs = qs.filter(
-                    return_date__gt=F('due_date') + timedelta(days=90)
-                )
-
-            elif late_filter == '6_month':
-                qs = qs.filter(
-                    return_date__gt=F('due_date') + timedelta(days=180)
-                )
-
-
-        if filters.get('fine_status') == 'paid':
-            qs = qs.filter(
-                Q(fine_amount__gt=0, fine_status='Paid') |
-                Q(fine_amount__lte=0)
-            )
-
-        elif filters.get('fine_status') == 'not_paid':
-            qs = qs.filter(
-                Q(fine_amount__gt=0, fine_status__in=['Unpaid', 'Pending']) |
-                Q(fine_amount__lte=0)
-            )
-
-        elif filters.get('fine_status') == 'adjusted':
-            qs = qs.filter(
-                Q(fine_amount__gt=0, fine_status='Adjusted') |
-                Q(fine_amount__lte=0)
-            )
-
-        membership_type = filters.get('membership_type')
-        if membership_type:
-            if not isinstance(membership_type, (list, tuple)):
-                membership_type = [membership_type]
+            
+            def get_user_name(user_id):
+                if not user_id:
+                    return ''
+                try:
+                    from Account.models import CustomUser
+                    if str(user_id).isdigit():
+                        user = CustomUser.objects.using(db).filter(id=int(user_id)).first()
+                    else:
+                        user = CustomUser.objects.using(db).filter(username=user_id).first()
+                    if user:
+                        return user.full_name or user.username or str(user_id)
+                    return str(user_id)
+                except Exception as e:
+                    print(f"Error getting user name for {user_id}: {e}")
+                    return str(user_id)
+            
+            data = []
+            for transaction in qs:
+                data.append({
+                    'membership_code': transaction.member.membership_code if transaction.member else '',
+                    'barcode': transaction.barcode or '',
+                    'accession_id': transaction.accession.accession_id if transaction.accession else '',
+                    'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
+                    'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
+                    'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
+                    'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
+                    'days_overdue_count': transaction.overdue_days or 0,
+                    'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
+                    'issued_by': get_user_name(transaction.issued_by),
+                    'remarks': transaction.remarks or '',
+                    'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
+                })
+            
+            return {'data': data}
         
-            qs = qs.filter(member__member_type_id__in=membership_type)
-
-        from django.db.models import IntegerField, Func, F
-        from django.db.models.functions import Now, Cast, Coalesce
-        from django.db.models import DateField
-
-
-        qs = qs.annotate(
-            late_days=Func(
-                Coalesce(
-                    F('return_date'),
-                    Cast(Now(), DateField())   # today if return_date is NULL
-                ),
-                F('due_date'),
-                function='DATEDIFF',
-                output_field=IntegerField()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {'data': [], 'error': str(e)}
+    
+    def get_transaction_data(self, db, member_ids, filters):
+        try:
+            qs = CirculationTransaction.objects.using(db).filter(
+                member_id__in=member_ids
+            ).select_related('catalog', 'accession', 'member')
+            
+            # Apply date filters
+            if filters.get('from_date'):
+                start_date = parse_month_start(filters['from_date'])
+                qs = qs.filter(issue_date__gte=start_date)
+            if filters.get('to_date'):
+                end_date = parse_month_end(filters['to_date'])
+                qs = qs.filter(issue_date__lte=end_date)
+            
+            # Late returns filter
+            from datetime import timedelta
+            from django.db.models import F, Q
+            
+            late_filter = filters.get('late_returns')
+            if late_filter:
+                qs = qs.filter(
+                    return_date__isnull=False,
+                    due_date__isnull=False
+                )
+                if late_filter == '0_3':
+                    qs = qs.filter(
+                        return_date__gt=F('due_date'),
+                        return_date__lte=F('due_date') + timedelta(days=3)
+                    )
+                elif late_filter == '4_7':
+                    qs = qs.filter(
+                        return_date__gt=F('due_date') + timedelta(days=3),
+                        return_date__lte=F('due_date') + timedelta(days=7)
+                    )
+                elif late_filter == '1_month':
+                    qs = qs.filter(
+                        return_date__gt=F('due_date') + timedelta(days=30)
+                    )
+                elif late_filter == '3_month':
+                    qs = qs.filter(
+                        return_date__gt=F('due_date') + timedelta(days=90)
+                    )
+                elif late_filter == '6_month':
+                    qs = qs.filter(
+                        return_date__gt=F('due_date') + timedelta(days=180)
+                    )
+            
+            # Fine status filter
+            if filters.get('fine_status') == 'paid':
+                qs = qs.filter(
+                    Q(fine_amount__gt=0, fine_status='Paid') |
+                    Q(fine_amount__lte=0)
+                )
+            elif filters.get('fine_status') == 'not_paid':
+                qs = qs.filter(
+                    Q(fine_amount__gt=0, fine_status__in=['Unpaid', 'Pending']) |
+                    Q(fine_amount__lte=0)
+                )
+            elif filters.get('fine_status') == 'adjusted':
+                qs = qs.filter(
+                    Q(fine_amount__gt=0, fine_status='Adjusted') |
+                    Q(fine_amount__lte=0)
+                )
+            
+            # Membership type filter
+            membership_type = filters.get('membership_type')
+            if membership_type:
+                if not isinstance(membership_type, (list, tuple)):
+                    membership_type = [membership_type]
+                qs = qs.filter(member__member_type_id__in=membership_type)
+            
+            # Annotate late days
+            from django.db.models import IntegerField, Func, F
+            from django.db.models.functions import Now, Cast, Coalesce
+            from django.db.models import DateField
+            
+            qs = qs.annotate(
+                late_days=Func(
+                    Coalesce(
+                        F('return_date'),
+                        Cast(Now(), DateField())
+                    ),
+                    F('due_date'),
+                    function='DATEDIFF',
+                    output_field=IntegerField()
+                )
             )
-        )
-
-
-
-        data = []
-        for transaction in qs:
-            data.append({
-                'member_name': f"{transaction.member.first_name or ''} {transaction.member.last_name or ''}".strip(),
-                'membership_code': transaction.member.membership_code if transaction.member else '',
-                'barcode': transaction.barcode,
-                'accession_id': transaction.accession.accession_id if transaction.accession else '',
-                'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
-                'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
-                'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'issued_by': CustomUser.objects.using(db).filter(id=transaction.issued_by).only('full_name').first().full_name if transaction.issued_by else '',
-                'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
-                'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                'received_by': transaction.received_by,
-                # 'days_overdue_count': transaction.days_overdue_count or 0,
-                'days_overdue_count': transaction.late_days or 0,
-                'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
-                'book_fine_amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0,
-                'total_fine': float(transaction.total_fine) if transaction.total_fine else 0,
-                'adjusted_fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0,
-                'fine_status': transaction.fine_status if transaction.fine_amount and transaction.fine_amount > 0 else None,
-                'fine_paid_date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
-                'remarks': transaction.remarks,
-                'updated_at': transaction.updated_at.strftime('%Y-%m-%d %H:%M') if transaction.updated_at else '',
-            })
+            
+            def get_user_name(user_id):
+                if not user_id:
+                    return ''
+                try:
+                    from Account.models import CustomUser
+                    if str(user_id).isdigit():
+                        user = CustomUser.objects.using(db).filter(id=int(user_id)).first()
+                    else:
+                        user = CustomUser.objects.using(db).filter(username=user_id).first()
+                    if user:
+                        return user.full_name or user.username or str(user_id)
+                    return str(user_id)
+                except Exception as e:
+                    print(f"Error getting user name for {user_id}: {e}")
+                    return str(user_id)
+            
+            data = []
+            for transaction in qs:
+                data.append({
+                    'member_name': f"{transaction.member.first_name or ''} {transaction.member.last_name or ''}".strip(),
+                    'membership_code': transaction.member.membership_code if transaction.member else '',
+                    'barcode': transaction.barcode or '',
+                    'accession_id': transaction.accession.accession_id if transaction.accession else '',
+                    'cat_ref_num': transaction.catalog.cat_ref_num if transaction.catalog else '',
+                    'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
+                    'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
+                    'issued_by': get_user_name(transaction.issued_by),
+                    'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
+                    'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
+                    'received_by': get_user_name(transaction.received_by),
+                    'days_overdue_count': transaction.late_days or 0,
+                    'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0,
+                    'book_fine_amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0,
+                    'total_fine': float(transaction.total_fine) if transaction.total_fine else 0,
+                    'adjusted_fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0,
+                    'fine_status': transaction.fine_status if transaction.fine_amount and transaction.fine_amount > 0 else None,
+                    'fine_paid_date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
+                    'remarks': transaction.remarks or '',
+                    'updated_at': transaction.updated_at.strftime('%Y-%m-%d %H:%M') if transaction.updated_at else '',
+                })
+            
+            return {'data': data}
         
-        return {'data': data}
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {'data': [], 'error': str(e)}
     
     def get_physical_visit_data(self, db, member_ids, filters):
 
@@ -851,54 +976,70 @@ class TabDataView(ReportBaseView):
             'membership__member_type',
             'status'
         ).order_by('-payment_date')
-
-        # Date filters
+        
+        # Apply filters (your existing code)
         if filters.get('from_date'):
             qs = qs.filter(payment_date__gte=filters['from_date'])
-
         if filters.get('to_date'):
             qs = qs.filter(payment_date__lte=filters['to_date'])
-
-        # Membership type
         if filters.get('membership_types'):
-            qs = qs.filter(
-                membership__member_type_id__in=filters['membership_types']
-            )
-
-        # Payment attributes
+            qs = qs.filter(membership__member_type_id__in=filters['membership_types'])
+        
         payment_type = filters.get('payment_type')
-
         if payment_type:
             if payment_type == 'Fine':
                 qs = qs.filter(payment_type__in=['Fine', 'Membership Renewed'])
             else:
                 qs = qs.filter(payment_type=payment_type)
-
-
+        
         if filters.get('payment_mode'):
             qs = qs.filter(payment_mode=filters['payment_mode'])
-
         if filters.get('payment_method'):
             qs = qs.filter(payment_method=filters['payment_method'])
-
         if filters.get('min_amount'):
             qs = qs.filter(fine_amount__gte=float(filters['min_amount']))
-
         if filters.get('max_amount'):
             qs = qs.filter(fine_amount__lte=float(filters['max_amount']))
-
+        
+        # Collect user IDs
+        user_ids = set()
+        for payment in qs:
+            if payment.created_by and str(payment.created_by).isdigit():
+                user_ids.add(int(payment.created_by))
+            if payment.updated_by and str(payment.updated_by).isdigit():
+                user_ids.add(int(payment.updated_by))
+        
+        # Get user names
+        user_names = {}
+        if user_ids:
+            try:
+                from Account.models import CustomUser
+                users = CustomUser.objects.using(db).filter(id__in=user_ids)
+                for user in users:
+                    user_names[user.id] = user.full_name or user.username or str(user.id)
+            except ImportError:
+                pass
+            
+            for uid in user_ids:
+                if uid not in user_names:
+                    user_names[uid] = str(uid)
+        
+        def get_name(value):
+            if not value:
+                return ''
+            if str(value).isdigit():
+                return user_names.get(int(value), value)
+            return value
+        
+        data = []
         for payment in qs:
             member = payment.membership
-
-            # ✅ Full member name
             member_name = " ".join(filter(None, [
                 member.first_name if member else '',
                 member.middle_name if member else '',
                 member.last_name if member else '',
             ]))
-
-        data = []
-        for payment in qs:
+            
             data.append({
                 'membership_code': payment.membership_code or '',
                 'member_name': member_name,
@@ -919,16 +1060,16 @@ class TabDataView(ReportBaseView):
                 'payment_mode': payment.payment_mode or '',
                 'payment_method': payment.payment_method or '',
                 'created_at': payment.created_at.strftime('%Y-%m-%d %H:%M:%S') if payment.created_at else '',
-                'created_by': payment.created_by or '',
+                'created_by': get_name(payment.created_by),
                 'updated_at': payment.updated_at.strftime('%Y-%m-%d %H:%M:%S') if payment.updated_at else '',
-                'updated_by': payment.updated_by or '',
+                'updated_by': get_name(payment.updated_by),
                 'membership_id': payment.membership_id,
                 'status_id': payment.status_id,
                 'circulation_transaction_id': payment.circulation_transaction_id,
             })
         
         return {'data': data}
-
+    
 class GetMemberOptionsView(ReportBaseView):
     """Get filter options for member types, wards, etc."""
     

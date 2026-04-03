@@ -34,24 +34,19 @@
 <link href="{% static 'css/inputs.css' %}" rel="stylesheet" type="text/css" >
 
 <style>
-
 .document-card {
     max-width: 220px;
     transition: all 0.2s ease-in-out;
 }
-
 .document-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
 }
-
 @media (max-width: 576px) {
     .document-card {
         max-width: 100%;
     }
 }
-
-
 </style>
 {% endblock %}
 
@@ -107,6 +102,262 @@ let currentFilters = {};
 let tabFilters = {};
 let dataTables = {};
 
+// ============================================
+// NEW: Select All Across Pages Functionality
+// ============================================
+let allItemsSelectedAcrossPages = false;
+let totalItemsCount = 0;
+
+// Function to fetch total count from server
+function fetchTotalMemberCount() {
+    return new Promise((resolve, reject) => {
+        const search = $('#member-search').val();
+        const membershipType = $('#membership-type-filter').val() || [];
+        const membershipStatus = $('#membership-status-filter').val() || [];
+        
+        $.ajax({
+            url: '{% url "member_list_data" %}',
+            traditional: true,
+            data: {
+                page: 1,
+                per_page: 1,
+                search: search,
+                membership_type: membershipType,
+                membership_status: membershipStatus
+            },
+            success: function(response) {
+                totalItemsCount = response.total;
+                resolve(totalItemsCount);
+            },
+            error: function() {
+                reject('Failed to fetch total count');
+            }
+        });
+    });
+}
+
+// Function to fetch all member IDs across all pages
+function fetchAllMemberIds() {
+    return new Promise((resolve, reject) => {
+        const search = $('#member-search').val();
+        const membershipType = $('#membership-type-filter').val() || [];
+        const membershipStatus = $('#membership-status-filter').val() || [];
+        
+        showLoading();
+        
+        $.ajax({
+            url: '{% url "member_list_data" %}',
+            traditional: true,
+            data: {
+                page: 1,
+                per_page: 1,
+                search: search,
+                membership_type: membershipType,
+                membership_status: membershipStatus
+            },
+            success: function(response) {
+                const totalPages = response.pages;
+                const allIds = [];
+                let completedRequests = 0;
+                
+                if (totalPages === 0 || response.total === 0) {
+                    hideLoading();
+                    resolve([]);
+                    return;
+                }
+                
+                for (let page = 1; page <= totalPages; page++) {
+                    $.ajax({
+                        url: '{% url "member_list_data" %}',
+                        traditional: true,
+                        data: {
+                            page: page,
+                            per_page: 100,
+                            search: search,
+                            membership_type: membershipType,
+                            membership_status: membershipStatus
+                        },
+                        success: function(pageData) {
+                            pageData.members.forEach(member => {
+                                if (!allIds.includes(member.id)) {
+                                    allIds.push(member.id);
+                                }
+                            });
+                            completedRequests++;
+                            if (completedRequests === totalPages) {
+                                hideLoading();
+                                resolve(allIds);
+                            }
+                        },
+                        error: function() {
+                            completedRequests++;
+                            if (completedRequests === totalPages) {
+                                hideLoading();
+                                reject('Failed to fetch some pages');
+                            }
+                        }
+                    });
+                }
+            },
+            error: function() {
+                hideLoading();
+                reject('Failed to fetch data');
+            }
+        });
+    });
+}
+
+// Function to select all members across all pages
+async function selectAllAcrossPages() {
+    const result = await Swal.fire({
+        title: 'Select All Members?',
+        html: 'This will select all members across all pages.<br>' +
+              '<strong>Note:</strong> This may take a few moments depending on the total number of members.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, select all',
+        cancelButtonText: 'Cancel'
+    });
+    
+    if (!result.isConfirmed) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const totalCount = await fetchTotalMemberCount();
+        
+        if (totalCount === 0) {
+            hideLoading();
+            Swal.fire('Info', 'No members found to select', 'info');
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Selecting All Members',
+            html: `Please wait while we select ${totalCount} member(s)...<br>
+                   <div class="progress mt-3">
+                       <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                            style="width: 0%"></div>
+                   </div>`,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        const allMemberIds = await fetchAllMemberIds();
+        
+        selectedMembers.clear();
+        allMemberIds.forEach(id => selectedMembers.add(id));
+        
+        $('.member-list-item').addClass('selected');
+        updateSelectionCount();
+        
+        allItemsSelectedAcrossPages = true;
+        $('#selectAllPagesBtn').html('<i class="bi bi-check-all"></i> All Selected');
+        $('#selectAllPagesBtn').removeClass('btn-info').addClass('btn-success');
+        
+        hideLoading();
+        Swal.fire({
+            title: 'Success!',
+            html: `Successfully selected <strong>${selectedMembers.size}</strong> member(s) across all pages.`,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        
+        loadCurrentTabData();
+        
+    } catch (error) {
+        hideLoading();
+        Swal.fire('Error', 'Failed to select all members: ' + error, 'error');
+        console.error('Select all error:', error);
+    }
+}
+
+// Function to deselect all across pages
+function deselectAllAcrossPages() {
+    Swal.fire({
+        title: 'Deselect All?',
+        text: 'This will clear all selections across all pages.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, deselect all',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            deselectAll();
+            allItemsSelectedAcrossPages = false;
+            $('#selectAllPagesBtn').html('<i class="bi bi-collection"></i> All Pages');
+            $('#selectAllPagesBtn').removeClass('btn-success').addClass('btn-info');
+            Swal.fire('Deselected', 'All selections have been cleared.', 'success');
+        }
+    });
+}
+
+// Update selection stats
+function updateSelectionStats() {
+    fetchTotalMemberCount().then(total => {
+        const selectedCount = selectedMembers.size;
+        const percentage = total > 0 ? ((selectedCount / total) * 100).toFixed(1) : 0;
+        
+        if (selectedCount === total && total > 0) {
+            $('#selectAllPagesBtn').html('<i class="bi bi-check-all"></i> All Selected');
+            $('#selectAllPagesBtn').removeClass('btn-info').addClass('btn-success');
+            allItemsSelectedAcrossPages = true;
+        } else {
+            $('#selectAllPagesBtn').html('<i class="bi bi-collection"></i> All Pages');
+            $('#selectAllPagesBtn').removeClass('btn-success').addClass('btn-info');
+            allItemsSelectedAcrossPages = false;
+        }
+        
+        if (!$('#selectionStats').length) {
+            $('.bulk-actions .d-flex.justify-content-between').append(`
+                <div id="selectionStats" class="small text-muted ms-2">
+                    ${selectedCount} of ${total} selected (${percentage}%)
+                </div>
+            `);
+        } else {
+            $('#selectionStats').html(`${selectedCount} of ${total} selected (${percentage}%)`);
+        }
+    }).catch(err => console.error('Failed to update stats:', err));
+}
+
+// Override existing functions
+const originalUpdateSelectionCount = updateSelectionCount;
+updateSelectionCount = function() {
+    originalUpdateSelectionCount();
+    updateSelectionStats();
+};
+
+const originalSelectAll = selectAll;
+const originalDeselectAll = deselectAll;
+
+selectAll = function() {
+    originalSelectAll();
+    allItemsSelectedAcrossPages = false;
+    $('#selectAllPagesBtn').html('<i class="bi bi-collection"></i> All Pages');
+    $('#selectAllPagesBtn').removeClass('btn-success').addClass('btn-info');
+};
+
+deselectAll = function() {
+    originalDeselectAll();
+    allItemsSelectedAcrossPages = false;
+    $('#selectAllPagesBtn').html('<i class="bi bi-collection"></i> All Pages');
+    $('#selectAllPagesBtn').removeClass('btn-success').addClass('btn-info');
+};
+
+// ============================================
+// END OF Select All Across Pages Functionality
+// ============================================
+
 $(document).ready(function() {
     // Load initial data
     loadMemberList();
@@ -124,9 +375,7 @@ function initSelectize() {
             plugins: ['remove_button'],
             delimiter: ',',
             persist: false,
-            create: false, // Prevents creating new items
-            //selectOnTab: false, // Disables item creation on tab
-            //maxItems: null,
+            create: false,
             onInitialize: function() {
                 var control = this;
                 control.clear();
@@ -136,7 +385,6 @@ function initSelectize() {
 }
 
 function checkSavedSession() {
-    // Check if there's a saved session ID in URL
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
     
@@ -146,7 +394,6 @@ function checkSavedSession() {
 }
 
 function loadMemberList(page = 1) {
-    
     const search = $('#member-search').val();
     const membershipType = $('#membership-type-filter').val() || [];
     const membershipStatus = $('#membership-status-filter').val() || [];
@@ -170,7 +417,6 @@ function loadMemberList(page = 1) {
             membership_status: membershipStatus
         },
         success: function(response) {
-             
             renderMemberList(response.members);
             renderPagination(response);
         },
@@ -210,7 +456,7 @@ function renderMemberList(members) {
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <div class="member-id">${member.membership_code || 'N/A'}</div>
-                        <div class="member-name text-dark" >${member.first_name} ${member.last_name} <span class="member-info small "> ( ${member.user_id} ) </span></div>
+                        <div class="member-name text-dark">${member.first_name} ${member.last_name} <span class="member-info small"> ( ${member.user_id} ) </span></div>
                     </div>
                 </div>
             </div>
@@ -229,11 +475,9 @@ function toggleMemberSelection(memberId, event) {
         selectedMembers.add(memberId);
     }
     
-    // Update UI
     $(`.member-list-item[data-member-id="${memberId}"]`).toggleClass('selected');
     updateSelectionCount();
     
-    // If we have selections, load tab data
     if (selectedMembers.size > 0) {
         loadCurrentTabData();
     }
@@ -253,7 +497,6 @@ function deselectAll() {
     selectedMembers.clear();
     $('.member-list-item').removeClass('selected');
     updateSelectionCount();
-    // Clear right-side tab tables (tbody only)
     const tables = [
         'member-details-table',
         'membership-details-table',
@@ -263,7 +506,6 @@ function deselectAll() {
         'virtual-usage-table',
         'payments-table'
     ];
-
     tables.forEach(tableId => {
         $('#' + tableId + ' tbody').empty();
     });
@@ -298,8 +540,7 @@ function applyLeftFilters() {
 function clearLeftFilters() {
     $('#member-search').val('');
     $('#membership-type-filter').val('');
-    $('#membership-status-filter').val('active');
-    
+    $('#membership-status-filter').val('');
     loadMemberList(1);
 }
 
@@ -309,7 +550,6 @@ function clearSearch() {
 }
 
 function initDataTables() {
-    // Simple initialization without DataTables if it's not available
     const tables = [
         'member-details-table',
         'membership-details-table', 
@@ -323,7 +563,6 @@ function initDataTables() {
     tables.forEach(tableId => {
         const table = document.getElementById(tableId);
         if (table) {
-            // Just add basic Bootstrap classes if DataTables isn't available
             table.classList.add('table', 'table-hover', 'table-striped');
         }
     });
@@ -332,7 +571,6 @@ function initDataTables() {
 function loadCurrentTabData() {
     const activeTab = $('#reportTabs .nav-link.active').attr('id');
     const tabName = activeTab.replace('-tab', '');
-    
     loadTabData(tabName);
 }
 
@@ -356,11 +594,41 @@ function loadTabData(tabName) {
             populateTabData(tabName, response.data);
             hideLoading();
         },
-        error: function() {
+        error: function(xhr, status, error) {
             hideLoading();
-            showError(tabName);
+            console.error('Error response:', xhr.responseText);
+            let errorMsg = 'Failed to load data. Please try again.';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            }
+            showError(tabName, errorMsg);
         }
     });
+}
+
+function showError(tabName, errorMsg) {
+    const container = $(`#${tabName} .table-responsive`);
+    if (container.length) {
+        container.html(`
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${errorMsg}
+                <button class="btn btn-sm btn-outline-danger mt-2" onclick="loadCurrentTabData()">
+                    <i class="bi bi-arrow-repeat"></i> Retry
+                </button>
+            </div>
+        `);
+    } else {
+        $(`#${tabName}`).html(`
+            <div class="alert alert-danger m-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${errorMsg}
+                <button class="btn btn-sm btn-outline-danger mt-2" onclick="loadCurrentTabData()">
+                    <i class="bi bi-arrow-repeat"></i> Retry
+                </button>
+            </div>
+        `);
+    }
 }
 
 function populateTabData(tabName, data) {
@@ -370,35 +638,26 @@ function populateTabData(tabName, data) {
     const tbody = table.querySelector('tbody');
     if (!tbody) return;
     
-    // Clear existing rows
     tbody.innerHTML = '';
     
-    // Add new rows
     data.forEach(item => {
         const row = document.createElement('tr');
-        
-        // Create cells based on tab type
         const cells = convertToTableRow(tabName, item);
         cells.forEach(cellContent => {
             const cell = document.createElement('td');
             cell.innerHTML = cellContent;
             row.appendChild(cell);
         });
-        
         tbody.appendChild(row);
     });
     
-    // Update record count
     const infoElement = document.querySelector(`#${tabName}-table_info`);
     if (infoElement) {
         infoElement.textContent = `Showing ${data.length} records`;
     }
 }
 
-
-// Filter application functions for all tab
 function applyRightFilters(tab, form) {
-    
     const formData = $('#' + form + 'Form').serializeArray();
     const filters = {};
     
@@ -438,9 +697,7 @@ function updateFilterCount(tabName, count) {
     $(`#${tabName}-filter-count`).text(count);
 }
 
-// Include modals in main template
 function includeModals() {
-    // Load all filter modals
     const modals = [
         'membership_details_filters',
         'loan_filters', 
@@ -463,8 +720,6 @@ function includeModals() {
     });
 }
 
-
-// Complete the convertToTableRow function for all tabs
 function convertToTableRow(tabName, item) {
     switch(tabName) {
         case 'member-details':
@@ -472,24 +727,19 @@ function convertToTableRow(tabName, item) {
             item.first_name || '',
             item.middle_name || '',
             item.last_name || '',
-
             item.first_name_mar || '',
             item.middle_name_mar || '',
             item.last_name_mar || '',
-
             item.membershipmaster_id || '',
             item.member_type || '',
             item.membership_code || '',
             item.membership_date || '',
-
             item.renewal_from_date || '',
             item.renewal_to_date || '',
-
             item.user_id || '',
             item.ward || '',
             item.pincode || '',
             item.local_address || '',
-
             item.mobile_no || '',
             item.email || '',
             item.occupation || '',
@@ -497,12 +747,10 @@ function convertToTableRow(tabName, item) {
             item.education || '',
             item.institute_name || '',
             item.recommender_details || '',
-
             item.dob || '',
             item.aadhar_no || '',
             item.address_same_as_aadhar || '',
             item.is_resident_of_nmmc || '',
-
             item.status || '',
             item.created_at || '',
             item.created_by || '',
@@ -510,73 +758,59 @@ function convertToTableRow(tabName, item) {
             item.updated_by || '',
             item.approved_by || '',
             item.approved_date || '',
-
             `<button class="btn btn-sm btn-primary" onclick="viewDocuments(${item.membershipmaster_id})">
                 <i class="bi bi-files"></i>
             </button>`
         ];
-
         
         case 'membership-details':
             return [
                 item.first_name || '',
                 item.middle_name || '',
                 item.last_name || '',
-
                 item.first_name_mar || '',
                 item.middle_name_mar || '',
                 item.last_name_mar || '',
-
                 item.actionperformed || '',
                 item.from_date || '',
                 item.to_date || '',
-
                 item.deposit ? '₹' + parseFloat(item.deposit).toFixed(2) : '₹0.00',
                 item.entry_fees ? '₹' + parseFloat(item.entry_fees).toFixed(2) : '₹0.00',
                 item.subscription ? '₹' + parseFloat(item.subscription).toFixed(2) : '₹0.00',
-
                 item.fine_calculated_at || '',
                 item.gap_fine_subscription ? '₹' + parseFloat(item.gap_fine_subscription).toFixed(2) : '₹0.00',
                 item.gap_fine_delay ? '₹' + parseFloat(item.gap_fine_delay).toFixed(2) : '₹0.00',
                 item.gap_months || 0,
                 item.late_fee ? '₹' + parseFloat(item.late_fee).toFixed(2) : '₹0.00',
-
                 item.changed_at || '',
                 item.changed_by || '',
                 item.membership_type_id || ''
             ];
-
         
         case 'loan':
             const overdueBadge = item.days_overdue_count > 0
                 ? `<span class="badge bg-danger">${item.days_overdue_count} days</span>`
                 : `<span class="badge bg-success">On time</span>`;
-
             return [
                 item.membership_code || '',
                 item.barcode || '',
                 item.accession_id || '',
                 item.cat_ref_num || '',
-
                 item.issue_date || '',
                 item.due_date || '',
                 item.return_date || '',
-
                 overdueBadge,
                 item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
                 item.issued_by || '',
                 item.remarks || '',
                 item.created_at || ''
             ];
-
         
         case 'transactions':
             const transactionOverdue = item.days_overdue_count > 0
                 ? `<span class="badge bg-danger">${item.days_overdue_count} days</span>`
                 : `<span class="badge bg-success">On time</span>`;
-
             let fineStatusBadge = '';
-
             if (item.fine_amount > 0) {
                 if (item.fine_status === 'Paid') {
                     fineStatusBadge = `<span class="badge bg-success">Paid</span>`;
@@ -586,47 +820,37 @@ function convertToTableRow(tabName, item) {
                     fineStatusBadge = `<span class="badge bg-danger">Unpaid</span>`;
                 }
             }
-
             return [
                 item.member_name || '',
                 item.membership_code || '',
                 item.barcode || '',
                 item.accession_id || '',
                 item.cat_ref_num || '',
-
                 item.issue_date || '',
                 item.due_date || '',
                 item.return_date || '',
-
                 item.issued_by || '',
                 item.received_by || '',
-
                 transactionOverdue,
-
                 item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
                 item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',
                 item.total_fine ? '₹' + parseFloat(item.total_fine).toFixed(2) : '₹0.00',
                 item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',
-
                 fineStatusBadge,
                 item.fine_paid_date || '',
-
                 item.remarks || '',
                 item.created_at || '',
                 item.updated_at || ''
             ];
-
         
         case 'physical-visit':
             let duration = 'In progress';
-
             if (item.entry_time && item.exit_time) {
                 const entry = new Date(item.entry_time);
                 const exit = new Date(item.exit_time);
                 const hours = (exit - entry) / (1000 * 60 * 60);
                 duration = `${hours.toFixed(2)} hours`;
             }
-        
             return [
                 item.activity || '',
                 item.member_name || '',
@@ -637,7 +861,6 @@ function convertToTableRow(tabName, item) {
                 item.remark || '',
                 item.created_at || ''
             ];
-
         case 'virtual-usage':
             return [
                 item.member_name || '',
@@ -650,81 +873,47 @@ function convertToTableRow(tabName, item) {
                 item.ip_address || '',
                 item.device_type || ''
             ];
-
-        
         case 'payments':
             return [
                 item.membership_code || '',
                 item.member_name || '',
                 item.user_id || '',
-
                 item.payment_type || '',
                 item.payment_date || '',
                 item.subscription_from || '',
                 item.subscription_to || '',
-
-                item.deposit_amount
-                    ? '₹' + parseFloat(item.deposit_amount).toFixed(2)
-                    : '₹0.00',
-
-                item.entry_fee_amount
-                    ? '₹' + parseFloat(item.entry_fee_amount).toFixed(2)
-                    : '₹0.00',
-
-                item.monthly_subscription_amount
-                    ? '₹' + parseFloat(item.monthly_subscription_amount).toFixed(2)
-                    : '₹0.00',
-
-                item.total_subscription_amount
-                    ? '₹' + parseFloat(item.total_subscription_amount).toFixed(2)
-                    : '₹0.00',
-
-                item.book_fine_amount
-                    ? '₹' + parseFloat(item.book_fine_amount).toFixed(2)
-                    : '₹0.00',
-
-                item.fine_amount
-                    ? '₹' + parseFloat(item.fine_amount).toFixed(2)
-                    : '₹0.00',
-
-                item.adjusted_amount
-                    ? '₹' + parseFloat(item.adjusted_amount).toFixed(2)
-                    : '₹0.00',
-
+                item.deposit_amount ? '₹' + parseFloat(item.deposit_amount).toFixed(2) : '₹0.00',
+                item.entry_fee_amount ? '₹' + parseFloat(item.entry_fee_amount).toFixed(2) : '₹0.00',
+                item.monthly_subscription_amount ? '₹' + parseFloat(item.monthly_subscription_amount).toFixed(2) : '₹0.00',
+                item.total_subscription_amount ? '₹' + parseFloat(item.total_subscription_amount).toFixed(2) : '₹0.00',
+                item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',
+                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',
+                item.adjusted_amount ? '₹' + parseFloat(item.adjusted_amount).toFixed(2) : '₹0.00',
                 item.transaction_id || '',
                 item.remarks || '',
-
                 item.payment_mode || '',
                 item.payment_method || '',
-
                 item.created_at || '',
                 item.created_by || '',
                 item.updated_at || '',
                 item.updated_by || '',
-
                 item.membership_id || '',
                 item.status_id || '',
                 item.circulation_transaction_id || ''
             ];
-
-        
         default:
             return [];
     }
 }
 
 function exportAllTabs() {
-
-    // initial count
     updateExportCounts();
-    
     
     if (selectedMembers.size === 0) {
         showToast('Please select at least one member to export', 'warning');
         return;
     }
     
-    // Show export options modal
     const modalHtml = `
         <div class="modal fade" id="exportOptionsModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
@@ -743,69 +932,47 @@ function exportAllTabs() {
                                 <option value="csv">CSV (Single Sheet)</option>
                             </select>
                         </div>
-                        
                         <div class="mb-3">
                             <label class="form-label">Include Tabs</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportMemberDetails" checked>
-                                <label class="form-check-label" for="exportMemberDetails">
-                                    Member Details
-                                </label>
+                                <label class="form-check-label" for="exportMemberDetails">Member Details</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportMembershipDetails" checked>
-                                <label class="form-check-label" for="exportMembershipDetails">
-                                    Membership Details
-                                </label>
+                                <label class="form-check-label" for="exportMembershipDetails">Membership Details</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportLoan" checked>
-                                <label class="form-check-label" for="exportLoan">
-                                    Loan
-                                </label>
+                                <label class="form-check-label" for="exportLoan">Loan</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportTransactions" checked>
-                                <label class="form-check-label" for="exportTransactions">
-                                    Transactions
-                                </label>
+                                <label class="form-check-label" for="exportTransactions">Transactions</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportPhysicalVisit" checked>
-                                <label class="form-check-label" for="exportPhysicalVisit">
-                                    Physical Visit
-                                </label>
+                                <label class="form-check-label" for="exportPhysicalVisit">Physical Visit</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportVirtualUsage" checked>
-                                <label class="form-check-label" for="exportVirtualUsage">
-                                    Virtual Usage
-                                </label>
+                                <label class="form-check-label" for="exportVirtualUsage">Virtual Usage</label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportPayments" checked>
-                                <label class="form-check-label" for="exportPayments">
-                                    Payments
-                                </label>
+                                <label class="form-check-label" for="exportPayments">Payments</label>
                             </div>
                         </div>
-                        
                         <div class="mb-3">
                             <label class="form-label">File Name</label>
                             <input type="text" class="form-control" id="exportFileName" 
                                    value="Member_Report_${new Date().toISOString().slice(0,10)}">
                         </div>
-                        
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            This will export <strong>
-                                <span id="exportMemberCount">${selectedMembers.size}</span>
-                            </strong> member(s) from 
-                            <strong>
-                                <span id="exportTabCount">7</span>
-                            </strong> selected tab(s).
+                            This will export <strong><span id="exportMemberCount">${selectedMembers.size}</span></strong> member(s) from 
+                            <strong><span id="exportTabCount">7</span></strong> selected tab(s).
                         </div>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -824,8 +991,6 @@ function exportAllTabs() {
     $('#exportOptionsModal').on('hidden.bs.modal', function() {
         $(this).remove();
     });
-
-    // live update on checkbox toggle
     $('#exportOptionsModal').on('change', 'input[type="checkbox"]', function () {
         updateExportCounts();
     });
@@ -833,26 +998,18 @@ function exportAllTabs() {
 
 function updateExportCounts() {
     const checkedTabs = $('#exportOptionsModal input[type="checkbox"]:checked').length;
-
     $('#exportTabCount').text(checkedTabs);
-    $('#exportMemberCount').text(
-        checkedTabs > 0 ? selectedMembers.size : 0
-    );
+    $('#exportMemberCount').text(checkedTabs > 0 ? selectedMembers.size : 0);
 }
-
 
 function processExportAll() {
     const format = $('#exportFormat').val();
     let fileName = $('#exportFileName').val().trim();
-
     if (!fileName) {
         showToast('Please enter file name', 'warning');
         return;
     }
-
-    // sanitize filename
     fileName = fileName.replace(/[^\w\-]/g, '_');
-
     const tabsToExport = [];
     const tabMap = {
         exportMemberDetails: 'member-details',
@@ -863,42 +1020,32 @@ function processExportAll() {
         exportVirtualUsage: 'virtual-usage',
         exportPayments: 'payments'
     };
-
     Object.entries(tabMap).forEach(([checkboxId, tabKey]) => {
         if ($('#' + checkboxId).is(':checked')) {
             tabsToExport.push(tabKey);
         }
     });
-
     if (tabsToExport.length === 0) {
         showToast('Please select at least one tab', 'warning');
         return;
     }
-
     const params = new URLSearchParams();
     params.append('format', format);
     params.append('filename', fileName);
     params.append('filters', JSON.stringify(currentFilters || {}));
     params.append('tab_filters', JSON.stringify(tabFilters || {}));
-
-    // 🔥 append arrays properly
     Array.from(selectedMembers).forEach(id => params.append('member_ids', id));
     tabsToExport.forEach(tab => params.append('tabs', tab));
-
     showToast('Preparing export…', 'info');
-
     window.location.href = `/reports/export-all-data/?${params.toString()}`;
     $('#exportOptionsModal').modal('hide');
 }
-
-
 
 function exportTabData(tabName) {
     if (selectedMembers.size === 0) {
         showToast('Please select at least one member to export', 'warning');
         return;
     }
-    debugger;
     const tabNames = {
         'member-details': 'Member Details',
         'membership-details': 'Membership Details',
@@ -910,14 +1057,12 @@ function exportTabData(tabName) {
     };
     const filters = tabFilters[tabName] || {};
     const fileName = `${tabNames[tabName]}_${new Date().toISOString().slice(0,10)}.xlsx`;
-
     const params = new URLSearchParams({
         type: tabName,
         member_ids: Array.from(selectedMembers),
         tab_filters: JSON.stringify(filters),
         filename: fileName
     });
-    debugger;
     showToast(`Exporting ${tabNames[tabName]}...`, 'info');
     window.location.href = `/reports/export-report/?${params.toString()}`;
 }
@@ -956,10 +1101,6 @@ function updateFilterBadge(tabId, count) {
     $(`#${tabId}-filter-count`).text(count);
 }
 
-
-
-
-// Scroll management
 $(window).scroll(function() {
     if ($(this).scrollTop() > 100) {
         $('#scrollIndicator').addClass('show');
@@ -972,36 +1113,26 @@ function scrollToTop() {
     $('html, body').animate({scrollTop: 0}, 500);
 }
 
-// Setup all event listeners
 function setupEventListeners() {
-    // Tab change event
     $('#reportTabs button').on('shown.bs.tab', function(e) {
         const tabName = $(e.target).attr('id').replace('-tab', '');
         loadTabData(tabName);
     });
-    
-    // Search with Enter key
     $('#member-search').keypress(function(e) {
         if (e.which === 13) {
             loadMemberList(1);
         }
     });
-    
-    // Highlight search text in member list
     $('#member-search').on('input', function() {
         const searchText = $(this).val().toLowerCase();
         highlightText(searchText);
     });
-    
-    // Initialize select2 for multi-select filters
     $('select[multiple]').each(function() {
         $(this).selectize({
             plugins: ['remove_button'],
             delimiter: ',',
             persist: false,
-            create: false, // Prevents creating new items
-            //selectOnTab: false, // Disables item creation on tab
-            //maxItems: null,
+            create: false,
             onInitialize: function() {
                 var control = this;
                 control.clear();
@@ -1015,11 +1146,9 @@ function highlightText(text) {
         $('.member-list-item').removeHighlight();
         return;
     }
-    
     $('.member-list-item').removeHighlight().highlight(text);
 }
 
-// jQuery highlight plugin
 jQuery.fn.highlight = function(pat) {
     function innerHighlight(node, pat) {
         var skip = 0;
@@ -1035,8 +1164,7 @@ jQuery.fn.highlight = function(pat) {
                 middlebit.parentNode.replaceChild(spannode, middlebit);
                 skip = 1;
             }
-        } else if (node.nodeType === 1 && node.childNodes && 
-                   !/(script|style)/i.test(node.tagName)) {
+        } else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
             for (var i = 0; i < node.childNodes.length; ++i) {
                 i += innerHighlight(node.childNodes[i], pat);
             }
@@ -1058,24 +1186,16 @@ jQuery.fn.removeHighlight = function() {
     }).end();
 };
 
-// Initialize all filter modals
 function initFilterModals() {
-    
-    // Load filter options dynamically
     $.ajax({
         url: '{% url "get_member_options" %}',
         success: function(response) {
-            
-            // Populate member type dropdowns
             const memberTypeSelects = $('select[name="member_type"], select[name="member_type[]"]');
             memberTypeSelects.empty();
             memberTypeSelects.append(`<option value="">--Select Types--</option>`);
             response.member_types.forEach(type => {
-                
                 memberTypeSelects.append(`<option value="${type.parameter_id}">${type.parameter_value}</option>`);
             });
-            
-            // Populate ward dropdowns
             const wardSelects = $('select[name="ward"], input[name="ward"]');
             if (wardSelects.is('select')) {
                 wardSelects.empty().append('<option value="">--Select Wards--</option>');
@@ -1083,22 +1203,15 @@ function initFilterModals() {
                     wardSelects.append(`<option value="${ward.ward_name}">${ward.ward_name}</option>`);
                 });
             }
-            
-            // Populate membership type dropdowns
             const membershipTypeSelects = $('select[name="membership_type"], select[name="membership_type[]"]');
             membershipTypeSelects.empty();
             membershipTypeSelects.append(`<option value="">--Select Types--</option>`);
-
             response.membership_types.forEach(type => {
                 membershipTypeSelects.append(`<option value="${type.id}">${type.membership_type_en}</option>`);
             });
-            
-            
-            // Populate action performed dropdowns
             const actionPerformedSelects = $('select[name="action_performed"], select[name="action_performed[]"]');
             actionPerformedSelects.empty();
             actionPerformedSelects.append(`<option value="">--Select Action--</option>`);
-
             response.actionperformed_list.forEach(type => {
                 actionPerformedSelects.append(`<option value="${type.actionperformed}">${type.actionperformed}</option>`);
             });
@@ -1107,43 +1220,26 @@ function initFilterModals() {
 }
 
 function viewDocuments(memberId) {
-
-    // Remove existing modal if already open
     const existing = document.getElementById('documentViewerModal');
     if (existing) existing.remove();
-
     $.ajax({
         url: `/reports/api/members/${memberId}/documents/`,
         method: 'GET',
         success: function (response) {
-
             const documents = response.documents || [];
-
             const documentsHtml = documents.length
                 ? documents.map(doc => `
                     <div class="col-12 col-sm-6 mb-3 d-flex justify-content-center">
                         <div class="card document-card w-100 text-center">
                             <div class="card-body">
-                                <i class="bi bi-file-earmark-pdf text-danger mb-2"
-                                   style="font-size: 2.5rem;"></i>
-
-                                <h6 class="text-truncate" title="${doc.document_name}">
-                                    ${doc.document_name}
-                                </h6>
-
-                                <small class="text-muted d-block mb-3">
-                                    Uploaded: ${doc.uploaded_at}
-                                </small>
-
+                                <i class="bi bi-file-earmark-pdf text-danger mb-2" style="font-size: 2.5rem;"></i>
+                                <h6 class="text-truncate" title="${doc.document_name}">${doc.document_name}</h6>
+                                <small class="text-muted d-block mb-3">Uploaded: ${doc.uploaded_at}</small>
                                 <div class="d-flex justify-content-center gap-2">
-                                    <button class="btn btn-sm btn-primary"
-                                            onclick="viewDocument('${doc.file_path}')">
+                                    <button class="btn btn-sm btn-primary" onclick="viewDocument('${doc.file_path}')">
                                         <i class="bi bi-eye"></i>
                                     </button>
-
-                                    <a href="${doc.file_path}"
-                                       class="btn btn-sm btn-success"
-                                       download>
+                                    <a href="${doc.file_path}" class="btn btn-sm btn-success" download>
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -1151,51 +1247,31 @@ function viewDocuments(memberId) {
                         </div>
                     </div>
                 `).join('')
-                : `
-                    <div class="col-12 text-center py-4">
-                        <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
-                        <p class="mt-2 text-muted">No documents found</p>
-                    </div>
-                `;
-
+                : `<div class="col-12 text-center py-4">
+                    <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">No documents found</p>
+                </div>`;
             const modalHtml = `
                 <div class="modal fade" id="documentViewerModal" tabindex="-1">
                     <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable">
                         <div class="modal-content">
-
                             <div class="modal-header justify-content-center">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-files me-2"></i> Member Documents
-                                </h5>
-                                <button type="button" class="btn-close position-absolute end-0 me-3"
-                                        data-bs-dismiss="modal"></button>
+                                <h5 class="modal-title"><i class="bi bi-files me-2"></i> Member Documents</h5>
+                                <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"></button>
                             </div>
-
                             <div class="modal-body">
-                                <div class="row justify-content-center">
-                                    ${documentsHtml}
-                                </div>
+                                <div class="row justify-content-center">${documentsHtml}</div>
                             </div>
-
                         </div>
                     </div>
                 </div>
             `;
-
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            const modal = new bootstrap.Modal(
-                document.getElementById('documentViewerModal'),
-                { backdrop: 'static', keyboard: true }
-            );
-
+            const modal = new bootstrap.Modal(document.getElementById('documentViewerModal'), { backdrop: 'static', keyboard: true });
             modal.show();
-
-            document
-                .getElementById('documentViewerModal')
-                .addEventListener('hidden.bs.modal', function () {
-                    this.remove();
-                });
+            document.getElementById('documentViewerModal').addEventListener('hidden.bs.modal', function () {
+                this.remove();
+            });
         },
         error: function () {
             alert('Unable to load documents');
@@ -1203,11 +1279,9 @@ function viewDocuments(memberId) {
     });
 }
 
-
 function viewDocument(filePath) {
     window.open(filePath, '_blank');
 }
-
 
 function updateMemberListSelection() {
     $('.member-list-item').each(function() {
@@ -1221,36 +1295,24 @@ function updateMemberListSelection() {
     updateSelectionCount();
 }
 
-// Toast notification function
 function showToast(message, type = 'info', duration = 3000) {
     const toastHtml = `
         <div class="toast align-items-center text-bg-${type} border-0" role="alert">
             <div class="d-flex">
-                <div class="toast-body">
-                    ${message}
-                </div>
+                <div class="toast-body">${message}</div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         </div>
     `;
-    
     const $toast = $(toastHtml);
     $('#toast-container').append($toast);
-    
-    const toast = new bootstrap.Toast($toast[0], {
-        delay: duration
-    });
+    const toast = new bootstrap.Toast($toast[0], { delay: duration });
     toast.show();
-    
-    // Remove toast after it hides
-    $toast.on('hidden.bs.toast', function() {
-        $(this).remove();
-    });
+    $toast.on('hidden.bs.toast', function() { $(this).remove(); });
 }
 
 function handleAjaxError(xhr, status, error) {
     let errorMessage = 'An error occurred. Please try again.';
-    
     if (xhr.responseJSON && xhr.responseJSON.error) {
         errorMessage = xhr.responseJSON.error;
     } else if (xhr.status === 0) {
@@ -1262,22 +1324,16 @@ function handleAjaxError(xhr, status, error) {
     } else if (xhr.status === 500) {
         errorMessage = 'Server error. Please try again later.';
     }
-    
     showToast(errorMessage, 'danger');
     hideLoading();
 }
 
-// Add toast container to body
 $('body').append('<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090;"></div>');
 
-// Pagination rendering
 function renderPagination(data) {
     const pagination = $('#pagination');
     pagination.empty();
-    
     if (data.pages <= 1) return;
-    
-    // Previous button
     const prevDisabled = data.current_page === 1 ? 'disabled' : '';
     pagination.append(`
         <li class="page-item ${prevDisabled}">
@@ -1286,11 +1342,8 @@ function renderPagination(data) {
             </a>
         </li>
     `);
-    
-    // Page numbers
     const startPage = Math.max(1, data.current_page - 2);
     const endPage = Math.min(data.pages, data.current_page + 2);
-    
     for (let i = startPage; i <= endPage; i++) {
         const active = i === data.current_page ? 'active' : '';
         pagination.append(`
@@ -1299,8 +1352,6 @@ function renderPagination(data) {
             </li>
         `);
     }
-    
-    // Next button
     const nextDisabled = data.current_page === data.pages ? 'disabled' : '';
     pagination.append(`
         <li class="page-item ${nextDisabled}">
@@ -1311,54 +1362,34 @@ function renderPagination(data) {
     `);
 }
 
-// Keyboard shortcuts
 $(document).keydown(function(e) {
-    // Ctrl+F for search
     if (e.ctrlKey && e.key === 'f') {
         e.preventDefault();
         $('#member-search').focus();
         return false;
     }
-    
-    // Ctrl+E for export
     if (e.ctrlKey && e.key === 'e') {
         e.preventDefault();
         exportCurrentTab();
         return false;
     }
-    
-    // Esc to clear selections
     if (e.key === 'Escape') {
         deselectAll();
         return false;
     }
 });
-
 </script>
 
 {% endblock %}
 
 {% block extra_javascript %}
-
 {% include "bootstrap/partials/syntax-highlight.html" %}
-
-<!-- Third party js -->
 <script src="{% static 'js/vendor/handlebars.min.js' %}"></script>
 <script src="{% static 'js/vendor/typeahead.bundle.min.js' %}"></script>
 <script src="{% static 'js/vendor/bootstrap-timepicker.min.js' %}"></script>
-<!-- Third party js ends -->
-
 <script src="{% static 'js/vendor/flatpickr.min.js' %}"></script>
-
-<!-- Init js -->
 <script src="{% static 'js/pages/demo.typehead.js' %}"></script>
 <script src="{% static 'js/pages/demo.timepicker.js' %}"></script>
-<!-- Init js end -->
-
-<!-- Selectize.js JS -->
 <script src="{% static 'js/selectize.min.js' %}"></script>
-
 <script src="{% static 'js/vendor/select2.min.js' %}"></script>
-
-
 {% endblock %}
