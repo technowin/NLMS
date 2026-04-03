@@ -3594,7 +3594,13 @@ def issue_return_book_create(request):
             for m in members:
                 m.member_encrypted_id = enc(str(m.id))
                 
-            circulation = CirculationCopyStatus.objects.filter(shelf_location__isnull=False)
+            # circulation = CirculationCopyStatus.objects.filter(shelf_location__isnull=False)
+            # In your GET request, order the circulation queryset by barcode numerically
+            circulation = CirculationCopyStatus.objects.filter(
+                shelf_location__isnull=False
+            ).extra(
+                select={'barcode_int': 'CAST(barcode AS UNSIGNED)'}
+            ).order_by('barcode_int')  # This will order 70, 170, 270, 780
             
             for circ in circulation:
                 circ.circ_encrypted_barcode = enc(str(circ.barcode))
