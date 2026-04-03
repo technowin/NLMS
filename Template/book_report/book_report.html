@@ -946,8 +946,8 @@ function convertToTableRow(tabName, item) {
                 item.invoice_number || '',
                 item.invoice_date || '',
                 item.price
-                    ? '₹' + parseFloat(item.price).toFixed(2)
-                    : '₹0.00',
+                    ? 'â‚¹' + parseFloat(item.price).toFixed(2)
+                    : 'â‚¹0.00',
                 item.remarks || '',
                 item.created_at || '',
                 item.created_by || '',
@@ -1008,8 +1008,8 @@ function convertToTableRow(tabName, item) {
                 item.return_date || '',
                 overdueBadge,
                 item.fine_amount
-                    ? '₹' + parseFloat(item.fine_amount).toFixed(2)
-                    : '₹0.00',
+                    ? 'â‚¹' + parseFloat(item.fine_amount).toFixed(2)
+                    : 'â‚¹0.00',
                 item.issued_by || '',
                 item.remarks || '',
                 item.created_at || ''
@@ -1017,59 +1017,47 @@ function convertToTableRow(tabName, item) {
 
             
         case 'circulation-transaction':
+
             const transactionOverdue = item.days_overdue_count || 0;
             let transactionOverdueBadge = '<span class="badge bg-success">On time</span>';
 
             if (transactionOverdue > 0) {
-                if (transactionOverdue <= 3) {
-                    transactionOverdueBadge = `<span class="badge bg-warning text-dark">${transactionOverdue} days</span>`;
-                } else if (transactionOverdue <= 7) {
-                    transactionOverdueBadge = `<span class="badge bg-orange">${transactionOverdue} days</span>`;
-                } else {
-                    transactionOverdueBadge = `<span class="badge bg-danger">${transactionOverdue} days</span>`;
-                }
+                transactionOverdueBadge =
+                    `<span class="badge bg-danger">${transactionOverdue} days</span>`;
             }
-
+        
             let fineStatusBadge = '';
             if (item.fine_status) {
                 if (item.fine_status === 'Paid') {
-                    fineStatusBadge = '<span class="badge bg-success">Paid</span>';
+                    fineStatusBadge = '<span class="badge fine-paid">Paid</span>';
                 } else if (item.fine_status === 'Adjusted') {
-                    fineStatusBadge = '<span class="badge bg-info text-dark">Adjusted</span>';
-                } else if (item.fine_status === 'Unpaid') {
-                    fineStatusBadge = '<span class="badge bg-warning text-dark">Unpaid</span>';
+                    fineStatusBadge = '<span class="badge fine-adjusted">Adjusted</span>';
                 } else {
-                    fineStatusBadge = `<span class="badge bg-secondary">${item.fine_status}</span>`;
+                    fineStatusBadge = '<span class="badge fine-unpaid">Unpaid</span>';
                 }
-            } else {
-                fineStatusBadge = '<span class="badge bg-secondary">N/A</span>';
             }
-
-            // Return exactly 23 columns matching the headers
+        
             return [
-                item.barcode || '-',                    // Barcode
-                item.accession_id || '-',               // Accession No
-                item.cat_ref_num || '-',                // Catalog Ref No
-                item.member_name || '-',                // Member Name
-                item.membership_code || '-',            // Membership Code
-                item.issue_date || '-',                 // Issue Date
-                item.due_date || '-',                   // Due Date
-                item.issued_by || '-',                  // Issued By (now shows name)
-                item.created_at || '-',                 // Created At
-                item.return_date || '-',                // Return Date
-                item.received_by || '-',                // Received By (now shows name)
-                transactionOverdueBadge,                // Days Overdue
-                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',  // Fine Amount
-                item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',  // Book Fine
-                item.total_fine ? '₹' + parseFloat(item.total_fine).toFixed(2) : '₹0.00',    // Total Fine
-                item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',  // Adjusted Fine
-                fineStatusBadge,                        // Fine Status
-                item.fine_paid_date || '-',             // Fine Paid Date
-                item.extended_on || '-',                // Extended On
-                item.created_by || '-',                 // Created By (new column)
-                item.updated_by || '-',                 // Updated By (new column - now shows name)
-                item.remarks || '-',                    // Remarks
-                item.updated_at || '-'                  // Updated At
+                item.barcode || '',
+                item.accession_id || '',
+                item.cat_ref_num || '',
+                item.member_name || '',
+                item.membership_code || '',
+                item.issue_date || '',
+                item.due_date || '',
+                item.issued_by || '',
+                item.created_at || '',
+                item.return_date || '',
+                item.received_by || '',
+                transactionOverdueBadge,
+                item.fine_amount ? 'â‚¹' + parseFloat(item.fine_amount).toFixed(2) : 'â‚¹0.00',
+                item.book_fine_amount ? 'â‚¹' + parseFloat(item.book_fine_amount).toFixed(2) : 'â‚¹0.00',
+                item.total_fine ? 'â‚¹' + parseFloat(item.total_fine).toFixed(2) : 'â‚¹0.00',
+                item.adjusted_fine ? 'â‚¹' + parseFloat(item.adjusted_fine).toFixed(2) : 'â‚¹0.00',
+                fineStatusBadge,
+                item.fine_paid_date || '',
+                item.remarks || '',
+                item.updated_at || ''
             ];
 
             
@@ -1551,7 +1539,7 @@ function processExportAll() {
     params.append('filename', fileName);
     params.append('list_type', currentListType);
 
-    // 🔹 FIXED: Send filters per tab instead of using undefined tabName
+    // ðŸ”¹ FIXED: Send filters per tab instead of using undefined tabName
     const allFilters = {};
 
     tabsToExport.forEach(tab => {
@@ -1567,7 +1555,7 @@ function processExportAll() {
         params.append('book_ids', id)
     );
 
-    showToast('Preparing export…', 'info');
+    showToast('Preparing exportâ€¦', 'info');
 
     window.location.href = `/books/export-all-data/?${params.toString()}`;
 

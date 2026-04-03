@@ -29,6 +29,7 @@ from django.db.models import (
 from django.db.models.functions import (
     Concat, Now, Cast, Coalesce, ExtractMonth
 )
+
 from book_report.models import *
 from L01.models import *
 from Account.models import CustomUser
@@ -106,74 +107,6 @@ class ReportBaseView(LoginRequiredMixin, View):
         
         return []
 
-    def get_user_name(self, db, user_id):
-        """Get user full name from user ID"""
-        if not user_id:
-            return ''
-        try:
-            # Try to convert to int if it's a string
-            user_id_int = int(user_id) if isinstance(user_id, str) else user_id
-            
-            # Try Django's default User model first
-            from django.contrib.auth.models import User
-            user = User.objects.using(db).filter(id=user_id_int).first()
-            if user:
-                return user.get_full_name() or user.username
-            
-            # Try CustomUser model if exists
-            try:
-                from Account.models import CustomUser
-                user = CustomUser.objects.using(db).filter(id=user_id_int).first()
-                if user:
-                    return user.get_full_name() or user.username
-            except ImportError:
-                pass
-            
-            return str(user_id)
-        except (ValueError, TypeError):
-            return str(user_id) if user_id else ''
-    
-    def get_bulk_user_names(self, db, user_ids):
-        """Get multiple user names in one query for efficiency"""
-        if not user_ids:
-            return {}
-        
-        user_map = {}
-        clean_ids = []
-        
-        # Clean and convert IDs
-        for uid in user_ids:
-            if uid:
-                try:
-                    clean_ids.append(int(uid))
-                except (ValueError, TypeError):
-                    pass
-        
-        if not clean_ids:
-            return {}
-        
-        # Try Django's default User model
-        try:
-            from django.contrib.auth.models import User
-            users = User.objects.using(db).filter(id__in=clean_ids)
-            for user in users:
-                user_map[user.id] = user.get_full_name() or user.username
-        except:
-            pass
-        
-        # Try CustomUser model for remaining IDs
-        remaining_ids = [uid for uid in clean_ids if uid not in user_map]
-        if remaining_ids:
-            try:
-                from Account.models import CustomUser
-                users = CustomUser.objects.using(db).filter(id__in=remaining_ids)
-                for user in users:
-                    user_map[user.id] = user.get_full_name() or user.username
-            except ImportError:
-                pass
-        
-        return user_map
-    
 class BookReportView(ReportBaseView, TemplateView):
     """Main book report view"""
     template_name = 'book_report/book_report.html'
@@ -477,15 +410,19 @@ class TabDataView(ReportBaseView):
         """Get catalogue data for selected books"""
         qs = BookCatalog.objects.using(db).filter(status_id=1)
         
-        # Apply filters based on list_type (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(cat_ref_num__in=book_ids)
         elif list_type == 'author':
+            # Get books by this author
             qs = qs.filter(author_fk__in=book_ids)
         elif list_type == 'category':
+            # Get books in this category
             qs = qs.filter(subject_id__in=book_ids)
         
-        # Apply date filters
+        # Apply  filters
+
+
         from datetime import datetime, timedelta
         from_date = filters.get('from_date')
         to_date = filters.get('to_date')
@@ -493,9 +430,12 @@ class TabDataView(ReportBaseView):
         if from_date:
             from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
             qs = qs.filter(created_at__gte=from_datetime)
+
         if to_date:
+            # Add 1 day to include full end date
             to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
             qs = qs.filter(created_at__lt=to_datetime)
+
         
         if filters.get('language'):
             languages = filters['language'] if isinstance(filters['language'], list) else [filters['language']]
@@ -515,17 +455,6 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(Q(ebook_available__isnull=True) | Q(ebook_available='No'))
         
         qs = qs.select_related('subject', 'material')
-        
-        # Collect all user IDs for bulk lookup
-        user_ids = set()
-        for catalog in qs:
-            if catalog.created_by:
-                user_ids.add(catalog.created_by)
-            if catalog.updated_by:
-                user_ids.add(catalog.updated_by)
-        
-        # Get user names in bulk
-        user_names = self.get_bulk_user_names(db, user_ids)
         
         data = []
         for catalog in qs:
@@ -555,64 +484,80 @@ class TabDataView(ReportBaseView):
                 'ebook_available': catalog.ebook_available or 'No',
                 'ebook_id': catalog.ebook_id or '',
                 'created_at': catalog.created_at.strftime('%Y-%m-%d %H:%M') if catalog.created_at else '',
-                'created_by': user_names.get(int(catalog.created_by), catalog.created_by) if catalog.created_by else '',  # Fixed
+                'created_by': catalog.created_by or '',
                 'updated_at': catalog.updated_at.strftime('%Y-%m-%d %H:%M') if catalog.updated_at else '',
-                'updated_by': user_names.get(int(catalog.updated_by), catalog.updated_by) if catalog.updated_by else '',  # Fixed
+                'updated_by': catalog.updated_by or '',
             })
         
         return {'data': data, 'total': len(data)}
     
     def get_accession_data(self, db, book_ids, list_type, filters):
         """Get accession data for selected books"""
-        qs = BookAccession.objects.using(db).select_related('catalogue','condition_at_entry','funding_source','location','status','supplier','currency')
-        
-        # Apply filters (your existing code)
+        qs = (BookAccession.objects.using(db).select_related('catalogue','condition_at_entry','funding_source','location','status','supplier','currency'))
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(catalogue_id__in=book_ids)
+
         elif list_type == 'author':
-            catalog_ids = BookCatalog.objects.using(db).filter(
-                author_fk__in=book_ids
-            ).values_list('cat_ref_num', flat=True)
+            # author is TextField, so filtering directly
+            catalog_ids = (
+                BookCatalog.objects.using(db)
+                .filter(author_fk__in=book_ids)
+                .values_list('cat_ref_num', flat=True)
+            )
             qs = qs.filter(catalogue_id__in=catalog_ids)
+
         elif list_type == 'category':
-            catalog_ids = BookCatalog.objects.using(db).filter(
-                subject_id__in=book_ids
-            ).values_list('cat_ref_num', flat=True)
+            catalog_ids = (
+                BookCatalog.objects.using(db)
+                .filter(subject_id__in=book_ids)
+                .values_list('cat_ref_num', flat=True)
+            )
             qs = qs.filter(catalogue_id__in=catalog_ids)
         
-        # Apply date filters
+        # Apply filters
         if filters.get('from_date'):
             qs = qs.filter(acquisition_date__gte=filters['from_date'])
+
         if filters.get('to_date'):
             qs = qs.filter(acquisition_date__lte=filters['to_date'])
         
-        # Apply other filters
         if filters.get('condition'):
             conditions = filters['condition'] if isinstance(filters['condition'], list) else [filters['condition']]
             qs = qs.filter(condition_at_entry_id__in=conditions)
+        
         if filters.get('source'):
             sources = filters['source'] if isinstance(filters['source'], list) else [filters['source']]
             qs = qs.filter(funding_source__in=sources)
+        
         if filters.get('location'):
             locations = filters['location'] if isinstance(filters['location'], list) else [filters['location']]
             qs = qs.filter(location_id__in=locations)
+        
         if filters.get('status'):
             statuses = filters['status'] if isinstance(filters['status'], list) else [filters['status']]
             qs = qs.filter(status_id__in=statuses)
+        
         if filters.get('supplier'):
             suppliers = filters['supplier'] if isinstance(filters['supplier'], list) else [filters['supplier']]
             qs = qs.filter(supplier_id__in=suppliers)
         
-        # Collect user IDs for bulk lookup
-        user_ids = set()
-        for acc in qs:
-            if acc.created_by:
-                user_ids.add(acc.created_by)
-            if acc.updated_by:
-                user_ids.add(acc.updated_by)
-        
-        user_names = self.get_bulk_user_names(db, user_ids)
-        
+        # qs = qs.select_related(
+        #     'catalog_ref_no', 'condition_at_entry', 'source', 
+        #     'location', 'status', 'supplier', 'currency'
+        # )
+        def apply_fk_filter(qs, field, value):
+            if value:
+                values = value if isinstance(value, list) else [value]
+                return qs.filter(**{f"{field}__in": values})
+            return qs
+
+        qs = apply_fk_filter(qs, 'condition_at_entry_id', filters.get('condition'))
+        qs = apply_fk_filter(qs, 'funding_source_id', filters.get('source'))
+        qs = apply_fk_filter(qs, 'location_id', filters.get('location'))
+        qs = apply_fk_filter(qs, 'status_id', filters.get('status'))
+        qs = apply_fk_filter(qs, 'supplier_id', filters.get('supplier'))
+
         data = []
         for acc in qs:
             data.append({
@@ -626,9 +571,9 @@ class TabDataView(ReportBaseView):
                 'price': float(acc.price) if acc.price else 0.0,
                 'remarks': acc.remarks or '',
                 'created_at': acc.created_at.strftime('%Y-%m-%d %H:%M') if acc.created_at else '',
-                'created_by': user_names.get(int(acc.created_by), acc.created_by) if acc.created_by else '',  # Fixed
+                'created_by': acc.created_by or '',
                 'updated_at': acc.updated_at.strftime('%Y-%m-%d %H:%M') if acc.updated_at else '',
-                'updated_by': user_names.get(int(acc.updated_by), acc.updated_by) if acc.updated_by else '',  # Fixed
+                'updated_by': acc.updated_by or '',
                 'condition_name': acc.condition_at_entry.condition_at_entry if acc.condition_at_entry else '',
                 'currency_name': acc.currency.currency_name if acc.currency else '',
                 'source_name': acc.funding_source.funding_source_name if acc.funding_source else '',
@@ -643,46 +588,46 @@ class TabDataView(ReportBaseView):
         """Get circulation data for selected books"""
         qs = CirculationCopyStatus.objects.using(db).all()
         
-        # Apply filters (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(bookcatalog_id__in=book_ids)
         elif list_type == 'author':
+            # Get circulation for books by this author
             catalog_ids = BookCatalog.objects.using(db).filter(
                 author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(bookcatalog_id__in=catalog_ids)
         elif list_type == 'category':
+            # Get circulation for books in this category
             catalog_ids = BookCatalog.objects.using(db).filter(
                 subject_id__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(bookcatalog_id__in=catalog_ids)
         
-        # Apply date filters
+        # Apply filters
+
         if filters.get('from_date'):
             qs = qs.filter(date_processed__gte=filters['from_date'])
+
         if filters.get('to_date'):
             qs = qs.filter(date_processed__lte=filters['to_date'])
+
         if filters.get('processing_status'):
             statuses = filters['processing_status'] if isinstance(filters['processing_status'], list) else [filters['processing_status']]
             qs = qs.filter(processing_status_id__in=statuses)
+        
         if filters.get('shelf_location'):
             locations = filters['shelf_location'] if isinstance(filters['shelf_location'], list) else [filters['shelf_location']]
             qs = qs.filter(shelf_location_id__in=locations)
+        
         if filters.get('current_status'):
             statuses = filters['current_status'] if isinstance(filters['current_status'], list) else [filters['current_status']]
             qs = qs.filter(current_status_id__in=statuses)
         
-        qs = qs.select_related('accession', 'bookcatalog', 'shelf_location', 'processing_status', 'current_status')
-        
-        # Collect user IDs
-        user_ids = set()
-        for circulation in qs:
-            if circulation.created_by:
-                user_ids.add(circulation.created_by)
-            if circulation.updated_by:
-                user_ids.add(circulation.updated_by)
-        
-        user_names = self.get_bulk_user_names(db, user_ids)
+        qs = qs.select_related(
+            'accession', 'bookcatalog', 'shelf_location',
+            'processing_status', 'current_status'
+        )
         
         data = []
         for circulation in qs:
@@ -696,9 +641,9 @@ class TabDataView(ReportBaseView):
                 'shelf_location': circulation.shelf_location.location_name if circulation.shelf_location else '',
                 'remarks': circulation.remarks or '',
                 'created_at': circulation.created_at.strftime('%Y-%m-%d %H:%M') if circulation.created_at else '',
-                'created_by': user_names.get(int(circulation.created_by), circulation.created_by) if circulation.created_by else '',  # Fixed
+                'created_by': circulation.created_by or '',
                 'updated_at': circulation.updated_at.strftime('%Y-%m-%d %H:%M') if circulation.updated_at else '',
-                'updated_by': user_names.get(int(circulation.updated_by), circulation.updated_by) if circulation.updated_by else '',  # Fixed
+                'updated_by': circulation.updated_by or '',
                 'current_status': circulation.current_status.status_name if circulation.current_status else '',
             })
         
@@ -707,47 +652,65 @@ class TabDataView(ReportBaseView):
     def get_loan_data(self, db, book_ids, list_type, filters):
         """Get loan data for selected books"""
         qs = CirculationTransaction.objects.using(db).filter(
-            return_date__isnull=True,
+            return_date__isnull=True,  # Only outstanding loans
             due_date__isnull=False
         )
         
-        # Apply filters (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(catalog_id__in=book_ids)
         elif list_type == 'author':
+            # Get loans for books by this author
             catalog_ids = BookCatalog.objects.using(db).filter(
                 author_fk__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(catalog_id__in=catalog_ids)
         elif list_type == 'category':
+            # Get loans for books in this category
             catalog_ids = BookCatalog.objects.using(db).filter(
                 subject_id__in=book_ids
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(catalog_id__in=catalog_ids)
         
-        # Apply date filters (your existing code)
+        # Apply date filters
         if filters.get('issue_from_date'):
             qs = qs.filter(issue_date__gte=filters['issue_from_date'])
+
         if filters.get('issue_to_date'):
             qs = qs.filter(issue_date__lte=filters['issue_to_date'])
+
         if filters.get('due_from_date'):
             qs = qs.filter(due_date__gte=filters['due_from_date'])
+
         if filters.get('due_to_date'):
             qs = qs.filter(due_date__lte=filters['due_to_date'])
         
-        # Apply overdue filter (your existing code)
+        
+        # Apply overdue filter
         today = date.today()
         overdue_filter = filters.get('overdue')
         if overdue_filter == '0_3':
-            qs = qs.filter(due_date__lt=today, due_date__gte=today - timedelta(days=3))
+            qs = qs.filter(
+                due_date__lt=today,
+                due_date__gte=today - timedelta(days=3)
+            )
         elif overdue_filter == '4_7':
-            qs = qs.filter(due_date__lt=today - timedelta(days=3), due_date__gte=today - timedelta(days=7))
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=3),
+                due_date__gte=today - timedelta(days=7)
+            )
         elif overdue_filter == '1_month':
-            qs = qs.filter(due_date__lt=today - timedelta(days=30))
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=30)
+            )
         elif overdue_filter == '3_month':
-            qs = qs.filter(due_date__lt=today - timedelta(days=90))
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=90)
+            )
         elif overdue_filter == '6_month':
-            qs = qs.filter(due_date__lt=today - timedelta(days=180))
+            qs = qs.filter(
+                due_date__lt=today - timedelta(days=180)
+            )
         
         # Apply fine status filter
         if filters.get('fine_status') == 'paid':
@@ -769,14 +732,6 @@ class TabDataView(ReportBaseView):
             )
         )
         
-        # Collect user IDs for issued_by
-        user_ids = set()
-        for transaction in qs:
-            if transaction.issued_by:
-                user_ids.add(transaction.issued_by)
-        
-        user_names = self.get_bulk_user_names(db, user_ids)
-        
         data = []
         for transaction in qs:
             data.append({
@@ -791,7 +746,7 @@ class TabDataView(ReportBaseView):
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
                 'days_overdue_count': transaction.overdue_days if transaction.overdue_days and transaction.overdue_days > 0 else 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
-                'issued_by': user_names.get(int(transaction.issued_by), transaction.issued_by) if transaction.issued_by else '',  # Fixed
+                'issued_by': transaction.issued_by or '',
                 'remarks': transaction.remarks or '',
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
             })
@@ -802,7 +757,7 @@ class TabDataView(ReportBaseView):
         """Get circulation transaction data"""
         qs = CirculationTransaction.objects.using(db).all()
         
-        # Apply filters based on list_type (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(catalog_id__in=book_ids)
         elif list_type == 'author':
@@ -819,16 +774,22 @@ class TabDataView(ReportBaseView):
         # Apply all date filters
         if filters.get('issue_from_date'):
             qs = qs.filter(issue_date__gte=filters['issue_from_date'])
+
         if filters.get('issue_to_date'):
             qs = qs.filter(issue_date__lte=filters['issue_to_date'])
+
         if filters.get('due_from_date'):
             qs = qs.filter(due_date__gte=filters['due_from_date'])
+
         if filters.get('due_to_date'):
             qs = qs.filter(due_date__lte=filters['due_to_date'])
+        
         if filters.get('return_from_date'):
             qs = qs.filter(return_date__gte=filters['return_from_date'])
+
         if filters.get('return_to_date'):
             qs = qs.filter(return_date__lte=filters['return_to_date'])
+
         
         # Apply other filters
         if filters.get('book_fine') == 'yes':
@@ -858,37 +819,6 @@ class TabDataView(ReportBaseView):
         
         data = []
         for transaction in qs:
-            # Helper function to get user name from ID
-            def get_user_name(user_id):
-                if not user_id:
-                    return ''
-                try:
-                    # Try to get from User model (Django's auth_user)
-                    from django.contrib.auth.models import User
-                    user = User.objects.using(db).filter(id=int(user_id)).first()
-                    if user:
-                        return user.get_full_name() or user.username
-                except:
-                    pass
-                
-                try:
-                    # Try to get from your custom User model if you have one
-                    from Account.models import CustomUser  # Replace with your actual user model
-                    user = CustomUser.objects.using(db).filter(id=int(user_id)).first()
-                    if user:
-                        return user.get_full_name() or user.username
-                except:
-                    pass
-                
-                # If all fails, return the ID
-                return str(user_id)
-            
-            # Get names for created_by and updated_by
-            created_by_name = get_user_name(transaction.created_by)
-            updated_by_name = get_user_name(transaction.updated_by)
-            issued_by_name = get_user_name(transaction.issued_by)
-            received_by_name = get_user_name(transaction.received_by)
-            
             data.append({
                 'barcode': transaction.barcode or '',
                 'accession_id': transaction.accession.accession_no if transaction.accession else '',
@@ -897,10 +827,10 @@ class TabDataView(ReportBaseView):
                 'membership_code': transaction.membership_code or '',
                 'issue_date': transaction.issue_date.strftime('%Y-%m-%d') if transaction.issue_date else '',
                 'due_date': transaction.due_date.strftime('%Y-%m-%d') if transaction.due_date else '',
-                'issued_by': issued_by_name,  # Now showing name instead of ID
+                'issued_by': transaction.issued_by or '',
                 'created_at': transaction.created_at.strftime('%Y-%m-%d %H:%M') if transaction.created_at else '',
                 'return_date': transaction.return_date.strftime('%Y-%m-%d') if transaction.return_date else '',
-                'received_by': received_by_name,  # Now showing name instead of ID
+                'received_by': transaction.received_by or '',
                 'days_overdue_count': transaction.late_days if transaction.late_days and transaction.late_days > 0 else 0,
                 'fine_amount': float(transaction.fine_amount) if transaction.fine_amount else 0.0,
                 'book_fine_amount': float(transaction.book_fine_amount) if transaction.book_fine_amount else 0.0,
@@ -908,10 +838,7 @@ class TabDataView(ReportBaseView):
                 'adjusted_fine': float(transaction.adjusted_fine) if transaction.adjusted_fine else 0.0,
                 'fine_status': transaction.fine_status or '',
                 'fine_paid_date': transaction.fine_paid_date.strftime('%Y-%m-%d') if transaction.fine_paid_date else '',
-                'extended_on': transaction.extended_on.strftime('%Y-%m-%d') if transaction.extended_on else '',
                 'remarks': transaction.remarks or '',
-                'created_by': created_by_name,  # Add this if you want to show creator
-                'updated_by': updated_by_name,  # Now showing name instead of ID
                 'updated_at': transaction.updated_at.strftime('%Y-%m-%d %H:%M') if transaction.updated_at else '',
             })
         
@@ -921,24 +848,31 @@ class TabDataView(ReportBaseView):
         """Get supplier data for selected books"""
         qs = BookAccession.objects.using(db).select_related('catalogue', 'supplier')
         
-        # Apply filters (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(catalogue_id__in=book_ids)
+    
         elif list_type == 'author':
+            # author is TextField in BookCatalog (NOT FK)
             catalog_ids = BookCatalog.objects.using(db).filter(
                 author__in=book_ids
             ).values_list('cat_ref_num', flat=True)
+    
             qs = qs.filter(catalogue_id__in=catalog_ids)
+    
         elif list_type == 'category':
+            # subject is FK → subject_id is correct
             catalog_ids = BookCatalog.objects.using(db).filter(
                 subject_id__in=book_ids
             ).values_list('cat_ref_num', flat=True)
+
             qs = qs.filter(catalogue_id__in=catalog_ids)
         
         # Apply supplier filters
         if filters.get('supplier'):
             suppliers = filters['supplier'] if isinstance(filters['supplier'], list) else [filters['supplier']]
             qs = qs.filter(supplier_id__in=suppliers)
+        
         if filters.get('is_active') == '1':
             qs = qs.filter(supplier__is_active=1)
         elif filters.get('is_active') == '0':
@@ -946,12 +880,13 @@ class TabDataView(ReportBaseView):
         
         qs = qs.exclude(supplier__isnull=True)
         qs = qs.order_by('supplier_id').distinct()
+
         
-        # Supplier tab doesn't have user fields typically
         data = []
         for acc in qs:
             supplier = acc.supplier
             catalog = acc.catalogue
+    
             data.append({
                 'accession_no': acc.accession_no or '',
                 'acquisition_date': acc.acquisition_date.strftime('%Y-%m-%d') if acc.acquisition_date else '',
@@ -972,7 +907,7 @@ class TabDataView(ReportBaseView):
         """Get review data for selected books"""
         qs = BookReview.objects.using(db).all()
         
-        # Apply filters (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(book_id__in=book_ids)
         elif list_type == 'author':
@@ -990,18 +925,20 @@ class TabDataView(ReportBaseView):
         if filters.get('rating'):
             ratings = filters['rating'] if isinstance(filters['rating'], list) else [filters['rating']]
             qs = qs.filter(rating__in=ratings)
+        
         if filters.get('library'):
             libraries = filters['library'] if isinstance(filters['library'], list) else [filters['library']]
             qs = qs.filter(library_code__in=libraries)
+        
         if filters.get('book_title'):
             qs = qs.filter(book__title__icontains=filters['book_title'])
+        
         if filters.get('catalogue'):
             catalogues = filters['catalogue'] if isinstance(filters['catalogue'], list) else [filters['catalogue']]
             qs = qs.filter(book_id__in=catalogues)
         
         qs = qs.select_related('book')
         
-        # Review tab uses user_id, not created_by/updated_by typically
         data = []
         for review in qs:
             # Get member details if user_id is a member ID
@@ -1033,7 +970,7 @@ class TabDataView(ReportBaseView):
         """Get return log data for selected books"""
         qs = BookReturnLog.objects.using(db).all()
         
-        # Apply filters (your existing code)
+        # Apply filters based on list_type
         if list_type == 'title':
             qs = qs.filter(cat_rem_num_id__in=book_ids)
         elif list_type == 'author':
@@ -1047,7 +984,8 @@ class TabDataView(ReportBaseView):
             ).values_list('cat_ref_num', flat=True)
             qs = qs.filter(cat_rem_num_id__in=catalog_ids)
         
-        # Apply date filters
+        # Apply filters
+
         from datetime import datetime, timedelta
         from_date = filters.get('from_date')
         to_date = filters.get('to_date')
@@ -1055,7 +993,9 @@ class TabDataView(ReportBaseView):
         if from_date:
             from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
             qs = qs.filter(created_at__gte=from_datetime)
+
         if to_date:
+            # Add 1 day to include full end date
             to_datetime = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
             qs = qs.filter(created_at__lt=to_datetime)
         
@@ -1063,13 +1003,13 @@ class TabDataView(ReportBaseView):
             qs = qs.filter(is_shelved=True)
         elif filters.get('is_shelved') == 'false':
             qs = qs.filter(is_shelved=False)
+        
         if filters.get('catalog'):
             catalogs = filters['catalog'] if isinstance(filters['catalog'], list) else [filters['catalog']]
             qs = qs.filter(cat_rem_num_id__in=catalogs)
         
         qs = qs.select_related('cat_rem_num', 'eod_log', 'created_by', 'updated_by')
         
-        # Return log already uses related fields that have names
         data = []
         for log in qs:
             data.append({
@@ -1079,9 +1019,9 @@ class TabDataView(ReportBaseView):
                 'is_shelved': 'Yes' if log.is_shelved else 'No',
                 'created_at': log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else '',
                 'updated_at': log.updated_at.strftime('%Y-%m-%d %H:%M') if log.updated_at else '',
-                'created_by_name': log.created_by.full_name if log.created_by else '',  # Already has name
+                'created_by_name': log.created_by.full_name if log.created_by else '',
                 'eod_log_id': log.eod_log_id,
-                'updated_by_name': log.updated_by.full_name if log.updated_by else '',  # Already has name
+                'updated_by_name': log.updated_by.full_name if log.updated_by else '',
             })
         
         return {'data': data, 'total': len(data)}
@@ -2172,9 +2112,6 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
             'Adjusted Fine': item.get('adjusted_fine', 0.0),
             'Fine Status': item.get('fine_status', ''),
             'Fine Paid Date': item.get('fine_paid_date', ''),
-            'Extended On': item.get('extended_on', ''),  # ADD THIS LINE
-            'Created By': item.get('created_by', ''),     # ADD THIS LINE (optional)
-            'Updated By': item.get('updated_by', ''),     # ADD THIS LINE (optional)
             'Remarks': item.get('remarks', ''),
             'Updated At': item.get('updated_at', ''),
         })
@@ -2246,11 +2183,6 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
         'num_format': '#,##0.00'
     })
 
-    date_format = workbook.add_format({
-        'border': 1,
-        'num_format': 'yyyy-mm-dd'
-    })
-
     # --------------------------------------------------
     # Report Title
     # --------------------------------------------------
@@ -2305,18 +2237,7 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
         'Total Fine',
         'Adjusted Fine'
     ]
-    money_col_indexes = [df.columns.get_loc(c) for c in money_columns if c in df.columns]
-    
-    date_columns = [
-        'Issue Date',
-        'Due Date',
-        'Return Date',
-        'Fine Paid Date',
-        'Extended On',
-        'Created At',
-        'Updated At'
-    ]
-    date_col_indexes = [df.columns.get_loc(c) for c in date_columns if c in df.columns]
+    money_col_indexes = [df.columns.get_loc(c) for c in money_columns]
 
     for row_idx in range(len(df)):
         excel_row = start_row + 1 + row_idx
@@ -2326,16 +2247,7 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
             value = df.iloc[row_idx, col_idx]
 
             if col_idx in money_col_indexes:
-                # Handle empty or None values for money columns
-                if value is None or value == '':
-                    value = 0.0
                 worksheet.write(excel_row, col_idx, value, money_format)
-            elif col_idx in date_col_indexes:
-                # Handle date formatting
-                if value and value != '-':
-                    worksheet.write(excel_row, col_idx, value, date_format)
-                else:
-                    worksheet.write(excel_row, col_idx, '', row_format)
             else:
                 worksheet.write(excel_row, col_idx, value, row_format)
 
@@ -2347,7 +2259,6 @@ def export_circulation_transaction_to_excel(writer, db, book_ids, list_type, fil
             df[column].astype(str).map(len).max() if not df.empty else 10,
             len(column)
         )
-        # Cap the width at 50 characters to keep spreadsheet readable
         worksheet.set_column(col_idx, col_idx, min(max_len + 3, 50))
 
     # --------------------------------------------------
