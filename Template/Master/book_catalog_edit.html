@@ -19,6 +19,59 @@
     <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
 
     <style>
+        /* Publisher Field Styling - Matching Author Field */
+        #publisher {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: none;
+        }
+
+        #publisher:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+        }
+
+        /* Publisher Dropdown Box */
+        #publisherDropdown {
+            width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            margin-top: 4px;
+            z-index: 1000;
+        }
+
+        /* Publisher Dropdown Items */
+        #publisherDropdown .publisher-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        #publisherDropdown .publisher-item:hover {
+            background-color: #f1f5ff;
+        }
+
+        /* Active item styling for keyboard navigation */
+        #publisherDropdown .publisher-item.active {
+            background-color: #e7f1ff;
+        }
+
+        /* Text Helper for Publisher */
+        #publisherHelpText {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        /* Position relative wrapper for dropdown positioning */
+        .position-relative {
+            position: relative;
+        }
         /* Back to Top Button */
         .back-to-top {
             position: fixed;
@@ -183,20 +236,20 @@
 
             <!-- Language -->
                 <div class="mb-3 row">
-                <div class="col-md-6">
-                <label class="form-label">भाषा / Language <span class="text-danger">*</span></label>
-                <input type="text" 
-                    id="language" 
-                    name="language" 
-                    class="form-control" 
-                    value="{{ obj.language }}" 
-                    disabled>
-                <input type="hidden" 
-                    name="language" 
-                    value="{{ obj.language }}">
-            </div>
+                    <div class="col-md-6">
+                        <label class="form-label">भाषा / Language <span class="text-danger">*</span></label>
+                        <input type="text" 
+                            id="language" 
+                            name="language" 
+                            class="form-control" 
+                            value="{{ obj.language }}" 
+                            disabled>
+                        <input type="hidden" 
+                            name="language" 
+                            value="{{ obj.language }}">
+                    </div>
 
-            </div>
+                </div>
 
             <!-- Title & Subtitle -->
             <div class="mb-3 row">
@@ -214,23 +267,19 @@
 
                 <!-- Author & Other Authors -->
             <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">लेखक / Author <span class="text-danger">*</span></label>
-                    <select name="author" id="author" class="form-control transliterate" required>
-                        <option value="">Select Author</option>
+                <div class="col-md-6 position-relative">
+                    <label for="author" class="form-label fw-semibold">
+                        लेखक / Author <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="author" name="author" class="form-control transliterate"
+                        placeholder="Type or select author" autocomplete="off" required
+                        value="{{ obj.author }}">
 
-                        {# ✅ If obj.author exists and is NOT in the authors list, show it first #}
-                        {% if obj.author and obj.author not in authors %}
-                            <option value="{{ obj.author }}" selected>{{ obj.author }}</option>
-                        {% endif %}
-
-                        {# ✅ Loop through authors list #}
-                        {% for author in authors %}
-                            <option value="{{ author }}" {% if obj.author == author %}selected{% endif %}>
-                                {{ author }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <div class="border rounded mt-1 d-none" id="authorDropdown"
+                        style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
+                        <!-- Authors will be loaded dynamically based on language -->
+                    </div>
+                    <small class="form-text text-muted">Select an author from the list or type a new one.</small>
                 </div>
 
                 <div class="col-md-6">
@@ -242,25 +291,20 @@
 
             <!-- Publisher & Year -->
             <div class="mb-3 row">
-                <div class="col-md-6">
-                    <label class="form-label">प्रकाशक / Publisher <span class="text-danger">*</span></label>
-                    <select name="publisher" id="publisher" class="form-control" required>
-                        <option value="">Select Publisher</option>
-
-                        {# ✔ If obj.publisher exists and is NOT in list, show it first #}
-                        {% if obj.publisher and obj.publisher not in publishers %}
-                            <option value="{{ obj.publisher }}" selected>{{ obj.publisher }}</option>
-                        {% endif %}
-
-                        {# ✔ Loop through publishers #}
-                        {% for pub in publishers %}
-                            <option value="{{ pub }}" {% if obj.publisher == pub %}selected{% endif %}>
-                                {{ pub }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                <div class="col-md-6 position-relative">
+                    <label class="form-label fw-semibold">
+                        प्रकाशक / Publisher <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="publisher" name="publisher" class="form-control"
+                        placeholder="Type or select publisher" autocomplete="off" required
+                        value="{{ obj.publisher }}">
+                    
+                    <div class="border rounded mt-1 d-none" id="publisherDropdown"
+                        style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
+                        <!-- Publishers will be loaded dynamically based on language -->
+                    </div>
+                    <small class="form-text text-muted" id="publisherHelpText">Select a publisher from the list or type a new one.</small>
                 </div>
-
 
                 <div class="col-md-6">
                     <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
@@ -283,9 +327,9 @@
             </div>
 
             <!-- Subject & Place -->
-           <div class="mb-3 row">
+            <div class="mb-3 row">
 
-            <!-- Subject Type -->
+                <!-- Subject Type -->
                 <div class="col-md-6">
                     <label class="form-label">
                         विषय प्रकार / Subject Type <span class="text-danger">*</span>
@@ -326,31 +370,27 @@
                     </select>
                 </div>
 
-
             </div>
 
             <!-- Material Type & Page Nos -->
             <div class="mb-3 row">
-                    <div class="col-md-6">
-                <label class="form-label">साहित्य प्रकार / Material Type <span class="text-danger">*</span></label>
-
-                <!-- Material -->
-                <select name="material_id" id="material_id" class="form-control" required>
-                    <option value="">Select Material Type</option>
-                    {% for m in materials %}
-                        <option value="{{ m.encrypted_id }}" {% if selected_material and m.id == selected_material.id %} selected {% endif %}>
-                            {{ m.materialNameEnglish }} - {{ m.materialNameMarathi }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-
-               <div class="col-md-6">
-    <label class="form-label">पृष्ठे / Page Nos</label>
-    <input type="text" name="page_nos" id="page_nos" class="form-control"
-           placeholder="Number of pages" value="{{ obj.pages }}">
-</div>
+                <div class="col-md-6">
+                    <label class="form-label">साहित्य प्रकार / Material Type <span class="text-danger">*</span></label>
+                    <!-- Material -->
+                    <select name="material_id" id="material_id" class="form-control" required>
+                        <option value="">Select Material Type</option>
+                        {% for m in materials %}
+                            <option value="{{ m.encrypted_id }}" {% if selected_material and m.id == selected_material.id %} selected {% endif %}>
+                                {{ m.materialNameEnglish }} - {{ m.materialNameMarathi }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">पृष्ठे / Page Nos</label>
+                    <input type="text" name="page_nos" id="page_nos" class="form-control"
+                        placeholder="Number of pages" value="{{ obj.pages }}">
+                </div>
 
             </div>
 
@@ -403,40 +443,40 @@
             </div>
 
             <!-- Last Page & Remarks -->
-         <div class="mb-3 row">
+            <div class="mb-3 row">
 
-    <!-- Last Page Image -->
-    <div class="col-md-6">
-        <label class="form-label">शेवटचे पृष्ठ प्रतिमा / Last Page Image</label>
-        <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'last_page_preview')">
+                        <!-- Last Page Image -->
+                        <div class="col-md-6">
+                            <label class="form-label">शेवटचे पृष्ठ प्रतिमा / Last Page Image</label>
+                            <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*" onchange="previewImage(this, 'last_page_preview')">
 
-        {% if last_page_url %}
-            <div class="mt-2">
-                <img id="last_page_preview" 
-                    src="{{ last_page_url }}" 
-                    alt="Last Page Image"
-                    class="img-thumbnail shadow-sm" 
-                    style="max-height: 120px;">
+                            {% if last_page_url %}
+                                <div class="mt-2">
+                                    <img id="last_page_preview" 
+                                        src="{{ last_page_url }}" 
+                                        alt="Last Page Image"
+                                        class="img-thumbnail shadow-sm" 
+                                        style="max-height: 120px;">
+                                </div>
+                            {% else %}
+                                <div class="mt-2">
+                                    <img id="last_page_preview" 
+                                        src="" 
+                                        alt="Last Page Preview"
+                                        class="img-thumbnail shadow-sm d-none" 
+                                        style="max-height: 120px;">
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Remarks -->
+                        <div class="col-md-6">
+                            <label class="form-label">टीप / Remarks</label>
+                            <textarea name="remarks" class="form-control transliterate" rows="3"
+                                placeholder="Notes, e.g. Donated by XYZ">{{ obj.remarks }}</textarea>
+                        </div>
+
             </div>
-        {% else %}
-            <div class="mt-2">
-                <img id="last_page_preview" 
-                    src="" 
-                    alt="Last Page Preview"
-                    class="img-thumbnail shadow-sm d-none" 
-                    style="max-height: 120px;">
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- Remarks -->
-    <div class="col-md-6">
-        <label class="form-label">टीप / Remarks</label>
-        <textarea name="remarks" class="form-control transliterate" rows="3"
-            placeholder="Notes, e.g. Donated by XYZ">{{ obj.remarks }}</textarea>
-    </div>
-
-</div>
 
             <!-- BUTTONS -->
             <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
@@ -447,6 +487,7 @@
                     <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
                 </a>
             </div>
+
         </form>
 
     </div>
@@ -717,21 +758,16 @@
 
                 // Collect required fields
                 const requiredFields = [
-                    {id: 'language_id', name: 'Language'},
                     {id: 'author', name: 'Author'},
-                    {id: 'subtitle', name: 'Subtitle'},
                     {id: 'publisher', name: 'Publisher'},
                     {id: 'year_of_publication', name: 'Year of Publication'},
                     {id: 'edition', name: 'Edition'},
                     {id: 'isbn', name: 'ISBN'},
                     {id: 'subject_id', name: 'Subject'},
-                    /*{id: 'call_number', name: 'Call Number'},
-                    {id: 'classification_number', name: 'Classification Number'},
-                    {id: 'cutter_number', name: 'Cutter Number'},*/
                     {id: 'material_id', name: 'Material Type'},
                     {id: 'page_nos', name: 'Page Nos'},
                     {id: 'keywords', name: 'Keywords'},
-                    {id: 'place_of_publication', name: 'Place of Publication'},
+                    {id: 'publication_place', name: 'Place of Publication'},
                     {id: 'remarks', name: 'Remarks'}
                 ];
 
@@ -762,224 +798,366 @@
         });
     </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const languageSelect = document.getElementById('language_id');
-    const languageHidden = document.getElementById('language_id_hidden');
-    const authorSelect = document.getElementById('author');
-
-    languageSelect.addEventListener('change', function() {
-        debugger;
-        const selectedLang = this.value;
-        languageHidden.value = selectedLang; // update hidden field
-
-        if (!selectedLang) {
-            authorSelect.innerHTML = '<option value="">Select Author</option>';
-            return;
-        }
-
-        // AJAX request to fetch authors based on selected language
-        fetch("{% url 'book_catalog_create' %}?language_id=" + selectedLang, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+    <script>
+        // Author Combobox for Edit Screen
+        const authorInput = document.getElementById('author');
+        const authorDropdown = document.getElementById('authorDropdown');
+        const languageSelectAuthor = document.getElementById('language_id');
+        
+        function fetchAuthorsByLanguage(languageId) {
+            if (!languageId) {
+                authorDropdown.innerHTML = '<div class="dropdown-item text-muted">Please select a language first</div>';
+                authorInput.disabled = true;
+                authorInput.placeholder = 'Select language first';
+                return;
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            authorSelect.innerHTML = '<option value="">Select Author</option>'; // reset
-            data.authors.forEach(author => {
-                const option = document.createElement('option');
-                option.value = author;
-                option.text = author;
-                authorSelect.appendChild(option);
-            });
-        })
-        .catch(err => console.error('Error fetching authors:', err));
-    });
-
-    // Set hidden field on page load
-    if (languageSelect.value) {
-        languageHidden.value = languageSelect.value;
-    }
-});
-</script>
-
-<script>
-    const authorInput = document.getElementById('author');
-    const authorDropdown = document.getElementById('authorDropdown');
-    const languageSelect = document.getElementById('language_id'); // your language dropdown
-
-    // Function to fetch authors based on selected language
-    function fetchAuthors(languageId) {
-        if (!languageId) return;
-
-        fetch(`/book_catalog_create?language_id=${languageId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            authorDropdown.innerHTML = ''; // clear existing items
-            if (data.authors && data.authors.length) {
-                data.authors.forEach(author => {
+            
+            authorInput.disabled = false;
+            authorInput.placeholder = 'Type or select author';
+            
+            fetch(`/book_catalog_create?action=get_authors&language_id=${languageId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const authors = data.data || [];
+                authorDropdown.innerHTML = '';
+                
+                // Add current author if it exists and not in list
+                const currentAuthor = authorInput.value;
+                if (currentAuthor && !authors.includes(currentAuthor)) {
                     const div = document.createElement('div');
                     div.className = 'dropdown-item author-item';
-                    div.textContent = author;
-                    div.onclick = () => selectAuthor(author);
+                    div.textContent = currentAuthor;
+                    div.onclick = () => selectAuthor(currentAuthor);
                     authorDropdown.appendChild(div);
-                });
-            } else {
-                authorDropdown.innerHTML = '<div class="dropdown-item text-muted">No authors found</div>';
-            }
-        })
-        .catch(err => console.error('Error fetching authors:', err));
-    }
-
-    // Update authors when language changes
-    languageSelect.addEventListener('change', function() {
-        fetchAuthors(this.value);
-    });
-
-    // Show dropdown on input focus
-    authorInput.addEventListener('focus', () => {
-        if (authorDropdown.children.length) authorDropdown.classList.remove('d-none');
-    });
-
-    // Hide dropdown on blur
-    authorInput.addEventListener('blur', () => setTimeout(() => authorDropdown.classList.add('d-none'), 200));
-
-    // Select author
-    function selectAuthor(name) {
-        authorInput.value = name;
-        authorDropdown.classList.add('d-none');
-    }
-
-    // Filter authors while typing
-    authorInput.addEventListener('input', () => {
-        const filter = authorInput.value.toLowerCase();
-        const items = authorDropdown.querySelectorAll('.author-item');
-        items.forEach(item => {
-            item.style.display = item.textContent.toLowerCase().includes(filter) ? 'block' : 'none';
-        });
-    });
-</script>
-
-
-<!-- Script for Translation -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const languageSelect = document.getElementById('language_id');
-    const authorLabel = document.querySelector('label[for="author"]');
-    const authorInput = document.getElementById('author');
-    const authorHelpText = document.querySelector('#author + small');
-
-    if (languageSelect && authorLabel && authorHelpText && authorInput) {
-        languageSelect.addEventListener('change', function () {
-            const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
-
-            if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
-                // Convert to Marathi
-                authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
-                authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
-                authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
-            } else {
-                // Revert to English
-                authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
-                authorInput.placeholder = 'Type or select author';
-                authorHelpText.textContent = 'Select an author from the list or type a new one.';
-            }
-        });
-    }
-});
-</script>
-
-
-<script>
-function previewImage(input, previewId) {
-    const file = input.files[0];
-    const preview = document.getElementById(previewId);
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.classList.remove('d-none');
-        };
-        reader.readAsDataURL(file);
-    } else {
-        preview.src = "";
-        preview.classList.add('d-none');
-    }
-}
-</script>
-
-<script>
-    const authorInput = document.getElementById("author");
-    const authorDropdown = document.getElementById("authorDropdown");
-
-    // Show dropdown when typing
-    authorInput.addEventListener("input", function() {
-        const filter = this.value.toLowerCase();
-        const items = authorDropdown.querySelectorAll(".author-item");
-        let visible = false;
-
-        items.forEach(item => {
-            if (item.textContent.toLowerCase().includes(filter)) {
-                item.style.display = "block";
-                visible = true;
-            } else {
-                item.style.display = "none";
-            }
-        });
-
-        if (filter && visible) {
-            authorDropdown.classList.remove("d-none");
-        } else {
-            authorDropdown.classList.add("d-none");
-        }
-    });
-
-    // Select author from dropdown
-    function selectAuthor(name) {
-        authorInput.value = name;
-        authorDropdown.classList.add("d-none");
-    }
-
-    // Hide dropdown when clicking outside
-    document.addEventListener("click", function(e) {
-        if (!authorInput.contains(e.target) && !authorDropdown.contains(e.target)) {
-            authorDropdown.classList.add("d-none");
-        }
-    });
-</script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // For barcode scanners that send Enter key
-        document.querySelector('input[name="isbn"]').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+                }
                 
-                // Trigger blur to ensure any onblur events fire
-                this.blur();
-                
-                // Small delay then focus next field
-                setTimeout(() => {
-                    const nextField = this.closest('.col-md-6').nextElementSibling?.querySelector('input, select, textarea');
-                    if (nextField) {
-                        nextField.focus();
+                if (authors.length) {
+                    authors.forEach(author => {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item author-item';
+                        div.textContent = author;
+                        div.onclick = () => selectAuthor(author);
+                        authorDropdown.appendChild(div);
+                    });
+                } else if (!currentAuthor) {
+                    authorDropdown.innerHTML = '<div class="dropdown-item text-muted">No authors found for this language</div>';
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching authors:', err);
+                authorDropdown.innerHTML = '<div class="dropdown-item text-muted">Error loading authors</div>';
+            });
+        }
+        
+        if (languageSelectAuthor) {
+            languageSelectAuthor.addEventListener('change', function() {
+                fetchAuthorsByLanguage(this.value);
+            });
+            
+            if (languageSelectAuthor.value) {
+                fetchAuthorsByLanguage(languageSelectAuthor.value);
+            }
+        }
+        
+        authorInput.addEventListener('focus', function() {
+            if (!languageSelectAuthor.value) {
+                authorDropdown.innerHTML = '<div class="dropdown-item text-muted">Please select a language first</div>';
+                authorDropdown.classList.remove('d-none');
+                return;
+            }
+            if (authorDropdown.children.length && !authorInput.disabled) {
+                authorDropdown.classList.remove('d-none');
+                filterAuthorOptions();
+            }
+        });
+        
+        authorInput.addEventListener('blur', function() {
+            setTimeout(() => authorDropdown.classList.add('d-none'), 200);
+        });
+        
+        authorInput.addEventListener('input', function() {
+            if (languageSelectAuthor.value) {
+                filterAuthorOptions();
+            }
+        });
+        
+        function filterAuthorOptions() {
+            const filter = authorInput.value.toLowerCase().trim();
+            const items = authorDropdown.querySelectorAll('.author-item');
+            let hasVisible = false;
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (filter === '' || text.includes(filter)) {
+                    item.style.display = 'block';
+                    hasVisible = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            if (hasVisible) {
+                authorDropdown.classList.remove('d-none');
+            }
+        }
+        
+        function selectAuthor(name) {
+            authorInput.value = name;
+            authorDropdown.classList.add('d-none');
+            authorInput.dispatchEvent(new Event('input'));
+            authorInput.dispatchEvent(new Event('change'));
+        }
+    </script>
+
+    <!-- Script for Translation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const languageSelect = document.getElementById('language_id');
+            const authorLabel = document.querySelector('label[for="author"]');
+            const authorInput = document.getElementById('author');
+            const authorHelpText = document.querySelector('#author + small');
+
+            if (languageSelect && authorLabel && authorHelpText && authorInput) {
+                languageSelect.addEventListener('change', function () {
+                    const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
+
+                    if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
+                        // Convert to Marathi
+                        authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
+                        authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
+                        authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
                     } else {
-                        // If no next field in same row, find next in form
-                        const form = this.closest('form');
-                        const inputs = Array.from(form.querySelectorAll('input, select, textarea:not([type="hidden"])'));
-                        const idx = inputs.indexOf(this);
-                        if (idx < inputs.length - 1) {
-                            inputs[idx + 1].focus();
-                        }
+                        // Revert to English
+                        authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
+                        authorInput.placeholder = 'Type or select author';
+                        authorHelpText.textContent = 'Select an author from the list or type a new one.';
                     }
-                }, 50);
+                });
             }
         });
-    });
-</script>
+    </script>
+
+
+    <script>
+        function previewImage(input, previewId) {
+            const file = input.files[0];
+            const preview = document.getElementById(previewId);
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = "";
+                preview.classList.add('d-none');
+            }
+        }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // For barcode scanners that send Enter key
+            document.querySelector('input[name="isbn"]').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    // Trigger blur to ensure any onblur events fire
+                    this.blur();
+                    
+                    // Small delay then focus next field
+                    setTimeout(() => {
+                        const nextField = this.closest('.col-md-6').nextElementSibling?.querySelector('input, select, textarea');
+                        if (nextField) {
+                            nextField.focus();
+                        } else {
+                            // If no next field in same row, find next in form
+                            const form = this.closest('form');
+                            const inputs = Array.from(form.querySelectorAll('input, select, textarea:not([type="hidden"])'));
+                            const idx = inputs.indexOf(this);
+                            if (idx < inputs.length - 1) {
+                                inputs[idx + 1].focus();
+                            }
+                        }
+                    }, 50);
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Edit Form - Load authors and publishers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageId = '{{ language_id_encrypted|default:"" }}';
+            
+            if (!languageId) {
+                console.log('No language ID found');
+                return;
+            }
+            
+            const authorInput = document.getElementById('author');
+            const authorDropdown = document.getElementById('authorDropdown');
+            const publisherInput = document.getElementById('publisher');
+            const publisherDropdown = document.getElementById('publisherDropdown');
+            
+            // Fetch authors
+            function fetchAuthors() {
+                fetch(`/book_catalog_create?action=get_authors&language_id=${languageId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const authors = data.data || [];
+                    authorDropdown.innerHTML = '';
+                    
+                    const currentAuthor = authorInput.value;
+                    if (currentAuthor && !authors.includes(currentAuthor)) {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item author-item';
+                        div.textContent = currentAuthor;
+                        div.onclick = () => selectAuthor(currentAuthor);
+                        authorDropdown.appendChild(div);
+                    }
+                    
+                    authors.forEach(author => {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item author-item';
+                        div.textContent = author;
+                        div.onclick = () => selectAuthor(author);
+                        authorDropdown.appendChild(div);
+                    });
+                    
+                    if (!authors.length && !currentAuthor) {
+                        authorDropdown.innerHTML = '<div class="dropdown-item text-muted">No authors found</div>';
+                    }
+                })
+                .catch(err => console.error('Error fetching authors:', err));
+            }
+            
+            // Fetch publishers
+            function fetchPublishers() {
+                fetch(`/book_catalog_create?action=get_publishers_by_language&language_id=${languageId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const publishers = data.data || [];
+                    publisherDropdown.innerHTML = '';
+                    
+                    const currentPublisher = publisherInput.value;
+                    if (currentPublisher && !publishers.includes(currentPublisher)) {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item publisher-item';
+                        div.textContent = currentPublisher;
+                        div.onclick = () => selectPublisher(currentPublisher);
+                        publisherDropdown.appendChild(div);
+                    }
+                    
+                    publishers.forEach(publisher => {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item publisher-item';
+                        div.textContent = publisher;
+                        div.onclick = () => selectPublisher(publisher);
+                        publisherDropdown.appendChild(div);
+                    });
+                    
+                    if (!publishers.length && !currentPublisher) {
+                        publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">No publishers found</div>';
+                    }
+                })
+                .catch(err => console.error('Error fetching publishers:', err));
+            }
+            
+            // Load data
+            fetchAuthors();
+            fetchPublishers();
+            
+            // Author dropdown events
+            authorInput.addEventListener('focus', function() {
+                if (authorDropdown.children.length) {
+                    authorDropdown.classList.remove('d-none');
+                    filterAuthorOptions();
+                }
+            });
+            
+            authorInput.addEventListener('blur', function() {
+                setTimeout(() => authorDropdown.classList.add('d-none'), 200);
+            });
+            
+            authorInput.addEventListener('input', filterAuthorOptions);
+            
+            function filterAuthorOptions() {
+                const filter = authorInput.value.toLowerCase().trim();
+                const items = authorDropdown.querySelectorAll('.author-item');
+                let hasVisible = false;
+                
+                items.forEach(item => {
+                    if (item.textContent.toLowerCase().includes(filter)) {
+                        item.style.display = 'block';
+                        hasVisible = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                if (hasVisible) {
+                    authorDropdown.classList.remove('d-none');
+                }
+            }
+            
+            function selectAuthor(name) {
+                authorInput.value = name;
+                authorDropdown.classList.add('d-none');
+                authorInput.dispatchEvent(new Event('input'));
+            }
+            
+            // Publisher dropdown events
+            publisherInput.addEventListener('focus', function() {
+                if (publisherDropdown.children.length) {
+                    publisherDropdown.classList.remove('d-none');
+                    filterPublisherOptions();
+                }
+            });
+            
+            publisherInput.addEventListener('blur', function() {
+                setTimeout(() => publisherDropdown.classList.add('d-none'), 200);
+            });
+            
+            publisherInput.addEventListener('input', filterPublisherOptions);
+            
+            function filterPublisherOptions() {
+                const filter = publisherInput.value.toLowerCase().trim();
+                const items = publisherDropdown.querySelectorAll('.publisher-item');
+                let hasVisible = false;
+                
+                items.forEach(item => {
+                    if (item.textContent.toLowerCase().includes(filter)) {
+                        item.style.display = 'block';
+                        hasVisible = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                if (hasVisible) {
+                    publisherDropdown.classList.remove('d-none');
+                }
+            }
+            
+            function selectPublisher(name) {
+                publisherInput.value = name;
+                publisherDropdown.classList.add('d-none');
+                publisherInput.dispatchEvent(new Event('input'));
+            }
+            
+            // Make functions globally available
+            window.selectAuthor = selectAuthor;
+            window.selectPublisher = selectPublisher;
+        });
+    </script>
 
 {% endblock %}

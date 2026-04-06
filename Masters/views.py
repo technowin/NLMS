@@ -364,6 +364,27 @@ def book_catalog_create(request):
                 response_data = BookCatalog.objects.filter(~Q(publisher__exact=""), publisher__isnull=False) \
                     .values_list('publisher', flat=True).distinct().order_by('publisher')
 
+            # 👇 ADD THIS NEW ACTION HERE 👇
+            elif action == "get_publishers_by_language":
+                language_id_encrypted = request.GET.get('language_id', '').strip()
+                if language_id_encrypted:
+                    try:
+                        language_id = dec(language_id_encrypted)
+                        lang_obj = LanguageMaster.objects.filter(id=language_id).first()
+                        lang_name = lang_obj.language_name.lower() if lang_obj else ""
+                        
+                        # Filter publishers based on books in that language
+                        # FIXED: Use Q objects for all conditions
+                        response_data = BookCatalog.objects.filter(
+                            Q(language=lang_obj.language_name if lang_obj else None) &
+                            ~Q(publisher__exact="") & 
+                            Q(publisher__isnull=False)
+                        ).values_list('publisher', flat=True).distinct().order_by('publisher')
+                    except Exception:
+                        response_data = []
+                else:
+                    response_data = []
+                    
             # --- Publication Places Dropdown ---
             elif action == "get_places":
                 response_data = BookCatalog.objects.filter(~Q(publication_place__exact=""), publication_place__isnull=False) \
@@ -734,6 +755,17 @@ def book_catalog_edit(request):
             
             if obj and obj.last_page_photo:
                 last_page_url = file_storage_service.get_file_url(obj.last_page_photo)
+                
+            # In your view, after getting obj, get the language ID
+            language_obj = None
+            language_id_encrypted = None
+            if obj and obj.language:
+                try:
+                    language_obj = LanguageMaster.objects.filter(language_name=obj.language).first()
+                    if language_obj:
+                        language_id_encrypted = enc(str(language_obj.id))
+                except:
+                    pass
 
             # -------------------- Render Context --------------------------
             context = {
@@ -750,21 +782,20 @@ def book_catalog_edit(request):
                 'selected_place': selected_place,
                 'catalog': {'encrypted_id': cat_ref_num_encrypted} if cat_ref_num_encrypted else None,
                 'MEDIA_URL': settings.MEDIA_URL,
-                'front_page_url': front_page_url,  # ✅ Pre-calculated
+                'front_page_url': front_page_url,
                 'last_page_url': last_page_url, 
+                'language_id_encrypted': language_id_encrypted,
             }
             
             return render(request, 'Master/book_catalog_edit.html', context)
     
         # -------------------- Handle POST (Update) --------------------
         
-        # Notepad ++ book_catalog_edit-POST
-        
         if request.method == "POST":
     
             user = request.user.id
             
-            # 🔥 FIX — fetch object first
+            # Fetch object first
             cat_ref_num_encrypted = request.GET.get('cat_ref_num')
             cat_ref_num = dec(cat_ref_num_encrypted)
             obj = get_object_or_404(BookCatalog, cat_ref_num=cat_ref_num)
@@ -772,8 +803,7 @@ def book_catalog_edit(request):
             form_data = {
                 "title": request.POST.get("title", "").strip(),
                 "subtitle": request.POST.get("subtitle", "").strip(),
-                "author_id": dec(request.POST.get("author_id", "").strip()) if request.POST.get("author_id") else None,
-                "author": request.POST.get("author", "").strip(),  # Keep original name
+                "author": request.POST.get("author", "").strip(),
                 "other_authors": request.POST.get("other_authors", "").strip(),
                 "publisher": request.POST.get("publisher", "").strip(),
                 "isbn": request.POST.get("isbn", "").strip(),
@@ -789,121 +819,106 @@ def book_catalog_edit(request):
                 "last_page_photo": request.FILES.get("last_page_image"),
             }
             
-            field_map = {
-                "title": "title",
-                "subtitle": "subtitle",
-                "author": "author",
-                "other_authors": "other_authors",
-                "publisher": "publisher",
-                "isbn": "isbn_issn",
-                "edition": "edition",
-                "subject_id": "subject_id",
-                "material_id": "material_id",
-                "remarks": "remarks",
-                "keywords": "keywords",
-                "publication_place": "publication_place",
-                "year_of_publication": "year_of_publication",
-                "page_nos": "pages",
-                "front_page_photo": "front_page_photo",
-                "last_page_photo": "last_page_photo",
-            }
-
-            # Check for changes
-            changes = []
-
-            for form_field, model_field in field_map.items():
-                new_value = form_data[form_field]
-                old_value = getattr(obj, model_field)
-
-                # FILE fields
-                if form_field in ["front_page_photo", "last_page_photo"]:
-                    if new_value:      # user uploaded a file?
-                        changes.append(form_field)
-                    continue
-
-                # Text/normal fields
-                if str(old_value or "") != str(new_value or ""):
-                    changes.append(form_field)
-
-            if not changes:
-                messages.info(request, "No changes detected. Nothing was updated.")
-                return redirect('book_catalog_index')
-
-            # 🔴 SIMPLE AUTHOR HANDLING - CHECK ONLY TWO COLUMNS
-            author_obj = None
+            # Helper functions for transliteration
+            def contains_non_english(text):
+                import re
+                return bool(re.search(r'[\u0900-\u097F]', text))
             
-            # 1. FIRST: Check if author selected from dropdown
-            if form_data["author_id"]:
-                try:
-                    author_obj = AuthorMaster.objects.get(author_code=form_data["author_id"])
-                    print(f"✅ Author from dropdown: {author_obj.author_code} - {author_obj.author_name_english}")
-                except AuthorMaster.DoesNotExist:
-                    print(f"❌ Author ID {form_data['author_id']} not found in database")
+            def transliterate_to_english(text):
+                mapping = {
+                    'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u',
+                    'ए':'e','ऐ':'ai','ओ':'o','औ':'au','क':'k','ख':'kh',
+                    'ग':'g','घ':'gh','च':'ch','छ':'chh','ज':'j','झ':'jh',
+                    'ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n','त':'t',
+                    'थ':'th','द':'d','ध':'dh','न':'n','प':'p','फ':'ph',
+                    'ब':'b','भ':'bh','म':'m','य':'y','र':'r','ल':'l',
+                    'व':'v','श':'sh','ष':'sh','स':'s','ह':'h','ं':'n',
+                    'ः':'h','ा':'a','ि':'i','ी':'i','ु':'u','ू':'u',
+                    'े':'e','ै':'ai','ो':'o','ौ':'au','्र':'r','्य':'y',
+                    'क्ष':'ksh','ज्ञ':'gy','श्र':'shr',' ':' '
+                }
+                result = ''
+                for char in text:
+                    result += mapping.get(char, char)
+                return result
             
-            # 2. SECOND: If no dropdown selection but author text changed, try to match
-            if not author_obj and form_data["author"] and form_data["author"] != obj.author:
-                author_text = form_data["author"].strip()
-                print(f"🔍 Searching for author: '{author_text}'")
-                
-                # 🔴 CHECK ONLY TWO COLUMNS AS YOU SAID:
-                # 2A. Check Marathi name exact match
-                author_obj = AuthorMaster.objects.filter(author_name_marathi=author_text).first()
-                if author_obj:
-                    print(f"✅ Found by author_name_marathi exact match")
-                
-                # 2B. Check English name exact match (case-insensitive)
-                if not author_obj:
-                    author_obj = AuthorMaster.objects.filter(author_name_english__iexact=author_text).first()
-                    if author_obj:
-                        print(f"✅ Found by author_name_english exact match")
-                
-                if not author_obj:
-                    print(f"❌ No author match found in database for: '{author_text}'")
+            # ============================================================
+            # 🔴 AUTHOR HANDLING - SAME LOGIC AS CREATE FORM
+            # ============================================================
+            author = form_data["author"]
+            other_authors = form_data.get("other_authors", "").strip()
             
-            # 3. UPDATE BOOK WITH AUTHOR INFO
-            if author_obj:
-                # Author found in database - set foreign key and short name
-                obj.author_fk = author_obj
-                obj.author_short_name = author_obj.author_short_name
-                
-                # Also update the text author field
-                # Keep the original text from form
-                obj.author = form_data["author"]
-                
-                # Track these changes
-                if "author_fk" not in changes:
-                    changes.append("author_fk")
-                if "author_short_name" not in changes:
-                    changes.append("author_short_name")
-                    
-                print(f"✅ Book linked to author: {author_obj.author_code} - {author_obj.author_name_english}")
-            elif form_data["author"]:
-                # No author found in database - clear FK but keep text
-                obj.author_fk = None
-                obj.author_short_name = None
-                obj.author = form_data["author"]
-                
-                # Still track author change
-                if "author_fk" not in changes:
-                    changes.append("author_fk")
-                if "author_short_name" not in changes:
-                    changes.append("author_short_name")
-                
-                print(f"⚠️ Author not found in database, keeping as text only: '{form_data['author']}'")
-
+            # Author transliteration logic (same as create)
+            if contains_non_english(author):
+                authorEnglish = transliterate_to_english(author).lower()
+                authorMarathi = author
+            else:
+                authorEnglish = author.lower()
+                authorMarathi = None
+            
+            if contains_non_english(other_authors):
+                otherAuthorEnglish = transliterate_to_english(other_authors).lower()
+                otherAuthorMarathi = other_authors
+            else:
+                otherAuthorEnglish = other_authors.lower()
+                otherAuthorMarathi = None
+            
+            # Get subject for classification number
+            subject = SubjectTypeMaster.objects.filter(id=form_data["subject_id"]).first()
+            
+            # Generate Classification Number and Cutter Number
+            ClassificationNumber = f"{subject.subjectCode:03}" if subject and subject.subjectCode else "000"
+            author_name_clean = ''.join(filter(str.isalpha, authorEnglish))
+            CutterNumber = author_name_clean[:3].title() if author_name_clean else "XXX"
+            pub_year = form_data['year_of_publication'] or "0000"
+            call_number = f"{ClassificationNumber}.{CutterNumber}.{pub_year}"
+            
+            # 🔴 Create or get AuthorMaster (same as create)
+            existing_author = AuthorMaster.objects.filter(author_name_english=authorEnglish).first()
+            
+            if not existing_author:
+                # Create new author
+                existing_author = AuthorMaster.objects.create(
+                    author_short_name=CutterNumber,
+                    author_name_english=authorEnglish,
+                    author_name_other_english=otherAuthorEnglish,
+                    author_name_marathi=authorMarathi,
+                    author_name_other_marathi=otherAuthorMarathi,
+                    detail_entered="Book Catalog Entry",
+                    is_active=1,
+                    created_by=user,
+                    updated_by=user
+                )
+                print(f"✅ New author created: {authorEnglish}")
+            else:
+                # Update existing author if needed
+                if not existing_author.author_short_name:
+                    existing_author.author_short_name = CutterNumber
+                    existing_author.save()
+                    print(f"✅ Updated existing author with short name: {CutterNumber}")
+                else:
+                    print(f"✅ Using existing author: {existing_author.author_name_english}")
+            
             # Update object with basic fields
             obj.title = form_data["title"]
             obj.subtitle = form_data["subtitle"]
+            obj.author = form_data["author"]  # Keep original author text
+            obj.author_fk = existing_author  # ForeignKey to AuthorMaster
+            obj.author_short_name = existing_author.author_short_name  # Short name from AuthorMaster
             obj.other_authors = form_data["other_authors"]
             obj.publisher = form_data["publisher"]
             obj.isbn_issn = form_data["isbn"]
             obj.edition = form_data["edition"]
             obj.subject_id = form_data["subject_id"]
+            obj.call_number = call_number
+            obj.classification_number = ClassificationNumber
+            obj.cutter_number = CutterNumber
+            obj.publication_year = pub_year
             obj.material_id = form_data["material_id"]
             obj.remarks = form_data["remarks"]
             obj.keywords = form_data["keywords"]
             obj.publication_place = form_data["publication_place"]
-            obj.year_of_publication = form_data["year_of_publication"]
+            obj.year_of_publication = int(pub_year) if pub_year.isdigit() else None
             obj.pages = form_data["page_nos"]
             obj.updated_by = request.user.id
             obj.updated_at = timezone.now()
@@ -925,26 +940,14 @@ def book_catalog_edit(request):
                 # --- Front Page Image ---
                 if front_photo:
                     try:
-                        # Extract original filename and extension
                         filename, ext = os.path.splitext(front_photo.name)
-                        
-                        # Generate unique filename
                         short_uuid = str(uuid.uuid4())[:8]
-                        # Remove special characters from filename for safety
                         safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
                         unique_filename = f"{obj.cat_ref_num}_front_{safe_filename}_{timestamp}_{short_uuid}{ext}"
-                        
-                        # Build save path
                         save_path = f"{book_folder}/{unique_filename}"
-                        
-                        # ✅ USE STORAGE SERVICE TO SAVE FILE
                         saved_file_path = file_storage_service.save_file(front_photo, save_path)
-                        
-                        # Update book record with saved path
                         obj.front_page_photo = saved_file_path
-                        
-                        print(f"✅ Front page image saved for library {library_code}: {saved_file_path}")
-                        
+                        print(f"✅ Front page image saved: {saved_file_path}")
                     except Exception as e:
                         print(f"❌ Error saving front page image: {str(e)}")
                         messages.warning(request, f"Front page image could not be saved: {str(e)}")
@@ -952,45 +955,28 @@ def book_catalog_edit(request):
                 # --- Last Page Image ---
                 if last_photo:
                     try:
-                        # Extract original filename and extension
                         filename, ext = os.path.splitext(last_photo.name)
-                        
-                        # Generate unique filename
                         short_uuid = str(uuid.uuid4())[:8]
-                        # Remove special characters from filename for safety
                         safe_filename = ''.join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
                         unique_filename = f"{obj.cat_ref_num}_back_{safe_filename}_{timestamp}_{short_uuid}{ext}"
-                        
-                        # Build save path
                         save_path = f"{book_folder}/{unique_filename}"
-                        
-                        # ✅ USE STORAGE SERVICE TO SAVE FILE
                         saved_file_path = file_storage_service.save_file(last_photo, save_path)
-                        
-                        # Update book record with saved path
                         obj.last_page_photo = saved_file_path
-                        
-                        print(f"✅ Last page image saved for library {library_code}: {saved_file_path}")
-                        
+                        print(f"✅ Last page image saved: {saved_file_path}")
                     except Exception as e:
                         print(f"❌ Error saving last page image: {str(e)}")
                         messages.warning(request, f"Last page image could not be saved: {str(e)}")
 
             obj.save()
             
-            # Show appropriate success message
-            if obj.author_fk:
-                messages.success(request, 
-                    f"Book '{obj.title}' updated successfully! Linked to author: {obj.author_fk.author_name_english}"
-                )
-            else:
-                messages.success(request, 
-                    f"Book '{obj.title}' updated successfully!"
-                )
+            messages.success(request, 
+                f"Book '{obj.title}' updated successfully! Linked to author: {existing_author.author_name_english}"
+            )
 
             return redirect('book_catalog_index')
         
     except Exception as e:
+        import traceback
         tb = traceback.extract_tb(e.__traceback__)
         fun = tb[0].name
         callproc("stp_error_log", [fun, str(e), user])

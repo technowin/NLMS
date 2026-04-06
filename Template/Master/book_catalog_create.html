@@ -20,6 +20,50 @@
     <link rel="stylesheet" href="{% static 'css/Master/create.css' %}">
 
     <style>
+
+        /* Publisher Field Styling - Matching Author Field */
+        #publisher {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: none;
+        }
+
+        #publisher:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+        }
+
+        /* Publisher Dropdown Box */
+        #publisherDropdown {
+            width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            margin-top: 4px;
+        }
+
+        /* Publisher Dropdown Items */
+        #publisherDropdown .publisher-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        #publisherDropdown .publisher-item:hover {
+            background-color: #f1f5ff;
+        }
+
+        /* Text Helper for Publisher */
+        .form-text.text-muted {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
         /* Back to Top Button */
         .back-to-top {
             position: fixed;
@@ -73,95 +117,95 @@
         }
 
         /* Author dropdown styling */
-.author-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-.author-suggestions div {
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.author-suggestions div:hover {
-    background: #f2f2f2;
-}
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
 
-        /* Author dropdown styling */
-.author-suggestions {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 1000;
-    width: 100%;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+                /* Author dropdown styling */
+        .author-suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            display: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-.author-suggestions div {
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+        .author-suggestions div {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-.author-suggestions div:hover {
-    background: #f2f2f2;
-}
+        .author-suggestions div:hover {
+            background: #f2f2f2;
+        }
 
-/* Author Field Styling */
-#author {
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    padding: 8px 12px;
-    transition: all 0.2s ease-in-out;
-    box-shadow: none;
-}
+        /* Author Field Styling */
+        #author {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 8px 12px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: none;
+        }
 
-#author:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
-}
+        #author:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+        }
 
-/* Dropdown Box */
-#authorDropdown {
-    width: 35%;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    background-color: #fff;
-    margin-top: 4px;
-}
+        /* Dropdown Box */
+        #authorDropdown {
+            width: 35%;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            margin-top: 4px;
+        }
 
-/* Dropdown Items */
-#authorDropdown .author-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-size: 0.95rem;
-}
+        /* Dropdown Items */
+        #authorDropdown .author-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.95rem;
+        }
 
-#authorDropdown .author-item:hover {
-    background-color: #f1f5ff;
-}
+        #authorDropdown .author-item:hover {
+            background-color: #f1f5ff;
+        }
 
-/* Text Helper */
-.form-text.text-muted {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 4px;
-}
+        /* Text Helper */
+        .form-text.text-muted {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
 
 
     </style>
@@ -181,19 +225,19 @@
 
             <!-- Language Dropdown -->
             <div class="mb-3 row">
-            <div class="col-md-6 mb-3">
-        <label class="form-label">
-            भाषा / Language <span class="text-danger">*</span>
-        </label>
-        <select name="language_id" id="language_id" class="form-control" style="padding-top: 0%;" required>
-            <option value="">Select Language</option>
-            {% for lang in languages %}
-                <option value="{{ lang.encrypted_id }}">{{ lang.language_name }}</option>
-            {% endfor %}
-        </select>
-        <small id="language-note" class="form-text text-muted"></small>
-        <input type="hidden" name="language_id_hidden" id="language_id_hidden">
-    </div>
+                <div class="col-md-6 mb-3">
+                        <label class="form-label">
+                            भाषा / Language <span class="text-danger">*</span>
+                        </label>
+                        <select name="language_id" id="language_id" class="form-control" style="padding-top: 0%;" required>
+                            <option value="">Select Language</option>
+                            {% for lang in languages %}
+                                <option value="{{ lang.encrypted_id }}">{{ lang.language_name }}</option>
+                            {% endfor %}
+                        </select>
+                    <small id="language-note" class="form-text text-muted"></small>
+                    <input type="hidden" name="language_id_hidden" id="language_id_hidden">
+                </div>
             </div>
 
             <!-- Row 1: Title & Subtitle -->
@@ -211,23 +255,21 @@
 
             <!-- Row 2: Author & Other Authors -->
             <div class="mb-3 row">
-      <div class="col-md-6 mb-3 position-relative">
-    <label for="author" class="form-label fw-semibold">
-        Author <span class="text-danger">*</span>
-    </label>
-    <input type="text" id="author" name="author" class="form-control transliterate"
-           placeholder="Type or select author" autocomplete="off" required>
+                <div class="col-md-6 mb-3 position-relative">
+                    <label for="author" class="form-label fw-semibold">
+                        Author <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="author" name="author" class="form-control transliterate"
+                        placeholder="Type or select author" autocomplete="off" required>
 
-    <div class="border rounded mt-1 d-none" id="authorDropdown"
-         style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
-        {% for author in authors %}
-            <div class="dropdown-item author-item" onclick="selectAuthor('{{ author }}')">{{ author }}</div>
-        {% endfor %}
-    </div>
-    <small class="form-text text-muted">Select an author from the list or type a new one.</small>
-</div>
-
-
+                    <div class="border rounded mt-1 d-none" id="authorDropdown"
+                        style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
+                        {% for author in authors %}
+                            <div class="dropdown-item author-item" onclick="selectAuthor('{{ author }}')">{{ author }}</div>
+                        {% endfor %}
+                    </div>
+                    <small class="form-text text-muted">Select an author from the list or type a new one.</small>
+                </div>
 
                 <div class="col-md-6">
                     <label class="form-label">सह-लेखक / Other Authors</label>
@@ -237,19 +279,25 @@
 
             <!-- Row 3: Publisher & Year of Publication -->
             <div class="mb-3 row">
-               <div class="col-md-6">
-    <label class="form-label">प्रकाशक / Publisher</label>
-    <select name="publisher" id="publisher" class="form-control" required>
-        <option value="">Select Publisher</option>
-        {% for pub in publishers %}
-            <option value="{{ pub }}">{{ pub }}</option>
-        {% endfor %}
-    </select>
-</div>
+                <div class="col-md-6 position-relative">
+                    <label class="form-label fw-semibold">
+                        प्रकाशक / Publisher <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="publisher" name="publisher" class="form-control transliterate"
+                        placeholder="Type or select publisher" autocomplete="off" required>
+                    
+                    <div class="border rounded mt-1 d-none" id="publisherDropdown"
+                        style="max-height:150px; overflow-y:auto; position:absolute; z-index:1000; background:white; width:100%;">
+                        {% for pub in publishers %}
+                            <div class="dropdown-item publisher-item" onclick="selectPublisher('{{ pub|escapejs }}')">{{ pub }}</div>
+                        {% endfor %}
+                    </div>
+                    <small class="form-text text-muted" id="publisherHelpText">Select a publisher from the list or type a new one.</small>
+                </div>
 
                 <div class="col-md-6">
                     <label class="form-label">प्रकाशन वर्ष / Year of Publication</label>
-                    <input type="number" name="year_of_publication" class="form-control" placeholder="e.g. 2024" readonly>
+                    <input type="text" name="year_of_publication" class="form-control" placeholder="e.g., 2024 or 1 January 1980" readonly>
                 </div>
             </div>
 
@@ -268,25 +316,25 @@
             <!-- Row 5: Subject & Call Number -->
             <div class="mb-3 row">
                 <div class="col-md-6">
-                    <label class="form-label">विषय / Subject</label>
-                    <select name="subject_id" id="subject_id" class="form-control" style="padding-top: 0%;" required disabled>
-                        <option value="">Select Subject</option>
-                        {% for sub in subjects %}
-                            <option value="{{ sub.encrypted_id }}" data-code="{{ sub.subjectCode }}">
-                                {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
-                            </option>
+                        <label class="form-label">विषय / Subject</label>
+                        <select name="subject_id" id="subject_id" class="form-control" style="padding-top: 0%;" required disabled>
+                            <option value="">Select Subject</option>
+                            {% for sub in subjects %}
+                                <option value="{{ sub.encrypted_id }}" data-code="{{ sub.subjectCode }}">
+                                    {{ sub.subjectNameEnglish }} - {{ sub.subjectNameMarathi }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                    <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
+                    <select name="publication_place" id="publication_place" class="form-control">
+                        <option value="">Select Place</option>
+                        {% for place in publication_places %}
+                            <option value="{{ place }}">{{ place }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-6">
-                <label class="form-label">प्रकाशन स्थळ / Place of Publication</label>
-                <select name="publication_place" id="publication_place" class="form-control">
-                    <option value="">Select Place</option>
-                    {% for place in publication_places %}
-                        <option value="{{ place }}">{{ place }}</option>
-                    {% endfor %}
-                </select>
-            </div>
 
                 {% comment %} <div class="col-md-6">
                     <label class="form-label">कॉल नंबर / Call Number</label>
@@ -332,35 +380,35 @@
                     <input type="text" name="keywords" class="form-control transliterate" placeholder="Search tags/keywords" readonly>
                 </div>
 
-     <div class="col-md-6">
-        <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
-        <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*">
-        {% if obj.front_page_photo %}
-            <div class="mt-2">
-                <img src="{{ MEDIA_URL }}{{ obj.front_page_photo }}" alt="Front Page Image" class="img-thumbnail" style="max-height: 120px;">
-            </div>
-        {% endif %}
-    </div>
+                <div class="col-md-6">
+                    <label class="form-label">मुखपृष्ठ प्रतिमा / Front Page Image</label>
+                    <input type="file" name="front_page_image" id="front_page_image" class="form-control" accept="image/*">
+                    {% if obj.front_page_photo %}
+                        <div class="mt-2">
+                            <img src="{{ MEDIA_URL }}{{ obj.front_page_photo }}" alt="Front Page Image" class="img-thumbnail" style="max-height: 120px;">
+                        </div>
+                    {% endif %}
+                </div>
             </div>  
 
             <!-- Row 9: Remarks -->
-              <div class="mb-3 row">
-         
-    <div class="col-md-6">
-        <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
-        <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*">
-        {% if obj.last_page_photo %}
-            <div class="mt-2">
-                <img src="{{ MEDIA_URL }}{{ obj.last_page_photo }}" alt="Last Page Image" class="img-thumbnail" style="max-height: 120px;">
-            </div>
-        {% endif %}
-    </div>
+            <div class="mb-3 row">
+                    
+                <div class="col-md-6">
+                    <label class="form-label">शेवटची पृष्ठ प्रतिमा / Last Page Image</label>
+                    <input type="file" name="last_page_image" id="last_page_image" class="form-control" accept="image/*">
+                    {% if obj.last_page_photo %}
+                        <div class="mt-2">
+                            <img src="{{ MEDIA_URL }}{{ obj.last_page_photo }}" alt="Last Page Image" class="img-thumbnail" style="max-height: 120px;">
+                        </div>
+                    {% endif %}
+                </div>
 
-            <div class="col-md-6">
-                <label class="form-label">टीप / Remarks</label>
-                <textarea name="remarks" class="form-control transliterate" rows="3" placeholder="Notes, e.g. Donated by XYZ" readonly></textarea>
+                        <div class="col-md-6">
+                            <label class="form-label">टीप / Remarks</label>
+                            <textarea name="remarks" class="form-control transliterate" rows="3" placeholder="Notes, e.g. Donated by XYZ" readonly></textarea>
+                        </div>
             </div>
-</div>
 
             <!-- BUTTONS -->
             <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
@@ -371,6 +419,7 @@
                     <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
                 </a>
             </div>
+
         </form>
 
     </div>
@@ -387,7 +436,6 @@
     <!-- Keeping only SweetAlert and optional message popup -->
     <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
@@ -644,6 +692,7 @@
                 const requiredFields = [
                     {id: 'language_id', name: 'Language'},
                     {id: 'author', name: 'Author'},
+                    {id: 'publisher', name: 'Publisher'},
                     {id: 'subtitle', name: 'Subtitle'},
                     {id: 'publisher', name: 'Publisher'},
                     {id: 'year_of_publication', name: 'Year of Publication'},
@@ -687,128 +736,307 @@
         });
     </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const languageSelect = document.getElementById('language_id');
-    const languageHidden = document.getElementById('language_id_hidden');
-    const authorSelect = document.getElementById('author');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageSelect = document.getElementById('language_id');
+            const languageHidden = document.getElementById('language_id_hidden');
+            const authorSelect = document.getElementById('author');
 
-    languageSelect.addEventListener('change', function() {
-        debugger;
-        const selectedLang = this.value;
-        languageHidden.value = selectedLang; // update hidden field
+            languageSelect.addEventListener('change', function() {
+                debugger;
+                const selectedLang = this.value;
+                languageHidden.value = selectedLang; // update hidden field
 
-        if (!selectedLang) {
-            authorSelect.innerHTML = '<option value="">Select Author</option>';
-            return;
+                if (!selectedLang) {
+                    authorSelect.innerHTML = '<option value="">Select Author</option>';
+                    return;
+                }
+
+                // AJAX request to fetch authors based on selected language
+                fetch("{% url 'book_catalog_create' %}?language_id=" + selectedLang, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    authorSelect.innerHTML = '<option value="">Select Author</option>'; // reset
+                    data.authors.forEach(author => {
+                        const option = document.createElement('option');
+                        option.value = author;
+                        option.text = author;
+                        authorSelect.appendChild(option);
+                    });
+                })
+                .catch(err => console.error('Error fetching authors:', err));
+            });
+
+            // Set hidden field on page load
+            if (languageSelect.value) {
+                languageHidden.value = languageSelect.value;
+            }
+        });
+    </script>
+
+    <script>
+        const authorInput = document.getElementById('author');
+        const authorDropdown = document.getElementById('authorDropdown');
+        const languageSelect = document.getElementById('language_id');
+
+        function fetchAuthors(languageId) {
+            if (!languageId) return;
+
+            fetch(`/book_catalog_create?action=get_authors&language_id=${languageId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                authorDropdown.innerHTML = '';
+                const authors = data.data || [];
+                if (authors.length) {
+                    authors.forEach(author => {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item author-item';
+                        div.textContent = author;
+                        div.onclick = () => selectAuthor(author);
+                        authorDropdown.appendChild(div);
+                    });
+                } else {
+                    authorDropdown.innerHTML = '<div class="dropdown-item text-muted">No authors found</div>';
+                }
+            })
+            .catch(err => console.error('Error fetching authors:', err));
         }
 
-        // AJAX request to fetch authors based on selected language
-        fetch("{% url 'book_catalog_create' %}?language_id=" + selectedLang, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            authorSelect.innerHTML = '<option value="">Select Author</option>'; // reset
-            data.authors.forEach(author => {
-                const option = document.createElement('option');
-                option.value = author;
-                option.text = author;
-                authorSelect.appendChild(option);
+        languageSelect.addEventListener('change', function() {
+            fetchAuthors(this.value);
+        });
+
+        authorInput.addEventListener('focus', () => {
+            if (authorDropdown.children.length) authorDropdown.classList.remove('d-none');
+        });
+
+        authorInput.addEventListener('blur', () => setTimeout(() => authorDropdown.classList.add('d-none'), 200));
+
+        function selectAuthor(name) {
+            authorInput.value = name;
+            authorDropdown.classList.add('d-none');
+        }
+
+        authorInput.addEventListener('input', () => {
+            const filter = authorInput.value.toLowerCase();
+            const items = authorDropdown.querySelectorAll('.author-item');
+            items.forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(filter) ? 'block' : 'none';
             });
-        })
-        .catch(err => console.error('Error fetching authors:', err));
-    });
+        });
+    </script>
 
-    // Set hidden field on page load
-    if (languageSelect.value) {
-        languageHidden.value = languageSelect.value;
-    }
-});
-</script>
+    <!-- Script for Translation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const languageSelect = document.getElementById('language_id');
+            const authorLabel = document.querySelector('label[for="author"]');
+            const authorInput = document.getElementById('author');
+            const authorHelpText = document.querySelector('#author + small');
 
-<script>
-    const authorInput = document.getElementById('author');
-    const authorDropdown = document.getElementById('authorDropdown');
-    const languageSelect = document.getElementById('language_id');
+            if (languageSelect && authorLabel && authorHelpText && authorInput) {
+                languageSelect.addEventListener('change', function () {
+                    const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
 
-    function fetchAuthors(languageId) {
-        if (!languageId) return;
-
-        fetch(`/book_catalog_create?action=get_authors&language_id=${languageId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            authorDropdown.innerHTML = '';
-            const authors = data.data || [];
-            if (authors.length) {
-                authors.forEach(author => {
-                    const div = document.createElement('div');
-                    div.className = 'dropdown-item author-item';
-                    div.textContent = author;
-                    div.onclick = () => selectAuthor(author);
-                    authorDropdown.appendChild(div);
+                    if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
+                        // Convert to Marathi
+                        authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
+                        authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
+                        authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
+                    } else {
+                        // Revert to English
+                        authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
+                        authorInput.placeholder = 'Type or select author';
+                        authorHelpText.textContent = 'Select an author from the list or type a new one.';
+                    }
                 });
-            } else {
-                authorDropdown.innerHTML = '<div class="dropdown-item text-muted">No authors found</div>';
-            }
-        })
-        .catch(err => console.error('Error fetching authors:', err));
-    }
-
-    languageSelect.addEventListener('change', function() {
-        fetchAuthors(this.value);
-    });
-
-    authorInput.addEventListener('focus', () => {
-        if (authorDropdown.children.length) authorDropdown.classList.remove('d-none');
-    });
-
-    authorInput.addEventListener('blur', () => setTimeout(() => authorDropdown.classList.add('d-none'), 200));
-
-    function selectAuthor(name) {
-        authorInput.value = name;
-        authorDropdown.classList.add('d-none');
-    }
-
-    authorInput.addEventListener('input', () => {
-        const filter = authorInput.value.toLowerCase();
-        const items = authorDropdown.querySelectorAll('.author-item');
-        items.forEach(item => {
-            item.style.display = item.textContent.toLowerCase().includes(filter) ? 'block' : 'none';
-        });
-    });
-</script>
-
-<!-- Script for Translation -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const languageSelect = document.getElementById('language_id');
-    const authorLabel = document.querySelector('label[for="author"]');
-    const authorInput = document.getElementById('author');
-    const authorHelpText = document.querySelector('#author + small');
-
-    if (languageSelect && authorLabel && authorHelpText && authorInput) {
-        languageSelect.addEventListener('change', function () {
-            const selectedLang = this.options[this.selectedIndex].text.trim().toLowerCase();
-
-            if (selectedLang === 'marathi' || selectedLang === 'मराठी') {
-                // Convert to Marathi
-                authorLabel.innerHTML = 'लेखक <span class="text-danger">*</span>';
-                authorInput.placeholder = 'लेखक निवडा किंवा लिहा';
-                authorHelpText.textContent = 'यादीतून लेखक निवडा किंवा नवीन लिहा.';
-            } else {
-                // Revert to English
-                authorLabel.innerHTML = 'Author <span class="text-danger">*</span>';
-                authorInput.placeholder = 'Type or select author';
-                authorHelpText.textContent = 'Select an author from the list or type a new one.';
             }
         });
-    }
-});
-</script>
+    </script>
 
+    <script>
+        // Publisher Combobox with Language Filtering
+        const publisherInput = document.getElementById('publisher');
+        const publisherDropdown = document.getElementById('publisherDropdown');
+        const languageSelectPublisher = document.getElementById('language_id');
+        
+        let allPublishers = [];
+        let currentLanguage = '';
+
+        // Fetch publishers based on selected language
+        function fetchPublishersByLanguage(languageId) {
+            if (!languageId) {
+                // Clear dropdown if no language selected
+                publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">Please select a language first</div>';
+                publisherInput.disabled = true;
+                publisherInput.placeholder = 'Select language first';
+                return;
+            }
+            
+            publisherInput.disabled = false;
+            publisherInput.placeholder = 'Type or select publisher';
+            
+            fetch(`/book_catalog_create?action=get_publishers_by_language&language_id=${languageId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const publishers = data.data || [];
+                publisherDropdown.innerHTML = '';
+                
+                if (publishers.length) {
+                    publishers.forEach(publisher => {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item publisher-item';
+                        div.textContent = publisher;
+                        div.onclick = () => selectPublisher(publisher);
+                        publisherDropdown.appendChild(div);
+                    });
+                    allPublishers = publishers;
+                } else {
+                    publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">No publishers found for this language</div>';
+                    allPublishers = [];
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching publishers:', err);
+                publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">Error loading publishers</div>';
+            });
+        }
+
+        // Listen to language change
+        if (languageSelectPublisher) {
+            languageSelectPublisher.addEventListener('change', function() {
+                const selectedLanguageId = this.value;
+                currentLanguage = selectedLanguageId;
+                
+                if (selectedLanguageId) {
+                    fetchPublishersByLanguage(selectedLanguageId);
+                } else {
+                    publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">Please select a language first</div>';
+                    publisherInput.disabled = true;
+                    publisherInput.value = '';
+                    publisherInput.placeholder = 'Select language first';
+                }
+            });
+            
+            // Trigger on page load if language is pre-selected
+            if (languageSelectPublisher.value) {
+                fetchPublishersByLanguage(languageSelectPublisher.value);
+            }
+        }
+
+        // Show dropdown when input is focused
+        publisherInput.addEventListener('focus', function() {
+            if (!languageSelectPublisher.value) {
+                publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">Please select a language first</div>';
+                publisherDropdown.classList.remove('d-none');
+                return;
+            }
+            
+            if (publisherDropdown.children.length && !publisherInput.disabled) {
+                publisherDropdown.classList.remove('d-none');
+                filterPublisherOptions();
+            }
+        });
+
+        // Hide dropdown when clicking outside
+        publisherInput.addEventListener('blur', function() {
+            setTimeout(() => publisherDropdown.classList.add('d-none'), 200);
+        });
+
+        // Filter dropdown options based on input
+        publisherInput.addEventListener('input', function() {
+            if (languageSelectPublisher.value) {
+                filterPublisherOptions();
+            }
+        });
+
+        // Handle keyboard navigation
+        publisherInput.addEventListener('keydown', function(e) {
+            if (!languageSelectPublisher.value) return;
+            
+            const items = publisherDropdown.querySelectorAll('.publisher-item:not([style*="display: none"])');
+            const currentIndex = Array.from(items).findIndex(item => item.classList.contains('active'));
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (items.length) {
+                    if (currentIndex >= 0) items[currentIndex].classList.remove('active');
+                    const newIndex = currentIndex + 1 < items.length ? currentIndex + 1 : 0;
+                    items[newIndex].classList.add('active');
+                    items[newIndex].scrollIntoView({ block: 'nearest' });
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (items.length) {
+                    if (currentIndex >= 0) items[currentIndex].classList.remove('active');
+                    const newIndex = currentIndex - 1 >= 0 ? currentIndex - 1 : items.length - 1;
+                    items[newIndex].classList.add('active');
+                    items[newIndex].scrollIntoView({ block: 'nearest' });
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const activeItem = publisherDropdown.querySelector('.publisher-item.active');
+                if (activeItem) {
+                    selectPublisher(activeItem.textContent);
+                } else if (publisherInput.value.trim()) {
+                    // Allow custom publisher entry
+                    publisherDropdown.classList.add('d-none');
+                }
+            } else if (e.key === 'Escape') {
+                publisherDropdown.classList.add('d-none');
+            }
+        });
+
+        function filterPublisherOptions() {
+            const filter = publisherInput.value.toLowerCase().trim();
+            const items = publisherDropdown.querySelectorAll('.publisher-item');
+            let hasVisible = false;
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (filter === '' || text.includes(filter)) {
+                    item.style.display = 'block';
+                    hasVisible = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show dropdown if there are visible items
+            if (hasVisible) {
+                publisherDropdown.classList.remove('d-none');
+            }
+        }
+
+        function selectPublisher(name) {
+            publisherInput.value = name;
+            publisherDropdown.classList.add('d-none');
+            // Trigger input event for any other logic
+            publisherInput.dispatchEvent(new Event('input'));
+            publisherInput.dispatchEvent(new Event('change'));
+            // Remove active class from items
+            publisherDropdown.querySelectorAll('.publisher-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Disable publisher input initially if no language selected
+            if (!languageSelectPublisher || !languageSelectPublisher.value) {
+                publisherInput.disabled = true;
+                publisherInput.placeholder = 'Select language first';
+                publisherDropdown.innerHTML = '<div class="dropdown-item text-muted">Please select a language first</div>';
+            }
+        });
+    </script>
+    
 {% endblock %}
