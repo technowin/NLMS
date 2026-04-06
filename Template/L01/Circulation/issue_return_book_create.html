@@ -590,6 +590,7 @@
                             <input type="hidden" name="total_amount" id="totalAmountHidden" value="0">
                             <input type="hidden" name="fine_Breakdown" id="fineBreakdownHidden" value="0">
                             <input type="hidden" name="adjusted_amount" id="adjustedAmountHidden" value="0">
+                            <input type="hidden" name="is_fine_adjusted" id="isFineAdjustedHidden" value="0">
                             
                             {% comment %} Barcode / बारकोड {% endcomment %}
 
@@ -1034,263 +1035,6 @@
 
     </script>
 
-    {% comment %} barcode search {% endcomment %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            function setupDropdown(inputId, optionsId, hiddenId, fetchFunction) {
-                const input = document.getElementById(inputId);
-                const options = document.getElementById(optionsId);
-                const hiddenInput = document.getElementById(hiddenId);
-                const items = options.getElementsByTagName("li");
-                let highlightedIndex = -1;
-
-                // Show dropdown on focus
-                input.addEventListener("focus", () => options.style.display = "block");
-
-                // Filter items while typing
-                input.addEventListener("input", () => {
-                    const filter = input.value.toLowerCase();
-                    let hasMatch = false;
-                    highlightedIndex = -1;
-
-                    const placeholder = options.querySelector(".no-result");
-                    if (placeholder) placeholder.remove();
-
-                    for (let i = 0; i < items.length; i++) {
-                        const txt = items[i].textContent.toLowerCase();
-                        if (txt.includes(filter)) {
-                            items[i].style.display = "";
-                            if (highlightedIndex === -1) highlightedIndex = i;
-                            hasMatch = true;
-                        } else {
-                            items[i].style.display = "none";
-                        }
-                        items[i].classList.remove("highlighted");
-                    }
-
-                    if (highlightedIndex !== -1) {
-                        items[highlightedIndex].classList.add("highlighted");
-                    }
-
-                    if (!hasMatch) {
-                        const li = document.createElement("li");
-                        li.textContent = "❌ No results found";
-                        li.classList.add("no-result");
-                        li.style.padding = "0.5rem 1rem";
-                        li.style.color = "#888";
-                        options.appendChild(li);
-                    }
-                });
-
-                // Keyboard navigation
-                input.addEventListener("keydown", function (e) {
-                    const visibleItems = Array.from(items).filter(i => i.style.display !== "none" && !i.classList.contains("no-result"));
-                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-                        e.preventDefault();
-                        if (visibleItems.length === 0) return;
-
-                        visibleItems.forEach(i => i.classList.remove("highlighted"));
-
-                        if (e.key === "ArrowDown") highlightedIndex = (highlightedIndex + 1) % visibleItems.length;
-                        else if (e.key === "ArrowUp") highlightedIndex = (highlightedIndex - 1 + visibleItems.length) % visibleItems.length;
-
-                        visibleItems[highlightedIndex].classList.add("highlighted");
-                        input.value = visibleItems[highlightedIndex].textContent.trim();
-                    }
-
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (highlightedIndex >= 0 && visibleItems.length > 0) {
-                            const selectedItem = visibleItems[highlightedIndex];
-                            input.value = selectedItem.textContent.trim();
-                            hiddenInput.value = selectedItem.getAttribute("data-value");
-
-                            fetchFunction(hiddenInput.value);  // Call specific fetch function
-                        }
-                        options.style.display = "none";
-                    }
-                });
-
-                // Click selection
-                for (let i = 0; i < items.length; i++) {
-                    items[i].addEventListener("click", function () {
-                        input.value = this.textContent.trim();
-                        hiddenInput.value = this.getAttribute("data-value");
-                        options.style.display = "none";
-
-                        fetchFunction(hiddenInput.value); // Call specific fetch function
-                    });
-                }
-
-                // Close dropdown on outside click
-                document.addEventListener("click", function (e) {
-                    if (!e.target.closest(".custom-dropdown")) options.style.display = "none";
-                });
-            }
-
-            // Initialize Barcode dropdown
-            setupDropdown("barcodeSearch", "barcodeOptions", "barcodeCodeInput", fetchBookDetails);
-
-            // AJAX function to fetch book details
-            function fetchBookDetails(barcodeId) {
-                $.ajax({
-                    url: "{% url 'L01:get_book_details' %}",  // Django URL
-                    type: "POST",
-                    data: {
-                        barcode_id: barcodeId,
-                        csrfmiddlewaretoken: '{{ csrf_token }}'
-                    },
-                    dataType: "json",
-                    success: function(data) {
-                        debugger;
-                        const container = $("#barcodeDetails");
-                        const issueBtn = $("#issueBookBtn");
-                        container.empty();
-
-                        if (data.success) {
-                            const books = Array.isArray(data.book) ? data.book : [data.book];
-                            allOnShelf = true;
-
-                            books.forEach(book => {
-                                // Determine status-based colors
-                                const isOnShelf = book.status_name === 'On-Shelf';
-                                if (!isOnShelf) {
-                                    allOnShelf = false; // found at least one not on shelf
-                                }
-                                const borderColor = isOnShelf ? '#28a745' : '#dc3545'; // card border
-                                const cardBg = isOnShelf ? '#e6f9e6' : '#ffe6e6';       // card background
-                                const badgeBg = isOnShelf ? '#d2fcd2' : '#ffdede';      // badge background
-                                const textColor = isOnShelf ? '#28a745' : '#dc3545';    // for title & labels
-
-                                container.append(`
-                                    <div class="book-card" style="border: 1px solid ${borderColor}; background-color: ${cardBg};">
-                                        <div class="book-photo">
-                                            <img src="${book.front_page_photo || '/static/images/book-placeholder.png'}" 
-                                                alt="Book Photo">
-                                        </div>
-                                        <div class="book-info">
-                                            <h5 style="color:${textColor};">${book.title || 'Untitled Book'}</h5>
-                                            <p><strong style="color:${textColor};">by</strong> <span style="color:${textColor};">${book.author || '-'}</span></p>
-                                            <p><strong style="color:${textColor};">ISBN:</strong> <span style="color:${textColor};">${book.isbn_issn || '-'}</span></p>
-                                            <p> 
-                                                <span 
-                                                    class="status-badge"
-                                                    style="background-color: ${badgeBg}; color: ${textColor};"
-                                                    ${book.status_name === "Issued" ? `onclick="viewCirculationDetails('${barcodeId}')"` : ''}
-                                                >
-                                                    ${book.status_name || 'Unknown'}
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                `);
-                            });
-                            // Disable or enable Issue button based on status
-                            if (!allOnShelf) {
-                                issueBtn.prop('disabled', true)
-                                        .addClass('btn-secondary')
-                                        .removeClass('btn-success')
-                                        .html('<i class="uil uil-ban"></i> Cannot Issue');
-                            } else {
-                                issueBtn.prop('disabled', false)
-                                        .addClass('btn-success')
-                                        .removeClass('btn-secondary')
-                                        .html('<i class="uil uil-check-circle"></i> Issue Book');
-                            }
-                        } else {
-                            container.html(`<p class="text-danger">${data.error || "No book details found"}</p>`);
-                            $("#issueBookBtn").prop("disabled", true)
-                                .addClass('btn-secondary')
-                                .removeClass('btn-success')
-                                .html('<i class="uil uil-ban"></i> Cannot Issue');
-                        }
-                    }
-                });
-            }
-        });
-
-        function viewCirculationDetails(barcode) {
-            debugger;
-            if (!barcode) return;
-
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('circulationDetailsModal'));
-            modal.show();
-
-            // Show loading text
-            const modalBody = document.querySelector('#circulationDetailsModal .modal-body');
-            modalBody.innerHTML = `<p class="text-center text-muted">लोड होत आहे...</p>`;
-
-            // AJAX call
-            $.ajax({
-                url: "{% url 'L01:circulation_transaction_details' %}", // adjust URL to your endpoint
-                type: 'GET',
-                data: { barcode: barcode },
-                success: function(data) {
-                    debugger;
-                    if (data.success) {
-                        if (data.transactions.length === 0) {
-                            modalBody.innerHTML = `<p class="text-center text-muted">कोणतेही रेकॉर्ड नाहीत</p>`;
-                            return;
-                        }
-
-                        // Member info
-                        const memberName = data.transactions[0].member_name || '-';
-                        const membershipCode = data.transactions[0].membership_code || '-';
-                        let html = `
-                            <div class="mb-3 p-2 bg-light rounded">
-                                <p><strong>सदस्याचे नाव:</strong> ${memberName}</p>
-                                <p><strong>सदस्य क्रमांक:</strong> ${membershipCode}</p>
-                            </div>
-                        `;
-
-                        // Table header
-                        html += `
-                            <table class="table table-bordered table-striped">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th>पुस्तकाचे नाव</th>
-                                        <th>दालन क्र.</th>
-                                        <th>जारी दिनांक</th>
-                                        <th>देय दिनांक</th>
-                                        <th>स्थिती</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                        `;
-
-                        // Table rows
-                        data.transactions.forEach(t => {
-                            html += `
-                                <tr>
-                                    <td>${t.title || '-'}</td>
-                                    <td>${t.accession_no || '-'}</td>
-                                    <td>${t.issue_date || '-'}</td>
-                                    <td>${t.due_date || '-'}</td>
-                                    <td>${t.status_name || '-'}</td>
-                                </tr>
-                            `;
-                        });
-
-                        html += `</tbody></table>`;
-
-                        // Set modal content
-                        modalBody.innerHTML = html;
-
-                    } else {
-                        modalBody.innerHTML = `<p class="text-center text-danger">${data.error || "त्रुटी आली"}</p>`;
-                    }
-                },
-                error: function(err) {
-                    modalBody.innerHTML = `<p class="text-center text-danger">AJAX त्रुटी झाली</p>`;
-                    console.error(err);
-                }
-
-            });
-        }
-    </script>
-
     {% comment %} barcode in return {% endcomment %}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -1363,7 +1107,7 @@
                             input.value = selectedItem.textContent.trim();
                             hiddenInput.value = selectedItem.getAttribute("data-value");
 
-                            fetchFunction(hiddenInput.value);  // Call specific fetch function
+                            fetchFunction(hiddenInput.value);
                         }
                         options.style.display = "none";
                     }
@@ -1376,7 +1120,7 @@
                         hiddenInput.value = this.getAttribute("data-value");
                         options.style.display = "none";
 
-                        fetchFunction(hiddenInput.value); // Call specific fetch function
+                        fetchFunction(hiddenInput.value);
                     });
                 }
 
@@ -1389,21 +1133,29 @@
             // Initialize Barcode dropdown
             setupDropdown("barcodeSearchReturn", "barcodeOptionsReturn", "barcodeCodeInputReturn", fetchBookDetails);
 
+            // Global variable to track if user adjusted fine
+            let isUserAdjusted = false;
+
             // AJAX function to fetch book details
             function fetchBookDetails(barcodeId) {
                 $.ajax({
-                    url: "{% url 'L01:get_book_details' %}",  // Django URL
+                    url: "{% url 'L01:get_book_details' %}",
                     type: "POST",
                     data: {
                         barcode_id: barcodeId,
                         csrfmiddlewaretoken: '{{ csrf_token }}',
-                        returnProcess: 'return'  // flag to indicate return process
+                        returnProcess: 'return'
                     },
                     dataType: "json",
                     success: function (data) {
                         const container = $("#barcodeDetailsReturn");
                         const returnBtn = $("#returnBookBtn");
                         container.empty();
+
+                        // Reset adjustment flag for new book
+                        isUserAdjusted = false;
+                        $("#isFineAdjustedHidden").val("0");
+                        $("#adjustedAmountHidden").val("0");
 
                         if (data.success) {
                             const book = data.book;
@@ -1447,7 +1199,7 @@
                             container.append(`
                                 <div class="member-card" style="border: 1px solid #0d6efd; background-color: #e9f3ff; border-radius: 10px; padding: 10px; display: flex; align-items: center;">
                                     <div class="member-photo">
-                                            <img src="${member.profile_photo || '/static/images/default-user.png'}" alt="Member Photo">
+                                        <img src="${member.profile_photo || '/static/images/default-user.png'}" alt="Member Photo">
                                     </div>
                                     <div class="member-info flex-grow-1">
                                         <h4 class="member-name mb-1" style="color:#0d6efd;">${member.member_name}</h4>
@@ -1460,14 +1212,20 @@
 
                             const fineAmount = book.fine_amount || 0;
                             const finePerDay = fineAmount && daysOverdue > 0 ? (fineAmount / daysOverdue).toFixed(2) : 0;
-                            const fineCard = $("#fineCard");
 
-                            // Store data globally
+                            // Store data globally with 1.5x multiplier for torn/lost
+                            const originalPrice = parseFloat(book.price || 0);
+                            const priceWithMultiplier = Math.round(originalPrice * 1.5);  // Round to nearest integer
+                            const penaltyAmount = Math.round(originalPrice * 0.5);        // Round the penalty amount
+
                             window.bookData = {
                                 days_overdue: daysOverdue,
                                 fine_per_day: parseFloat(finePerDay) || 0,
-                                original_fine: fineAmount,            
-                                price: parseFloat(book.price || 0)
+                                original_fine: Math.round(fineAmount),  // Round fine amount
+                                price: originalPrice,
+                                price_multiplier: 1.5,
+                                price_with_multiplier: priceWithMultiplier,
+                                penalty_amount: penaltyAmount
                             };
 
                             // Hide fine card by default
@@ -1476,94 +1234,146 @@
                             $("#bookPriceRow").hide();
                             $("#bookPriceHR").hide();
 
-                            // Only show fine if daysOverdue > 0 (optional)
+                            // Only show fine if daysOverdue > 0
                             if (daysOverdue > 0) {
+                                const roundedFine = Math.round(window.bookData.original_fine);
+                                
                                 $("#fineCard").show();
                                 $("#adjustedFineRow").show();
                                 $("#fineBreakdown").text(`${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue × ₹${finePerDay}/day`);
-                                $("#fineAmount").text(`₹${window.bookData.original_fine.toFixed(2)}`);
-                                $("#fineTotal").text(`Total Fine: ₹${window.bookData.original_fine.toFixed(2)}`);
-                                fineAmountHidden.value = window.bookData.original_fine.toFixed(2);
-                                fineBreakdownHidden.value = daysOverdue.toFixed(2);
+                                $("#fineAmount").text(`₹${roundedFine}`);
+                                
+                                // Set total fine to original fine initially
+                                $("#fineTotal").text(`Total Fine: ₹${roundedFine}`);
+                                
+                                fineAmountHidden.value = roundedFine;
+                                totalAmountHidden.value = roundedFine;
+                                fineBreakdownHidden.value = daysOverdue;
+                                
+                                // Reset adjusted fine input to original fine
+                                $("#adjustedFineInput").val(roundedFine);
+                            } else {
+                                $("#fineCard").hide();
+                                fineAmountHidden.value = "0";
+                                totalAmountHidden.value = "0";
+                                $("#adjustedFineInput").val("0");
                             }
 
+                            // Remove existing event listeners to avoid duplicates
+                            $("#bookConditionSelect").off("change");
+                            $("#adjustedFineInput").off("focus input");
 
                             // --- Dropdown logic ---
-                            document.getElementById("bookConditionSelect").addEventListener("change", function () {
+                            $("#bookConditionSelect").on("change", function () {
                                 const condition = this.value;
-                                const adjusted = parseFloat($("#adjustedFineInput").val()) || 0;
-
-                                // Original fine
-                                const originalFine = window.bookData.original_fine;
-
-                                // Start with adjusted fine if entered, else original fine
-                                let totalFine = adjusted > 0 ? adjusted : originalFine;
-
-                                // Torn/Lost adds book price
+                                let adjusted = Math.round(parseFloat($("#adjustedFineInput").val()) || 0);
+                                
+                                const originalFine = Math.round(window.bookData.original_fine);
+                                
+                                // If user hasn't adjusted, use original fine
+                                // If user has adjusted, use adjusted value (even if 0)
+                                let totalFine = isUserAdjusted ? adjusted : originalFine;
+                                
+                                // Torn/Lost adds 1.5x book price (rounded)
                                 if (condition === "18" || condition === "19") {
-                                    totalFine += window.bookData.price;
+                                    const bookPriceWithMultiplier = window.bookData.price_with_multiplier;
+                                    totalFine = Math.round(totalFine + bookPriceWithMultiplier);
+                                    
                                     $("#bookPriceRow").show();
-                                    $("#bookPriceAmount").text(`₹${window.bookData.price.toFixed(2)}`);
+                                    $("#bookPriceAmount").html(`
+                                        <div>
+                                            <span style="font-size:0.85rem; display:block;">Book Price: ₹${window.bookData.price.toFixed(2)}</span>
+                                            <span style="font-size:0.85rem; display:block; color:#dc3545;">+ 1.5x Penalty: ₹${window.bookData.penalty_amount}</span>
+                                            <hr style="margin:4px 0; border-top:1px solid #dc3545;">
+                                            <span style="font-weight:bold;">Total: ₹${bookPriceWithMultiplier}</span>
+                                        </div>
+                                    `);
                                     $("#bookPriceHR").show();
-                                    bookPriceAmountHidden.value = window.bookData.price.toFixed(2);
+                                    bookPriceAmountHidden.value = bookPriceWithMultiplier;
                                 } else {
                                     $("#bookPriceRow").hide();
                                     $("#bookPriceHR").hide();
-                                    $("#bookPriceAmount").text("₹0.00");
-                                    bookPriceAmountHidden.value = "0.00";
+                                    $("#bookPriceAmount").text("₹0");
+                                    bookPriceAmountHidden.value = "0";
                                 }
-
+                                
                                 // Show/hide fine card if overdue or Torn/Lost
                                 if (window.bookData.days_overdue > 0 || condition === "18" || condition === "19") {
                                     $("#fineCard").show();
                                 } else {
                                     $("#fineCard").hide();
                                 }
-
-                                // Update UI
-                                $("#fineAmount").text(`₹${originalFine.toFixed(2)}`); // always original
-                                $("#fineTotal").text(`Total Fine: ₹${totalFine.toFixed(2)}`);
-
+                                
+                                // Update UI with rounded values
+                                $("#fineAmount").text(`₹${originalFine}`);
+                                $("#fineTotal").text(`Total Fine: ₹${totalFine}`);
+                                
                                 // Update hidden fields
-                                fineAmountHidden.value = originalFine.toFixed(2);  // always original fine
-                                totalAmountHidden.value = totalFine.toFixed(2);    // total fine including book price
-                                $("#adjustedAmountHidden").val(adjusted.toFixed(2)); // adjusted fine if any
+                                fineAmountHidden.value = originalFine;
+                                totalAmountHidden.value = totalFine;
+                                
+                                // Only send adjusted amount if user actually adjusted
+                                if (isUserAdjusted) {
+                                    $("#adjustedAmountHidden").val(adjusted);
+                                    $("#isFineAdjustedHidden").val("1");
+                                } else {
+                                    $("#adjustedAmountHidden").val("0");
+                                    $("#isFineAdjustedHidden").val("0");
+                                }
                             });
 
-
                             // --- Adjusted fine input listener ---
+                            $("#adjustedFineInput").on("focus", function() {
+                                isUserAdjusted = true;
+                            });
+
                             $("#adjustedFineInput").on("input", function () {
+                                isUserAdjusted = true;
+                                
                                 const condition = $("#bookConditionSelect").val();
-                                const adjusted = parseFloat($(this).val()) || 0;
-
-                                const originalFine = window.bookData.original_fine;
-                                let totalFine = adjusted > 0 ? adjusted : originalFine;
-
-                                // Torn/Lost adds book price
+                                let adjusted = Math.round(parseFloat($(this).val()) || 0);
+                                $(this).val(adjusted);  // Update input field with rounded value
+                                
+                                const originalFine = Math.round(window.bookData.original_fine);
+                                
+                                // Use adjusted value directly (even if 0)
+                                let totalFine = adjusted;
+                                
+                                // Torn/Lost adds 1.5x book price (rounded)
                                 if (condition === "18" || condition === "19") {
-                                    totalFine += window.bookData.price;
+                                    const bookPriceWithMultiplier = window.bookData.price_with_multiplier;
+                                    totalFine = Math.round(totalFine + bookPriceWithMultiplier);
+                                    
                                     $("#bookPriceRow").show();
-                                    $("#bookPriceAmount").text(`₹${window.bookData.price.toFixed(2)}`);
+                                    $("#bookPriceAmount").html(`
+                                        <div>
+                                            <span style="font-size:0.85rem; display:block;">Book Price: ₹${window.bookData.price.toFixed(2)}</span>
+                                            <span style="font-size:0.85rem; display:block; color:#dc3545;">+ 1.5x Penalty: ₹${window.bookData.penalty_amount}</span>
+                                            <hr style="margin:4px 0; border-top:1px solid #dc3545;">
+                                            <span style="font-weight:bold;">Total: ₹${bookPriceWithMultiplier}</span>
+                                        </div>
+                                    `);
                                     $("#bookPriceHR").show();
-                                    bookPriceAmountHidden.value = window.bookData.price.toFixed(2);
+                                    bookPriceAmountHidden.value = bookPriceWithMultiplier;
                                 } else {
                                     $("#bookPriceRow").hide();
                                     $("#bookPriceHR").hide();
-                                    $("#bookPriceAmount").text("₹0.00");
-                                    bookPriceAmountHidden.value = "0.00";
+                                    $("#bookPriceAmount").text("₹0");
+                                    bookPriceAmountHidden.value = "0";
                                 }
-
-                                // Update UI
-                                $("#fineAmount").text(`₹${originalFine.toFixed(2)}`); // always original
-                                $("#fineTotal").text(`Total Fine: ₹${totalFine.toFixed(2)}`);
-
+                                
+                                // Update UI with rounded values
+                                $("#fineAmount").text(`₹${originalFine}`);
+                                $("#fineTotal").text(`Total Fine: ₹${totalFine}`);
+                                
                                 // Update hidden fields
-                                fineAmountHidden.value = originalFine.toFixed(2);  // always original fine
-                                totalAmountHidden.value = totalFine.toFixed(2);    // total fine including book price
-                                $("#adjustedAmountHidden").val(adjusted.toFixed(2)); // adjusted fine
+                                fineAmountHidden.value = originalFine;
+                                totalAmountHidden.value = totalFine;
+                                
+                                // Store adjusted amount and flag
+                                $("#adjustedAmountHidden").val(adjusted);
+                                $("#isFineAdjustedHidden").val("1");
                             });
-
-
 
                             // Reset UI
                             $("#bookConditionSelect").val("");
@@ -1586,31 +1396,25 @@
         });
 
         function viewCirculationDetails(barcode) {
-            debugger;
             if (!barcode) return;
 
-            // Show modal
             const modal = new bootstrap.Modal(document.getElementById('circulationDetailsModal'));
             modal.show();
 
-            // Show loading text
             const modalBody = document.querySelector('#circulationDetailsModal .modal-body');
             modalBody.innerHTML = `<p class="text-center text-muted">लोड होत आहे...</p>`;
 
-            // AJAX call
             $.ajax({
-                url: "{% url 'L01:circulation_transaction_details' %}", // adjust URL to your endpoint
+                url: "{% url 'L01:circulation_transaction_details' %}",
                 type: 'GET',
                 data: { barcode: barcode },
                 success: function(data) {
-                    debugger;
                     if (data.success) {
                         if (data.transactions.length === 0) {
                             modalBody.innerHTML = `<p class="text-center text-muted">कोणतेही रेकॉर्ड नाहीत</p>`;
                             return;
                         }
 
-                        // Member info
                         const memberName = data.transactions[0].member_name || '-';
                         const membershipCode = data.transactions[0].membership_code || '-';
                         let html = `
@@ -1618,41 +1422,19 @@
                                 <p><strong>सदस्याचे नाव:</strong> ${memberName}</p>
                                 <p><strong>सदस्य क्रमांक:</strong> ${membershipCode}</p>
                             </div>
-                        `;
-
-                        // Table header
-                        html += `
                             <table class="table table-bordered table-striped">
                                 <thead class="table-primary">
-                                    <tr>
-                                        <th>पुस्तकाचे नाव</th>
-                                        <th>दालन क्र.</th>
-                                        <th>जारी दिनांक</th>
-                                        <th>देय दिनांक</th>
-                                        <th>स्थिती</th>
-                                    </tr>
+                                    <tr><th>पुस्तकाचे नाव</th><th>दालन क्र.</th><th>जारी दिनांक</th><th>देय दिनांक</th><th>स्थिती</th></tr>
                                 </thead>
                                 <tbody>
                         `;
 
-                        // Table rows
                         data.transactions.forEach(t => {
-                            html += `
-                                <tr>
-                                    <td>${t.title || '-'}</td>
-                                    <td>${t.accession_no || '-'}</td>
-                                    <td>${t.issue_date || '-'}</td>
-                                    <td>${t.due_date || '-'}</td>
-                                    <td>${t.status_name || '-'}</td>
-                                </tr>
-                            `;
+                            html += `<tr><td>${t.title || '-'}</td><td>${t.accession_no || '-'}</td><td>${t.issue_date || '-'}</td><td>${t.due_date || '-'}</td><td>${t.status_name || '-'}</td></tr>`;
                         });
 
                         html += `</tbody></table>`;
-
-                        // Set modal content
                         modalBody.innerHTML = html;
-
                     } else {
                         modalBody.innerHTML = `<p class="text-center text-danger">${data.error || "त्रुटी आली"}</p>`;
                     }
@@ -1661,7 +1443,6 @@
                     modalBody.innerHTML = `<p class="text-center text-danger">AJAX त्रुटी झाली</p>`;
                     console.error(err);
                 }
-
             });
         }
     </script>
@@ -2295,6 +2076,7 @@
                 }
             });
         }
+
     </script>
 
     {% comment %} Clear modal content when closed/reopened {% endcomment %}

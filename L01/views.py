@@ -3700,10 +3700,11 @@ def issue_return_book_create(request):
 
                 # Book condition and fine
                 condition_name = request.POST.get("book_condition")
-                fine_amount = float(request.POST.get("fine_amount", 0) or 0)
-                adjusted_fine = float(request.POST.get("adjusted_amount", 0) or 0)  # <-- new
-                book_price_amount = float(request.POST.get("book_price_amount", 0) or 0)
-                total_amount = float(request.POST.get("total_amount", 0))
+                fine_amount = round(float(request.POST.get("fine_amount", 0) or 0))  # Round to integer
+                adjusted_fine = round(float(request.POST.get("adjusted_amount", 0) or 0))  # Round to integer
+                is_fine_adjusted = request.POST.get("is_fine_adjusted", "0") == "1"
+                book_price_amount = round(float(request.POST.get("book_price_amount", 0) or 0))  # Already includes 1.5x
+                total_amount = round(float(request.POST.get("total_amount", 0) or 0))
                 fine_Breakdown = float(request.POST.get("fine_Breakdown", 0))
                 notes = request.POST.get("notes", "")
                 payment_method = request.POST.get("payment_method", "Cash")
@@ -3715,47 +3716,44 @@ def issue_return_book_create(request):
                     new_copy_status = status_master.objects.get(status_id=19)
                 else:
                     new_copy_status = status_master.objects.get(status_id=13)
+                
+                # 🔴 FIXED: Calculate final fine correctly
+                # Only use adjusted_fine if user actually changed it
+                if is_fine_adjusted:
+                    final_fine = adjusted_fine  # This can be 0, 10, 50, etc.
+                else:
+                    final_fine = fine_amount  # Use original calculated fine
 
                 # Wrap all DB operations in a transaction
                 try:
                     with db_transaction.atomic():
                         # Update CirculationTransaction
-                        
-                        # final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
-                        
-                        # trans_obj.return_date = timezone.now().date()
-                        # trans_obj.return_condition = new_copy_status
-                        # trans_obj.fine_amount = fine_amount
-                        # trans_obj.adjusted_fine = adjusted_fine  # <-- save adjusted fine
-                        # trans_obj.book_fine_amount = book_price_amount
-                        # trans_obj.total_fine = total_amount
-                        # trans_obj.days_overdue_count = fine_Breakdown
-                        # trans_obj.fine_status = "Paid" if fine_amount > 0 else "None"
-                        # trans_obj.fine_paid_date = timezone.now().date()
-                        # trans_obj.transaction_status = "Success"
-                        # trans_obj.transaction_type = "Offline"
-                        # trans_obj.received_by = user_id
-                        # trans_obj.remarks = notes
-                        # trans_obj.updated_by = user_id
-                        # trans_obj.save()
-                        
-                        final_fine = adjusted_fine if adjusted_fine > 0 else fine_amount
                         trans_obj.return_date = timezone.now().date()
                         trans_obj.return_condition = new_copy_status
+                        
+                        # Only save adjusted_fine if user actually changed it
+                        if is_fine_adjusted:
+                            trans_obj.adjusted_fine = adjusted_fine
+                        else:
+                            trans_obj.adjusted_fine = None
+                            
                         trans_obj.fine_amount = fine_amount
-                        trans_obj.adjusted_fine = adjusted_fine
+                        trans_obj.total_fine = final_fine
                         trans_obj.book_fine_amount = book_price_amount
-                        trans_obj.total_fine = total_amount
                         trans_obj.days_overdue_count = fine_Breakdown
 
-                        if adjusted_fine > 0:
+                        # Set fine status based on final_fine
+                        if is_fine_adjusted and adjusted_fine == 0:
+                            trans_obj.fine_status = "Adjusted"
+                            trans_obj.fine_paid_date = None
+                        elif adjusted_fine > 0 and is_fine_adjusted:
                             trans_obj.fine_status = "Adjusted"
                             trans_obj.fine_paid_date = timezone.now().date()
-                        elif fine_amount > 0:
+                        elif fine_amount > 0 and not is_fine_adjusted:
                             trans_obj.fine_status = "Paid"
                             trans_obj.fine_paid_date = timezone.now().date()
                         else:
-                            trans_obj.fine_status = None
+                            trans_obj.fine_status = "None"
                             trans_obj.fine_paid_date = None
 
                         trans_obj.transaction_status = "Success"
@@ -3770,8 +3768,9 @@ def issue_return_book_create(request):
                         circ.current_status = new_copy_status
                         circ.save()
 
-                        # Payment logic
-                        fine_nonzero = fine_amount > 0.001
+                        # 🔴 FIXED: ALWAYS create payment record for audit trail
+                        # Determine payment type based on final_fine and book_price
+                        fine_nonzero = final_fine > 0.001
                         book_nonzero = book_price_amount > 0.001
 
                         if fine_nonzero and not book_nonzero:
@@ -3781,29 +3780,29 @@ def issue_return_book_create(request):
                         elif not fine_nonzero and book_nonzero:
                             payment_type = "Loss"
                         else:
-                            payment_type = None
-
-                        if total_amount > 0 and payment_type:
-                            PaymentDetails.objects.create(
-                                membership=trans_obj.member,
-                                circulation_transaction=trans_obj,
-                                payment_mode="Offline",
-                                payment_method=payment_method,
-                                payment_type=payment_type,
-                                fine_amount=final_fine,              
-                                book_fine_amount=book_price_amount,  
-                                user_id=trans_obj.member.user_id,
-                                membership_code=trans_obj.membership_code,
-                                payment_date=timezone.now().date(),
-                                created_by=user_id,
-                                updated_by=user_id,
-                                status=StatusMaster.objects.get(id=5),
-                            )
+                            payment_type = "None"
+                            
+                        # Always create payment record (even for 0 amount) for audit trail
+                        PaymentDetails.objects.create(
+                            membership=trans_obj.member,
+                            circulation_transaction=trans_obj,
+                            payment_mode="Offline",
+                            payment_method=payment_method,
+                            payment_type=payment_type,
+                            fine_amount=final_fine,
+                            book_fine_amount=book_price_amount,
+                            adjusted_amount=adjusted_fine if is_fine_adjusted else None,  # 🔴 ADD THIS - Store adjusted fine if user changed it
+                            user_id=trans_obj.member.user_id,
+                            membership_code=trans_obj.membership_code,
+                            payment_date=timezone.now().date() if total_amount > 0 else None,
+                            created_by=user_id,
+                            updated_by=user_id,
+                            status=StatusMaster.objects.get(id=5),
+                        )
 
                     messages.success(request, "पुस्तक यशस्वीरित्या परत झाले आहे!")
 
                 except Exception as e:
-                    # Rollback automatically on any error
                     messages.error(request, f"त्रुटी: {str(e)}. कृपया पुन्हा प्रयत्न करा!")
                     return redirect('L01:issue_return_book_create')
             
