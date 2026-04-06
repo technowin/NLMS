@@ -74,7 +74,7 @@
         }
     </style>
 
-       <style>
+    <style>
         .image-wrapper {
             position: relative;
             display: inline-block;
@@ -124,265 +124,261 @@
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-<!-- Hidden field with encrypted ID -->
-  <input type="hidden" name="id" value="{% if library %}{{ library.encrypted_id }}{% endif %}">
+            <!-- Hidden field with encrypted ID -->
+            <input type="hidden" name="id" value="{% if library %}{{ library.encrypted_id }}{% endif %}">
 
-     <!-- Row 1: Library Code & Name (English) -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">लायब्ररी कोड / Library Code</label>
-            <input type="text" name="library_code" id="library_code" class="form-control"
-                   value="{% if library %}{{ library.library_code }}{% else %}{{ new_library_code }}{% endif %}"
-                   readonly>
-        </div>
-      <div class="col-md-6">
-    <label class="form-label">Library Name (English)</label>
-    <input type="text" name="library_name" id="library_name" class="form-control"
-           placeholder="Library Name in English"
-           value="{% if library %}{{ library.library_name }}{% endif %}" required>
-</div>
-    </div>
+            <!-- Row 1: Library Code & Name (English) -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">लायब्ररी कोड / Library Code</label>
+                    <input type="text" name="library_code" id="library_code" class="form-control"
+                        value="{% if library %}{{ library.library_code }}{% else %}{{ new_library_code }}{% endif %}"
+                        readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Library Name (English)</label>
+                    <input type="text" name="library_name" id="library_name" class="form-control"
+                        placeholder="Library Name in English"
+                        value="{% if library %}{{ library.library_name }}{% endif %}" required>
+                </div>
+            </div>
 
-    <!-- Row 2: Name (Marathi) & Accounting Code -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-    <label class="form-label">लायब्ररी नाव / Library Name in Marathi</label>
-    <input type="text" name="library_name_mar" id="library_name_mar" class="form-control"
-           placeholder="Library Name in Marathi"
-           value="{% if library %}{{ library.library_name_mar }}{% endif %}" required>
-</div>
+            <!-- Row 2: Name (Marathi) & Accounting Code -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">लायब्ररी नाव / Library Name in Marathi</label>
+                    <input type="text" name="library_name_mar" id="library_name_mar" class="form-control"
+                        placeholder="Library Name in Marathi"
+                        value="{% if library %}{{ library.library_name_mar }}{% endif %}" required>
+                </div>
 
- <div class="col-md-6">
-    <label class="form-label">लेखांकन कोड / Accounting Code</label>
-    <select name="accounting_code_id" id="accounting_code_id" class="form-control" required>
+                <div class="col-md-6">
+                    <label class="form-label">लेखांकन कोड / Accounting Code</label>
+                    <select name="accounting_code_id" id="accounting_code_id" class="form-control" required>
 
-        {% if library and library.library_accounting_code_id %}
-            {% for code in accounting_codes %}
-                {% if code.ward_id == library.library_accounting_code_id %}
-                    <option value="{{ code.ward_id }}" selected>{{ code.accounting_code }}</option>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-
-        {% for code in accounting_codes %}
-            {% if not library or code.ward_id != library.library_accounting_code_id %}
-                <option value="{{ code.ward_id }}">{{ code.accounting_code }}</option>
-            {% endif %}
-        {% endfor %}
-
-    </select>
-</div>
-
-
-
-    </div>
-
-    <!-- Row 3: Location & Ward -->
-    <div class="mb-3 row">
-      <div class="col-md-6">
-    <label class="form-label">स्थान / Location</label>
-    <select name="location_id" id="location_id" class="form-control" required>
-
-        {% if library and library.location_id %}
-            {% for loc in locations %}
-                {% if loc.location_id == library.location_id %}
-                    <option value="{{ loc.location_id }}" selected>{{ loc.location_name }}</option>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-
-        {% for loc in locations %}
-            {% if not library or loc.location_id != library.location_id %}
-                <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
-            {% endif %}
-        {% endfor %}
-
-    </select>
-</div>
-
-   <div class="col-md-6">
-        <label class="form-label">वॉर्ड / Ward</label>
-        <select name="parent_ward_id" id="parent_ward_id" class="form-control" required>
-
-            {% if library and library.parent_ward_id %}
-                {% for ward in wards %}
-                    {% if ward.is_active and ward.ward_id == library.parent_ward_id %}
-                        <option value="{{ ward.ward_id }}" selected>{{ ward.ward_name }}</option>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-
-            {% for ward in wards %}
-                {% if ward.is_active %}
-                    {% if not library %}
-                        <option value="{{ ward.ward_id }}">{{ ward.ward_name }}</option>
-                    {% else %}
-                        {% if ward.ward_id != library.parent_ward_id %}
-                            <option value="{{ ward.ward_id }}">{{ ward.ward_name }}</option>
+                        {% if library and library.library_accounting_code_id %}
+                            {% for code in accounting_codes %}
+                                {% if code.ward_id == library.library_accounting_code_id %}
+                                    <option value="{{ code.ward_id }}" selected>{{ code.accounting_code }}</option>
+                                {% endif %}
+                            {% endfor %}
                         {% endif %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
 
-        </select>
-    </div>
-
-
-    </div>
-
-    <!-- Row 4: Librarian Name & Contact Email -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">लायब्रेरियन नाव / Librarian Name</label>
-            <input type="text" name="librarian_name" id="librarian_name" class="form-control"
-                   value="{% if library %}{{ library.librarian_name }}{% endif %}">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">ईमेल / Contact Email</label>
-            <input type="email" name="contact_email" id="contact_email" class="form-control"
-                   placeholder="example@domain.com"
-                   value="{% if library %}{{ library.contact_email }}{% endif %}" required>
-        </div>
-    </div>
-
-    <!-- Row 5: Contact Phone & Landing Page -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">फोन / Contact Phone</label>
-            <input type="text" name="contact_phone" id="contact_phone" class="form-control"
-                   placeholder="Enter 10-digit mobile number" maxlength="10"
-                   value="{% if library %}{{ library.contact_phone }}{% endif %}" required>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">लँडिंग पेज लिंक / Landing Page Link</label>
-            <input type="text" name="landing_page_link" class="form-control"
-                   value="{% if library %}{{ library.landing_page_link }}{% endif %}">
-        </div>
-    </div>
-
-    <!-- Row 6: About Library & Membership Page -->
-    <div class="mb-3 row">
-        <div class="col-md-6">
-            <label class="form-label">लायब्ररी बद्दल / About Library</label>
-            <textarea name="about_library" class="form-control">{% if library %}{{ library.about_library }}{% endif %}</textarea>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">मेंबरशिप पेज लिंक / Membership Page Link</label>
-            <input type="text" name="membership_page_link" class="form-control"
-                   value="{% if library %}{{ library.membership_page_link }}{% endif %}">
-        </div>
-    </div>
-
-    <!-- Row 7: Library Rules & Membership Rules -->
-    <div class="mb-3 row">
-        <div class="row">
-            <div class="col-md-6">
-                <label class="form-label">📘 लायब्ररी नियम / Library Rules</label>
-                <textarea id="library_rules_editor" name="library_rules" class="form-control">
-                    {% if library %}{{ library.library_rules|safe }}{% endif %}
-                </textarea>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">📝 मेंबरशिप नियम / Membership Rules</label>
-                <textarea id="membership_rules_editor" name="membership_rules" class="form-control">
-                    {% if library %}{{ library.membership_rules|safe }}{% endif %}
-                </textarea>
-            </div>
-        </div>
-
-    </div>
-
-        <!-- Row 8: Social Media URLs -->
-        <div class="mb-3 row">
-            <div class="col-md-6">
-                <label class="form-label">फेसबुक URL</label>
-                <input type="text" name="facebook_url" class="form-control"
-                    value="{% if library %}{{ library.facebook_url }}{% endif %}">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">ट्विटर URL</label>
-                <input type="text" name="twitter_url" class="form-control"
-                    value="{% if library %}{{ library.twitter_url }}{% endif %}">
-            </div>
-        </div>
-
-        <!-- Row 9: Instagram & YouTube URLs -->
-        <div class="mb-3 row">
-            <div class="col-md-6">
-                <label class="form-label">इंस्टाग्राम URL</label>
-                <input type="text" name="instagram_url" class="form-control"
-                    value="{% if library %}{{ library.instagram_url }}{% endif %}">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">यूट्यूब URL</label>
-                <input type="text" name="youtube_url" class="form-control"
-                    value="{% if library %}{{ library.youtube_url }}{% endif %}">
-            </div>
-        </div>
-
-        <!-- Row 10: Image & Capacity -->
-        <div class="mb-3 row">
-            <div class="col-md-6">
-                    <label class="form-label">लायब्ररी इमेज / Library Image</label>
-                    <input type="hidden" name="removed_images" id="removed_images">
-
-                    <div id="imagePreviewContainer"
-                        style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px; position:relative;">
-                        {% for img in library.display_image_urls %}
-                        <div class="image-wrapper" data-existing="true" style="position:relative;">
-                            <img src="{{ img }}" class="preview-img" style="height:120px; border:1px solid #ddd; padding:4px; border-radius:6px;">
-                            <span class="remove-image"
-                                style="position:absolute; top:6px; right:6px; background:red; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; cursor:pointer;">×</span>
-                        </div>
+                        {% for code in accounting_codes %}
+                            {% if not library or code.ward_id != library.library_accounting_code_id %}
+                                <option value="{{ code.ward_id }}">{{ code.accounting_code }}</option>
+                            {% endif %}
                         {% endfor %}
+
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 3: Location & Ward -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">स्थान / Location</label>
+                    <select name="location_id" id="location_id" class="form-control" required>
+
+                        {% if library and library.location_id %}
+                            {% for loc in locations %}
+                                {% if loc.location_id == library.location_id %}
+                                    <option value="{{ loc.location_id }}" selected>{{ loc.location_name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% for loc in locations %}
+                            {% if not library or loc.location_id != library.location_id %}
+                                <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
+                            {% endif %}
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">वॉर्ड / Ward</label>
+                    <select name="parent_ward_id" id="parent_ward_id" class="form-control" required>
+
+                        {% if library and library.parent_ward_id %}
+                            {% for ward in wards %}
+                                {% if ward.is_active and ward.ward_id == library.parent_ward_id %}
+                                    <option value="{{ ward.ward_id }}" selected>{{ ward.ward_name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% for ward in wards %}
+                            {% if ward.is_active %}
+                                {% if not library %}
+                                    <option value="{{ ward.ward_id }}">{{ ward.ward_name }}</option>
+                                {% else %}
+                                    {% if ward.ward_id != library.parent_ward_id %}
+                                        <option value="{{ ward.ward_id }}">{{ ward.ward_name }}</option>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 4: Librarian Name & Contact Email -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">लायब्रेरियन नाव / Librarian Name</label>
+                    <input type="text" name="librarian_name" id="librarian_name" class="form-control"
+                        value="{% if library %}{{ library.librarian_name }}{% endif %}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">ईमेल / Contact Email</label>
+                    <input type="email" name="contact_email" id="contact_email" class="form-control"
+                        placeholder="example@domain.com"
+                        value="{% if library %}{{ library.contact_email }}{% endif %}" required>
+                </div>
+            </div>
+
+            <!-- Row 5: Contact Phone & Landing Page -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">फोन / Contact Phone</label>
+                    <input type="text" name="contact_phone" id="contact_phone" class="form-control"
+                        placeholder="Enter 10-digit mobile number" maxlength="10"
+                        value="{% if library %}{{ library.contact_phone }}{% endif %}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">लँडिंग पेज लिंक / Landing Page Link</label>
+                    <input type="text" name="landing_page_link" class="form-control"
+                        value="{% if library %}{{ library.landing_page_link }}{% endif %}">
+                </div>
+            </div>
+
+            <!-- Row 6: About Library & Membership Page -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">लायब्ररी बद्दल / About Library</label>
+                    <textarea name="about_library" class="form-control">{% if library %}{{ library.about_library }}{% endif %}</textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">मेंबरशिप पेज लिंक / Membership Page Link</label>
+                    <input type="text" name="membership_page_link" class="form-control"
+                        value="{% if library %}{{ library.membership_page_link }}{% endif %}">
+                </div>
+            </div>
+
+            <!-- Row 7: Library Rules & Membership Rules -->
+            <div class="mb-3 row">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">📘 लायब्ररी नियम / Library Rules</label>
+                        <textarea id="library_rules_editor" name="library_rules" class="form-control">
+                            {% if library %}{{ library.library_rules|safe }}{% endif %}
+                        </textarea>
                     </div>
 
-                    <div id="fileError" class="text-danger mt-2" style="display:none;"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">📝 मेंबरशिप नियम / Membership Rules</label>
+                        <textarea id="membership_rules_editor" name="membership_rules" class="form-control">
+                            {% if library %}{{ library.membership_rules|safe }}{% endif %}
+                        </textarea>
+                    </div>
+                </div>
 
-                    <input type="file"name="library_photo"id="library_photo"class="form-control mt-2"accept="image/*"multiple>
             </div>
 
-            <div class="col-md-6">
-                <label class="form-label">क्षमता / Capacity</label>
-                <input type="text" name="capacity" class="form-control"
-                    value="{% if library %}{{ library.capacity }}{% endif %}">
+            <!-- Row 8: Social Media URLs -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">फेसबुक URL</label>
+                    <input type="text" name="facebook_url" class="form-control"
+                        value="{% if library %}{{ library.facebook_url }}{% endif %}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">ट्विटर URL</label>
+                    <input type="text" name="twitter_url" class="form-control"
+                        value="{% if library %}{{ library.twitter_url }}{% endif %}">
+                </div>
             </div>
-        </div>
 
-        <!-- Row 11: Opening Hours & Location URL -->
-        <div class="mb-3 row">
-            <div class="col-md-6">
-                <label class="form-label">उघडण्याचे तास / Opening Hours</label>
-                <input type="text" name="opening_hours" class="form-control"
-                    value="{% if library %}{{ library.opening_hours }}{% endif %}">
+            <!-- Row 9: Instagram & YouTube URLs -->
+            <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">इंस्टाग्राम URL</label>
+                        <input type="text" name="instagram_url" class="form-control"
+                            value="{% if library %}{{ library.instagram_url }}{% endif %}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">यूट्यूब URL</label>
+                        <input type="text" name="youtube_url" class="form-control"
+                            value="{% if library %}{{ library.youtube_url }}{% endif %}">
+                    </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">स्थान URL / Map link</label>
-                <input type="text" name="location_url" class="form-control"
-                    value="{% if library %}{{ library.location_url }}{% endif %}">
-            </div>
-        </div>
 
-        <!-- Row 12: Establishment Year -->
-        <div class="mb-3 row">
-            <div class="col-md-6">
-                <label class="form-label">स्थापनेचे वर्ष / Establishment Year</label>
-                <input type="number" name="est_year" class="form-control"
-                    placeholder="YYYY" min="1800" max="{{ now|date:'Y' }}"
-                    value="{% if library %}{{ library.est_year }}{% endif %}">
+            <!-- Row 10: Image & Capacity -->
+            <div class="mb-3 row">
+                    <div class="col-md-6">
+                            <label class="form-label">लायब्ररी इमेज / Library Image</label>
+                            <input type="hidden" name="removed_images" id="removed_images">
+
+                            <div id="imagePreviewContainer"
+                                style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px; position:relative;">
+                                {% for img in library.display_image_urls %}
+                                <div class="image-wrapper" data-existing="true" style="position:relative;">
+                                    <img src="{{ img }}" class="preview-img" style="height:120px; border:1px solid #ddd; padding:4px; border-radius:6px;">
+                                    <span class="remove-image"
+                                        style="position:absolute; top:6px; right:6px; background:red; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; cursor:pointer;">×</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <div id="fileError" class="text-danger mt-2" style="display:none;"></div>
+
+                            <input type="file"name="library_photo"id="library_photo"class="form-control mt-2"accept="image/*"multiple>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">क्षमता / Capacity</label>
+                        <input type="text" name="capacity" class="form-control"
+                            value="{% if library %}{{ library.capacity }}{% endif %}">
+                    </div>
             </div>
-        </div>
+
+            <!-- Row 11: Opening Hours & Location URL -->
+            <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label class="form-label">उघडण्याचे तास / Opening Hours</label>
+                        <input type="text" name="opening_hours" class="form-control"
+                            value="{% if library %}{{ library.opening_hours }}{% endif %}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">स्थान URL / Map link</label>
+                        <input type="text" name="location_url" class="form-control"
+                            value="{% if library %}{{ library.location_url }}{% endif %}">
+                    </div>
+            </div>
+
+            <!-- Row 12: Establishment Year -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label class="form-label">स्थापनेचे वर्ष / Establishment Year</label>
+                    <input type="text" name="est_year" class="form-control"
+                        placeholder="e.g., 1 January 1980 or १ जानेवारी १९८०"
+                        value="{% if library %}{{ library.est_year }}{% endif %}">
+                </div>
+            </div>
 
             <!-- BUTTONS -->
             <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
-                <button type="submit" class="btn btn-submit">
-                    <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
-                </button>
-                <a href="{% url 'library_master_index' %}" class="btn-go-back">
-                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
-                </a>
+                        <button type="submit" class="btn btn-submit">
+                            <i class="fa-solid fa-paper-plane"></i> Submit / सबमिट करा
+                        </button>
+                        <a href="{% url 'library_master_index' %}" class="btn-go-back">
+                            <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                        </a>
             </div>
+
         </form>
 
     </div>
@@ -651,6 +647,7 @@
             }
         });
     </script>
+    
     {% comment %}   
     <script>
         document.getElementById('library_photo').addEventListener('change', function(event) {
@@ -667,6 +664,7 @@
             }
         });
     </script> {% endcomment %}
+
     <script>
 
         const fileInput = document.getElementById("library_photo");

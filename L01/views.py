@@ -4323,7 +4323,7 @@ def library_master_index_individual(request):
                 library.capacity = capacity
                 library.opening_hours = opening_hours
                 library.location_url = location_url
-                library.est_year = int(est_year) if est_year.isdigit() else None
+                library.est_year = est_year
                 library.image_url = image_url
                 library.is_active = bool(is_active)
                 library.updated_by = request.user.id
@@ -4387,7 +4387,7 @@ def library_master_index_individual(request):
                             "capacity": capacity,
                             "opening_hours": opening_hours,
                             "location_url": location_url,
-                            "est_year": int(est_year) if est_year.isdigit() else None,
+                            "est_year": est_year,
                             "image_url": image_url,
                             "is_active": bool(is_active),
                             "created_by": str(request.user.id),
@@ -4418,7 +4418,7 @@ def library_master_index_individual(request):
                         library_master.capacity = capacity
                         library_master.opening_hours = opening_hours
                         library_master.location_url = location_url
-                        library_master.est_year = int(est_year) if est_year.isdigit() else None
+                        library_master.est_year = est_year
                         library_master.image_url = image_url
                         library_master.is_active = bool(is_active)
                         library_master.updated_by = str(request.user.id)

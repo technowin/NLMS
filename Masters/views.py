@@ -3987,7 +3987,7 @@ def library_create(request):
                 library.membership_rules = membership_rules
                 library.membership_page_link = membership_page_link
                 library.opening_hours = opening_hours
-                library.est_year = int(est_year) if est_year.isdigit() else None
+                library.est_year = est_year  # ← Changed: Save as text, no conversion
                 library.location_url = location_url
                 library.facebook_url = facebook_url
                 library.twitter_url = twitter_url
@@ -4021,7 +4021,7 @@ def library_create(request):
                 membership_rules=membership_rules,
                 membership_page_link=membership_page_link,
                 opening_hours=opening_hours,
-                est_year=int(est_year) if est_year.isdigit() else None,
+                est_year=est_year,  # ← Changed: Save as text, no conversion
                 location_url=location_url,
                 image_url=image_url,
                 facebook_url=facebook_url,
@@ -4240,7 +4240,7 @@ def library_master_edit(request):
             library.membership_rules = membership_rules
             library.membership_page_link = membership_page_link
             library.opening_hours = opening_hours
-            library.est_year = int(est_year) if est_year.isdigit() else None
+            library.est_year = est_year  # ← CHANGED THIS LINE
             library.location_url = location_url
             library.image_url = image_url
             library.facebook_url = facebook_url

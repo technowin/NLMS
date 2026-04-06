@@ -85,171 +85,166 @@
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-         <input type="hidden" name="id" value="{% if library %}{{ library.encrypted_id }}{% endif %}">
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>लायब्ररी कोड / Library Code:</strong><br>
-        <input type="text" class="form-control" value="{{ library.library_code }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>Library Name (English):</strong><br>
-        <input type="text" class="form-control" value="{{ library.library_name }}" readonly>
-    </div>
-</div>
-
-<!-- Row 2: Marathi Name & Accounting Code -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>लायब्ररी नाव / Library Name in Marathi:</strong><br>
-        <input type="text" class="form-control" value="{{ library.library_name_mar }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>लेखांकन कोड / Accounting Code:</strong><br>
-        <input type="text" class="form-control" value="{{ library.library_accounting_code.accounting_code }}" readonly>
-    </div>
-</div>
-
-<!-- Row 3: Location & Ward -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>स्थान / Location:</strong><br>
-        <input type="text" class="form-control" value="{% if library.location %}{{ library.location.location_name }}{% else %}-{% endif %}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>वॉर्ड / Ward:</strong><br>
-        <input type="text" class="form-control" value="{% if library.parent_ward %}{{ library.parent_ward.ward_name }}{% else %}-{% endif %}" readonly>
-    </div>
-</div>
-
-<!-- Row 4: Librarian & Email -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>लायब्रेरियन नाव / Librarian Name:</strong><br>
-        <input type="text" class="form-control" value="{{ library.librarian_name }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>ईमेल / Contact Email:</strong><br>
-        <input type="email" class="form-control" value="{{ library.contact_email }}" readonly>
-    </div>
-</div>
-
-<!-- Row 5: Phone & Landing Page -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>फोन / Contact Phone:</strong><br>
-        <input type="text" class="form-control" value="{{ library.contact_phone }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>लँडिंग पेज लिंक / Landing Page Link:</strong><br>
-        <input type="url" class="form-control" value="{{ library.landing_page_link }}" readonly>
-    </div>
-</div>
-
-<!-- Row 6: About & Membership Page -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>लायब्ररी बद्दल / About Library:</strong><br>
-        <textarea class="form-control" rows="3" readonly>{{ library.about_library }}</textarea>
-    </div>
-    <div class="col-md-6">
-        <strong>मेंबरशिप पेज लिंक / Membership Page Link:</strong><br>
-        <input type="url" class="form-control" value="{{ library.membership_page_link }}" readonly>
-    </div>
-</div>
-
-<!-- Row 7: Rules -->
-<div class="mb-3 row">
-<div class="col-md-6">
-    <strong>📘 लायब्ररी नियम / Library Rules:</strong><br>
-    <div class="form-control" style="height:auto; min-height:100px; overflow:auto;">
-        {{ library.library_rules|safe }}
-    </div>
-</div>
-
-<div class="col-md-6">
-    <strong>📝 मेंबरशिप नियम / Membership Rules:</strong><br>
-    <div class="form-control" style="height:auto; min-height:100px; overflow:auto;">
-        {{ library.membership_rules|safe }}
-    </div>
-</div>
-
-
-</div>
-
-<!-- Row 8: Social Media -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>फेसबुक URL:</strong><br>
-        <input type="url" class="form-control" value="{{ library.facebook_url }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>ट्विटर URL:</strong><br>
-        <input type="url" class="form-control" value="{{ library.twitter_url }}" readonly>
-    </div>
-</div>
-
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>इंस्टाग्राम URL:</strong><br>
-        <input type="url" class="form-control" value="{{ library.instagram_url }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>यूट्यूब URL:</strong><br>
-        <input type="url" class="form-control" value="{{ library.youtube_url }}" readonly>
-    </div>
-</div>
-
-<!-- Row 9: Image & Capacity -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>लायब्ररी इमेज / Library Image:</strong><br>
-        
-        {% if library.display_image_urls %}
-            <div style="display:flex; gap:10px; overflow-x:auto;">
-                {% for img_url in library.display_image_urls %}
-                    <img src="{{ img_url }}" 
-                         style="height:120px; width:auto; border:1px solid #ddd; border-radius:6px; padding:2px;">
-                {% endfor %}
+            <input type="hidden" name="id" value="{% if library %}{{ library.encrypted_id }}{% endif %}">
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>लायब्ररी कोड / Library Code:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.library_code }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>Library Name (English):</strong><br>
+                    <input type="text" class="form-control" value="{{ library.library_name }}" readonly>
+                </div>
             </div>
-        {% else %}
-            <p>-</p>
-        {% endif %}
-    </div>
 
-    <div class="col-md-6">
-        <strong>क्षमता / Capacity:</strong><br>
-        <input type="text" class="form-control" value="{{ library.capacity }}" readonly>
-    </div>
-</div>
+            <!-- Row 2: Marathi Name & Accounting Code -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>लायब्ररी नाव / Library Name in Marathi:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.library_name_mar }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>लेखांकन कोड / Accounting Code:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.library_accounting_code.accounting_code }}" readonly>
+                </div>
+            </div>
 
+            <!-- Row 3: Location & Ward -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>स्थान / Location:</strong><br>
+                    <input type="text" class="form-control" value="{% if library.location %}{{ library.location.location_name }}{% else %}-{% endif %}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>वॉर्ड / Ward:</strong><br>
+                    <input type="text" class="form-control" value="{% if library.parent_ward %}{{ library.parent_ward.ward_name }}{% else %}-{% endif %}" readonly>
+                </div>
+            </div>
 
-<!-- Row 10: Opening Hours & Map -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>उघडण्याचे तास / Opening Hours:</strong><br>
-        <input type="text" class="form-control" value="{{ library.opening_hours }}" readonly>
-    </div>
-    <div class="col-md-6">
-        <strong>स्थान URL / Map link:</strong><br>
-        <input type="url" class="form-control" value="{{ library.location_url }}" readonly>
-    </div>
-</div>
+            <!-- Row 4: Librarian & Email -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>लायब्रेरियन नाव / Librarian Name:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.librarian_name }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>ईमेल / Contact Email:</strong><br>
+                    <input type="email" class="form-control" value="{{ library.contact_email }}" readonly>
+                </div>
+            </div>
 
-<!-- Row 11: Establishment Year -->
-<div class="mb-3 row">
-    <div class="col-md-6">
-        <strong>स्थापनेचे वर्ष / Establishment Year:</strong><br>
-        <input type="number" class="form-control" value="{{ library.est_year }}" readonly>
-    </div>
-</div>
+            <!-- Row 5: Phone & Landing Page -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>फोन / Contact Phone:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.contact_phone }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>लँडिंग पेज लिंक / Landing Page Link:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.landing_page_link }}" readonly>
+                </div>
+            </div>
 
+            <!-- Row 6: About & Membership Page -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>लायब्ररी बद्दल / About Library:</strong><br>
+                    <textarea class="form-control" rows="3" readonly>{{ library.about_library }}</textarea>
+                </div>
+                <div class="col-md-6">
+                    <strong>मेंबरशिप पेज लिंक / Membership Page Link:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.membership_page_link }}" readonly>
+                </div>
+            </div>
 
+            <!-- Row 7: Rules -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>📘 लायब्ररी नियम / Library Rules:</strong><br>
+                    <div class="form-control" style="height:auto; min-height:100px; overflow:auto;">
+                        {{ library.library_rules|safe }}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>📝 मेंबरशिप नियम / Membership Rules:</strong><br>
+                    <div class="form-control" style="height:auto; min-height:100px; overflow:auto;">
+                        {{ library.membership_rules|safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 8: Social Media -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>फेसबुक URL:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.facebook_url }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>ट्विटर URL:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.twitter_url }}" readonly>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>इंस्टाग्राम URL:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.instagram_url }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>यूट्यूब URL:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.youtube_url }}" readonly>
+                </div>
+            </div>
+
+            <!-- Row 9: Image & Capacity -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>लायब्ररी इमेज / Library Image:</strong><br>
+                    
+                    {% if library.display_image_urls %}
+                        <div style="display:flex; gap:10px; overflow-x:auto;">
+                            {% for img_url in library.display_image_urls %}
+                                <img src="{{ img_url }}" 
+                                    style="height:120px; width:auto; border:1px solid #ddd; border-radius:6px; padding:2px;">
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>-</p>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <strong>क्षमता / Capacity:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.capacity }}" readonly>
+                </div>
+            </div>
+
+            <!-- Row 10: Opening Hours & Map -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>उघडण्याचे तास / Opening Hours:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.opening_hours }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <strong>स्थान URL / Map link:</strong><br>
+                    <input type="url" class="form-control" value="{{ library.location_url }}" readonly>
+                </div>
+            </div>
+
+            <!-- Row 11: Establishment Year -->
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <strong>स्थापनेचे वर्ष / Establishment Year:</strong><br>
+                    <input type="text" class="form-control" value="{{ library.est_year }}" readonly>
+                </div>
+            </div>
        
-   <div class="mt-4 d-flex justify-content-center">
-    <a href="{% url 'library_master_index' %}" class="btn-go-back">
-        <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
-    </a>
-</div>
+            <div class="mt-4 d-flex justify-content-center">
+                <a href="{% url 'library_master_index' %}" class="btn-go-back">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Go Back / मागे जा
+                </a>
+            </div>
 
         
         </form>
@@ -487,6 +482,5 @@
 
         });
     </script>
-
   
 {% endblock %}
