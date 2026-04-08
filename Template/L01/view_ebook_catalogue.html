@@ -1813,39 +1813,29 @@
         }
 
         // ================= DJANGO API CALL =================
-        async function fetchTransliteration(word) {
+        function fetchTransliteration(word) {
             if (!word || !/^[a-zA-Z]+$/.test(word)) {
-                return word; // Return original if not English alphabets
+                return Promise.resolve(word);
             }
             
-            try {
-                // Call your Django transliteration endpoint
-                const response = await fetch(`/translate_word/?q=${encodeURIComponent(word)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            return $.ajax({
+                url: `/translate/word/?q=${encodeURIComponent(word)}`,  // ✅ Changed from /translate_word/ to /translate/word/
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 }
-                
-                const data = await response.json();
-                
+            }).then(function(data) {
                 if (data.error) {
                     console.warn("Transliteration API error:", data.error);
-                    return fallbackTransliteration(word); // Use fallback on error
+                    return fallbackTransliteration(word);
                 }
-                
                 return data.translated || word;
-                
-            } catch (error) {
+            }).catch(function(error) {
                 console.error("Transliteration fetch failed:", error);
-                // Fallback to client-side transliteration
                 return fallbackTransliteration(word);
-            }
+            });
         }
 
         // ================= FALLBACK TRANSLITERATION =================

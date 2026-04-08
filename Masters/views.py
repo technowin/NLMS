@@ -1403,6 +1403,8 @@ def book_accession_view(request, encrypted_id=None):
 
 def translate_word(request):
     word = request.GET.get("q", "").strip()
+    print(f"=== TRANSLITERATION HIT ===")  # This will print to console
+    print(f"Word received: '{word}'")
     if word:
         try:
             response = requests.get(
