@@ -1326,6 +1326,147 @@ class GetBookOptionsView(ReportBaseView):
             'catalogues': list(catalogues),
         })
 
+class ExportFilteredDataView(ReportBaseView):
+    """Export data directly based on filters without book selection"""
+    
+    def get(self, request):
+        # Get parameters
+        tabs_param = request.GET.get('tabs', '')
+        selected_tabs = [t.strip() for t in tabs_param.split(',') if t.strip()]
+        filename = request.GET.get('filename', 'book_export')
+        list_type = request.GET.get('list_type', 'title')
+        search = request.GET.get('search', '')
+        language = request.GET.get('language', '')
+        resource_type = request.GET.get('resource_type', '')
+        
+        # Validate
+        if not selected_tabs:
+            return JsonResponse({'error': 'No tabs selected'}, status=400)
+        
+        if list_type != 'title':
+            return JsonResponse({'error': 'Only Title list type is currently supported'}, status=400)
+        
+        db = self.get_library_db()
+        
+        # IMPORTANT: Convert language to database value
+        db_language = None
+        if language:
+            if language == "Hindi":
+                db_language = "हिंदी"
+            elif language == "Marathi":
+                db_language = "मराठी"  # Convert to Marathi script
+            else:
+                db_language = language
+        
+        # Get all book IDs matching filters
+        try:
+            qs = BookCatalog.objects.using(db).filter(status_id=1)
+            
+            # Apply language filter using database value
+            if db_language:
+                qs = qs.filter(language=db_language)
+                print(f"Filtering by language: '{db_language}'")  # Debug
+            
+            # Apply resource type filter
+            if resource_type == 'ebook':
+                qs = qs.filter(ebook_available='Yes')
+            elif resource_type == 'book':
+                qs = qs.filter(Q(ebook_available__isnull=True) | Q(ebook_available='No'))
+            
+            # Apply search filter
+            if search:
+                qs = qs.filter(
+                    Q(title__icontains=search) |
+                    Q(isbn_issn__icontains=search) |
+                    Q(author__icontains=search)
+                )
+            
+            # Debug: Print count
+            book_count = qs.count()
+            print(f"Found {book_count} books matching filters")
+            
+            # Get all book IDs
+            book_ids = list(qs.values_list('cat_ref_num', flat=True))
+            
+            if not book_ids:
+                return JsonResponse({'error': 'No records found matching filters'}, status=404)
+            
+            # Debug: Print first 5 book IDs
+            print(f"First 5 book IDs: {book_ids[:5]}")
+            
+        except Exception as e:
+            return JsonResponse({'error': f'Failed to fetch data: {str(e)}'}, status=500)
+        
+        # Create Excel file
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+            output_path = tmp.name
+        
+        try:
+            import pandas as pd
+            
+            with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+                
+                export_map = {
+                    'catalogue': export_catalogue_to_excel,
+                    'accession': export_accession_to_excel,
+                    'circulation': export_circulation_to_excel,
+                    'loan': export_loan_to_excel,
+                    'circulation-transaction': export_circulation_transaction_to_excel,
+                    'supplier': export_supplier_to_excel,
+                    'review': export_review_to_excel,
+                    'return-log': export_return_log_to_excel,
+                    'google-metadata': export_google_metadata_to_excel,
+                    'loc-metadata': export_loc_metadata_to_excel,
+                }
+                
+                # Prepare filters - use the converted database language value
+                export_filters = {
+                    'language': db_language,  # This should be "मराठी" for Marathi
+                    'resource_type': resource_type,
+                    'search': search
+                }
+                
+                print(f"Export filters: {export_filters}")  # Debug
+                
+                for tab in selected_tabs:
+                    export_func = export_map.get(tab)
+                    if export_func:
+                        try:
+                            print(f"Exporting {tab} with {len(book_ids)} books...")
+                            export_func(
+                                writer=writer,
+                                db=db,
+                                book_ids=book_ids,
+                                list_type='title',
+                                filters=export_filters
+                            )
+                        except Exception as e:
+                            print(f"Error exporting {tab}: {e}")
+                            import traceback
+                            traceback.print_exc()
+                            continue
+            
+            with open(output_path, 'rb') as f:
+                response = HttpResponse(
+                    f.read(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+            
+            response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+            return response
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': f'Export failed: {str(e)}'}, status=500)
+        
+        finally:
+            if os.path.exists(output_path):
+                os.unlink(output_path)
+             
 def normalize_export_filters(filters, db=None):
    
     FILTER_MODEL_MAP = {
@@ -3506,7 +3647,6 @@ class ExportReportView(ReportBaseView):
             'google-metadata': export_google_metadata_to_excel,
             'loc-metadata': export_loc_metadata_to_excel,
         }
-
 class ExportAllDataView(ReportBaseView):
     """Export selected book report tabs to Excel"""
 

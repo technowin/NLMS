@@ -38,6 +38,7 @@
 <style>
 
 </style>
+
 {% endblock %}
 
 {% block content %}
@@ -130,11 +131,11 @@
                     <i class="bi bi-check2-square"></i>
                 </button>
                 <!-- Add this button near your existing select all button (around line 128 in your template) -->
-                <button class="btn btn-sm btn-info" 
-                        onclick="selectAllAcrossPages()" 
-                        title="Select All Across All Pages"
-                        id="selectAllPagesBtn">
-                    <i class="bi bi-collection"></i> Select All (All Pages)
+                <button class="btn btn-sm btn-success" 
+                        onclick="exportFilteredData()" 
+                        title="Export to Excel"
+                        id="exportFilteredBtn">
+                    <i class="bi bi-file-earmark-excel"></i> Export to Excel
                 </button>
             
                 <!-- Export -->
@@ -614,1223 +615,1466 @@
     };
 </script>    
 
-
 <script>
-// Global variables
-let selectedBooks = new Set();
-let currentListType = 'title';
-let currentFilters = {};
-let tabFilters = {};
-let dataTables = {};
+    // Global variables
+    let selectedBooks = new Set();
+    let currentListType = 'title';
+    let currentFilters = {};
+    let tabFilters = {};
+    let dataTables = {};
 
-$(document).ready(function() {
-    // Load initial data
-    loadBookList();
-    initDataTables();
-    setupEventListeners();
-    initSelectize();
-    updateTitleFiltersVisibility();
-});
+    $(document).ready(function() {
+        // Load initial data
+        loadBookList();
+        initDataTables();
+        setupEventListeners();
+        initSelectize();
+        updateTitleFiltersVisibility();
+    });
 
-function initSelectize() {
-    $('select[multiple]').each(function() {
-        $(this).selectize({
-            plugins: ['remove_button'],
-            delimiter: ',',
-            persist: false,
-            create: false,
-            onInitialize: function() {
-                var control = this;
-                control.clear();
+    function initSelectize() {
+        $('select[multiple]').each(function() {
+            $(this).selectize({
+                plugins: ['remove_button'],
+                delimiter: ',',
+                persist: false,
+                create: false,
+                onInitialize: function() {
+                    var control = this;
+                    control.clear();
+                }
+            });
+        });
+    }
+
+    function loadBookList(page = 1) {
+        const search = $('#book-search').val();
+        const language = $('#language-filter').val();
+        const resourceType = $('#resource-type-filter').val();
+        
+        $('#book-list-container').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading books...</p>
+            </div>
+        `);
+        
+        $.ajax({
+            url: '{% url "book_list_data" %}',
+            traditional: true,
+            data: {
+                page: page,
+                search: search,
+                list_type: currentListType,
+                language: language,
+                resource_type: resourceType
+            },
+            success: function(response) {
+                renderBookList(response.books);
+                renderPagination(response);
+                updateTitleFiltersVisibility();
+            },
+            error: function() {
+                $('#book-list-container').html(`
+                    <div class="text-center py-5">
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                        <p class="mt-2 text-danger">Failed to load books</p>
+                    </div>
+                `);
             }
         });
-    });
-}
+    }
 
-function loadBookList(page = 1) {
-    const search = $('#book-search').val();
-    const language = $('#language-filter').val();
-    const resourceType = $('#resource-type-filter').val();
-    
-    $('#book-list-container').html(`
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2 text-muted">Loading books...</p>
-        </div>
-    `);
-    
-    $.ajax({
-        url: '{% url "book_list_data" %}',
-        traditional: true,
-        data: {
-            page: page,
-            search: search,
-            list_type: currentListType,
-            language: language,
-            resource_type: resourceType
-        },
-        success: function(response) {
-            renderBookList(response.books);
-            renderPagination(response);
-            updateTitleFiltersVisibility();
-        },
-        error: function() {
-            $('#book-list-container').html(`
+    function renderBookList(books) {
+        const container = $('#book-list-container');
+        container.empty();
+        
+        if (books.length === 0) {
+            container.html(`
                 <div class="text-center py-5">
-                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
-                    <p class="mt-2 text-danger">Failed to load books</p>
+                    <i class="bi bi-book text-muted" style="font-size: 2rem;"></i>
+                    <p class="mt-2 text-muted">No books found</p>
                 </div>
             `);
+            return;
         }
-    });
-}
-
-function renderBookList(books) {
-    const container = $('#book-list-container');
-    container.empty();
-    
-    if (books.length === 0) {
-        container.html(`
-            <div class="text-center py-5">
-                <i class="bi bi-book text-muted" style="font-size: 2rem;"></i>
-                <p class="mt-2 text-muted">No books found</p>
-            </div>
-        `);
-        return;
-    }
-    
-    books.forEach(book => {
-        const isSelected = selectedBooks.has(book.id);
-        const typeBadge = book.type === 'Title' ? 'info' : 
-                         book.type === 'Author' ? 'success' : 'warning text-dark';
         
-        container.append(`
-            <div class="book-list-item ${isSelected ? 'selected' : ''}" 
-                 data-book-id="${book.id}"
-                 data-book-type="${book.type}"
-                 onclick="toggleBookSelection(${book.id}, event)">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center mb-1">
-                            <span class="badge bg-${typeBadge} me-2">${book.type}</span>
-                            <span class="book-id">${book.code}</span>
+        books.forEach(book => {
+            const isSelected = selectedBooks.has(book.id);
+            const typeBadge = book.type === 'Title' ? 'info' : 
+                            book.type === 'Author' ? 'success' : 'warning text-dark';
+            
+            container.append(`
+                <div class="book-list-item ${isSelected ? 'selected' : ''}" 
+                    data-book-id="${book.id}"
+                    data-book-type="${book.type}"
+                    onclick="toggleBookSelection(${book.id}, event)">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-${typeBadge} me-2">${book.type}</span>
+                                <span class="book-id">${book.code}</span>
+                            </div>
+                            <div class="book-name">${book.name}</div>
+                            ${book.subtext ? `<div class="book-info small">${book.subtext}</div>` : ''}
                         </div>
-                        <div class="book-name">${book.name}</div>
-                        ${book.subtext ? `<div class="book-info small">${book.subtext}</div>` : ''}
-                    </div>
-                    <div class="ps-2">
-                        ${isSelected ? '<i class="bi bi-check-circle-fill text-white"></i>' : ''}
+                        <div class="ps-2">
+                            ${isSelected ? '<i class="bi bi-check-circle-fill text-white"></i>' : ''}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `);
-    });
-    
-    updateSelectionCount();
-}
-
-function toggleBookSelection(bookId, event) {
-    event.stopPropagation();
-    
-    if (selectedBooks.has(bookId)) {
-        selectedBooks.delete(bookId);
-    } else {
-        selectedBooks.add(bookId);
+            `);
+        });
+        
+        updateSelectionCount();
     }
-    
-    // Update UI
-    $(`.book-list-item[data-book-id="${bookId}"]`).toggleClass('selected');
-    updateSelectionCount();
-    
-    // If we have selections, load tab data
-    if (selectedBooks.size > 0) {
+
+    function toggleBookSelection(bookId, event) {
+        event.stopPropagation();
+        
+        if (selectedBooks.has(bookId)) {
+            selectedBooks.delete(bookId);
+        } else {
+            selectedBooks.add(bookId);
+        }
+        
+        // Update UI
+        $(`.book-list-item[data-book-id="${bookId}"]`).toggleClass('selected');
+        updateSelectionCount();
+        
+        // If we have selections, load tab data
+        if (selectedBooks.size > 0) {
+            loadCurrentTabData();
+        } else {
+            clearAllTabData();
+        }
+    }
+
+    function selectAll() {
+        $('.book-list-item').each(function() {
+            const bookId = $(this).data('book-id');
+            selectedBooks.add(bookId);
+            $(this).addClass('selected');
+        });
+        updateSelectionCount();
         loadCurrentTabData();
-    } else {
+    }
+
+    function deselectAll() {
+        selectedBooks.clear();
+        $('.book-list-item').removeClass('selected');
+        updateSelectionCount();
         clearAllTabData();
     }
-}
 
-function selectAll() {
-    $('.book-list-item').each(function() {
-        const bookId = $(this).data('book-id');
-        selectedBooks.add(bookId);
-        $(this).addClass('selected');
-    });
-    updateSelectionCount();
-    loadCurrentTabData();
-}
-
-function deselectAll() {
-    selectedBooks.clear();
-    $('.book-list-item').removeClass('selected');
-    updateSelectionCount();
-    clearAllTabData();
-}
-
-function updateSelectionCount() {
-    const count = selectedBooks.size;
-    $('#selected-count').text(count);
-    $('#selected-books-count').text(count);
-    
-    if (count > 0) {
-        $('#bulk-actions').addClass('show');
-    } else {
-        $('#bulk-actions').removeClass('show');
-    }
-}
-
-function changeListType(type) {
-    currentListType = type;
-    
-    // Update active tab
-    $('#listTypeTabs .nav-link').removeClass('active');
-    $(`#listTypeTabs .nav-link[data-type="${type}"]`).addClass('active');
-    
-    // Clear selections
-    selectedBooks.clear();
-    $('.book-list-item').removeClass('selected');
-    updateSelectionCount();
-    
-    // Update title filters visibility
-    updateTitleFiltersVisibility();
-    
-    // Load new list
-    loadBookList(1);
-}
-
-function updateTitleFiltersVisibility() {
-    if (currentListType === 'title') {
-        $('#title-filters').show();
-    } else {
-        $('#title-filters').hide();
-    }
-}
-
-function applyLeftFilters() {
-    loadBookList(1);
-}
-
-function clearLeftFilters() {
-    $('#book-search').val('');
-    $('#language-filter').val('');
-    $('#resource-type-filter').val('');
-    loadBookList(1);
-}
-
-function clearSearch() {
-    $('#book-search').val('');
-    loadBookList(1);
-}
-
-function loadCurrentTabData() {
-    const activeTab = $('#reportTabs .nav-link.active').attr('id');
-    const tabName = activeTab.replace('-tab', '');
-    
-    loadTabData(tabName);
-}
-
-function loadTabData(tabName) {
-    if (selectedBooks.size === 0) {
-        clearTabData(tabName);
-        return;
-    }
-    
-    showLoading();
-
-    const filters = tabFilters[tabName] || {};
-    
-    $.ajax({
-        url: `/books/tab-data/${tabName}/`,
-        data: {
-            book_ids: Array.from(selectedBooks),
-            list_type: currentListType,
-            filters: JSON.stringify(filters)
-        },
-        success: function(response) {
-            populateTabData(tabName, response.data);
-            updateTabCount(tabName, response.total || response.data.length);
-            hideLoading();
-        },
-        error: function() {
-            hideLoading();
-            showError(tabName);
+    function updateSelectionCount() {
+        const count = selectedBooks.size;
+        $('#selected-count').text(count);
+        $('#selected-books-count').text(count);
+        
+        if (count > 0) {
+            $('#bulk-actions').addClass('show');
+        } else {
+            $('#bulk-actions').removeClass('show');
         }
-    });
-}
-
-function populateTabData(tabName, data) {
-    const table = document.getElementById(`${tabName}-table`);
-    if (!table) return;
-    
-    const tbody = table.querySelector('tbody');
-    if (!tbody) return;
-    
-    // Clear existing rows
-    tbody.innerHTML = '';
-    
-    if (data.length === 0) {
-        // Show empty message
-        document.getElementById(`${tabName}-empty`).style.display = 'block';
-        return;
     }
-    
-    document.getElementById(`${tabName}-empty`).style.display = 'none';
-    
-    // Add new rows
-    data.forEach((item, index) => {
-        const row = document.createElement('tr');
-        row.className = index % 2 === 0 ? '' : 'table-active';
+
+    function changeListType(type) {
+        currentListType = type;
         
-        const cells = convertToTableRow(tabName, item);
-        cells.forEach(cellContent => {
-            const cell = document.createElement('td');
-            cell.innerHTML = cellContent;
-            row.appendChild(cell);
-        });
+        // Update active tab
+        $('#listTypeTabs .nav-link').removeClass('active');
+        $(`#listTypeTabs .nav-link[data-type="${type}"]`).addClass('active');
         
-        tbody.appendChild(row);
-    });
-    
-    // Update record count
-    const infoElement = document.getElementById(`${tabName}-info`);
-    if (infoElement) {
-        infoElement.textContent = `Showing ${data.length} records`;
+        // Clear selections
+        selectedBooks.clear();
+        $('.book-list-item').removeClass('selected');
+        updateSelectionCount();
+        
+        // Update title filters visibility
+        updateTitleFiltersVisibility();
+        
+        // Load new list
+        loadBookList(1);
     }
-}
 
-function convertToTableRow(tabName, item) {
-    switch(tabName) {
-        case 'catalogue':
-            return [
-                item.cat_ref_num || '',
-                item.title || '',
-                item.subtitle || '',
-                item.author || '',
-                item.other_authors || '',
-                item.publisher || '',
-                item.isbn_issn || '',
-                item.edition || '',
-                item.keywords || '',
-                item.language || '',
-                item.publication_place || '',
-                item.year_of_publication || '',
-                item.classification_number || '',
-                item.pages || '',
-                item.date_of_registration || '',
-                item.status_name || '',
-                item.subject_name || '',
-                item.call_number || '',
-                item.cutter_number || '',
-                item.publication_year || '',
-                item.remarks || '',
-                item.material_name || '',
-                item.ebook_available === 'Yes'
-                    ? '<span class="badge bg-success">Yes</span>'
-                    : '<span class="badge bg-secondary">No</span>',
-                item.ebook_id || '',
-                item.created_at || '',
-                item.created_by || '',
-                item.updated_at || '',
-                item.updated_by || ''
-            ];
-            
-        case 'accession':
-            return [
-                item.accession_no || '',
-                item.acquisition_date || '',
-                item.catalog_ref_no || '',
-                item.book_title || '',
-                item.copy_number || '',
-                item.invoice_number || '',
-                item.invoice_date || '',
-                item.price
-                    ? 'â‚¹' + parseFloat(item.price).toFixed(2)
-                    : 'â‚¹0.00',
-                item.remarks || '',
-                item.created_at || '',
-                item.created_by || '',
-                item.updated_at || '',
-                item.updated_by || '',
-                item.condition_name || '',
-                item.currency_name || '',
-                item.source_name || '',
-                item.location_name || '',
-                item.status_name || '',
-                item.supplier_name || ''
-            ];
-
-            
-        case 'circulation':
-            return [
-                item.barcode || '',
-                item.book_title || '',
-                item.bookcatalog_id || '',
-                item.accession_no || '',
-                item.date_processed || '',
-                item.processing_status || '',
-                item.shelf_location || '',
-                item.remarks || '',
-                item.created_at || '',
-                item.created_by || '',
-                item.updated_at || '',
-                item.updated_by || '',
-                item.current_status || ''
-            ];
-
-            
-        case 'loan':
-            const overdueDays = item.days_overdue_count || 0;
-            let overdueBadge = '<span class="badge bg-success">On time</span>';
-
-            if (overdueDays > 0) {
-                if (overdueDays <= 3) {
-                    overdueBadge = `<span class="badge overdue-0-3">${overdueDays} days</span>`;
-                } else if (overdueDays <= 7) {
-                    overdueBadge = `<span class="badge overdue-4-7">${overdueDays} days</span>`;
-                } else if (overdueDays <= 30) {
-                    overdueBadge = `<span class="badge bg-warning text-dark">${overdueDays} days</span>`;
-                } else {
-                    overdueBadge = `<span class="badge bg-danger">${overdueDays} days</span>`;
-                }
-            }
-        
-            return [
-                item.barcode || '',
-                item.accession_id || '',
-                item.cat_ref_num || '',
-                item.book_title || '',
-                item.member_name || '',
-                item.membership_code || '',
-                item.issue_date || '',
-                item.due_date || '',
-                item.return_date || '',
-                overdueBadge,
-                item.fine_amount
-                    ? 'â‚¹' + parseFloat(item.fine_amount).toFixed(2)
-                    : 'â‚¹0.00',
-                item.issued_by || '',
-                item.remarks || '',
-                item.created_at || ''
-            ];
-
-            
-        case 'circulation-transaction':
-            const transactionOverdue = item.days_overdue_count || 0;
-            let transactionOverdueBadge = '<span class="badge bg-success">On time</span>';
-
-            if (transactionOverdue > 0) {
-                transactionOverdueBadge =
-                    `<span class="badge bg-danger">${transactionOverdue} days</span>`;
-            }
-
-            let fineStatusBadge = '';
-            if (item.fine_status) {
-                if (item.fine_status === 'Paid') {
-                    fineStatusBadge = '<span class="badge fine-paid">Paid</span>';
-                } else if (item.fine_status === 'Adjusted') {
-                    fineStatusBadge = '<span class="badge fine-adjusted">Adjusted</span>';
-                } else {
-                    fineStatusBadge = '<span class="badge fine-unpaid">Unpaid</span>';
-                }
-            }
-
-            // IMPORTANT: Must match the 23 columns in your HTML table
-            return [
-                item.barcode || '',                          // Barcode
-                item.accession_id || '',                     // Accession No
-                item.cat_ref_num || '',                      // Catalog Ref No
-                item.member_name || '',                      // Member Name
-                item.membership_code || '',                  // Membership Code
-                item.issue_date || '',                       // Issue Date
-                item.due_date || '',                         // Due Date
-                item.issued_by || '',                        // Issued By
-                item.created_at || '',                       // Created At
-                item.return_date || '',                      // Return Date
-                item.received_by || '',                      // Received By
-                transactionOverdueBadge,                     // Days Overdue
-                item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',      // Fine Amount
-                item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',  // Book Fine
-                item.total_fine ? '₹' + parseFloat(item.total_fine).toFixed(2) : '₹0.00',        // Total Fine
-                item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',  // Adjusted Fine
-                fineStatusBadge,                             // Fine Status
-                item.fine_paid_date || '',                   // Fine Paid Date
-                item.extended_on || '',                      // Extended On (NEW)
-                item.created_by || '',                       // Created By (NEW - shows name)
-                item.updated_by || '',                       // Updated By (NEW - shows name)
-                item.remarks || '',                          // Remarks
-                item.updated_at || ''                        // Updated At
-            ];
-
-            
-        case 'supplier':
-            return [
-                item.accession_no || '',
-                item.acquisition_date || '',
-                item.catalog_ref_no || '',
-                item.book_title || '',
-                item.supplier_code || '',
-                item.supplier_name || '',
-                item.supplier_mobile || '',
-                item.supplier_email || '',
-                item.supplier_address || '',
-                item.supplier_pincode || '',
-                item.is_active === 'Yes'
-                    ? '<span class="badge bg-success">Active</span>'
-                    : '<span class="badge bg-secondary">Inactive</span>'
-            ];
-
-            
-        case 'review':
-
-            // Create rating stars
-            const rating = item.rating || 0;
-            let stars = '';
-
-            for (let i = 1; i <= 5; i++) {
-                if (i <= rating) {
-                    stars += '<i class="bi bi-star-fill text-warning"></i>';
-                } else {
-                    stars += '<i class="bi bi-star text-secondary"></i>';
-                }
-            }
-        
-            return [
-                item.user_name || '',
-                item.member_name || '',
-                `<div class="rating-stars">${stars}</div>`,
-                item.review
-                    ? (item.review.length > 50
-                        ? item.review.substring(0, 50) + '...'
-                        : item.review)
-                    : '',
-                item.created_at || '',
-                item.updated_at || '',
-                item.library_code || '',
-                item.cat_ref_id || '',
-                item.book_title || '',
-                item.ebook_name || ''
-            ];
-
-            
-        case 'return-log':
-            return [
-                item.barcode || '',
-                item.book_title || '',
-                item.cat_ref_num_id || '',
-                item.is_shelved === 'Yes'
-                    ? '<span class="badge bg-success">Shelved</span>'
-                    : '<span class="badge bg-warning text-dark">Not Shelved</span>',
-                item.created_at || '',
-                item.updated_at || '',
-                item.created_by_name || '',
-                item.eod_log_id || '',
-                item.updated_by_name || ''
-            ];
-
-            
-        case 'google-metadata':
-            return [
-                item.title || '',
-                item.isbn || '',
-                item.created_at || '',
-                '<button class="btn btn-sm btn-info" onclick="viewMetadataDetails(' + JSON.stringify(item.details).replace(/"/g, '&quot;') + ')">View Details</button>'
-            ];
-            
-        case 'loc-metadata':
-            return [
-                item.title || '',
-                item.isbn || '',
-                item.created_at || '',
-                '<button class="btn btn-sm btn-info" onclick="viewMetadataDetails(' + JSON.stringify(item.details).replace(/"/g, '&quot;') + ')">View Details</button>'
-            ];
-            
-        default:
-            return [];
-    }
-}
-
-// View metadata details
-function viewMetadataDetails(detailsJson) {
-    try {
-        const details = JSON.parse(detailsJson);
-        let detailsHtml = '<div class="metadata-details">';
-        
-        for (const [key, value] of Object.entries(details)) {
-            detailsHtml += `
-                <div class="mb-2">
-                    <strong>${key}:</strong>
-                    <div class="ms-2 text-muted">${value || 'N/A'}</div>
-                </div>
-            `;
+    function updateTitleFiltersVisibility() {
+        if (currentListType === 'title') {
+            $('#title-filters').show();
+        } else {
+            $('#title-filters').hide();
         }
-        
-        detailsHtml += '</div>';
-        
-        Swal.fire({
-            title: 'Metadata Details',
-            html: detailsHtml,
-            width: '600px',
-            showCloseButton: true,
-            showConfirmButton: false
-        });
-    } catch (e) {
-        showToast('Error displaying metadata details', 'error');
     }
-}
 
-
-function updateTabCount(tabName, count) {
-    $(`#${tabName}-count`).text(count);
-}
-
-function clearTabData(tabName) {
-    const table = document.getElementById(`${tabName}-table`);
-    if (table) {
-        const tbody = table.querySelector('tbody');
-        if (tbody) tbody.innerHTML = '';
+    function applyLeftFilters() {
+        loadBookList(1);
     }
-    $(`#${tabName}-count`).text('0');
-}
 
-function clearAllTabData() {
-    const tabs = [
-        'catalogue', 'accession', 'circulation', 'loan',
-        'circulation-transaction', 'supplier', 'review',
-        'return-log', 'google-metadata', 'loc-metadata'
-    ];
-    
-    tabs.forEach(tab => {
-        clearTabData(tab);
-    });
-}
+    function clearLeftFilters() {
+        $('#book-search').val('');
+        $('#language-filter').val('');
+        $('#resource-type-filter').val('');
+        loadBookList(1);
+    }
 
-function showLoading() {
-    $('#loadingOverlay').show();
-}
+    function clearSearch() {
+        $('#book-search').val('');
+        loadBookList(1);
+    }
 
-function hideLoading() {
-    $('#loadingOverlay').hide();
-}
-
-function showError(tabName) {
-    showToast(`Failed to load ${tabName.replace('-', ' ')} data`, 'danger');
-}
-
-function showToast(message, type = 'info', duration = 3000) {
-    const toastHtml = `
-        <div class="toast align-items-center text-bg-${type} border-0" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `;
-    
-    const $toast = $(toastHtml);
-    $('#toast-container').append($toast);
-    
-    const toast = new bootstrap.Toast($toast[0], {
-        delay: duration
-    });
-    toast.show();
-    
-    $toast.on('hidden.bs.toast', function() {
-        $(this).remove();
-    });
-}
-
-function initDataTables() {
-    // Initialize DataTables if needed
-    // For now, just add Bootstrap classes
-    const tables = [
-        'catalogue-table',
-        'accession-table',
-        'circulation-table',
-        'loan-table',
-        'circulation-transaction-table',
-        'supplier-table',
-        'review-table',
-        'return-log-table',
-        'google-metadata-table',
-        'loc-metadata-table'
-    ];
-    
-    tables.forEach(tableId => {
-        const table = document.getElementById(tableId);
-        if (table) {
-            table.classList.add('table', 'table-hover', 'table-striped');
-        }
-    });
-}
-
-function setupEventListeners() {
-    // Tab change event
-    $('#reportTabs button').on('shown.bs.tab', function(e) {
-        const tabName = $(e.target).attr('id').replace('-tab', '');
+    function loadCurrentTabData() {
+        const activeTab = $('#reportTabs .nav-link.active').attr('id');
+        const tabName = activeTab.replace('-tab', '');
+        
         loadTabData(tabName);
-    });
-    
-    // Search with Enter key
-    $('#book-search').keypress(function(e) {
-        if (e.which === 13) {
-            loadBookList(1);
+    }
+
+    function loadTabData(tabName) {
+        if (selectedBooks.size === 0) {
+            clearTabData(tabName);
+            return;
         }
-    });
-}
+        
+        showLoading();
 
-function scrollToTop() {
-    $('html, body').animate({scrollTop: 0}, 500);
-}
-
-// Initialize when page loads
-$(window).scroll(function() {
-    if ($(this).scrollTop() > 100) {
-        $('#scrollIndicator').addClass('show');
-    } else {
-        $('#scrollIndicator').removeClass('show');
-    }
-});
-
-// Export functions
-function exportCurrentTab() {
-    if (selectedBooks.size === 0) {
-        showToast('Please select at least one book to export', 'warning');
-        return;
-    }
-    
-    const activeTab = $('#reportTabs .nav-link.active').attr('id');
-    const tabName = activeTab.replace('-tab', '');
-    const tabNames = {
-        'catalogue': 'Catalogue',
-        'accession': 'Accession',
-        'circulation': 'Circulation',
-        'loan': 'Loan',
-        'circulation-transaction': 'Circulation Transaction',
-        'supplier': 'Supplier',
-        'review': 'Review',
-        'return-log': 'Return Log',
-        'google-metadata': 'Google Metadata',
-        'loc-metadata': 'LOC Metadata'
-    };
-    
-    const filters = tabFilters[tabName] || {};
-    const fileName = `${tabNames[tabName]}_${new Date().toISOString().slice(0,10)}.xlsx`;
-    
-    const params = new URLSearchParams();
-    params.append('type', tabName);
-    params.append('book_ids', Array.from(selectedBooks));
-    params.append('list_type', currentListType);
-    params.append('tab_filters', JSON.stringify(filters));
-    params.append('filename', fileName);
-    
-    // Show export progress
-    $('#exportLoading').show();
-    
-    // Simulate progress for better UX
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        progress += 10;
-        if (progress > 90) progress = 90;
-        $('#exportProgress').css('width', progress + '%').text(progress + '%');
-    }, 200);
-    
-    // Make export request
-    fetch(`/books/export-report/?${params.toString()}`)
-        .then(response => {
-            clearInterval(progressInterval);
-            $('#exportProgress').css('width', '100%').text('100%');
-            
-            if (response.ok) {
-                return response.blob();
-            } else {
-                throw new Error('Export failed');
+        const filters = tabFilters[tabName] || {};
+        
+        $.ajax({
+            url: `/books/tab-data/${tabName}/`,
+            data: {
+                book_ids: Array.from(selectedBooks),
+                list_type: currentListType,
+                filters: JSON.stringify(filters)
+            },
+            success: function(response) {
+                populateTabData(tabName, response.data);
+                updateTabCount(tabName, response.total || response.data.length);
+                hideLoading();
+            },
+            error: function() {
+                hideLoading();
+                showError(tabName);
             }
-        })
-        .then(blob => {
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            // Hide progress
-            setTimeout(() => {
-                $('#exportLoading').hide();
-                $('#exportProgress').css('width', '0%').text('0%');
-            }, 500);
-            
-            showToast('Export completed successfully', 'success');
-        })
-        .catch(error => {
-            clearInterval(progressInterval);
-            $('#exportLoading').hide();
-            $('#exportProgress').css('width', '0%').text('0%');
-            showToast('Export failed: ' + error.message, 'error');
         });
-}
-
-function exportAllTabs() {
-
-    if (selectedBooks.size === 0) {
-        showToast('Please select at least one book to export', 'warning');
-        return;
     }
 
-    // Remove existing modal if already present
-    $('#exportOptionsModal').remove();
+    function populateTabData(tabName, data) {
+        const table = document.getElementById(`${tabName}-table`);
+        if (!table) return;
+        
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        
+        // Clear existing rows
+        tbody.innerHTML = '';
+        
+        if (data.length === 0) {
+            // Show empty message
+            document.getElementById(`${tabName}-empty`).style.display = 'block';
+            return;
+        }
+        
+        document.getElementById(`${tabName}-empty`).style.display = 'none';
+        
+        // Add new rows
+        data.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.className = index % 2 === 0 ? '' : 'table-active';
+            
+            const cells = convertToTableRow(tabName, item);
+            cells.forEach(cellContent => {
+                const cell = document.createElement('td');
+                cell.innerHTML = cellContent;
+                row.appendChild(cell);
+            });
+            
+            tbody.appendChild(row);
+        });
+        
+        // Update record count
+        const infoElement = document.getElementById(`${tabName}-info`);
+        if (infoElement) {
+            infoElement.textContent = `Showing ${data.length} records`;
+        }
+    }
 
-    const today = new Date().toISOString().slice(0, 10);
+    function convertToTableRow(tabName, item) {
+        switch(tabName) {
+            case 'catalogue':
+                return [
+                    item.cat_ref_num || '',
+                    item.title || '',
+                    item.subtitle || '',
+                    item.author || '',
+                    item.other_authors || '',
+                    item.publisher || '',
+                    item.isbn_issn || '',
+                    item.edition || '',
+                    item.keywords || '',
+                    item.language || '',
+                    item.publication_place || '',
+                    item.year_of_publication || '',
+                    item.classification_number || '',
+                    item.pages || '',
+                    item.date_of_registration || '',
+                    item.status_name || '',
+                    item.subject_name || '',
+                    item.call_number || '',
+                    item.cutter_number || '',
+                    item.publication_year || '',
+                    item.remarks || '',
+                    item.material_name || '',
+                    item.ebook_available === 'Yes'
+                        ? '<span class="badge bg-success">Yes</span>'
+                        : '<span class="badge bg-secondary">No</span>',
+                    item.ebook_id || '',
+                    item.created_at || '',
+                    item.created_by || '',
+                    item.updated_at || '',
+                    item.updated_by || ''
+                ];
+                
+            case 'accession':
+                return [
+                    item.accession_no || '',
+                    item.acquisition_date || '',
+                    item.catalog_ref_no || '',
+                    item.book_title || '',
+                    item.copy_number || '',
+                    item.invoice_number || '',
+                    item.invoice_date || '',
+                    item.price
+                        ? 'â‚¹' + parseFloat(item.price).toFixed(2)
+                        : 'â‚¹0.00',
+                    item.remarks || '',
+                    item.created_at || '',
+                    item.created_by || '',
+                    item.updated_at || '',
+                    item.updated_by || '',
+                    item.condition_name || '',
+                    item.currency_name || '',
+                    item.source_name || '',
+                    item.location_name || '',
+                    item.status_name || '',
+                    item.supplier_name || ''
+                ];
 
-    const modalHtml = `
-        <div class="modal fade" id="exportOptionsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
+                
+            case 'circulation':
+                return [
+                    item.barcode || '',
+                    item.book_title || '',
+                    item.bookcatalog_id || '',
+                    item.accession_no || '',
+                    item.date_processed || '',
+                    item.processing_status || '',
+                    item.shelf_location || '',
+                    item.remarks || '',
+                    item.created_at || '',
+                    item.created_by || '',
+                    item.updated_at || '',
+                    item.updated_by || '',
+                    item.current_status || ''
+                ];
 
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-download me-2"></i>Export All Data
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                
+            case 'loan':
+                const overdueDays = item.days_overdue_count || 0;
+                let overdueBadge = '<span class="badge bg-success">On time</span>';
+
+                if (overdueDays > 0) {
+                    if (overdueDays <= 3) {
+                        overdueBadge = `<span class="badge overdue-0-3">${overdueDays} days</span>`;
+                    } else if (overdueDays <= 7) {
+                        overdueBadge = `<span class="badge overdue-4-7">${overdueDays} days</span>`;
+                    } else if (overdueDays <= 30) {
+                        overdueBadge = `<span class="badge bg-warning text-dark">${overdueDays} days</span>`;
+                    } else {
+                        overdueBadge = `<span class="badge bg-danger">${overdueDays} days</span>`;
+                    }
+                }
+            
+                return [
+                    item.barcode || '',
+                    item.accession_id || '',
+                    item.cat_ref_num || '',
+                    item.book_title || '',
+                    item.member_name || '',
+                    item.membership_code || '',
+                    item.issue_date || '',
+                    item.due_date || '',
+                    item.return_date || '',
+                    overdueBadge,
+                    item.fine_amount
+                        ? 'â‚¹' + parseFloat(item.fine_amount).toFixed(2)
+                        : 'â‚¹0.00',
+                    item.issued_by || '',
+                    item.remarks || '',
+                    item.created_at || ''
+                ];
+
+                
+            case 'circulation-transaction':
+                const transactionOverdue = item.days_overdue_count || 0;
+                let transactionOverdueBadge = '<span class="badge bg-success">On time</span>';
+
+                if (transactionOverdue > 0) {
+                    transactionOverdueBadge =
+                        `<span class="badge bg-danger">${transactionOverdue} days</span>`;
+                }
+
+                let fineStatusBadge = '';
+                if (item.fine_status) {
+                    if (item.fine_status === 'Paid') {
+                        fineStatusBadge = '<span class="badge fine-paid">Paid</span>';
+                    } else if (item.fine_status === 'Adjusted') {
+                        fineStatusBadge = '<span class="badge fine-adjusted">Adjusted</span>';
+                    } else {
+                        fineStatusBadge = '<span class="badge fine-unpaid">Unpaid</span>';
+                    }
+                }
+
+                // IMPORTANT: Must match the 23 columns in your HTML table
+                return [
+                    item.barcode || '',                          // Barcode
+                    item.accession_id || '',                     // Accession No
+                    item.cat_ref_num || '',                      // Catalog Ref No
+                    item.member_name || '',                      // Member Name
+                    item.membership_code || '',                  // Membership Code
+                    item.issue_date || '',                       // Issue Date
+                    item.due_date || '',                         // Due Date
+                    item.issued_by || '',                        // Issued By
+                    item.created_at || '',                       // Created At
+                    item.return_date || '',                      // Return Date
+                    item.received_by || '',                      // Received By
+                    transactionOverdueBadge,                     // Days Overdue
+                    item.fine_amount ? '₹' + parseFloat(item.fine_amount).toFixed(2) : '₹0.00',      // Fine Amount
+                    item.book_fine_amount ? '₹' + parseFloat(item.book_fine_amount).toFixed(2) : '₹0.00',  // Book Fine
+                    item.total_fine ? '₹' + parseFloat(item.total_fine).toFixed(2) : '₹0.00',        // Total Fine
+                    item.adjusted_fine ? '₹' + parseFloat(item.adjusted_fine).toFixed(2) : '₹0.00',  // Adjusted Fine
+                    fineStatusBadge,                             // Fine Status
+                    item.fine_paid_date || '',                   // Fine Paid Date
+                    item.extended_on || '',                      // Extended On (NEW)
+                    item.created_by || '',                       // Created By (NEW - shows name)
+                    item.updated_by || '',                       // Updated By (NEW - shows name)
+                    item.remarks || '',                          // Remarks
+                    item.updated_at || ''                        // Updated At
+                ];
+
+                
+            case 'supplier':
+                return [
+                    item.accession_no || '',
+                    item.acquisition_date || '',
+                    item.catalog_ref_no || '',
+                    item.book_title || '',
+                    item.supplier_code || '',
+                    item.supplier_name || '',
+                    item.supplier_mobile || '',
+                    item.supplier_email || '',
+                    item.supplier_address || '',
+                    item.supplier_pincode || '',
+                    item.is_active === 'Yes'
+                        ? '<span class="badge bg-success">Active</span>'
+                        : '<span class="badge bg-secondary">Inactive</span>'
+                ];
+
+                
+            case 'review':
+
+                // Create rating stars
+                const rating = item.rating || 0;
+                let stars = '';
+
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= rating) {
+                        stars += '<i class="bi bi-star-fill text-warning"></i>';
+                    } else {
+                        stars += '<i class="bi bi-star text-secondary"></i>';
+                    }
+                }
+            
+                return [
+                    item.user_name || '',
+                    item.member_name || '',
+                    `<div class="rating-stars">${stars}</div>`,
+                    item.review
+                        ? (item.review.length > 50
+                            ? item.review.substring(0, 50) + '...'
+                            : item.review)
+                        : '',
+                    item.created_at || '',
+                    item.updated_at || '',
+                    item.library_code || '',
+                    item.cat_ref_id || '',
+                    item.book_title || '',
+                    item.ebook_name || ''
+                ];
+
+                
+            case 'return-log':
+                return [
+                    item.barcode || '',
+                    item.book_title || '',
+                    item.cat_ref_num_id || '',
+                    item.is_shelved === 'Yes'
+                        ? '<span class="badge bg-success">Shelved</span>'
+                        : '<span class="badge bg-warning text-dark">Not Shelved</span>',
+                    item.created_at || '',
+                    item.updated_at || '',
+                    item.created_by_name || '',
+                    item.eod_log_id || '',
+                    item.updated_by_name || ''
+                ];
+
+                
+            case 'google-metadata':
+                return [
+                    item.title || '',
+                    item.isbn || '',
+                    item.created_at || '',
+                    '<button class="btn btn-sm btn-info" onclick="viewMetadataDetails(' + JSON.stringify(item.details).replace(/"/g, '&quot;') + ')">View Details</button>'
+                ];
+                
+            case 'loc-metadata':
+                return [
+                    item.title || '',
+                    item.isbn || '',
+                    item.created_at || '',
+                    '<button class="btn btn-sm btn-info" onclick="viewMetadataDetails(' + JSON.stringify(item.details).replace(/"/g, '&quot;') + ')">View Details</button>'
+                ];
+                
+            default:
+                return [];
+        }
+    }
+
+    // View metadata details
+    function viewMetadataDetails(detailsJson) {
+        try {
+            const details = JSON.parse(detailsJson);
+            let detailsHtml = '<div class="metadata-details">';
+            
+            for (const [key, value] of Object.entries(details)) {
+                detailsHtml += `
+                    <div class="mb-2">
+                        <strong>${key}:</strong>
+                        <div class="ms-2 text-muted">${value || 'N/A'}</div>
                     </div>
+                `;
+            }
+            
+            detailsHtml += '</div>';
+            
+            Swal.fire({
+                title: 'Metadata Details',
+                html: detailsHtml,
+                width: '600px',
+                showCloseButton: true,
+                showConfirmButton: false
+            });
+        } catch (e) {
+            showToast('Error displaying metadata details', 'error');
+        }
+    }
 
-                    <div class="modal-body">
 
-                        <div class="mb-3">
-                            <label class="form-label">File Name</label>
-                            <input type="text" class="form-control" id="exportFileName"
-                                   value="Book_Report_${today}">
-                        </div>
+    function updateTabCount(tabName, count) {
+        $(`#${tabName}-count`).text(count);
+    }
 
-                        <div class="mb-3">
-                            <label class="form-label">Include Tabs</label>
-                            <div class="row" id="exportTabContainer">
-                                ${generateTabCheckboxes()}
-                            </div>
-                        </div>
+    function clearTabData(tabName) {
+        const table = document.getElementById(`${tabName}-table`);
+        if (table) {
+            const tbody = table.querySelector('tbody');
+            if (tbody) tbody.innerHTML = '';
+        }
+        $(`#${tabName}-count`).text('0');
+    }
 
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            This will export
-                            <strong><span id="exportBookCount">${selectedBooks.size}</span></strong>
-                            book(s) from
-                            <strong><span id="exportTabCount"></span></strong>
-                            selected tab(s).
-                        </div>
+    function clearAllTabData() {
+        const tabs = [
+            'catalogue', 'accession', 'circulation', 'loan',
+            'circulation-transaction', 'supplier', 'review',
+            'return-log', 'google-metadata', 'loc-metadata'
+        ];
+        
+        tabs.forEach(tab => {
+            clearTabData(tab);
+        });
+    }
 
+    function showLoading() {
+        $('#loadingOverlay').show();
+    }
+
+    function hideLoading() {
+        $('#loadingOverlay').hide();
+    }
+
+    function showError(tabName) {
+        showToast(`Failed to load ${tabName.replace('-', ' ')} data`, 'danger');
+    }
+
+    function showToast(message, type = 'info', duration = 3000) {
+        const toastHtml = `
+            <div class="toast align-items-center text-bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
                     </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary"
-                                data-bs-dismiss="modal">Cancel</button>
-
-                        <button type="button" class="btn btn-primary"
-                                id="confirmExportBtn">
-                            <i class="bi bi-download me-1"></i>Export
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    `;
-
-    $('body').append(modalHtml);
-
-    const modal = new bootstrap.Modal(document.getElementById('exportOptionsModal'));
-    modal.show();
-
-    updateExportCounts();
-
-    // Live count update
-    $('#exportOptionsModal').on('change', 'input[type="checkbox"]', updateExportCounts);
-
-    // Button click binding (better than inline onclick)
-    $('#confirmExportBtn').on('click', processExportAll);
-
-    $('#exportOptionsModal').on('hidden.bs.modal', function () {
-        $(this).remove();
-    });
-}
-
-
-/* ---------------------------------- */
-/* Generate checkboxes dynamically    */
-/* ---------------------------------- */
-function generateTabCheckboxes() {
-
-    const tabMap = {
-        catalogue: 'Catalogue',
-        accession: 'Accession',
-        circulation: 'Circulation',
-        loan: 'Loan',
-        'circulation-transaction': 'Circulation Transaction',
-        supplier: 'Supplier',
-        review: 'Review',
-        'return-log': 'Return Log',
-        'google-metadata': 'Google Metadata',
-        'loc-metadata': 'LOC Metadata'
-    };
-
-    let html = '';
-    Object.entries(tabMap).forEach(([value, label]) => {
-        html += `
-            <div class="col-6">
-                <div class="form-check">
-                    <input class="form-check-input export-tab-checkbox"
-                           type="checkbox"
-                           value="${value}"
-                           checked>
-                    <label class="form-check-label">
-                        ${label}
-                    </label>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
             </div>
         `;
-    });
-
-    return html;
-}
-
-
-/* ---------------------------------- */
-/* Update export count                */
-/* ---------------------------------- */
-function updateExportCounts() {
-
-    const checkedTabs = $('.export-tab-checkbox:checked').length;
-
-    $('#exportTabCount').text(checkedTabs);
-    $('#exportBookCount').text(
-        checkedTabs > 0 ? selectedBooks.size : 0
-    );
-}
-
-
-/* ---------------------------------- */
-/* Process Export                     */
-/* ---------------------------------- */
-function processExportAll() {
-
-    let fileName = $('#exportFileName').val().trim();
-
-    if (!fileName) {
-        showToast('Please enter file name', 'warning');
-        return;
+        
+        const $toast = $(toastHtml);
+        $('#toast-container').append($toast);
+        
+        const toast = new bootstrap.Toast($toast[0], {
+            delay: duration
+        });
+        toast.show();
+        
+        $toast.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
     }
 
-    fileName = fileName.replace(/[^\w\-]/g, '_');
-
-    const tabsToExport = [];
-    $('.export-tab-checkbox:checked').each(function () {
-        tabsToExport.push($(this).val());
-    });
-
-    if (tabsToExport.length === 0) {
-        showToast('Please select at least one tab', 'warning');
-        return;
+    function initDataTables() {
+        // Initialize DataTables if needed
+        // For now, just add Bootstrap classes
+        const tables = [
+            'catalogue-table',
+            'accession-table',
+            'circulation-table',
+            'loan-table',
+            'circulation-transaction-table',
+            'supplier-table',
+            'review-table',
+            'return-log-table',
+            'google-metadata-table',
+            'loc-metadata-table'
+        ];
+        
+        tables.forEach(tableId => {
+            const table = document.getElementById(tableId);
+            if (table) {
+                table.classList.add('table', 'table-hover', 'table-striped');
+            }
+        });
     }
 
-    const params = new URLSearchParams();
-    params.append('filename', fileName);
-    params.append('list_type', currentListType);
+    function setupEventListeners() {
+        // Tab change event
+        $('#reportTabs button').on('shown.bs.tab', function(e) {
+            const tabName = $(e.target).attr('id').replace('-tab', '');
+            loadTabData(tabName);
+        });
+        
+        // Search with Enter key
+        $('#book-search').keypress(function(e) {
+            if (e.which === 13) {
+                loadBookList(1);
+            }
+        });
+    }
 
-    // ðŸ”¹ FIXED: Send filters per tab instead of using undefined tabName
-    const allFilters = {};
+    function scrollToTop() {
+        $('html, body').animate({scrollTop: 0}, 500);
+    }
 
-    tabsToExport.forEach(tab => {
-        allFilters[tab] = tabFilters?.[tab] || {};
-        params.append('tabs', tab);
-    });
-
-    // Send one single JSON object
-    params.append('tab_filters', JSON.stringify(allFilters));
-
-
-    Array.from(selectedBooks).forEach(id =>
-        params.append('book_ids', id)
-    );
-
-    showToast('Preparing exportâ€¦', 'info');
-
-    window.location.href = `/books/export-all-data/?${params.toString()}`;
-
-    bootstrap.Modal.getInstance(
-        document.getElementById('exportOptionsModal')
-    )?.hide();
-}
-
-function applyTabFilters(tab, formId) {
-    const $form = $('#' + formId);
-    const filters = {};
-
-    // --------------------------------------------------
-    // 1. Collect normal inputs (text, date, single select)
-    // --------------------------------------------------
-    const formData = $form.serializeArray();
-    console.log(formData);
-
-    formData.forEach(item => {
-        if (!item.value) return;
-
-        if (item.name.endsWith('[]')) {
-            const key = item.name.replace('[]', '');
-            if (!filters[key]) filters[key] = [];
-            filters[key].push(item.value);
+    // Initialize when page loads
+    $(window).scroll(function() {
+        if ($(this).scrollTop() > 100) {
+            $('#scrollIndicator').addClass('show');
         } else {
-            filters[item.name] = item.value;
+            $('#scrollIndicator').removeClass('show');
         }
     });
 
-    // --------------------------------------------------
-    // 2. Save filters & update UI
-    // --------------------------------------------------
-    tabFilters[tab] = filters;
-    updateFilterBadge(tab, Object.keys(filters).length);
+    // Export functions
+    function exportCurrentTab() {
+        if (selectedBooks.size === 0) {
+            showToast('Please select at least one book to export', 'warning');
+            return;
+        }
+        
+        const activeTab = $('#reportTabs .nav-link.active').attr('id');
+        const tabName = activeTab.replace('-tab', '');
+        const tabNames = {
+            'catalogue': 'Catalogue',
+            'accession': 'Accession',
+            'circulation': 'Circulation',
+            'loan': 'Loan',
+            'circulation-transaction': 'Circulation Transaction',
+            'supplier': 'Supplier',
+            'review': 'Review',
+            'return-log': 'Return Log',
+            'google-metadata': 'Google Metadata',
+            'loc-metadata': 'LOC Metadata'
+        };
+        
+        const filters = tabFilters[tabName] || {};
+        const fileName = `${tabNames[tabName]}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        
+        const params = new URLSearchParams();
+        params.append('type', tabName);
+        params.append('book_ids', Array.from(selectedBooks));
+        params.append('list_type', currentListType);
+        params.append('tab_filters', JSON.stringify(filters));
+        params.append('filename', fileName);
+        
+        // Show export progress
+        $('#exportLoading').show();
+        
+        // Simulate progress for better UX
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 10;
+            if (progress > 90) progress = 90;
+            $('#exportProgress').css('width', progress + '%').text(progress + '%');
+        }, 200);
+        
+        // Make export request
+        fetch(`/books/export-report/?${params.toString()}`)
+            .then(response => {
+                clearInterval(progressInterval);
+                $('#exportProgress').css('width', '100%').text('100%');
+                
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error('Export failed');
+                }
+            })
+            .then(blob => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Hide progress
+                setTimeout(() => {
+                    $('#exportLoading').hide();
+                    $('#exportProgress').css('width', '0%').text('0%');
+                }, 500);
+                
+                showToast('Export completed successfully', 'success');
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                $('#exportLoading').hide();
+                $('#exportProgress').css('width', '0%').text('0%');
+                showToast('Export failed: ' + error.message, 'error');
+            });
+    }
 
-    $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
-    loadTabData(tab);
-}
+    function exportAllTabs() {
 
-function clearTabFilters(tab, formId) {
-    const $form = $('#' + formId);
+        if (selectedBooks.size === 0) {
+            showToast('Please select at least one book to export', 'warning');
+            return;
+        }
 
-    // Reset normal inputs
-    $form[0].reset();
+        // Remove existing modal if already present
+        $('#exportOptionsModal').remove();
 
-    // Clear selectize multi-selects
-    $form.find('select[multiple]').each(function () {
-        if (this.selectize) {
-            this.selectize.clear(true);
+        const today = new Date().toISOString().slice(0, 10);
+
+        const modalHtml = `
+            <div class="modal fade" id="exportOptionsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-download me-2"></i>Export All Data
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="mb-3">
+                                <label class="form-label">File Name</label>
+                                <input type="text" class="form-control" id="exportFileName"
+                                    value="Book_Report_${today}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Include Tabs</label>
+                                <div class="row" id="exportTabContainer">
+                                    ${generateTabCheckboxes()}
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                This will export
+                                <strong><span id="exportBookCount">${selectedBooks.size}</span></strong>
+                                book(s) from
+                                <strong><span id="exportTabCount"></span></strong>
+                                selected tab(s).
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                    data-bs-dismiss="modal">Cancel</button>
+
+                            <button type="button" class="btn btn-primary"
+                                    id="confirmExportBtn">
+                                <i class="bi bi-download me-1"></i>Export
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(modalHtml);
+
+        const modal = new bootstrap.Modal(document.getElementById('exportOptionsModal'));
+        modal.show();
+
+        updateExportCounts();
+
+        // Live count update
+        $('#exportOptionsModal').on('change', 'input[type="checkbox"]', updateExportCounts);
+
+        // Button click binding (better than inline onclick)
+        $('#confirmExportBtn').on('click', processExportAll);
+
+        $('#exportOptionsModal').on('hidden.bs.modal', function () {
+            $(this).remove();
+        });
+    }
+
+
+    /* ---------------------------------- */
+    /* Generate checkboxes dynamically    */
+    /* ---------------------------------- */
+    function generateTabCheckboxes() {
+
+        const tabMap = {
+            catalogue: 'Catalogue',
+            accession: 'Accession',
+            circulation: 'Circulation',
+            loan: 'Loan',
+            'circulation-transaction': 'Circulation Transaction',
+            supplier: 'Supplier',
+            review: 'Review',
+            'return-log': 'Return Log',
+            'google-metadata': 'Google Metadata',
+            'loc-metadata': 'LOC Metadata'
+        };
+
+        let html = '';
+        Object.entries(tabMap).forEach(([value, label]) => {
+            html += `
+                <div class="col-6">
+                    <div class="form-check">
+                        <input class="form-check-input export-tab-checkbox"
+                            type="checkbox"
+                            value="${value}"
+                            checked>
+                        <label class="form-check-label">
+                            ${label}
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+
+        return html;
+    }
+
+
+    /* ---------------------------------- */
+    /* Update export count                */
+    /* ---------------------------------- */
+    function updateExportCounts() {
+
+        const checkedTabs = $('.export-tab-checkbox:checked').length;
+
+        $('#exportTabCount').text(checkedTabs);
+        $('#exportBookCount').text(
+            checkedTabs > 0 ? selectedBooks.size : 0
+        );
+    }
+
+
+    /* ---------------------------------- */
+    /* Process Export                     */
+    /* ---------------------------------- */
+    function processExportAll() {
+
+        let fileName = $('#exportFileName').val().trim();
+
+        if (!fileName) {
+            showToast('Please enter file name', 'warning');
+            return;
+        }
+
+        fileName = fileName.replace(/[^\w\-]/g, '_');
+
+        const tabsToExport = [];
+        $('.export-tab-checkbox:checked').each(function () {
+            tabsToExport.push($(this).val());
+        });
+
+        if (tabsToExport.length === 0) {
+            showToast('Please select at least one tab', 'warning');
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append('filename', fileName);
+        params.append('list_type', currentListType);
+
+        // ðŸ”¹ FIXED: Send filters per tab instead of using undefined tabName
+        const allFilters = {};
+
+        tabsToExport.forEach(tab => {
+            allFilters[tab] = tabFilters?.[tab] || {};
+            params.append('tabs', tab);
+        });
+
+        // Send one single JSON object
+        params.append('tab_filters', JSON.stringify(allFilters));
+
+
+        Array.from(selectedBooks).forEach(id =>
+            params.append('book_ids', id)
+        );
+
+        showToast('Preparing exportâ€¦', 'info');
+
+        window.location.href = `/books/export-all-data/?${params.toString()}`;
+
+        bootstrap.Modal.getInstance(
+            document.getElementById('exportOptionsModal')
+        )?.hide();
+    }
+
+    function applyTabFilters(tab, formId) {
+        const $form = $('#' + formId);
+        const filters = {};
+
+        // --------------------------------------------------
+        // 1. Collect normal inputs (text, date, single select)
+        // --------------------------------------------------
+        const formData = $form.serializeArray();
+        console.log(formData);
+
+        formData.forEach(item => {
+            if (!item.value) return;
+
+            if (item.name.endsWith('[]')) {
+                const key = item.name.replace('[]', '');
+                if (!filters[key]) filters[key] = [];
+                filters[key].push(item.value);
+            } else {
+                filters[item.name] = item.value;
+            }
+        });
+
+        // --------------------------------------------------
+        // 2. Save filters & update UI
+        // --------------------------------------------------
+        tabFilters[tab] = filters;
+        updateFilterBadge(tab, Object.keys(filters).length);
+
+        $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
+        loadTabData(tab);
+    }
+
+    function clearTabFilters(tab, formId) {
+        const $form = $('#' + formId);
+
+        // Reset normal inputs
+        $form[0].reset();
+
+        // Clear selectize multi-selects
+        $form.find('select[multiple]').each(function () {
+            if (this.selectize) {
+                this.selectize.clear(true);
+            }
+        });
+
+        delete tabFilters[tab];
+        $('#' + tab + '-filter-count').text('0');
+
+        $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
+        loadTabData(tab);
+    }
+
+    function updateFilterBadge(tab, count) {
+        $(`#${tab}-filter-count`).text(count);
+    }
+
+    // Filter application functions
+    //function applyTabFilters(tabName, formId) {
+    //    const form = document.getElementById(formId);
+    //    if (!form) {
+    //        showToast('Filter form not found', 'error');
+    //        return;
+    //    }
+    //    
+    //    const formData = new FormData(form);
+    //    const filters = {};
+    //    let hasFilters = false;
+    //    
+    //    for (const [key, value] of formData.entries()) {
+    //        if (value && value !== '') {
+    //            hasFilters = true;
+    //            if (key.endsWith('[]')) {
+    //                const cleanKey = key.replace('[]', '');
+    //                if (!filters[cleanKey]) filters[cleanKey] = [];
+    //                filters[cleanKey].push(value);
+    //            } else {
+    //                filters[key] = value;
+    //            }
+    //        }
+    //    }
+    //    
+    //    if (hasFilters) {
+    //        tabFilters[tabName] = filters;
+    //        updateFilterBadge(tabName, Object.keys(filters).length);
+    //        showToast('Filters applied successfully', 'success');
+    //    } else {
+    //        delete tabFilters[tabName];
+    //        updateFilterBadge(tabName, 0);
+    //        showToast('No filters applied', 'info');
+    //    }
+    //    
+    //    // Close modal
+    //    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
+    //    if (modal) modal.hide();
+    //    
+    //    // Reload tab data
+    //    loadTabData(tabName);
+    //}
+    //
+    //function clearTabFilters(tabName, formId) {
+    //    const form = document.getElementById(formId);
+    //    if (form) form.reset();
+    //    
+    //    // Clear selectize instances
+    //    $(`#${formId} select[multiple]`).each(function() {
+    //        if (this.selectize) {
+    //            this.selectize.clear();
+    //        }
+    //    });
+    //    
+    //    delete tabFilters[tabName];
+    //    updateFilterBadge(tabName, 0);
+    //    
+    //    // Close modal
+    //    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
+    //    if (modal) modal.hide();
+    //    
+    //    // Reload tab data
+    //    loadTabData(tabName);
+    //}
+    //
+    //function updateFilterBadge(tabName, count) {
+    //    const badge = $(`.nav-link#${tabName}-tab .badge`);
+    //    if (count > 0) {
+    //        badge.removeClass('bg-secondary').addClass('bg-warning text-dark');
+    //        badge.text(count);
+    //    } else {
+    //        badge.removeClass('bg-warning text-dark').addClass('bg-secondary');
+    //        badge.text('0');
+    //    }
+    //}
+
+    // Keyboard shortcuts
+    $(document).keydown(function(e) {
+        // Ctrl+F for search
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            $('#book-search').focus();
+            return false;
+        }
+        
+        // Ctrl+E for export current tab
+        if (e.ctrlKey && e.key === 'e') {
+            e.preventDefault();
+            exportCurrentTab();
+            return false;
+        }
+        
+        // Ctrl+Shift+E for export all
+        if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+            e.preventDefault();
+            exportAllTabs();
+            return false;
+        }
+        
+        // Esc to clear selections
+        if (e.key === 'Escape') {
+            deselectAll();
+            return false;
         }
     });
 
-    delete tabFilters[tab];
-    $('#' + tab + '-filter-count').text('0');
-
-    $('#' + formId.replace('Form', 'FiltersModal')).modal('hide');
-    loadTabData(tab);
-}
-
-
-
-
-function updateFilterBadge(tab, count) {
-    $(`#${tab}-filter-count`).text(count);
-}
-
-// Filter application functions
-//function applyTabFilters(tabName, formId) {
-//    const form = document.getElementById(formId);
-//    if (!form) {
-//        showToast('Filter form not found', 'error');
-//        return;
-//    }
-//    
-//    const formData = new FormData(form);
-//    const filters = {};
-//    let hasFilters = false;
-//    
-//    for (const [key, value] of formData.entries()) {
-//        if (value && value !== '') {
-//            hasFilters = true;
-//            if (key.endsWith('[]')) {
-//                const cleanKey = key.replace('[]', '');
-//                if (!filters[cleanKey]) filters[cleanKey] = [];
-//                filters[cleanKey].push(value);
-//            } else {
-//                filters[key] = value;
-//            }
-//        }
-//    }
-//    
-//    if (hasFilters) {
-//        tabFilters[tabName] = filters;
-//        updateFilterBadge(tabName, Object.keys(filters).length);
-//        showToast('Filters applied successfully', 'success');
-//    } else {
-//        delete tabFilters[tabName];
-//        updateFilterBadge(tabName, 0);
-//        showToast('No filters applied', 'info');
-//    }
-//    
-//    // Close modal
-//    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
-//    if (modal) modal.hide();
-//    
-//    // Reload tab data
-//    loadTabData(tabName);
-//}
-//
-//function clearTabFilters(tabName, formId) {
-//    const form = document.getElementById(formId);
-//    if (form) form.reset();
-//    
-//    // Clear selectize instances
-//    $(`#${formId} select[multiple]`).each(function() {
-//        if (this.selectize) {
-//            this.selectize.clear();
-//        }
-//    });
-//    
-//    delete tabFilters[tabName];
-//    updateFilterBadge(tabName, 0);
-//    
-//    // Close modal
-//    const modal = bootstrap.Modal.getInstance(document.getElementById(formId.replace('Form', 'Modal')));
-//    if (modal) modal.hide();
-//    
-//    // Reload tab data
-//    loadTabData(tabName);
-//}
-//
-//function updateFilterBadge(tabName, count) {
-//    const badge = $(`.nav-link#${tabName}-tab .badge`);
-//    if (count > 0) {
-//        badge.removeClass('bg-secondary').addClass('bg-warning text-dark');
-//        badge.text(count);
-//    } else {
-//        badge.removeClass('bg-warning text-dark').addClass('bg-secondary');
-//        badge.text('0');
-//    }
-//}
-
-// Keyboard shortcuts
-$(document).keydown(function(e) {
-    // Ctrl+F for search
-    if (e.ctrlKey && e.key === 'f') {
-        e.preventDefault();
-        $('#book-search').focus();
-        return false;
-    }
-    
-    // Ctrl+E for export current tab
-    if (e.ctrlKey && e.key === 'e') {
-        e.preventDefault();
-        exportCurrentTab();
-        return false;
-    }
-    
-    // Ctrl+Shift+E for export all
-    if (e.ctrlKey && e.shiftKey && e.key === 'E') {
-        e.preventDefault();
-        exportAllTabs();
-        return false;
-    }
-    
-    // Esc to clear selections
-    if (e.key === 'Escape') {
-        deselectAll();
-        return false;
-    }
-});
-
-// Pagination rendering
-function renderPagination(data) {
-    const pagination = $('#pagination');
-    pagination.empty();
-    
-    if (data.pages <= 1) return;
-    
-    // Previous button
-    const prevDisabled = data.current_page === 1 ? 'disabled' : '';
-    pagination.append(`
-        <li class="page-item ${prevDisabled}">
-            <a class="page-link" href="#" onclick="loadBookList(${data.current_page - 1})" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-            </a>
-        </li>
-    `);
-    
-    // Page numbers
-    const startPage = Math.max(1, data.current_page - 2);
-    const endPage = Math.min(data.pages, data.current_page + 2);
-    
-    for (let i = startPage; i <= endPage; i++) {
-        const active = i === data.current_page ? 'active' : '';
+    // Pagination rendering
+    function renderPagination(data) {
+        const pagination = $('#pagination');
+        pagination.empty();
+        
+        if (data.pages <= 1) return;
+        
+        // Previous button
+        const prevDisabled = data.current_page === 1 ? 'disabled' : '';
         pagination.append(`
-            <li class="page-item ${active}">
-                <a class="page-link" href="#" onclick="loadBookList(${i})">${i}</a>
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="loadBookList(${data.current_page - 1})" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        `);
+        
+        // Page numbers
+        const startPage = Math.max(1, data.current_page - 2);
+        const endPage = Math.min(data.pages, data.current_page + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const active = i === data.current_page ? 'active' : '';
+            pagination.append(`
+                <li class="page-item ${active}">
+                    <a class="page-link" href="#" onclick="loadBookList(${i})">${i}</a>
+                </li>
+            `);
+        }
+        
+        // Next button
+        const nextDisabled = data.current_page === data.pages ? 'disabled' : '';
+        pagination.append(`
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="loadBookList(${data.current_page + 1})" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
             </li>
         `);
     }
-    
-    // Next button
-    const nextDisabled = data.current_page === data.pages ? 'disabled' : '';
-    pagination.append(`
-        <li class="page-item ${nextDisabled}">
-            <a class="page-link" href="#" onclick="loadBookList(${data.current_page + 1})" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-            </a>
-        </li>
-    `);
-}
 
-// Initialize tooltips
-function initTooltips() {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-}
-
-// Initialize date pickers
-function initDatePickers() {
-    $('.datepicker').flatpickr({
-        dateFormat: 'Y-m-d',
-        allowInput: true
-    });
-}
-
-// Handle window resize
-function handleResize() {
-    const isMobile = window.innerWidth < 992;
-    if (isMobile) {
-        $('.sidebar').css('height', '400px');
-        $('.content-area').css('height', 'calc(100vh - 450px)');
-    } else {
-        $('.sidebar').css('height', '100%');
-        $('.content-area').css('height', '100%');
+    // Initialize tooltips
+    function initTooltips() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
-}
 
-// Add to $(document).ready()
-$(document).ready(function() {
-    // ... existing code ...
-    
-    // Add new initializations
-    initTooltips();
-    //initDatePickers();
-    handleResize();
-    
+    // Initialize date pickers
+    function initDatePickers() {
+        $('.datepicker').flatpickr({
+            dateFormat: 'Y-m-d',
+            allowInput: true
+        });
+    }
+
     // Handle window resize
-    $(window).resize(handleResize);
-    
-    // Add click outside to clear search highlight
-    $(document).click(function(e) {
-        if (!$(e.target).closest('#book-search').length) {
-            $('.book-list-item').removeHighlight();
-        }
-    });
-    
-    // Add search highlight on input
-    $('#book-search').on('input', function() {
-        const searchText = $(this).val().toLowerCase();
-        if (searchText) {
-            $('.book-list-item').removeHighlight().highlight(searchText);
+    function handleResize() {
+        const isMobile = window.innerWidth < 992;
+        if (isMobile) {
+            $('.sidebar').css('height', '400px');
+            $('.content-area').css('height', 'calc(100vh - 450px)');
         } else {
-            $('.book-list-item').removeHighlight();
+            $('.sidebar').css('height', '100%');
+            $('.content-area').css('height', '100%');
         }
-    });
-});
+    }
 
+    // Add to $(document).ready()
+    $(document).ready(function() {
+        // ... existing code ...
+        
+        // Add new initializations
+        initTooltips();
+        //initDatePickers();
+        handleResize();
+        
+        // Handle window resize
+        $(window).resize(handleResize);
+        
+        // Add click outside to clear search highlight
+        $(document).click(function(e) {
+            if (!$(e.target).closest('#book-search').length) {
+                $('.book-list-item').removeHighlight();
+            }
+        });
+        
+        // Add search highlight on input
+        $('#book-search').on('input', function() {
+            const searchText = $(this).val().toLowerCase();
+            if (searchText) {
+                $('.book-list-item').removeHighlight().highlight(searchText);
+            } else {
+                $('.book-list-item').removeHighlight();
+            }
+        });
+    });
+
+</script>
+
+<script>
+    // New function to export data directly based on filters
+    function exportFilteredData() {
+        // Get current filters from left sidebar
+        const language = $('#language-filter').val();
+        const resourceType = $('#resource-type-filter').val();
+        const search = $('#book-search').val();
+        const listType = currentListType; // 'title', 'author', or 'category'
+        
+        // For now, only support 'title' list type
+        if (listType !== 'title') {
+            showToast('Export is currently only supported for Title list type. Please switch to Title view.', 'warning');
+            return;
+        }
+        
+        // Show loading
+        showLoading();
+        
+        // First, get total count to show in modal
+        $.ajax({
+            url: '{% url "book_list_data" %}',  // Using Django template tag
+            data: {
+                page: 1,
+                per_page: 1,
+                search: search,
+                list_type: listType,
+                language: language,
+                resource_type: resourceType
+            },
+            success: function(response) {
+                hideLoading();
+                
+                if (response.total === 0) {
+                    showToast('No records found to export', 'warning');
+                    return;
+                }
+                
+                // Show export options modal
+                showFilteredExportModal(response.total, search, language, resourceType, listType);
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                console.error('AJAX Error:', status, error);
+                console.error('Response:', xhr.responseText);
+                showToast('Failed to fetch record count: ' + (xhr.responseText || error), 'error');
+            }
+        });
+    }
+
+    function showFilteredExportModal(totalCount, search, language, resourceType, listType) {
+        // Remove existing modal if present
+        $('#filteredExportModal').remove();
+        
+        const modalHtml = `
+            <div class="modal fade" id="filteredExportModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-file-earmark-excel me-2"></i>Export to Excel
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Exporting <strong>${totalCount.toLocaleString()}</strong> record(s) matching current filters.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Select Tabs to Export:</label>
+                                <div class="row" id="filteredExportTabs">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="catalogue" id="export_tab_catalogue" checked>
+                                            <label class="form-check-label" for="export_tab_catalogue">
+                                                <i class="bi bi-journal me-1"></i> Catalogue
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="accession" id="export_tab_accession" checked>
+                                            <label class="form-check-label" for="export_tab_accession">
+                                                <i class="bi bi-box-seam me-1"></i> Accession
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="circulation" id="export_tab_circulation">
+                                            <label class="form-check-label" for="export_tab_circulation">
+                                                <i class="bi bi-arrow-left-right me-1"></i> Circulation
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="loan" id="export_tab_loan">
+                                            <label class="form-check-label" for="export_tab_loan">
+                                                <i class="bi bi-calendar-check me-1"></i> Loan
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="circulation-transaction" id="export_tab_circulation_transaction">
+                                            <label class="form-check-label" for="export_tab_circulation_transaction">
+                                                <i class="bi bi-arrows-angle-contract me-1"></i> Circulation Transaction
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="supplier" id="export_tab_supplier">
+                                            <label class="form-check-label" for="export_tab_supplier">
+                                                <i class="bi bi-truck me-1"></i> Supplier
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="review" id="export_tab_review">
+                                            <label class="form-check-label" for="export_tab_review">
+                                                <i class="bi bi-star me-1"></i> Review
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="return-log" id="export_tab_return_log">
+                                            <label class="form-check-label" for="export_tab_return_log">
+                                                <i class="bi bi-arrow-return-left me-1"></i> Return Log
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="google-metadata" id="export_tab_google_metadata">
+                                            <label class="form-check-label" for="export_tab_google_metadata">
+                                                <i class="bi bi-google me-1"></i> Google Metadata
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="loc-metadata" id="export_tab_loc_metadata">
+                                            <label class="form-check-label" for="export_tab_loc_metadata">
+                                                <i class="bi bi-building me-1"></i> LOC Metadata
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">File Name</label>
+                                <input type="text" class="form-control" id="filteredExportFileName" 
+                                    value="Book_Export_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" id="confirmFilteredExportBtn">
+                                <i class="bi bi-download me-1"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('filteredExportModal'));
+        modal.show();
+        
+        // Handle export button click
+        $('#confirmFilteredExportBtn').off('click').on('click', function() {
+            const selectedTabs = [];
+            $('#filteredExportModal input[type="checkbox"]:checked').each(function() {
+                selectedTabs.push($(this).val());
+            });
+            
+            if (selectedTabs.length === 0) {
+                showToast('Please select at least one tab to export', 'warning');
+                return;
+            }
+            
+            const fileName = $('#filteredExportFileName').val().trim() || 'book_export';
+            
+            modal.hide();
+            
+            // Call backend export using simple AJAX
+            performFilteredExport(selectedTabs, fileName, search, language, resourceType, listType);
+        });
+    }
+
+    function performFilteredExport(selectedTabs, fileName, search, language, resourceType, listType) {
+        // Show export loading
+        $('#exportLoading').show();
+        
+        // Make AJAX request with Django URL tag
+        $.ajax({
+            url: '{% url "export_filtered_data" %}',  // Using Django template tag
+            type: 'GET',
+            data: {
+                tabs: selectedTabs.join(','),
+                filename: fileName,
+                list_type: listType,
+                search: search || '',
+                language: language || '',
+                resource_type: resourceType || ''
+            },
+            xhrFields: {
+                responseType: 'blob'  // Important for file download
+            },
+            success: function(response, status, xhr) {
+                // Create blob and download
+                const blob = new Blob([response], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                $('#exportLoading').hide();
+                showToast('Export completed successfully!', 'success');
+            },
+            error: function(xhr, status, error) {
+                $('#exportLoading').hide();
+                let errorMsg = 'Export failed. Please try again.';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.error || errorMsg;
+                } catch(e) {}
+                showToast(errorMsg, 'error');
+            }
+        });
+    }
+    
 </script>
 
 {% endblock %}
