@@ -115,7 +115,6 @@
                 </div>
             </div>
             
-            
             <!-- Action Buttons -->
             <div class="btn-group justify-content-center d-flex gap-1">  
                 <button class="btn btn-sm btn-primary" onclick="applyLeftFilters()">
@@ -124,23 +123,29 @@
                 <button class="btn btn-sm btn-secondary" onclick="clearLeftFilters()">
                     Clear
                 </button>
-                 <!-- Select All -->
+                <!-- NEW: Select All Matching Filters Button -->
+                <button class="btn btn-sm btn-warning" 
+                        onclick="selectAllFilteredBooks()" 
+                        title="Select All Books Matching Current Filters"
+                        id="selectAllFilteredBtn">
+                    <i class="bi bi-check2-square"></i> Select All
+                </button>
+                <!-- Select All Visible (Current Page) -->
                 <button class="btn btn-sm btn-primary"
                         onclick="selectAll()"
-                        title="Select All">
+                        title="Select All on Current Page">
                     <i class="bi bi-check2-square"></i>
                 </button>
-                <!-- Add this button near your existing select all button (around line 128 in your template) -->
-                <button class="btn btn-sm btn-success" 
-                        onclick="exportFilteredData()" 
-                        title="Export to Excel"
-                        id="exportFilteredBtn">
-                    <i class="bi bi-file-earmark-excel"></i> Export to Excel
-                </button>
-            
+                <!-- Select All Across All Pages (Existing) -->
+                {% comment %} <button class="btn btn-sm btn-info" 
+                        onclick="selectAllAcrossPages()" 
+                        title="Select All Across All Pages"
+                        id="selectAllPagesBtn">
+                    <i class="bi bi-collection"></i> All Pages
+                </button> {% endcomment %}
                 <!-- Export -->
-                <button class="btn btn-success btn-sm" onclick="exportAllTabs()" title="Export All Data">
-                    <i class="bi bi-file-earmark-excel"></i>
+                <button class="btn btn-sm btn-success" onclick="exportFilteredData()" title="Export to Excel">
+                    <i class="bi bi-file-earmark-excel"></i> Export
                 </button>
             </div>
             
@@ -319,6 +324,20 @@
 <!-- Scroll to Top Indicator -->
 <div class="scroll-indicator" id="scrollIndicator" onclick="scrollToTop()">
     <i class="bi bi-arrow-up"></i>
+</div>
+
+<!-- Progress Overlay for Large Data Loading -->
+<div class="loading-overlay" id="progressOverlay" style="display: none;">
+    <div class="text-center">
+        <div class="spinner-border text-primary loading-spinner" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2" id="progressMessage">Loading data...</p>
+        <div class="progress mt-3" style="width: 80%; margin: 0 auto;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 0%">0%</div>
+        </div>
+    </div>
 </div>
 
 <!-- Toast Container -->
@@ -831,6 +850,7 @@
         loadTabData(tabName);
     }
 
+    // NEW: Load tab data with chunking for large datasets
     function loadTabData(tabName) {
         if (selectedBooks.size === 0) {
             clearTabData(tabName);
@@ -838,28 +858,88 @@
         }
         
         showLoading();
-
-        const filters = tabFilters[tabName] || {};
         
-        $.ajax({
-            url: `/books/tab-data/${tabName}/`,
-            data: {
-                book_ids: Array.from(selectedBooks),
-                list_type: currentListType,
-                filters: JSON.stringify(filters)
-            },
-            success: function(response) {
-                populateTabData(tabName, response.data);
-                updateTabCount(tabName, response.total || response.data.length);
-                hideLoading();
-            },
-            error: function() {
-                hideLoading();
-                showError(tabName);
-            }
+        const filters = tabFilters[tabName] || {};
+        const bookIdsArray = Array.from(selectedBooks);
+        const CHUNK_SIZE = 500; // Process 500 books at a time
+        const chunks = [];
+        
+        // Split book IDs into chunks
+        for (let i = 0; i < bookIdsArray.length; i += CHUNK_SIZE) {
+            chunks.push(bookIdsArray.slice(i, i + CHUNK_SIZE));
+        }
+        
+        // Store results from all chunks
+        let allData = [];
+        let completedChunks = 0;
+        
+        // If no chunks, just return
+        if (chunks.length === 0) {
+            hideLoading();
+            return;
+        }
+        
+        // Process each chunk
+        chunks.forEach((chunk, index) => {
+            $.ajax({
+                url: `/books/tab-data/${tabName}/`,
+                data: {
+                    book_ids: chunk,
+                    list_type: currentListType,
+                    filters: JSON.stringify(filters)
+                },
+                success: function(response) {
+                    // Merge data from this chunk
+                    if (response.data && response.data.length > 0) {
+                        allData = allData.concat(response.data);
+                    }
+                    completedChunks++;
+                    
+                    // Update progress (optional)
+                    if (chunks.length > 1) {
+                        showToast(`Loading ${tabName}: ${Math.round(completedChunks/chunks.length*100)}%...`, 'info', 1000);
+                    }
+                    
+                    // When all chunks are done
+                    if (completedChunks === chunks.length) {
+                        // Combine and display all data
+                        const combinedResponse = {
+                            data: allData,
+                            total: allData.length
+                        };
+                        populateTabData(tabName, combinedResponse.data);
+                        updateTabCount(tabName, combinedResponse.total || combinedResponse.data.length);
+                        hideLoading();
+                        
+                        if (chunks.length > 1) {
+                            showToast(`Successfully loaded ${allData.length} records for ${tabName}`, 'success');
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    completedChunks++;
+                    console.error(`Error loading chunk ${index + 1} for ${tabName}:`, error);
+                    
+                    // If all chunks failed or completed with errors
+                    if (completedChunks === chunks.length) {
+                        if (allData.length === 0) {
+                            hideLoading();
+                            showError(tabName);
+                            showToast(`Failed to load ${tabName} data. Please try selecting fewer books.`, 'error');
+                        } else {
+                            // Show partial data
+                            populateTabData(tabName, allData);
+                            updateTabCount(tabName, allData.length);
+                            hideLoading();
+                            showToast(`Loaded ${allData.length} records (partial). Some chunks failed.`, 'warning');
+                        }
+                    }
+                }
+            });
         });
     }
 
+    // Keep the original populateTabData function as is
     function populateTabData(tabName, data) {
         const table = document.getElementById(`${tabName}-table`);
         if (!table) return;
@@ -872,16 +952,22 @@
         
         if (data.length === 0) {
             // Show empty message
-            document.getElementById(`${tabName}-empty`).style.display = 'block';
+            const emptyDiv = document.getElementById(`${tabName}-empty`);
+            if (emptyDiv) emptyDiv.style.display = 'block';
             return;
         }
         
-        document.getElementById(`${tabName}-empty`).style.display = 'none';
+        const emptyDiv = document.getElementById(`${tabName}-empty`);
+        if (emptyDiv) emptyDiv.style.display = 'none';
         
-        // Add new rows
-        data.forEach((item, index) => {
+        // Add new rows (limit display to first 1000 for performance, but data is all there)
+        const displayData = data; // Show all data
+        const rowLimit = displayData.length;
+        
+        for (let i = 0; i < rowLimit; i++) {
+            const item = displayData[i];
             const row = document.createElement('tr');
-            row.className = index % 2 === 0 ? '' : 'table-active';
+            row.className = i % 2 === 0 ? '' : 'table-active';
             
             const cells = convertToTableRow(tabName, item);
             cells.forEach(cellContent => {
@@ -891,12 +977,12 @@
             });
             
             tbody.appendChild(row);
-        });
+        }
         
         // Update record count
         const infoElement = document.getElementById(`${tabName}-info`);
         if (infoElement) {
-            infoElement.textContent = `Showing ${data.length} records`;
+            infoElement.textContent = `Showing ${displayData.length} records`;
         }
     }
 
@@ -1179,7 +1265,6 @@
             showToast('Error displaying metadata details', 'error');
         }
     }
-
 
     function updateTabCount(tabName, count) {
         $(`#${tabName}-count`).text(count);
@@ -2071,6 +2156,67 @@
                     errorMsg = response.error || errorMsg;
                 } catch(e) {}
                 showToast(errorMsg, 'error');
+            }
+        });
+    }
+
+    // NEW FUNCTION: Select all books matching current filters (Language, Resource, Search)
+    function selectAllFilteredBooks() {
+        // Only works for Title tab
+        if (currentListType !== 'title') {
+            showToast('Select All is only available for Title list type. Please switch to Title view.', 'warning');
+            return;
+        }
+        
+        // Get current filters
+        const language = $('#language-filter').val();
+        const resourceType = $('#resource-type-filter').val();
+        const search = $('#book-search').val();
+        
+        showLoading();
+        
+        // Use the new get_all_ids parameter
+        $.ajax({
+            url: '{% url "book_list_data" %}',
+            data: {
+                get_all_ids: 'true',  // NEW parameter
+                search: search,
+                list_type: 'title',
+                language: language,
+                resource_type: resourceType
+            },
+            success: function(response) {
+                hideLoading();
+                
+                if (response.total === 0) {
+                    showToast('No books found matching the selected filters', 'warning');
+                    return;
+                }
+                
+                // Clear existing selections
+                selectedBooks.clear();
+                
+                // Add all book IDs from response
+                response.all_ids.forEach(bookId => {
+                    if (bookId) {  // Only add if not empty
+                        selectedBooks.add(bookId);
+                    }
+                });
+                
+                // Update UI - select all visible items in current page
+                $('.book-list-item').addClass('selected');
+                updateSelectionCount();
+                
+                // Show success message
+                showToast(`Successfully selected ${selectedBooks.size.toLocaleString()} book(s) matching filters!`, 'success');
+                
+                // Load current tab data
+                loadCurrentTabData();
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                console.error('Select All error:', error);
+                showToast('Failed to fetch books. Please try again.', 'error');
             }
         });
     }

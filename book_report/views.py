@@ -270,6 +270,9 @@ class BookListDataView(ReportBaseView):
             filters = form.cleaned_data
             list_type = filters.get('list_type', 'title')
             
+            # Check if we need ALL IDs (for select all functionality)
+            get_all_ids = request.GET.get('get_all_ids', 'false').lower() == 'true'
+            
             # Try to get database connection
             try:
                 db = self.get_library_db()
@@ -290,6 +293,23 @@ class BookListDataView(ReportBaseView):
             except Exception as e:
                 return JsonResponse({'error': f'Failed to process query results: {str(e)}'}, status=500)
             
+            # If get_all_ids is true, return ALL IDs without pagination
+            if get_all_ids:
+                all_ids = []
+                for book in books_list:
+                    if list_type == 'title':
+                        all_ids.append(book.get('cat_ref_num', ''))
+                    elif list_type == 'author':
+                        all_ids.append(book.get('author_code', ''))
+                    elif list_type == 'category':
+                        all_ids.append(book.get('id', ''))
+                
+                return JsonResponse({
+                    'total': len(all_ids),
+                    'all_ids': all_ids
+                })
+            
+            # Normal pagination flow (existing code continues here)
             # Pagination with validation
             try:
                 page = int(request.GET.get('page', 1))
