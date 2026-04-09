@@ -850,7 +850,7 @@
         loadTabData(tabName);
     }
 
-    // NEW: Load tab data with chunking for large datasets
+    // Load tab data with POST method (no URL length limit)
     function loadTabData(tabName) {
         if (selectedBooks.size === 0) {
             clearTabData(tabName);
@@ -879,15 +879,17 @@
             return;
         }
         
-        // Process each chunk
+        // Process each chunk using POST
         chunks.forEach((chunk, index) => {
             $.ajax({
                 url: `/books/tab-data/${tabName}/`,
-                data: {
+                type: 'POST',  // Using POST instead of GET
+                contentType: 'application/json',
+                data: JSON.stringify({
                     book_ids: chunk,
                     list_type: currentListType,
-                    filters: JSON.stringify(filters)
-                },
+                    filters: filters
+                }),
                 success: function(response) {
                     // Merge data from this chunk
                     if (response.data && response.data.length > 0) {
@@ -895,20 +897,15 @@
                     }
                     completedChunks++;
                     
-                    // Update progress (optional)
+                    // Update progress for large datasets
                     if (chunks.length > 1) {
                         showToast(`Loading ${tabName}: ${Math.round(completedChunks/chunks.length*100)}%...`, 'info', 1000);
                     }
                     
                     // When all chunks are done
                     if (completedChunks === chunks.length) {
-                        // Combine and display all data
-                        const combinedResponse = {
-                            data: allData,
-                            total: allData.length
-                        };
-                        populateTabData(tabName, combinedResponse.data);
-                        updateTabCount(tabName, combinedResponse.total || combinedResponse.data.length);
+                        populateTabData(tabName, allData);
+                        updateTabCount(tabName, allData.length);
                         hideLoading();
                         
                         if (chunks.length > 1) {
@@ -920,7 +917,7 @@
                     completedChunks++;
                     console.error(`Error loading chunk ${index + 1} for ${tabName}:`, error);
                     
-                    // If all chunks failed or completed with errors
+                    // If all chunks done
                     if (completedChunks === chunks.length) {
                         if (allData.length === 0) {
                             hideLoading();

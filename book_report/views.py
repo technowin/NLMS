@@ -36,6 +36,29 @@ from Account.models import CustomUser
 from .forms import *
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+# reports/views.py
+
+import os
+import json
+import calendar
+import tempfile
+from io import BytesIO
+from datetime import date, datetime, time, timedelta
+
+import pandas as pd
+import xlsxwriter
+
+from django.conf import settings
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse, HttpResponse
+from django.views import View
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 class ReportBaseView(LoginRequiredMixin, View):
     """Base view for handling dynamic database selection"""
     
@@ -390,18 +413,34 @@ class BookListDataView(ReportBaseView):
                 'error': f'An unexpected error occurred: {str(e)}'
             }, status=500)
             
+@method_decorator(csrf_exempt, name='dispatch')
 class TabDataView(ReportBaseView):
     """AJAX endpoint for tab data on right side"""
     
     def get(self, request, tab_name):
-        book_ids = request.GET.getlist('book_ids[]')
-        list_type = request.GET.get('list_type', 'title')
-        filters_json = request.GET.get('filters', '{}')
-        
-        try:
-            filters = json.loads(filters_json)
-        except:
-            filters = {}
+        # Keep GET for compatibility
+        return self.process_request(request, tab_name)
+    
+    def post(self, request, tab_name):
+        # POST for large requests (no URL length limit)
+        return self.process_request(request, tab_name)
+    
+    def process_request(self, request, tab_name):
+        # Get data from either GET or POST
+        if request.method == 'POST':
+            import json
+            data = json.loads(request.body)
+            book_ids = data.get('book_ids', [])
+            list_type = data.get('list_type', 'title')
+            filters = data.get('filters', {})
+        else:
+            book_ids = request.GET.getlist('book_ids[]')
+            list_type = request.GET.get('list_type', 'title')
+            filters_json = request.GET.get('filters', '{}')
+            try:
+                filters = json.loads(filters_json)
+            except:
+                filters = {}
         
         db = self.get_library_db()
         
