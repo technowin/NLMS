@@ -24,6 +24,10 @@
         --transition: all 0.3s ease;
     }
 
+    body{
+        background-color: #ECEDF3;
+    }
+
     /* ================= Book Gallery Container ================= */
     .library-books-section {
         margin-top: 30px;
@@ -707,10 +711,62 @@
         }
     }
 
-    /* Hide slider arrows on desktop & laptop */
-    @media (min-width: 1024px) {
+    /* ================= SLIDER ARROWS - MOBILE ONLY ================= */
+    .slider-nav-btn {
+        display: none !important; /* Hidden by default on all devices */
+    }
+
+    /* Show arrows only on mobile (less than 768px) */
+    @media (max-width: 767px) {
         .slider-nav-btn {
-            display: none !important;
+            display: flex !important; /* Show on mobile */
+        }
+    }
+
+    @media (max-width: 768px) {
+        .upcoming-slider-container {
+            padding: 10px 45px; /* Space for arrows */
+            min-height: 320px;
+            position: relative;
+        }
+
+        .upcoming-books-track {
+            justify-content: flex-start;
+            gap: 15px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            overflow-x: auto;
+            scrollbar-width: none; /* Hide scrollbar Firefox */
+            -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+            padding: 10px 5px;
+        }
+        
+        .upcoming-books-track::-webkit-scrollbar {
+            display: none; /* Hide scrollbar Chrome/Safari */
+        }
+
+        .upcoming-book-card {
+            min-width: 180px;
+            max-width: 180px;
+            scroll-snap-align: center;
+            flex-shrink: 0;
+        }
+        
+        /* Ensure arrows are properly positioned */
+        .slider-nav-btn {
+            width: 36px;
+            height: 36px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        .prev-btn {
+            left: 2px;
+        }
+        
+        .next-btn {
+            right: 2px;
         }
     }
 </style>
@@ -952,6 +1008,74 @@
     }
 </style>
 
+<style>
+    /* Section Header with Icon and Title side by side */
+    .section-header-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 25px;
+    }
+
+    .section-header-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        transition: var(--transition);
+    }
+
+    .section-header-icon:hover {
+        transform: rotate(10deg) scale(1.1);
+        background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+    }
+
+    .section-header-title {
+        text-align: center;
+    }
+
+    .section-header-title h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-blue), var(--accent-gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 4px;
+    }
+
+    .section-header-title p {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .section-header-content {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .section-header-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .section-header-title h3 {
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
 <div class="oz-card-grid">
     {% for library in libraries %}
         <div class="oz-library-card">
@@ -1092,6 +1216,24 @@
 
         <!-- Library Stats Section - Bilingual -->
         <div class="library-stats-section">
+            <div class="section-header-container">
+                <div class="section-header-content">
+                    <div class="section-header-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="section-header-title">
+                        <div id="stats-title-marathi">
+                            <h3>ग्रंथालय आकडेवारी</h3>
+                            <p>एक नजरेत</p>
+                        </div>
+                        <div id="stats-title-english" style="display: none;">
+                            <h3>Library Statistics</h3>
+                            <p>At a Glance</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="stats-marathi" class="stats-container" style="display: flex;">
                 <div class="stat-item">
                     <div class="stat-icon"><i class="fas fa-book-open"></i></div>
@@ -1144,24 +1286,21 @@
 
         {% if library.books %}
             <div class="library-books-section">
-
                 <div class="section-header-container">
                     <h4 id="marathi-head-{{ library.id }}">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
                     <h4 id="english-head-{{ library.id }}" style="display:none;">{{ library.library_name }} Books are available here</h4>
                 </div>
 
                 <div class="upcoming-slider-container">
-
-                    <button class="slider-nav-btn prev-btn" data-target="libraryBooksTrack">
+                    <button class="slider-nav-btn prev-btn" data-target="libraryBooksTrack-{{ library.id }}">
                         <i class="ri-arrow-left-s-line"></i>
                     </button>
 
-                    <div class="upcoming-books-track" id="libraryBooksTrack">
+                    <div class="upcoming-books-track" id="libraryBooksTrack-{{ library.id }}">
                         {% for book in library.books %}
                             <div class="upcoming-book-card">
-
                                 <div class="book-item">
-                                    <div class="book-flip" id="book-flip-{{ forloop.counter }}">
+                                    <div class="book-flip" id="book-flip-{{ library.id }}-{{ forloop.counter }}">
                                         <div class="book-flip-inner">
 
                                             {% if book.front_page_photo %}
@@ -1222,7 +1361,7 @@
                                                 data-ebook_available="{{ book.ebook_available }}"
                                                 data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
                                                 <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                            <!-- Tablet/Device Outline -->
+                                                    <!-- Tablet/Device Outline -->
                                                     <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
                                                         <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
                                                         <div style="font-size: 30px; color: #4a90e2;">
@@ -1245,8 +1384,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            </div>
-                                        {% endif %}
+                                            {% endif %}
 
                                         </div>
                                     </div>
@@ -1277,191 +1415,180 @@
                                     <span class="ebook-badge">📘 Ebook Available</span>
                                     {% endif %}
                                 </div>
-
                             </div>
                         {% endfor %}
                     </div>
 
-                    <button class="slider-nav-btn next-btn" data-target="libraryBooksTrack">
+                    <button class="slider-nav-btn next-btn" data-target="libraryBooksTrack-{{ library.id }}">
                         <i class="ri-arrow-right-s-line"></i>
                     </button>
-
                 </div>
             </div>
-            {% endif %}
-
+        {% endif %}
 
         {% if library.ebooks %}
-                <div class="library-books-section">
+            <div class="library-books-section">
+                <div class="section-header-container">
+                    <h4 id="marathi-header-{{ library.id }}">{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
+                    <h4 id="english-header-{{ library.id }}" style="display:none;">{{ library.library_name }} EBooks are available here</h4>
+                </div>
+                
+                <div class="upcoming-slider-container">
+                    <button class="slider-nav-btn prev-btn" data-target="ebooksTrack-{{ library.id }}">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </button>
 
-                    <div class="section-header-container">
-                        <h4 id="marathi-header-{{ library.id }}">{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
-                        <h4 id="english-header-{{ library.id }}" style="display:none;">{{ library.library_name }} EBooks are available here</h4>
-                    </div>
+                    <div class="upcoming-books-track" id="ebooksTrack-{{ library.id }}">
+                        {% for ebook in library.ebooks %}
+                        <div class="upcoming-book-card">
+                            <div class="book-item">
+                                <div class="book-flip" id="ebook-flip-{{ library.id }}-{{ forloop.counter }}">
+                                    <div class="book-flip-inner">
 
-                    <div class="upcoming-slider-container">
-
-                        <button class="slider-nav-btn prev-btn" data-target="ebooksTrack">
-                            <i class="ri-arrow-left-s-line"></i>
-                        </button>
-
-                        <div class="upcoming-books-track" id="ebooksTrack">
-                            {% for ebook in library.ebooks %}
-                            <div class="upcoming-book-card">
-
-                                <div class="book-item">
-                                    <div class="book-flip">
-                                        <div class="book-flip-inner">
-
-                                            {% if ebook.eb_front_page_photo %}
-                                                <div class="book-flip-front">
-                                                    <img src="{{ ebook.eb_front_page_photo }}"
-                                                        alt="{{ ebook.eb_title }} Front Cover"
-                                                        class="book-image"
-                                                        onclick="zoomImage(this)"
-                                                        data-front-image="{{ ebook.eb_front_page_photo }}"
-                                                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
-                                                        data-title="{{ ebook.eb_title }}"
-                                                        data-subtitle="{{ ebook.eb_subtitle }}"
-                                                        data-author="{{ ebook.eb_author }}"
-                                                        data-publisher="{{ ebook.eb_publisher }}"
-                                                        data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-                                                        data-edition="{{ ebook.eb_edition }}"
-                                                        data-subject="{{ ebook.eb_subject }}"
-                                                        data-publication_place="{{ ebook.eb_publication_place }}"
-                                                        data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-                                                        data-pages="{{ ebook.eb_pages }}"
-                                                        data-remarks="{{ ebook.remarks }}"
-                                                        data-language="{{ ebook.eb_language }}"
-                                                        data-description="{{ ebook.eb_keywords }}"
-                                                        data-pdf_file="{{ ebook.eb_pdf_url }}"
-                                                        data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-                                                        data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-                                                </div>
-                                            {% else %}
-                                            <!-- ✅ STANDARD EBOOK COVER FOR NO IMAGE -->
-                                                <div class="book-flip-front"
-                                                    style="
-                                                        display:flex;
-                                                        align-items:center;
-                                                        justify-content:center;
-                                                        background: #e8f0fe;
-                                                        border: 1px solid #c6dafc;
-                                                        border-radius: 4px;
-                                                        height:220px;
-                                                        cursor:pointer;
-                                                        padding: 15px;
-                                                        text-align: center;
-                                                        position: relative;
-                                                    "
-                                                    onclick="zoomFromTitle(this)"
-                                                    data-image=""
-                                                    data-last-image=""
-                                                    data-author="{{ ebook.eb_author }}"
+                                        {% if ebook.eb_front_page_photo %}
+                                            <div class="book-flip-front">
+                                                <img src="{{ ebook.eb_front_page_photo }}"
+                                                    alt="{{ ebook.eb_title }} Front Cover"
+                                                    class="book-image"
+                                                    onclick="zoomImage(this)"
+                                                    data-front-image="{{ ebook.eb_front_page_photo }}"
+                                                    data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
                                                     data-title="{{ ebook.eb_title }}"
                                                     data-subtitle="{{ ebook.eb_subtitle }}"
+                                                    data-author="{{ ebook.eb_author }}"
                                                     data-publisher="{{ ebook.eb_publisher }}"
                                                     data-isbn_issn="{{ ebook.eb_isbn_issn }}"
                                                     data-edition="{{ ebook.eb_edition }}"
+                                                    data-subject="{{ ebook.eb_subject }}"
                                                     data-publication_place="{{ ebook.eb_publication_place }}"
                                                     data-year_of_publication="{{ ebook.eb_year_of_publication }}"
                                                     data-pages="{{ ebook.eb_pages }}"
-                                                    data-remarks="{{ ebook.eb_remarks }}"
+                                                    data-remarks="{{ ebook.remarks }}"
                                                     data-language="{{ ebook.eb_language }}"
-                                                    data-description="{{ ebook.eb_description }}"
-                                                    data-ebook_available="{{ ebook.eb_ebook_available }}"
+                                                    data-description="{{ ebook.eb_keywords }}"
+                                                    data-pdf_file="{{ ebook.eb_pdf_url }}"
                                                     data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
                                                     data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-                                                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                                        <!-- Tablet/Device Outline -->
-                                                        <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
-                                                            <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
-                                                            <div style="font-size: 30px; color: #4a90e2;">
-                                                                📱
-                                                            </div>
-                                                            <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
-                                                                E-BOOK
-                                                            </div>
+                                            </div>
+                                        {% else %}
+                                        <!-- ✅ STANDARD EBOOK COVER FOR NO IMAGE -->
+                                            <div class="book-flip-front"
+                                                style="
+                                                    display:flex;
+                                                    align-items:center;
+                                                    justify-content:center;
+                                                    background: #e8f0fe;
+                                                    border: 1px solid #c6dafc;
+                                                    border-radius: 4px;
+                                                    height:220px;
+                                                    cursor:pointer;
+                                                    padding: 15px;
+                                                    text-align: center;
+                                                    position: relative;
+                                                "
+                                                onclick="zoomFromTitle(this)"
+                                                data-image=""
+                                                data-last-image=""
+                                                data-author="{{ ebook.eb_author }}"
+                                                data-title="{{ ebook.eb_title }}"
+                                                data-subtitle="{{ ebook.eb_subtitle }}"
+                                                data-publisher="{{ ebook.eb_publisher }}"
+                                                data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                                data-edition="{{ ebook.eb_edition }}"
+                                                data-publication_place="{{ ebook.eb_publication_place }}"
+                                                data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                                data-pages="{{ ebook.eb_pages }}"
+                                                data-remarks="{{ ebook.eb_remarks }}"
+                                                data-language="{{ ebook.eb_language }}"
+                                                data-description="{{ ebook.eb_description }}"
+                                                data-ebook_available="{{ ebook.eb_ebook_available }}"
+                                                data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                                data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                    <!-- Tablet/Device Outline -->
+                                                    <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
+                                                        <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
+                                                        <div style="font-size: 30px; color: #4a90e2;">
+                                                            📱
                                                         </div>
-                                                        
-                                                        <div style="margin-top: 10px;">
-                                                            <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
-                                                                {{ ebook.eb_title|truncatechars:25 }}
-                                                            </div>
-                                                            {% if ebook.eb_author %}
-                                                            <div style="font-size: 11px; color: #666;">
-                                                                {{ ebook.eb_author|truncatechars:20 }}
-                                                            </div>
-                                                            {% endif %}
+                                                        <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
+                                                            E-BOOK
                                                         </div>
                                                     </div>
+                                                    
+                                                    <div style="margin-top: 10px;">
+                                                        <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
+                                                            {{ ebook.eb_title|truncatechars:25 }}
+                                                        </div>
+                                                        {% if ebook.eb_author %}
+                                                        <div style="font-size: 11px; color: #666;">
+                                                            {{ ebook.eb_author|truncatechars:20 }}
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
-                                            {% endif %}
+                                            </div>
+                                        {% endif %}
 
-                                        </div>
                                     </div>
-
-                                    <p class="book-title"
-                                        style="margin-bottom: 4px; cursor:pointer;"
-                                        onclick="zoomFromTitle(this)"
-                                        data-image="{% if ebook.eb_front_page_photo %}{{ ebook.eb_front_page_photo }}{% endif %}"
-                                        data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
-                                        data-author="{{ ebook.eb_author }}"
-                                        data-title="{{ ebook.eb_title }}"
-                                        data-subtitle="{{ ebook.eb_subtitle }}"
-                                        data-publisher="{{ ebook.eb_publisher }}"
-                                        data-isbn_issn="{{ ebook.eb_isbn_issn }}"
-                                        data-edition="{{ ebook.eb_edition }}"
-                                        data-publication_place="{{ ebook.eb_publication_place }}"
-                                        data-year_of_publication="{{ ebook.eb_year_of_publication }}"
-                                        data-pages="{{ ebook.eb_pages }}"
-                                        data-remarks="{{ ebook.eb_remarks }}"
-                                        data-language="{{ ebook.eb_language }}"
-                                        data-description="{{ ebook.eb_description }}"
-                                        data-ebook_available="{{ ebook.eb_ebook_available }}"
-                                        data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
-                                        data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
-                                            {{ ebook.eb_title }}
-                                    </p>
-
                                 </div>
 
+                                <p class="book-title"
+                                    style="margin-bottom: 4px; cursor:pointer;"
+                                    onclick="zoomFromTitle(this)"
+                                    data-image="{% if ebook.eb_front_page_photo %}{{ ebook.eb_front_page_photo }}{% endif %}"
+                                    data-last-image="{% if ebook.eb_last_page_photo %}{{ ebook.eb_last_page_photo }}{% endif %}"
+                                    data-author="{{ ebook.eb_author }}"
+                                    data-title="{{ ebook.eb_title }}"
+                                    data-subtitle="{{ ebook.eb_subtitle }}"
+                                    data-publisher="{{ ebook.eb_publisher }}"
+                                    data-isbn_issn="{{ ebook.eb_isbn_issn }}"
+                                    data-edition="{{ ebook.eb_edition }}"
+                                    data-publication_place="{{ ebook.eb_publication_place }}"
+                                    data-year_of_publication="{{ ebook.eb_year_of_publication }}"
+                                    data-pages="{{ ebook.eb_pages }}"
+                                    data-remarks="{{ ebook.eb_remarks }}"
+                                    data-language="{{ ebook.eb_language }}"
+                                    data-description="{{ ebook.eb_description }}"
+                                    data-ebook_available="{{ ebook.eb_ebook_available }}"
+                                    data-encrypted-ebook-id="{{ ebook.encrypted_ebook_id }}"
+                                    data-encrypted-pdf-url="{{ ebook.encrypted_pdf_url }}">
+                                        {{ ebook.eb_title }}
+                                </p>
                             </div>
-                            {% endfor %}
                         </div>
-
-                        <button class="slider-nav-btn next-btn" data-target="ebooksTrack">
-                            <i class="ri-arrow-right-s-line"></i>
-                        </button>
-
+                        {% endfor %}
                     </div>
+
+                    <button class="slider-nav-btn next-btn" data-target="ebooksTrack-{{ library.id }}">
+                        <i class="ri-arrow-right-s-line"></i>
+                    </button>
                 </div>
+            </div>
 
+            <!-- Buttons -->
+            <div class="view-more-btn-container"
+                style="display:flex; justify-content:center; gap:12px; align-items:center;
+                        margin:8px; margin-bottom:10px; flex-wrap:wrap;">
+                <a href="{% url 'L01:view_ebook_catalogue' %}"
+                style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff;
+                        text-decoration:none; padding:8px 18px; border-radius:30px;
+                        font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                        transition:all 0.3s ease;"
+                onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)';this.style.transform='translateY(-2px) scale(1.05)';"
+                onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)';this.style.transform='translateY(0) scale(1)';">
+                    <i class="fas fa-arrow-down" style="margin-right:6px;"></i> Search Books
+                </a>
 
-                <!-- Buttons -->
-                <div class="view-more-btn-container"
-                    style="display:flex; justify-content:center; gap:12px; align-items:center;
-                            margin:8px; margin-bottom:10px; flex-wrap:wrap;">
-                    <a href="{% url 'L01:view_ebook_catalogue' %}"
-                    style="background:linear-gradient(135deg, #2563eb, #1e40af); color:#fff;
-                            text-decoration:none; padding:8px 18px; border-radius:30px;
-                            font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                            transition:all 0.3s ease;"
-                    onmouseover="this.style.background='linear-gradient(135deg, #1e40af, #1e3a8a)';this.style.transform='translateY(-2px) scale(1.05)';"
-                    onmouseout="this.style.background='linear-gradient(135deg, #2563eb, #1e40af)';this.style.transform='translateY(0) scale(1)';">
-                        <i class="fas fa-arrow-down" style="margin-right:6px;"></i> Search Books
-                    </a>
-
-                    <a href="{% url 'Login' %}"
-                    style="background:linear-gradient(135deg, #10b981, #047857); color:#fff;
-                            text-decoration:none; padding:8px 18px; border-radius:30px;
-                            font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
-                            transition:all 0.3s ease;"
-                    onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)';this.style.transform='translateY(-2px) scale(1.05)';"
-                    onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)';this.style.transform='translateY(0) scale(1)';">
-                        <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
-                    </a>
-                </div>
+                <a href="{% url 'Login' %}"
+                style="background:linear-gradient(135deg, #10b981, #047857); color:#fff;
+                        text-decoration:none; padding:8px 18px; border-radius:30px;
+                        font-weight:600; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+                        transition:all 0.3s ease;"
+                onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)';this.style.transform='translateY(-2px) scale(1.05)';"
+                onmouseout="this.style.background='linear-gradient(135deg, #10b981, #047857)';this.style.transform='translateY(0) scale(1)';">
+                    <i class="fas fa-sign-in-alt" style="margin-right:6px;"></i> Login
+                </a>
             </div>
         {% endif %}
 
@@ -1537,8 +1664,6 @@
         </div>
     {% endfor %}
 </div>
-
-
 
 {% for library in libraries %}
     {% if library.library_rules %}
@@ -1979,16 +2104,80 @@
     </script>
 
     <script>
+        // Slider Navigation
         document.querySelectorAll('.slider-nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const track = document.getElementById(btn.dataset.target);
+                const trackId = btn.getAttribute('data-target');
+                const track = document.getElementById(trackId);
+                if (!track) {
+                    console.error('Track not found:', trackId);
+                    return;
+                }
+                
                 const card = track.querySelector('.upcoming-book-card');
                 if (!card) return;
 
-                const scrollAmount = card.offsetWidth + 16;
+                // Get card width including gap
+                const cardWidth = card.offsetWidth;
+                const computedStyle = window.getComputedStyle(track);
+                const gap = parseInt(computedStyle.gap) || 20;
+                const scrollAmount = cardWidth + gap;
+                
+                // Determine direction
+                const direction = btn.classList.contains('next-btn') ? 1 : -1;
+                
+                // Smooth scroll
                 track.scrollBy({
-                    left: btn.classList.contains('next-btn') ? scrollAmount : -scrollAmount,
+                    left: scrollAmount * direction,
                     behavior: 'smooth'
+                });
+                
+                // Update button visibility after scroll
+                setTimeout(() => updateArrowVisibility(track), 350);
+            });
+        });
+        
+        // Function to show/hide arrows based on scroll position
+        function updateArrowVisibility(track) {
+            const container = track.parentElement;
+            const prevBtn = container.querySelector('.prev-btn');
+            const nextBtn = container.querySelector('.next-btn');
+            
+            if (!prevBtn || !nextBtn) return;
+            
+            // Show/hide left arrow
+            if (track.scrollLeft <= 5) {
+                prevBtn.style.opacity = '0.3';
+                prevBtn.style.pointerEvents = 'none';
+            } else {
+                prevBtn.style.opacity = '1';
+                prevBtn.style.pointerEvents = 'auto';
+            }
+            
+            // Show/hide right arrow
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            if (track.scrollLeft >= maxScroll - 5) {
+                nextBtn.style.opacity = '0.3';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Initialize arrow visibility on load, scroll, and resize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.upcoming-books-track').forEach(track => {
+                updateArrowVisibility(track);
+                
+                // Update on scroll
+                track.addEventListener('scroll', () => {
+                    updateArrowVisibility(track);
+                });
+                
+                // Update on window resize
+                window.addEventListener('resize', () => {
+                    updateArrowVisibility(track);
                 });
             });
         });
