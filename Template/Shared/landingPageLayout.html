@@ -1298,12 +1298,11 @@
                 toggleSection('section-marathi', 'section-english', false);
                 toggleSection('marathi-head', 'english-head', false);
                 toggleSection('marathi-header', 'english-header', false);
-                // ========== ADD STATS TITLE TOGGLE ========== ← NEW
-                toggleSection('stats-title-marathi', 'stats-title-english', false);  // ← NEW
+                toggleSection('stats-title-marathi', 'stats-title-english', false);
                 
-                // ========== ADD VISION MISSION PAGE TOGGLES ==========
-                // Banner
-                toggleSection('banner-marathi', 'banner-english', false);
+                // ========== FIXED: Changed 'oggleSection' to 'toggleSection' ==========
+                toggleSection('stats-marathi', 'stats-english', false);
+                
                 // ========== ADD VISION MISSION PAGE TOGGLES ==========
                 // Banner
                 toggleSection('banner-marathi', 'banner-english', false);
@@ -1354,7 +1353,6 @@
                         }
                     }, 100);
                 }
-                
             }
 
             function switchToMarathi() {
@@ -1385,10 +1383,7 @@
 
                 // ========== ADD STATS TITLE TOGGLE ========== ← NEW
                 toggleSection('stats-title-marathi', 'stats-title-english', true);  // ← NEW
-                
-                // ========== ADD VISION MISSION PAGE TOGGLES ==========
-                // Banner
-                toggleSection('banner-marathi', 'banner-english', true);
+                toggleSection('stats-marathi', 'stats-english', true);
                 
                 // ========== ADD VISION MISSION PAGE TOGGLES ==========
                 // Banner
@@ -1450,16 +1445,32 @@
                 const englishElements = document.querySelectorAll(`[id^="${englishId}"]`);
                 
                 marathiElements.forEach(el => {
-                    el.style.display = showMarathi ? '' : 'none';
-                    if (showMarathi && el.style.display === '') {
-                        el.style.display = 'block';
+                    if (showMarathi) {
+                        // Use inline style removal to let CSS handle the display
+                        el.style.display = '';
+                        // Force reflow then apply correct display
+                        const computedDisplay = window.getComputedStyle(el).display;
+                        if (computedDisplay === 'none' || computedDisplay === 'block') {
+                            // Check if element should be flex based on class
+                            el.style.display = el.classList.contains('stats-container') ? 'flex' : 'block';
+                        }
+                    } else {
+                        el.style.display = 'none';
                     }
                 });
                 
                 englishElements.forEach(el => {
-                    el.style.display = showMarathi ? 'none' : '';
-                    if (!showMarathi && el.style.display === '') {
-                        el.style.display = 'block';
+                    if (!showMarathi) {
+                        // Use inline style removal to let CSS handle the display
+                        el.style.display = '';
+                        // Force reflow then apply correct display
+                        const computedDisplay = window.getComputedStyle(el).display;
+                        if (computedDisplay === 'none' || computedDisplay === 'block') {
+                            // Check if element should be flex based on class
+                            el.style.display = el.classList.contains('stats-container') ? 'flex' : 'block';
+                        }
+                    } else {
+                        el.style.display = 'none';
                     }
                 });
             }
