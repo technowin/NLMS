@@ -6,61 +6,70 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="vision-mission-page">
-    <!-- Official Header Banner -->
-    <div class="official-banner">
-        <div class="banner-content">
-            <div class="banner-icon">
+    <!-- Hero Banner with Animation -->
+    <div class="vm-hero-section">
+        <div class="vm-hero-overlay"></div>
+        <div class="vm-hero-particles"></div>
+        <div class="vm-hero-content">
+            <div class="vm-hero-icon">
                 <i class="fas fa-university"></i>
             </div>
-            <div id="banner-marathi" class="banner-text">
-                <h1>नवी मुंबई महानगरपालिका ग्रंथालय सेवा</h1>
-                <p>दृष्टी, ध्येय व उद्दिष्टे</p>
+            <div id="banner-marathi" class="vm-hero-text" style="display: block;">
+                <h1 class="vm-hero-title">नवी मुंबई महानगरपालिका ग्रंथालय सेवा</h1>
+                <p class="vm-hero-subtitle">दृष्टी, ध्येय व उद्दिष्टे</p>
             </div>
-            <div id="banner-english" class="banner-text" style="display: none;">
-                <h1>Navi Mumbai Municipal Corporation Library Services</h1>
-                <p>Vision, Mission & Objectives</p>
+            <div id="banner-english" class="vm-hero-text" style="display: none;">
+                <h1 class="vm-hero-title">Navi Mumbai Municipal Corporation Library Services</h1>
+                <p class="vm-hero-subtitle">Vision, Mission & Objectives</p>
             </div>
+        </div>
+        <div class="vm-hero-wave">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120">
+                <path fill="#EDEFF6" fill-opacity="1" d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"></path>
+            </svg>
         </div>
     </div>
 
-    <div class="container">
+    <div class="vm-container">
         <!-- Vision & Mission Side by Side -->
-        <div class="vision-mission-row">
+        <div class="vm-row">
             <!-- Vision Card -->
-            <div class="column vision-column">
-                <div class="section-card vision-card">
-                    <div class="card-header">
-                        <div class="header-icon">
+            <div class="vm-col">
+                <div class="vm-card vm-card-vision scroll-animate">
+                    <div class="vm-card-glow"></div>
+                    <div class="vm-card-header">
+                        <div class="vm-card-icon">
                             <i class="fas fa-eye"></i>
                         </div>
-                        <div class="header-title">
+                        <div class="vm-card-title">
                             <div id="vision-title-marathi">
                                 <h3>दृष्टी</h3>
-                                <p class="subtitle">आमचे भविष्यदृष्टी</p>
+                                <p>आमचे भविष्यदृष्टी</p>
                             </div>
                             <div id="vision-title-english" style="display: none;">
                                 <h3>Vision</h3>
-                                <p class="subtitle">Our Future Vision</p>
+                                <p>Our Future Vision</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="card-body">
-                        <div id="vision-content-marathi" class="content-text">
+                    <div class="vm-card-body">
+                        <div id="vision-content-marathi" class="vm-vision-text">
                             <p>नवी मुंबई महानगरपालिका क्षेत्रातील प्रत्येक नागरिकासाठी समावेशक, सुलभ व नागरिककेंद्रित सार्वजनिक ग्रंथालय व्यवस्था उभारणे, जी वाचन, शिक्षण व ज्ञानसंवर्धनाची संस्कृती वृद्धिंगत करून समाजाच्या शैक्षणिक व बौद्धिक विकासास चालना देईल.</p>
                         </div>
-                        <div id="vision-content-english" class="content-text" style="display: none;">
+                        <div id="vision-content-english" class="vm-vision-text" style="display: none;">
                             <p>To create an inclusive, accessible, and citizen-centric public library system that nurtures a strong culture of reading, learning, and knowledge sharing, and contributes to the social, educational, and intellectual development of every citizen of Navi Mumbai.</p>
                         </div>
                     </div>
                     
-                    <div class="card-features">
-                        <div class="feature">
-                            <div class="feature-icon">
+                    <div class="vm-card-features">
+                        <div class="vm-feature">
+                            <div class="vm-feature-icon">
                                 <i class="fas fa-users"></i>
                             </div>
-                            <div class="feature-text">
+                            <div class="vm-feature-text">
                                 <div id="vision-feature1-marathi">
                                     <h4>समावेशकता</h4>
                                     <p>सर्वांसाठी प्रवेश</p>
@@ -72,11 +81,11 @@
                             </div>
                         </div>
                         
-                        <div class="feature">
-                            <div class="feature-icon">
+                        <div class="vm-feature">
+                            <div class="vm-feature-icon">
                                 <i class="fas fa-book-reader"></i>
                             </div>
-                            <div class="feature-text">
+                            <div class="vm-feature-text">
                                 <div id="vision-feature2-marathi">
                                     <h4>वाचन संस्कृती</h4>
                                     <p>सतत शिक्षण</p>
@@ -88,11 +97,11 @@
                             </div>
                         </div>
                         
-                        <div class="feature">
-                            <div class="feature-icon">
+                        <div class="vm-feature">
+                            <div class="vm-feature-icon">
                                 <i class="fas fa-brain"></i>
                             </div>
-                            <div class="feature-text">
+                            <div class="vm-feature-text">
                                 <div id="vision-feature3-marathi">
                                     <h4>बौद्धिक विकास</h4>
                                     <p>ज्ञान संवर्धन</p>
@@ -108,39 +117,40 @@
             </div>
 
             <!-- Mission Card -->
-            <div class="column mission-column">
-                <div class="section-card mission-card">
-                    <div class="card-header">
-                        <div class="header-icon">
+            <div class="vm-col">
+                <div class="vm-card vm-card-mission scroll-animate">
+                    <div class="vm-card-glow"></div>
+                    <div class="vm-card-header">
+                        <div class="vm-card-icon">
                             <i class="fas fa-bullseye"></i>
                         </div>
-                        <div class="header-title">
+                        <div class="vm-card-title">
                             <div id="mission-title-marathi">
                                 <h3>ध्येय</h3>
-                                <p class="subtitle">आमची प्रतिबद्धता</p>
+                                <p>आमची प्रतिबद्धता</p>
                             </div>
                             <div id="mission-title-english" style="display: none;">
                                 <h3>Mission</h3>
-                                <p class="subtitle">Our Commitment</p>
+                                <p>Our Commitment</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="card-body">
-                        <div id="mission-content-marathi" class="content-text">
+                    <div class="vm-card-body">
+                        <div id="mission-content-marathi" class="vm-mission-text">
                             <p>वाचन आणि आजीवन शिक्षणास प्रोत्साहन देणे, दर्जेदार ग्रंथालय व अभ्यासिकेच्या सुविधा उपलब्ध करून देणे आणि भौतिक व डिजिटल माध्यमांतून सर्व नागरिकांना ज्ञानसाधनांचा समान प्रवेश सुनिश्चित करणे.</p>
                         </div>
-                        <div id="mission-content-english" class="content-text" style="display: none;">
+                        <div id="mission-content-english" class="vm-mission-text" style="display: none;">
                             <p>To promote reading and lifelong learning, provide quality library and study facilities, and ensure equitable access to knowledge resources for students and citizens across Navi Mumbai through physical and digital platforms.</p>
                         </div>
                     </div>
                     
-                    <div class="card-features">
-                        <div class="feature">
-                            <div class="feature-icon">
+                    <div class="vm-card-features">
+                        <div class="vm-feature">
+                            <div class="vm-feature-icon">
                                 <i class="fas fa-graduation-cap"></i>
                             </div>
-                            <div class="feature-text">
+                            <div class="vm-feature-text">
                                 <div id="mission-feature1-marathi">
                                     <h4>गुणवत्तापूर्ण सुविधा</h4>
                                     <p>आधुनिक ग्रंथालये</p>
@@ -152,11 +162,11 @@
                             </div>
                         </div>
                         
-                        <div class="feature">
-                            <div class="feature-icon">
+                        <div class="vm-feature">
+                            <div class="vm-feature-icon">
                                 <i class="fas fa-laptop"></i>
                             </div>
-                            <div class="feature-text">
+                            <div class="vm-feature-text">
                                 <div id="mission-feature2-marathi">
                                     <h4>डिजिटल प्रवेश</h4>
                                     <p>ई-संसाधने</p>
@@ -168,11 +178,11 @@
                             </div>
                         </div>
                         
-                        <div class="feature">
-                            <div class="feature-icon">
+                        <div class="vm-feature">
+                            <div class="vm-feature-icon">
                                 <i class="fas fa-hands-helping"></i>
                             </div>
-                            <div class="feature-text">
+                            <div class="vm-feature-text">
                                 <div id="mission-feature3-marathi">
                                     <h4>सामुदायिक सहभाग</h4>
                                     <p>नागरिक संवाद</p>
@@ -188,161 +198,181 @@
             </div>
         </div>
 
-        <!-- Objectives Section Below -->
-        <div class="objectives-section">
-            <div class="section-header">
-                <div class="header-icon">
-                    <i class="fas fa-flag-checkered"></i>
+        <!-- Objectives Section -->
+        <div class="vm-objectives-section">
+            <div class="vm-section-header scroll-animate">
+                <div class="vm-section-icon-wrapper">
+                    <div class="vm-section-icon">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                    <div class="vm-section-title-group">
+                        <div id="objectives-title-marathi">
+                            <h2>उद्दिष्टे</h2>
+                            <p>आमची ध्येये व प्राथमिकताः</p>
+                        </div>
+                        <div id="objectives-title-english" style="display: none;">
+                            <h2>Objectives</h2>
+                            <p>Our Goals & Priorities:</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="header-title">
-                    <div id="objectives-title-marathi">
-                        <h2>उद्दिष्टे</h2>
-                        <p class="subtitle">आमची ध्येये व प्राथमिकताः</p>
-                    </div>
-                    <div id="objectives-title-english" style="display: none;">
-                        <h2>Objectives</h2>
-                        <p class="subtitle">Our Goals & Priorities:</p>
-                    </div>
+                <div class="vm-section-underlines">
+                    <span class="vm-underline vm-underline-blue"></span>
+                    <span class="vm-underline vm-underline-gold"></span>
                 </div>
             </div>
             
-            <div class="objectives-grid">
+            <div class="vm-objectives-grid">
                 <!-- Objective 1 -->
-                <div class="objective-card">
-                    <div class="objective-number">01</div>
-                    <div class="objective-content">
-                        <div id="obj1-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="1">
+                    <div class="vm-objective-number">01</div>
+                    <div class="vm-objective-content">
+                        <div id="obj1-marathi">
                             <h4>वाचन प्रेरणा</h4>
                             <p>सर्व वयोगटांतील नागरिकांमध्ये वाचनाची आवड निर्माण व ती वृद्धिंगत करणे.</p>
                         </div>
-                        <div id="obj1-english" class="objective-text" style="display: none;">
+                        <div id="obj1-english" style="display: none;">
                             <h4>Reading Inspiration</h4>
                             <p>Encourage reading habits among citizens of all age groups.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
 
                 <!-- Objective 2 -->
-                <div class="objective-card">
-                    <div class="objective-number">02</div>
-                    <div class="objective-content">
-                        <div id="obj2-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="2">
+                    <div class="vm-objective-number">02</div>
+                    <div class="vm-objective-content">
+                        <div id="obj2-marathi">
                             <h4>शैक्षणिक सहाय्य</h4>
                             <p>विद्यार्थ्यांसाठी सुरक्षित, शांत अभ्यासाची जागा व दर्जेदार संदर्भ साहित्य उपलब्ध करणे.</p>
                         </div>
-                        <div id="obj2-english" class="objective-text" style="display: none;">
+                        <div id="obj2-english" style="display: none;">
                             <h4>Educational Support</h4>
                             <p>Provide safe, peaceful study spaces and quality reference materials for students.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
 
                 <!-- Objective 3 -->
-                <div class="objective-card">
-                    <div class="objective-number">03</div>
-                    <div class="objective-content">
-                        <div id="obj3-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="3">
+                    <div class="vm-objective-number">03</div>
+                    <div class="vm-objective-content">
+                        <div id="obj3-marathi">
                             <h4>परीक्षा तयारी</h4>
                             <p>स्पर्धा परीक्षा, उच्च शिक्षण व करिअर विकासासाठी साहाय्य.</p>
                         </div>
-                        <div id="obj3-english" class="objective-text" style="display: none;">
+                        <div id="obj3-english" style="display: none;">
                             <h4>Exam Preparation</h4>
                             <p>Support for competitive exams and career development.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
 
                 <!-- Objective 4 -->
-                <div class="objective-card">
-                    <div class="objective-number">04</div>
-                    <div class="objective-content">
-                        <div id="obj4-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="4">
+                    <div class="vm-objective-number">04</div>
+                    <div class="vm-objective-content">
+                        <div id="obj4-marathi">
                             <h4>डिजिटल विकास</h4>
                             <p>डिजिटल ग्रंथालय, ई-पुस्तके व ई-वाचन सुविधा विकसित करणे.</p>
                         </div>
-                        <div id="obj4-english" class="objective-text" style="display: none;">
+                        <div id="obj4-english" style="display: none;">
                             <h4>Digital Development</h4>
                             <p>Develop digital libraries and e-reading facilities.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
 
                 <!-- Objective 5 -->
-                <div class="objective-card">
-                    <div class="objective-number">05</div>
-                    <div class="objective-content">
-                        <div id="obj5-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="5">
+                    <div class="vm-objective-number">05</div>
+                    <div class="vm-objective-content">
+                        <div id="obj5-marathi">
                             <h4>समावेशक सेवा</h4>
                             <p>सर्व घटकांपर्यंत ग्रंथालय सेवा पोहोचविणे.</p>
                         </div>
-                        <div id="obj5-english" class="objective-text" style="display: none;">
+                        <div id="obj5-english" style="display: none;">
                             <h4>Inclusive Services</h4>
                             <p>Reach all communities with library services.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
 
                 <!-- Objective 6 -->
-                <div class="objective-card">
-                    <div class="objective-number">06</div>
-                    <div class="objective-content">
-                        <div id="obj6-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="6">
+                    <div class="vm-objective-number">06</div>
+                    <div class="vm-objective-content">
+                        <div id="obj6-marathi">
                             <h4>सामाजिक मूल्ये</h4>
                             <p>डॉ. आंबेडकर यांच्या विचारांवर आधारित ज्ञान, समता व सामाजिक न्यायाची मूल्ये रुजविणे.</p>
                         </div>
-                        <div id="obj6-english" class="objective-text" style="display: none;">
+                        <div id="obj6-english" style="display: none;">
                             <h4>Social Values</h4>
                             <p>Promote values of knowledge, equality and social justice.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
 
                 <!-- Objective 7 -->
-                <div class="objective-card">
-                    <div class="objective-number">07</div>
-                    <div class="objective-content">
-                        <div id="obj7-marathi" class="objective-text">
+                <div class="vm-objective-card scroll-animate" data-delay="7">
+                    <div class="vm-objective-number">07</div>
+                    <div class="vm-objective-content">
+                        <div id="obj7-marathi">
                             <h4>सामाजिक विकास</h4>
                             <p>ज्ञानाधिष्ठित समाजनिर्मितीस हातभार लावणे.</p>
                         </div>
-                        <div id="obj7-english" class="objective-text" style="display: none;">
+                        <div id="obj7-english" style="display: none;">
                             <h4>Social Development</h4>
                             <p>Contribute to building a knowledge-driven society.</p>
                         </div>
                     </div>
+                    <div class="vm-objective-shine"></div>
                 </div>
             </div>
         </div>
 
         <!-- Call to Action -->
-        <div class="cta-section">
-            <div class="cta-card">
-                <div class="cta-content">
-                    <div class="cta-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-                    <div class="cta-text">
-                        <div id="cta-marathi">
+        <div class="vm-cta-section">
+            <div class="vm-cta-card scroll-animate">
+                <div class="vm-cta-particles"></div>
+                <div class="vm-cta-content">
+                    <div class="vm-cta-header">
+                        <div class="vm-cta-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div id="cta-marathi" class="vm-cta-title">
                             <h3>ग्रंथालय सेवांचा लाभ घ्या</h3>
+                        </div>
+                        <div id="cta-english" class="vm-cta-title" style="display: none;">
+                            <h3>Access Library Services</h3>
+                        </div>
+                    </div>
+                    <div class="vm-cta-text">
+                        <div id="cta-sub-marathi">
                             <p>नवी मुंबई महानगरपालिकेच्या 36 ग्रंथालयांमधील एकाचे सदस्य व्हा</p>
                         </div>
-                        <div id="cta-english" style="display: none;">
-                            <h3>Access Library Services</h3>
+                        <div id="cta-sub-english" style="display: none;">
                             <p>Become a member of one of NMMC's 36 libraries</p>
                         </div>
-                        
-                        <div class="cta-buttons">
-                            <a href="{% url 'swd_libraries' %}" class="btn-primary">
-                                <i class="fas fa-search"></i>
-                                <span id="cta-btn-marathi">ग्रंथालय शोधा</span>
-                                <span id="cta-btn-english" style="display: none;">Find a Library</span>
-                            </a>
-                            <a href="{% url 'library_list' %}" class="btn-secondary">
-                                <i class="fas fa-home"></i>
-                                <span id="home-btn-marathi">मुख्य पृष्ठ</span>
-                                <span id="home-btn-english" style="display: none;">Home</span>
-                            </a>
-                        </div>
+                    </div>
+                    
+                    <div class="vm-cta-buttons">
+                        <a href="{% url 'swd_libraries' %}" class="vm-btn vm-btn-primary">
+                            <i class="fas fa-search"></i>
+                            <span id="cta-btn-marathi">ग्रंथालय शोधा</span>
+                            <span id="cta-btn-english" style="display: none;">Find a Library</span>
+                        </a>
+                        <a href="{% url 'library_list' %}" class="vm-btn vm-btn-secondary">
+                            <i class="fas fa-home"></i>
+                            <span id="home-btn-marathi">मुख्य पृष्ठ</span>
+                            <span id="home-btn-english" style="display: none;">Home</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -351,85 +381,80 @@
 </div>
 
 <script>
-    // Language sync function
-    function syncVisionMissionWithLayout() {
-        const headEnglish = document.getElementById('head-english');
-        const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+    // Scroll Animation Observer
+    function initScrollAnimations() {
+        const animatedElements = document.querySelectorAll('.scroll-animate');
         
-        // Toggle all language-specific elements
-        const marathiElements = document.querySelectorAll('[id*="marathi"]');
-        const englishElements = document.querySelectorAll('[id*="english"]');
-        
-        if (isEnglish) {
-            // Show English, hide Marathi
-            marathiElements.forEach(el => {
-                if (!el.id.includes('head-') && !el.id.includes('navbar')) {
-                    el.style.display = 'none';
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    const delay = entry.target.getAttribute('data-delay') || 0;
+                    setTimeout(() => {
+                        entry.target.classList.add('animate-in');
+                    }, delay * 50);
+                    observer.unobserve(entry.target);
                 }
             });
-            englishElements.forEach(el => {
-                if (!el.id.includes('head-') && !el.id.includes('navbar')) {
-                    el.style.display = 'block';
-                }
-            });
-        } else {
-            // Show Marathi, hide English
-            marathiElements.forEach(el => {
-                if (!el.id.includes('head-') && !el.id.includes('navbar')) {
-                    el.style.display = 'block';
-                }
-            });
-            englishElements.forEach(el => {
-                if (!el.id.includes('head-') && !el.id.includes('navbar')) {
-                    el.style.display = 'none';
-                }
-            });
-        }
+        }, { 
+            threshold: 0.1,
+            rootMargin: '0px 0px -30px 0px'
+        });
         
-        // Handle inline elements
-        const inlineElements = [
-            {marathi: 'cta-btn-marathi', english: 'cta-btn-english'},
-            {marathi: 'home-btn-marathi', english: 'home-btn-english'}
-        ];
-        
-        inlineElements.forEach(item => {
-            const marathi = document.getElementById(item.marathi);
-            const english = document.getElementById(item.english);
-            if (marathi && english) {
-                marathi.style.display = isEnglish ? 'none' : 'inline';
-                english.style.display = isEnglish ? 'inline' : 'none';
-            }
+        animatedElements.forEach(el => {
+            observer.observe(el);
         });
     }
     
-    // Add scroll animations
-    function initScrollAnimations() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-in');
-                }
-            });
-        }, { threshold: 0.1 });
+    // Hero Banner Animation
+    function initHeroAnimation() {
+        const hero = document.querySelector('.vm-hero-section');
+        if (hero) {
+            hero.style.opacity = '0';
+            hero.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                hero.style.transition = 'all 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+                hero.style.opacity = '1';
+                hero.style.transform = 'translateY(0)';
+            }, 100);
+        }
+    }
+    
+    // Ensure proper banner display on language toggle
+    function fixBannerDisplay() {
+        const bannerMarathi = document.getElementById('banner-marathi');
+        const bannerEnglish = document.getElementById('banner-english');
+        const headEnglish = document.getElementById('head-english');
         
-        document.querySelectorAll('.section-card, .objective-card, .cta-card').forEach(card => {
-            observer.observe(card);
-        });
+        if (bannerMarathi && bannerEnglish) {
+            const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+            bannerMarathi.style.display = isEnglish ? 'none' : 'block';
+            bannerEnglish.style.display = isEnglish ? 'block' : 'none';
+        }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
-        // Override language toggle
-        const originalToggle = window.toggleLanguage;
-        window.toggleLanguage = function() {
-            if (originalToggle) originalToggle();
-            setTimeout(syncVisionMissionWithLayout, 100);
-        };
-        
-        // Initial sync
-        syncVisionMissionWithLayout();
-        
-        // Initialize animations
         initScrollAnimations();
+        initHeroAnimation();
+        fixBannerDisplay();
+        
+        // Listen for language toggle events
+        const originalSwitchToEnglish = window.switchToEnglish;
+        const originalSwitchToMarathi = window.switchToMarathi;
+        
+        if (originalSwitchToEnglish) {
+            window.switchToEnglish = function() {
+                originalSwitchToEnglish();
+                setTimeout(fixBannerDisplay, 50);
+            };
+        }
+        
+        if (originalSwitchToMarathi) {
+            window.switchToMarathi = function() {
+                originalSwitchToMarathi();
+                setTimeout(fixBannerDisplay, 50);
+            };
+        }
     });
 </script>
+
 {% endblock %}

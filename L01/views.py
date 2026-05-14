@@ -498,6 +498,22 @@ def registration(request):
                     # Override if membertype == 5
                     if membertype == "5":
                         education_value = request.POST.get("practitioner_details") or None
+                    
+                    membership_type_id = request.POST.get("membershiptype")
+
+                    # For membership types 3, 5, 6 - months and to_date should be None
+                    if membership_type_id in ["3", "5", "6"]:
+                        membership_duration_value = None
+                        to_date_value = None
+                    else:
+                        membership_duration_value = request.POST.get("months") or None
+                        to_date_value = request.POST.get("toDate") or None
+                        
+                    # Add this validation after getting membership_type_id
+                    if membership_type_id in ["3", "5", "6"]:
+                        if not request.POST.get("fromDate"):
+                            raise ValueError("From Date is required for this membership type")
+                        
                     # === Collect Membership Data ===
                     data = {
                         "user_id": request.POST.get("user_id") or None,
@@ -523,9 +539,9 @@ def registration(request):
                         "member_type_id": membertype or None,
                         "is_resident_of_nmmc": 1 if request.POST.get("is_nmmc") == "yes" else 0,
                         "address_same_as_aadhar": 1 if request.POST.get("same_aadhar") == "yes" else 0,
-                        "membership_duration": request.POST.get("months") or None,
+                        "membership_duration": membership_duration_value,
                         "from_date": request.POST.get("fromDate") or None,
-                        "to_date": request.POST.get("toDate") or None,
+                        "to_date": to_date_value,
                         "deposit": request.POST.get("deposit") or None,
                         "entry_fees": request.POST.get("entry_fees") or None,
                         "subscription": request.POST.get("subscription") or None,
@@ -811,6 +827,17 @@ def membership_form_create(request):
                     if membertype == "5":
                         education_value = request.POST.get("practitioner_details") or None
                         
+                    # After getting membership_type_id, add this logic
+                    membership_type_id = request.POST.get("membershiptype")
+
+                    # For membership types 3, 5, 6 - months and to_date should be None
+                    if membership_type_id in ["3", "5", "6"]:
+                        membership_duration_value = None
+                        to_date_value = None
+                    else:
+                        membership_duration_value = request.POST.get("months") or None
+                        to_date_value = request.POST.get("toDate") or None
+                        
                     # === Collect Membership Data ===
                     data = {
                         "user_id": request.POST.get("user_id") or None,
@@ -836,9 +863,9 @@ def membership_form_create(request):
                         "member_type_id": membertype or None,
                         "is_resident_of_nmmc": 1 if request.POST.get("is_nmmc") == "yes" else 0,
                         "address_same_as_aadhar": 1 if request.POST.get("same_aadhar") == "yes" else 0,
-                        "membership_duration": request.POST.get("months") or None,
+                        "membership_duration": membership_duration_value,  # Use the variable
                         "from_date": request.POST.get("fromDate") or None,
-                        "to_date": request.POST.get("toDate") or None,
+                        "to_date": to_date_value,  # Use the variable
                         "deposit": request.POST.get("deposit") or None,
                         "entry_fees": request.POST.get("entry_fees") or None,
                         "subscription": request.POST.get("subscription") or None,
@@ -1052,6 +1079,11 @@ def membership_form_edit(request):
 
                 # Default: get education value
                 education_value = request.POST.get("education") or None
+                
+                membership_type_id = request.POST.get("membershiptype")
+
+                # For membership types 3, 5, 6 - force duration and to_date to be None
+                force_no_duration = membership_type_id in ["3", "5", "6"]
 
                 # Override education if membertype == 5
                 if membertype == "5":
@@ -1115,7 +1147,10 @@ def membership_form_edit(request):
 
                     # --- Integer fields ---
                     elif model_field == "membership_duration":
-                        new_value = int(new_value) if new_value else None
+                        if force_no_duration:
+                            new_value = None
+                        else:
+                            new_value = int(new_value) if new_value else None
 
                     # --- ForeignKey fields ---
                     elif model_field in ["membership_id", "member_type_id"]:
@@ -1123,15 +1158,19 @@ def membership_form_edit(request):
 
                     # --- Date fields ---
                     elif model_field in date_fields:
-                        if new_value:
-                            try:
-                                # Ensure we only keep date part
-                                new_value = datetime.strptime(new_value.split(" ")[0], "%Y-%m-%d").date()
-                            except Exception as e:
-                                print("❌ Date parse error for", form_field, ":", new_value, "->", e)
-                                new_value = None
-                        else:
+                        # Special handling for to_date when force_no_duration is True
+                        if force_no_duration and model_field == "to_date":
                             new_value = None
+                        else:
+                            if new_value:
+                                try:
+                                    # Ensure we only keep date part
+                                    new_value = datetime.strptime(new_value.split(" ")[0], "%Y-%m-%d").date()
+                                except Exception as e:
+                                    print("❌ Date parse error for", form_field, ":", new_value, "->", e)
+                                    new_value = None
+                            else:
+                                new_value = None
 
                     # --- Default ---
                     else:
@@ -2652,6 +2691,14 @@ def membership_form_renew(request):
                     membership=membership,
                     status='pending'
                 ).first()
+                
+                membership_type_id = request.POST.get("membershiptype")
+
+                # For membership types 3, 5, 6 - months and to_date should be None in renewal too
+                if membership_type_id in ["3", "5", "6"]:
+                    # Override the values
+                    new_duration = None
+                    new_to_date = None
              
                 # Parse dates and convert types
                 new_from_date_str = request.POST.get("fromDate")
@@ -2684,22 +2731,22 @@ def membership_form_renew(request):
                     membership=membership,
                     
                     # Store OLD data (current membership values from database)
-                    old_from_date=membership.from_date,  # ← From DB
-                    old_to_date=membership.to_date,      # ← From DB
-                    old_duration=membership.membership_duration,  # ← From DB
-                    old_deposit=membership.deposit,      # ← From DB
-                    old_entry_fees=membership.entry_fees, # ← From DB
-                    old_subscription=membership.subscription, # ← From DB
-                    old_membership_id=membership.membership.id if membership.membership else None,  # ← From DB
+                    old_from_date=membership.from_date,
+                    old_to_date=membership.to_date,
+                    old_duration=membership.membership_duration,
+                    old_deposit=membership.deposit,
+                    old_entry_fees=membership.entry_fees,
+                    old_subscription=membership.subscription,
+                    old_membership_id=membership.membership.id if membership.membership else None,
                     
                     # Store NEW data (from form submission directly)
-                    new_from_date=new_from_date,  # ← From POST request
-                    new_to_date=new_to_date,      # ← From POST request
-                    new_duration=new_duration,    # ← From POST request
-                    new_deposit=new_deposit,      # ← From POST request
-                    new_entry_fees=new_entry_fees, # ← From POST request
-                    new_subscription=new_subscription, # ← From POST request
-                    new_membership_id=new_membership_id,  # ← From POST request
+                    new_from_date=new_from_date,
+                    new_to_date=new_to_date if membership_type_id not in ["3", "5", "6"] else None,  # ← Modified
+                    new_duration=new_duration if membership_type_id not in ["3", "5", "6"] else None,  # ← Modified
+                    new_deposit=new_deposit,
+                    new_entry_fees=new_entry_fees,
+                    new_subscription=new_subscription,
+                    new_membership_id=new_membership_id,
                     
                     status='pending',
                     created_by=user_code,

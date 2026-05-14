@@ -36,8 +36,10 @@ def library_list(request):
                 request.session.modified = True
                 set_current_service(library_code)
                 return redirect(f"{library_code}:index")
+        
         # Get ALL active libraries for dropdown (no pagination)
         all_libraries = LibraryMaster.objects.using('default').select_related("location").filter(is_active=1)
+        
         now = timezone.now()
         next_24_hours = now + timedelta(hours=24)
         upcoming_events = LibraryEvent.objects.using('default').filter(
@@ -57,26 +59,28 @@ def library_list(request):
         has_upcoming_event = upcoming_events.exists()
         upcoming_count = upcoming_events.count()
 
-        # Add encrypted library code and membership link status to ALL libraries
+        # ============ PROCESS ALL LIBRARIES (for dropdown) ============
+        # Create a separate list for dropdown (not paginated)
+        dropdown_libraries = []
         for lilo in all_libraries:
             encrypted_library_code = enc(lilo.library_code)
             lilo.libraries = encrypted_library_code
-            lilo.main_image = ""
-            if lilo.image_url:
-                first_image_path = lilo.image_url.split(",")[0].strip()
-                if first_image_path:
-                    lilo.main_image = file_storage_service.get_file_url(first_image_path)
+            
             has_membership_link = bool(
                 lilo.membership_page_link and 
                 str(lilo.membership_page_link).strip() != '' and
                 str(lilo.membership_page_link).strip() != 'None'
             )
             lilo.has_membership_link = has_membership_link
+            
+            # Also build dropdown list
+            dropdown_libraries.append(lilo)
         
-        # Handle AJAX requests for pagination - CHANGE: 6 per page instead of 4
+        # ============ HANDLE AJAX PAGINATION ============
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             page = request.GET.get('page', 1)
-            paginator = Paginator(all_libraries, 6)  # CHANGED: 6 per page
+            paginator = Paginator(all_libraries, 6)  # 6 per page (2 rows × 3 columns)
+            
             try:
                 libraries_page = paginator.page(page)
             except (PageNotAnInteger, EmptyPage):
@@ -84,16 +88,17 @@ def library_list(request):
             
             libraries_data = []
             for library in libraries_page:
-                
                 first_image_path = ""
                 if library.image_url:
                     first_image_path = library.image_url.split(",")[0].strip()
-                first_image_url = file_storage_service.get_file_url(first_image_path)
+                first_image_url = file_storage_service.get_file_url(first_image_path) if first_image_path else ""
+                
                 has_membership_link = bool(
                     library.membership_page_link and 
                     str(library.membership_page_link).strip() != '' and
                     str(library.membership_page_link).strip() != 'None'
                 )
+                
                 libraries_data.append({
                     'id': library.id,
                     'library_name': library.library_name,
@@ -105,16 +110,18 @@ def library_list(request):
                     'libraries': library.libraries,  # encrypted code
                     'has_membership_link': has_membership_link
                 })
+            
             return JsonResponse({
                 'libraries': libraries_data,
                 'has_next': libraries_page.has_next(),
                 'has_previous': libraries_page.has_previous(),
-                'current_page': int(page),
+                'current_page': libraries_page.number,
                 'total_pages': paginator.num_pages,
-                'total_count': paginator.count
+                'total_libraries': paginator.count  # CHANGED: renamed from total_count
             })
-        # Regular request
-        paginator = Paginator(all_libraries, 6)  # CHANGED: 6 per page
+        
+        # ============ REGULAR PAGE LOAD ============
+        paginator = Paginator(all_libraries, 6)  # 6 per page
         page = request.GET.get('page', 1)
         
         try:
@@ -132,15 +139,25 @@ def library_list(request):
                 str(first_library.membership_page_link).strip() != 'None'
             )
         
+        # Process images for initial page load libraries
+        for library in library_details:
+            if library.image_url:
+                first_image_path = library.image_url.split(",")[0].strip()
+                if first_image_path:
+                    library.main_image = file_storage_service.get_file_url(first_image_path)
+            else:
+                library.main_image = ""
+        
         return render(request, 'administration/library_list.html', {
             'library_details': library_details,
-            'all_libraries': all_libraries,
+            'all_libraries': dropdown_libraries,
             'MEDIA_URL': settings.MEDIA_URL,
             'total_pages': paginator.num_pages,
             'total_count': paginator.count,
             "has_upcoming_event": has_upcoming_event,
-            'upcoming_count':upcoming_count,
-            'initial_has_membership': initial_has_membership  # Add this
+            'upcoming_count': upcoming_count,
+            'initial_has_membership': initial_has_membership,
+            'vishnudas_library_code': enc("L01"),  # ← ADD THIS LINE
         })
     
     except Exception as e:

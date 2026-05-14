@@ -5,8 +5,25 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-
 <style>
+    /* ==================== BRAND COLORS ==================== */
+    :root {
+        --primary-blue: #384988;
+        --primary-dark: #1E2A4F;
+        --primary-light: #eef0f7;
+        --accent-gold: #D0AD37;
+        --accent-gold-dark: #b8922e;
+        --accent-gold-light: #e6c86a;
+        --text-dark: #1e293b;
+        --text-gray: #334155;
+        --text-light: #64748b;
+        --bg-light: #f8fafc;
+        --white: #ffffff;
+        --shadow-sm: 0 4px 12px rgba(56, 73, 136, 0.08);
+        --shadow-md: 0 8px 25px rgba(56, 73, 136, 0.12);
+        --transition: all 0.3s ease;
+    }
+
     /* ================= Book Gallery Container ================= */
     .library-books-section {
         margin-top: 30px;
@@ -17,12 +34,23 @@
     .library-books-section h4 {
         font-size: 1.8rem;
         font-weight: 700;
-        text-align: center;
-        color: #2c3e50;  /* Darker shade for readability */
-        text-transform: capitalize;  /* Capitalizes the first letter of each word */
+        text-align: center !important;
+        background: linear-gradient(135deg, var(--primary-blue), var(--accent-gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-transform: capitalize;
         position: relative;
         padding-bottom: 10px;
         margin-bottom: 30px;
+        display: block;
+        width: 100%;
+    }
+
+    #marathi-head, #english-head, #marathi-header, #english-header {
+        text-align: center !important;
+        display: block;
+        width: 100%;
     }
 
     .library-books-section h4::after {
@@ -30,25 +58,27 @@
         position: absolute;
         bottom: 0;
         left: 50%;
-        width: 60px;  /* Shorter line than the width of the text */
-        height: 3px;
-        background-color: #f39c12;  /* Golden accent line */
         transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--primary-blue), var(--accent-gold));
         border-radius: 2px;
     }
 
     .library-books-section h4 span {
         font-size: 1.2rem;
         font-weight: 400;
-        color: #00eeffff;  /* Slightly lighter shade for the subtitle or secondary text */
+        color: var(--accent-gold-light);
     }
 
     .library-books-section h4:hover {
-        color: #ff0000ff;  /* Golden text on hover */
+        background: linear-gradient(135deg, var(--accent-gold), var(--primary-blue));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
         cursor: pointer;
-        transition: color 0.3s ease;
+        transition: var(--transition);
     }
-
 
     /* Book Gallery */
     .book-gallery {
@@ -84,7 +114,7 @@
         transition: transform 0.8s;
         transform-style: preserve-3d;
         cursor: pointer;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--shadow-sm);
     }
 
     /* Front & Back Side */
@@ -94,18 +124,25 @@
         height: 100%;
         backface-visibility: hidden;
         overflow: hidden;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--shadow-sm);
     }
 
     .book-flip-front img, .book-flip-back img {
         width: 100%;
         height: 100%;
-        {% comment %} object-fit: cover; {% endcomment %}
     }
 
     /* Back Side */
     .book-flip-back {
         transform: rotateY(180deg);
+        background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        padding: 15px;
+        font-size: 14px;
     }
 
     /* Flip Button */
@@ -114,8 +151,7 @@
         padding: 6px 12px;
         font-size: 0.9rem;
         font-weight: 500;
-        {% comment %} background: #015296; {% endcomment %}
-        background: #F700F7;
+        background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
         color: #fff;
         border: none;
         border-radius: 6px;
@@ -123,11 +159,12 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        transition: background 0.3s;
+        transition: var(--transition);
     }
 
     .flip-btn:hover {
-        background: #007bff;
+        background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+        transform: translateY(-2px);
     }
 
     /* FontAwesome Icon inside Flip Button */
@@ -141,25 +178,15 @@
         font-size: 1.1rem;
         font-weight: 700;
         letter-spacing: 0.4px;
-
-        /* Dark brown gradient text (high contrast) */
-        background: linear-gradient(
-            135deg,
-            #3e2723,   /* deep brown */
-            #5d4037,   /* warm brown */
-            #6d4c41    /* soft highlight */
-        );
+        background: linear-gradient(135deg, var(--primary-blue), var(--accent-gold));
         -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-
+        background-clip: text;
+        color: transparent;
         cursor: pointer;
         position: relative;
         display: inline-block;
         padding: 8px 16px;
-
-        transition:
-            transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-            text-shadow 0.35s ease;
+        transition: transform 0.35s ease;
     }
 
     /* Elegant underline */
@@ -170,27 +197,16 @@
         bottom: 0;
         width: 32%;
         height: 3px;
-
-        background: linear-gradient(
-            90deg,
-            #5d4037,
-            #8d6e63
-        );
-
+        background: linear-gradient(90deg, var(--primary-blue), var(--accent-gold));
         border-radius: 10px;
         transform: translateX(-50%);
         opacity: 0.8;
-
         transition: width 0.4s ease, opacity 0.4s ease;
     }
 
     /* Hover effect */
     .book-title:hover {
         transform: translateY(-3px) scale(1.02);
-
-        {% comment %} /* Soft brown glow for visibility */
-        text-shadow:
-            0 4px 12px rgba(93, 64, 55, 0.35); {% endcomment %}
     }
 
     .book-title:hover::after {
@@ -203,39 +219,39 @@
         transform: translateY(-1px) scale(0.98);
     }
 
-    
-
-
     /* View More Button */
     .view-more-btn-container {
         text-align: center;
-        margin-top: 20px;  /* Adds space above the button */
+        margin-top: 20px;
     }
 
     .view-more-btn {
-        background-color: #015296;  /* Blue background color */
+        background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
         color: #fff;
         padding: 12px 25px;
         font-size: 1.1rem;
         font-weight: bold;
         border-radius: 25px;
-        text-decoration: none;  /* Remove underline from link */
+        text-decoration: none;
         display: inline-flex;
-        align-items: center;  /* Align text and icon vertically */
+        align-items: center;
         justify-content: center;
-        gap: 8px;  /* Space between the icon and text */
-        transition: all 0.3s ease;
+        gap: 8px;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
     }
 
     .view-more-btn i {
-        font-size: 1.2rem;  /* Icon size */
+        font-size: 1.2rem;
     }
 
     .view-more-btn:hover {
-        background-color: #007bff;  /* Lighter blue on hover */
-        transform: scale(1.05);  /* Slightly enlarge the button */
+        background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+        transform: scale(1.05);
+        color: var(--primary-dark);
     }
 </style>
+
 <style>
     /* Modal Base Styles */
     .zoom-modal {
@@ -262,7 +278,7 @@
         display: flex;
         width: 90%;
         max-width: 1200px;
-        height: 85vh; /* Increased height */
+        height: 85vh;
         max-height: 800px;
         background: white;
         border-radius: 12px;
@@ -277,14 +293,14 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: #f8f9fa;
+        background: linear-gradient(135deg, var(--primary-light), #ffffff);
         border-right: 1px solid #e9ecef;
     }
     
     .zoom-modal-right {
         width: 55%;
         padding: 30px;
-        overflow-y: auto; /* Scroll only if content overflows */
+        overflow-y: auto;
     }
     
     .book-info-content {
@@ -301,7 +317,7 @@
         object-fit: contain;
         margin-bottom: 20px;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-md);
     }
     
     /* Thumbnail Styles */
@@ -313,7 +329,7 @@
         padding: 15px;
         background: white;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-sm);
     }
     
     .thumbnail-wrapper {
@@ -330,7 +346,7 @@
         object-fit: cover;
         border: 2px solid #ddd;
         border-radius: 6px;
-        transition: all 0.3s ease;
+        transition: var(--transition);
         opacity: 0.7;
     }
     
@@ -340,15 +356,15 @@
     }
     
     .thumbnail.active {
-        border-color: #007bff;
+        border-color: var(--accent-gold);
         opacity: 1;
-        box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+        box-shadow: 0 0 10px rgba(208, 173, 55, 0.4);
     }
     
     .thumbnail-wrapper span {
         margin-top: 8px;
         font-size: 13px;
-        color: #555;
+        color: var(--text-light);
         font-weight: 500;
         text-align: center;
     }
@@ -360,7 +376,7 @@
         gap: 15px;
         margin: 25px 0;
         padding: 20px;
-        background: #f8f9fa;
+        background: var(--primary-light);
         border-radius: 8px;
     }
     
@@ -368,7 +384,7 @@
         display: flex;
         flex-direction: column;
         padding: 8px 0;
-        border-bottom: 1px solid #e9ecef;
+        border-bottom: 1px solid #e2e8f0;
     }
     
     .info-item:last-child {
@@ -376,13 +392,13 @@
     }
     
     .info-item strong {
-        color: #333;
+        color: var(--primary-blue);
         margin-bottom: 4px;
         font-size: 14px;
     }
     
     .info-item span {
-        color: #666;
+        color: var(--text-gray);
         font-size: 15px;
         line-height: 1.4;
     }
@@ -391,7 +407,7 @@
     .book-description-section {
         margin-top: 20px;
         padding: 20px;
-        background: #f8f9fa;
+        background: var(--primary-light);
         border-radius: 8px;
         flex-grow: 1;
     }
@@ -406,13 +422,13 @@
     
     .description-item strong {
         display: block;
-        color: #333;
+        color: var(--primary-blue);
         margin-bottom: 8px;
         font-size: 15px;
     }
     
     .description-item span {
-        color: #666;
+        color: var(--text-gray);
         font-size: 14px;
         line-height: 1.6;
         display: block;
@@ -432,12 +448,12 @@
     }
     
     .close-zoom:hover {
-        color: #007bff;
+        color: var(--accent-gold);
     }
     
     /* Login Button */
     .login-btn {
-        background: #007bff;
+        background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
         color: white;
         border: none;
         padding: 12px 24px;
@@ -445,13 +461,16 @@
         font-size: 16px;
         font-weight: 500;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: var(--transition);
         margin-top: 25px;
         align-self: flex-start;
+        box-shadow: var(--shadow-sm);
     }
     
     .login-btn:hover {
-        background: #0056b3;
+        background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+        transform: translateY(-3px);
+        color: var(--primary-dark);
     }
     
     /* Scrollbar Styling */
@@ -465,24 +484,27 @@
     }
     
     .zoom-modal-right::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
+        background: var(--primary-blue);
         border-radius: 3px;
     }
     
     .zoom-modal-right::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
+        background: var(--accent-gold);
     }
     
     /* Title Styling */
     #zoomBookTitle {
-        color: #333;
+        background: linear-gradient(135deg, var(--primary-blue), var(--accent-gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
         margin-bottom: 8px;
         font-size: 24px;
         line-height: 1.3;
     }
     
     #zoomBookSubtitle {
-        color: #666;
+        color: var(--text-light);
         font-size: 16px;
         margin-bottom: 20px;
         font-style: italic;
@@ -556,41 +578,53 @@
         border-radius: 6px;
         cursor: pointer;
         padding: 3px;
-        transition: all 0.2s ease;
+        transition: var(--transition);
     }
 
     .library-thumb:hover {
-        border-color: #2563eb;
+        border-color: var(--accent-gold);
     }
 
     .library-thumb.active {
-        border-color: #1e40af;
+        border-color: var(--primary-blue);
     }
+
     /* ================= SLIDER WRAPPER ================= */
     .upcoming-slider-container {
         position: relative;
         display: flex;
         align-items: center;
-        justify-content: center;   /* 👈 CENTER WHOLE SLIDER */
+        justify-content: center;
         gap: 14px;
-
-        max-width: 1200px;         /* 👈 CONTROL WIDTH */
-        margin: 0 auto;            /* 👈 CENTER ON PAGE */
-        padding: 10px 60px; 
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 10px 60px;
     }
 
     /* ================= SLIDER TRACK ================= */
     .upcoming-books-track {
         display: flex;
         gap: 20px;
-
         overflow-x: hidden;
         scroll-behavior: smooth;
-
         width: 100%;
-        justify-content: flex-start;   
+        justify-content: flex-start;
+        scrollbar-width: thin;
     }
 
+    .upcoming-books-track::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .upcoming-books-track::-webkit-scrollbar-track {
+        background: var(--primary-light);
+        border-radius: 3px;
+    }
+
+    .upcoming-books-track::-webkit-scrollbar-thumb {
+        background: var(--primary-blue);
+        border-radius: 3px;
+    }
 
     /* ================= BOOK CARD ================= */
     .upcoming-book-card {
@@ -599,25 +633,22 @@
         flex-shrink: 0;
         text-align: center;
     }
+
     .slider-nav-btn {
         position: absolute;
         top: 50%;
         transform: translateY(-50%) scale(1);
         transition: transform 0.25s ease;
-
-        background: #ffffffd0;
+        background: var(--white);
         border: 1px solid #ddd;
         cursor: pointer;
-
         width: 44px;
         height: 44px;
-
         display: flex;
         align-items: center;
         justify-content: center;
-
         border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: var(--shadow-sm);
         z-index: 10;
     }
 
@@ -629,27 +660,29 @@
         right: 10px;
     }
 
-
-
-
     .slider-nav-btn i {
-        color: #410bd6;
+        color: var(--primary-blue);
         font-size: 22px;
         line-height: 1;
     }
 
-
     .slider-nav-btn:hover {
         transform: translateY(-50%) scale(1.1);
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
     }
+
+    .slider-nav-btn:hover i {
+        color: white;
+    }
+
     .upcoming-books-track::before,
     .upcoming-books-track::after {
         content: "";
         flex: 0 0 10px;
     }
-   
-   @media (max-width: 768px) {
 
+    @media (max-width: 768px) {
         .upcoming-slider-container {
             padding: 10px 50px;
             min-height: 320px;
@@ -657,7 +690,7 @@
 
         .upcoming-books-track {
             justify-content: flex-start;
-            gap: 8 px;
+            gap: 8px;
             padding-inline: calc((100% - 180px) / 2);
             scroll-snap-type: x mandatory;
         }
@@ -672,17 +705,7 @@
             max-width: 180px;
             scroll-snap-align: center;
         }
-
-        {% comment %} .slider-nav-btn {
-            top: 50%;
-            transform: translateY(-50%);
-        } {% endcomment %}
-        
     }
-
-
-
-
 
     /* Hide slider arrows on desktop & laptop */
     @media (min-width: 1024px) {
@@ -690,65 +713,43 @@
             display: none !important;
         }
     }
-
-
-
-
-
 </style>
-<style>
 
+<style>
     /* Main Button */
     .event-btn {
         position: relative;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-
         padding: 10px 16px;
-
         border-radius: 8px;
-
         background: #f5f5f5;
         color: #333;
-
         text-decoration: none;
         font-weight: 600;
-
-        transition: all 0.3s ease;
+        transition: var(--transition);
     }
-
 
     /* When Notification Exists */
     .notify-active {
-        background: linear-gradient(135deg, #ff9800, #ff6f00);
+        background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
         color: #fff !important;
-
         animation: glowPulse 1.8s infinite;
     }
-
 
     /* Smooth Glow */
     @keyframes glowPulse {
         0% {
-            box-shadow:
-                0 0 6px rgba(255,152,0,0.5),
-                0 0 12px rgba(255,152,0,0.3);
+            box-shadow: 0 0 6px rgba(208, 173, 55, 0.5), 0 0 12px rgba(208, 173, 55, 0.3);
         }
-
         50% {
-            box-shadow:
-                0 0 14px rgba(255,152,0,0.9),
-                0 0 28px rgba(255,152,0,0.7);
+            box-shadow: 0 0 14px rgba(208, 173, 55, 0.9), 0 0 28px rgba(208, 173, 55, 0.7);
         }
-
         100% {
-            box-shadow:
-                0 0 6px rgba(255,152,0,0.5),
-                0 0 12px rgba(255,152,0,0.3);
+            box-shadow: 0 0 6px rgba(208, 173, 55, 0.5), 0 0 12px rgba(208, 173, 55, 0.3);
         }
     }
-
 
     /* Icon Wrapper */
     .icon-wrap {
@@ -756,49 +757,200 @@
         font-size: 16px;
     }
 
-
     /* Badge */
     .notify-badge {
         position: absolute;
-
         top: -5px;
         right: -5px;
-
         min-width: 18px;
         height: 18px;
-
         background: #ff1744;
-
         color: white;
-
         font-size: 11px;
         font-weight: bold;
-
         border-radius: 50%;
-
         display: flex;
         align-items: center;
         justify-content: center;
-
         padding: 0 4px;
-
         border: 2px solid white;
-
-        box-shadow: 0 0 6px rgba(255,23,68,0.8);
+        box-shadow: 0 0 6px rgba(255, 23, 68, 0.8);
     }
-
 
     /* Hover Effect */
     .event-btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
     }
-
 </style>
 
-{% comment %} <div>
-    Library Code is this :- {{library_code}}
-</div> {% endcomment %}
+<style>
+    .stats-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 25px;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        border: none;
+    }
+
+    #marathi-head, #english-head, #marathi-header, #english-header {
+        text-align: center !important;
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .section-header-container {
+        text-align: center;
+        width: 100%;
+    }
+
+    /* ================= LIBRARY STATS SECTION - CARD STYLE ================= */
+    .library-stats-section {
+        margin: 30px 0 20px;
+        padding: 0 20px;
+    }
+
+    .stat-item {
+        flex: 1;
+        min-width: 180px;
+        max-width: 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 15px;
+        padding: 25px 20px;
+        background: linear-gradient(135deg, #ffffff, var(--bg-light));
+        border-radius: 20px;
+        transition: var(--transition);
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(56, 73, 136, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-blue), var(--accent-gold), var(--primary-blue));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-item:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-item:hover::before {
+        opacity: 1;
+    }
+
+    .stat-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.8rem;
+        margin: 0 auto;
+        transition: var(--transition);
+    }
+
+    .stat-item:hover .stat-icon {
+        transform: scale(1.1) rotate(5deg);
+        background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+    }
+
+    .stat-icon i {
+        font-size: 1.8rem;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--primary-blue), var(--accent-gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .library-stats-section {
+            margin: 20px 0;
+            padding: 0 15px;
+        }
+        
+        .stats-container,
+        #stats-marathi, #stats-english {
+            gap: 15px;
+        }
+        
+        .stat-item {
+            min-width: 140px;
+            padding: 18px 15px;
+        }
+        
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            font-size: 1.4rem;
+        }
+        
+        .stat-icon i {
+            font-size: 1.4rem;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .stats-container,
+        #stats-marathi, #stats-english {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-item {
+            width: 100%;
+            max-width: 280px;
+            min-width: auto;
+        }
+    }
+</style>
 
 <div class="oz-card-grid">
     {% for library in libraries %}
@@ -938,12 +1090,64 @@
             </div>
         </div>
 
+        <!-- Library Stats Section - Bilingual -->
+        <div class="library-stats-section">
+            <div id="stats-marathi" class="stats-container" style="display: flex;">
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-number">4,500+</span>
+                        <span class="stat-label">पुस्तके</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-number">350+</span>
+                        <span class="stat-label">सक्रिय सभासद</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-id-card"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-number">7</span>
+                        <span class="stat-label">सभासदत्व प्रकार</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="stats-english" class="stats-container" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-number">4,500+</span>
+                        <span class="stat-label">Books</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-number">350+</span>
+                        <span class="stat-label">Active Members</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-id-card"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-number">7</span>
+                        <span class="stat-label">Membership Types</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         {% if library.books %}
             <div class="library-books-section">
 
                 <div class="section-header-container">
-                    <h4 id="marathi-head">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
-                    <h4 id="english-head" style="display:none;">{{ library.library_name }} Books are available here</h4>
+                    <h4 id="marathi-head-{{ library.id }}">{{ library.library_name_mar }} येथे पुस्तके उपलब्ध आहेत</h4>
+                    <h4 id="english-head-{{ library.id }}" style="display:none;">{{ library.library_name }} Books are available here</h4>
                 </div>
 
                 <div class="upcoming-slider-container">
@@ -954,20 +1158,55 @@
 
                     <div class="upcoming-books-track" id="libraryBooksTrack">
                         {% for book in library.books %}
-                        <div class="upcoming-book-card">
+                            <div class="upcoming-book-card">
 
-                            <div class="book-item">
-                                <div class="book-flip" id="book-flip-{{ forloop.counter }}">
-                                    <div class="book-flip-inner">
+                                <div class="book-item">
+                                    <div class="book-flip" id="book-flip-{{ forloop.counter }}">
+                                        <div class="book-flip-inner">
 
-                                        {% if book.front_page_photo %}
-                                        <div class="book-flip-front">
-                                            <img src="{{ book.front_page_photo }}"
-                                                alt="{{ book.title }} Front Cover"
-                                                class="book-image"
-                                                onclick="zoomImage(this)"
-                                                data-front-image="{{ book.front_page_photo }}"
-                                                data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
+                                            {% if book.front_page_photo %}
+                                            <div class="book-flip-front">
+                                                <img src="{{ book.front_page_photo }}"
+                                                    alt="{{ book.title }} Front Cover"
+                                                    class="book-image"
+                                                    onclick="zoomImage(this)"
+                                                    data-front-image="{{ book.front_page_photo }}"
+                                                    data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
+                                                    data-author="{{ book.author }}"
+                                                    data-title="{{ book.title }}"
+                                                    data-subtitle="{{ book.subtitle }}"
+                                                    data-publisher="{{ book.publisher }}"
+                                                    data-isbn_issn="{{ book.isbn_issn }}"
+                                                    data-edition="{{ book.edition }}"
+                                                    data-publication_place="{{ book.publication_place }}"
+                                                    data-year_of_publication="{{ book.year_of_publication }}"
+                                                    data-pages="{{ book.pages }}"
+                                                    data-remarks="{{ book.remarks }}"
+                                                    data-language="{{ book.language }}"
+                                                    data-description="{{ book.description }}"
+                                                    data-ebook_available="{{ book.ebook_available }}"
+                                                    data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
+                                            </div>
+
+                                            {% else %}
+                                            <!-- ✅ BOOK ICON WITH DUMMY COVER -->
+                                            <div class="book-flip-front book-no-image"
+                                                style="
+                                                    display:flex;
+                                                    align-items:center;
+                                                    justify-content:center;
+                                                    background: #f5f5f5;
+                                                    border: 1px solid #ddd;
+                                                    border-radius: 4px;
+                                                    height:220px;
+                                                    cursor:pointer;
+                                                    padding: 15px;
+                                                    text-align: center;
+                                                    position: relative;
+                                                "
+                                                onclick="zoomFromTitle(this)"
+                                                data-image=""
+                                                data-last-image=""
                                                 data-author="{{ book.author }}"
                                                 data-title="{{ book.title }}"
                                                 data-subtitle="{{ book.subtitle }}"
@@ -982,99 +1221,64 @@
                                                 data-description="{{ book.description }}"
                                                 data-ebook_available="{{ book.ebook_available }}"
                                                 data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
-                                        </div>
-
-                                        {% else %}
-                                        <!-- ✅ BOOK ICON WITH DUMMY COVER -->
-                                        <div class="book-flip-front book-no-image"
-                                            style="
-                                                display:flex;
-                                                align-items:center;
-                                                justify-content:center;
-                                                background: #f5f5f5;
-                                                border: 1px solid #ddd;
-                                                border-radius: 4px;
-                                                height:220px;
-                                                cursor:pointer;
-                                                padding: 15px;
-                                                text-align: center;
-                                                position: relative;
-                                            "
-                                            onclick="zoomFromTitle(this)"
-                                            data-image=""
-                                            data-last-image=""
-                                            data-author="{{ book.author }}"
-                                            data-title="{{ book.title }}"
-                                            data-subtitle="{{ book.subtitle }}"
-                                            data-publisher="{{ book.publisher }}"
-                                            data-isbn_issn="{{ book.isbn_issn }}"
-                                            data-edition="{{ book.edition }}"
-                                            data-publication_place="{{ book.publication_place }}"
-                                            data-year_of_publication="{{ book.year_of_publication }}"
-                                            data-pages="{{ book.pages }}"
-                                            data-remarks="{{ book.remarks }}"
-                                            data-language="{{ book.language }}"
-                                            data-description="{{ book.description }}"
-                                            data-ebook_available="{{ book.ebook_available }}"
-                                            data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}">
-                                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                        <!-- Tablet/Device Outline -->
-                                                <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
-                                                    <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
-                                                    <div style="font-size: 30px; color: #4a90e2;">
-                                                        📱
+                                                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                            <!-- Tablet/Device Outline -->
+                                                    <div style="width: 80px; height: 100px; border: 2px solid #4a90e2; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: white;">
+                                                        <div style="position: absolute; top: -8px; width: 20px; height: 2px; background: #4a90e2;"></div>
+                                                        <div style="font-size: 30px; color: #4a90e2;">
+                                                            📱
+                                                        </div>
+                                                        <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
+                                                            BOOK
+                                                        </div>
                                                     </div>
-                                                    <div style="position: absolute; bottom: 5px; font-size: 10px; color: #666;">
-                                                        BOOK
+                                                    
+                                                    <div style="margin-top: 10px;">
+                                                        <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
+                                                            {{ book.title|truncatechars:25 }}
+                                                        </div>
+                                                        {% if book.author %}
+                                                        <div style="font-size: 11px; color: #666;">
+                                                            {{ book.author|truncatechars:20 }}
+                                                        </div>
+                                                        {% endif %}
                                                     </div>
-                                                </div>
-                                                
-                                                <div style="margin-top: 10px;">
-                                                    <div style="font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; line-height: 1.2;">
-                                                        {{ book.title|truncatechars:25 }}
-                                                    </div>
-                                                    {% if book.author %}
-                                                    <div style="font-size: 11px; color: #666;">
-                                                        {{ book.author|truncatechars:20 }}
-                                                    </div>
-                                                    {% endif %}
                                                 </div>
                                             </div>
-                                        </div>
-                                        </div>
-                                    {% endif %}
+                                            </div>
+                                        {% endif %}
 
+                                        </div>
                                     </div>
+
+                                    <p class="book-title"
+                                        style="margin-bottom: 4px; cursor:pointer;"
+                                        onclick="zoomFromTitle(this)"
+                                        data-image="{% if book.front_page_photo %}{{ book.front_page_photo }}{% endif %}"
+                                        data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
+                                        data-author="{{ book.author }}"
+                                        data-title="{{ book.title }}"
+                                        data-subtitle="{{ book.subtitle }}"
+                                        data-publisher="{{ book.publisher }}"
+                                        data-isbn_issn="{{ book.isbn_issn }}"
+                                        data-edition="{{ book.edition }}"
+                                        data-publication_place="{{ book.publication_place }}"
+                                        data-year_of_publication="{{ book.year_of_publication }}"
+                                        data-pages="{{ book.pages }}"
+                                        data-remarks="{{ book.remarks }}"
+                                        data-language="{{ book.language }}"
+                                        data-description="{{ book.description }}"
+                                        data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}"
+                                        data-ebook_available="{{ book.ebook_available }}">
+                                            {{ book.title }}
+                                    </p>
+
+                                    {% if book.ebook_available == "Yes" %}
+                                    <span class="ebook-badge">📘 Ebook Available</span>
+                                    {% endif %}
                                 </div>
 
-                                <p class="book-title"
-                                    style="margin-bottom: 4px; cursor:pointer;"
-                                    onclick="zoomFromTitle(this)"
-                                    data-image="{% if book.front_page_photo %}{{ book.front_page_photo }}{% endif %}"
-                                    data-last-image="{% if book.last_page_photo %}{{ book.last_page_photo }}{% endif %}"
-                                    data-author="{{ book.author }}"
-                                    data-title="{{ book.title }}"
-                                    data-subtitle="{{ book.subtitle }}"
-                                    data-publisher="{{ book.publisher }}"
-                                    data-isbn_issn="{{ book.isbn_issn }}"
-                                    data-edition="{{ book.edition }}"
-                                    data-publication_place="{{ book.publication_place }}"
-                                    data-year_of_publication="{{ book.year_of_publication }}"
-                                    data-pages="{{ book.pages }}"
-                                    data-remarks="{{ book.remarks }}"
-                                    data-language="{{ book.language }}"
-                                    data-description="{{ book.description }}"
-                                    data-encrypted-cat-ref-num="{{ book.encrypted_cat_ref_num}}"
-                                    data-ebook_available="{{ book.ebook_available }}">
-                                        {{ book.title }}
-                                </p>
-
-                                {% if book.ebook_available == "Yes" %}
-                                <span class="ebook-badge">📘 Ebook Available</span>
-                                {% endif %}
                             </div>
-
-                        </div>
                         {% endfor %}
                     </div>
 
@@ -1091,8 +1295,8 @@
                 <div class="library-books-section">
 
                     <div class="section-header-container">
-                        <h4 id="marathi-header">{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
-                        <h4 id="english-header" style="display:none;">{{ library.library_name }} EBooks are available here</h4>
+                        <h4 id="marathi-header-{{ library.id }}">{{ library.library_name_mar }} येथे ई-पुस्तके उपलब्ध आहेत</h4>
+                        <h4 id="english-header-{{ library.id }}" style="display:none;">{{ library.library_name }} EBooks are available here</h4>
                     </div>
 
                     <div class="upcoming-slider-container">
@@ -1333,6 +1537,8 @@
         </div>
     {% endfor %}
 </div>
+
+
 
 {% for library in libraries %}
     {% if library.library_rules %}

@@ -1041,8 +1041,8 @@
                             $("#entryFeesCell").text(formatCurrency(baseEntryFees));
                             $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
-                            if (encId == "5" || encId == "6") {
-                                // Lifetime or Patron Branch
+                            if (encId == "3" || encId == "5" || encId == "6") {
+                                // Book Branch (NMC), Lifetime or Patron Branch
                                 $("#membershipDetails, #amountFields").fadeIn();
                                 $("#membershipDuration").show();
                                 $("#months, #toDate").closest(".col-md-6").hide();
@@ -1051,7 +1051,7 @@
                                 // Set amounts
                                 $("#depositInput").val(baseDeposit);
                                 $("#entryFeesInput").val(baseEntryFees);
-                                $("#subscriptionInput").val(baseSubscription); // show fixed subscription
+                                $("#subscriptionInput").val(baseSubscription);
                                 $("#depositHidden").val(baseDeposit);
                                 $("#entryFeesHidden").val(baseEntryFees);
                                 $("#subscriptionHidden").val(baseSubscription);
@@ -1060,7 +1060,9 @@
                                 $("#subscriptionInput").closest(".col-md-6").show();
 
                                 let noteText = "";
-                                if (encId == "5") {
+                                if (encId == "3") {
+                                    noteText = "Note: For Book Branch (NMC) (पुस्तक शाखा (नमुंमपा)) — only From Date is mandatory. Do not enter Duration or To Date.";
+                                } else if (encId == "5") {
                                     noteText = "Note: For Lifetime Branch (आजीव शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
                                 } else if (encId == "6") {
                                     noteText = "Note: For Patron Branch (आश्रयदाते शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
@@ -1174,9 +1176,9 @@
             let entry = Number(baseEntryFees) || 0;
             let subscription;
 
-            // If membership is 5 or 6, subscription is fixed
+            // If membership is 3, 5, or 6, subscription is fixed
             let encId = $("#membershiptype").val();
-            if (encId == "5" || encId == "6") {
+            if (encId == "3" || encId == "5" || encId == "6") {
                 subscription = Number(baseSubscription) || 0;
             } else {
                 subscription = (Number(baseSubscription) || 0) * months;
@@ -1378,8 +1380,8 @@
         memberType.addEventListener("change", function() {
             const selectedValue = parseInt(this.value);
 
-            if (selectedValue === 5 || selectedValue === 6) {
-                // Hide duration + remove required
+            if (selectedValue === 3 || selectedValue === 5 || selectedValue === 6) {
+                // Hide duration + remove required for Book Branch (NMC), Lifetime, Patron
                 membershipDuration.style.display = "none";
                 monthsField.removeAttribute("required");
                 fromDateField.removeAttribute("required");

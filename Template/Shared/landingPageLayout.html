@@ -97,6 +97,161 @@
 
     </head>
 
+    <style>
+        /* ==================== UPDATED HEADER UTILITY ROW ==================== */
+        .headerUtilityRow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 6px 20px;
+            background: #f5f5f5;
+            min-height: 40px;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            font-size: 13px;
+        }
+
+        /* Utility link items */
+        .utility-link-item {
+            color: #384988;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 6px;
+            transition: color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .utility-link-item:hover {
+            color: #015296;
+            text-decoration: underline;
+        }
+
+        /* Divider separator */
+        .divider {
+            color: #999;
+            font-size: 13px;
+            margin: 0 2px;
+            user-select: none;
+        }
+
+        /* Font buttons group */
+        .font-btns-group {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .font-btn {
+            background: none;
+            border: none;
+            {% comment %} color: #333; {% endcomment %}
+            color: #384988;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s ease;
+        }
+
+        .font-btn:hover {
+            color: #015296;
+        }
+
+        /* Language buttons group */
+        .lang-btns-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .lang-btn {
+            background: none;
+            border: 1px solid #ccc;
+            color: #666;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 3px 10px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .lang-btn:hover {
+            border-color: #015296;
+            color: #015296;
+        }
+
+        /* Active language button */
+        .lang-btn.active-lang {
+            background: #015296;
+            color: #fff;
+            border-color: #015296;
+        }
+
+        /* NMMC Library link (desktop only) */
+        .nmmc-library-link .library-link {
+            font-size: 13px;
+            padding: 4px 8px;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            .headerUtilityRow {
+                padding: 6px 10px;
+                gap: 4px;
+                font-size: 11px;
+            }
+            
+            .utility-link-item {
+                font-size: 11px;
+                padding: 3px 4px;
+            }
+            
+            .divider {
+                font-size: 11px;
+                margin: 0 1px;
+            }
+            
+            .font-btn {
+                font-size: 11px;
+                padding: 3px 5px;
+            }
+            
+            .lang-btn {
+                font-size: 10px;
+                padding: 2px 7px;
+            }
+            
+            .desktop-only {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .headerUtilityRow {
+                gap: 2px;
+                padding: 4px 5px;
+                font-size: 10px;
+            }
+            
+            .utility-link-item {
+                font-size: 10px;
+            }
+            
+            .divider {
+                margin: 0;
+            }
+            
+            .lang-btn {
+                font-size: 9px;
+                padding: 2px 5px;
+            }
+        }
+    </style> 
+
     <body>
 
         <!-- Lead Capture Modal -->
@@ -161,6 +316,102 @@
         <header>
 
                 <div class="headerUtilityRow" id="head-english" style="display: none;">
+                    <!-- ========== LEFT GROUP ========== -->
+                    <div class="utility-left-group">
+                        <!-- Skip to main content -->
+                        <a href="#main-content" class="utility-link-item" aria-label="Skip to main content">
+                            Skip to main content
+                        </a>
+                        <span class="divider">|</span>
+                        
+                        <!-- Font Size Buttons: A+ | A | A- -->
+                        <div class="font-btns-group">
+                            <button onclick="increaseFont()" class="font-btn" title="Increase Font Size">A+</button>
+                            <span class="divider">|</span>
+                            <button onclick="resetFont()" class="font-btn" title="Reset Font Size">A</button>
+                            <span class="divider">|</span>
+                            <button onclick="decreaseFont()" class="font-btn" title="Decrease Font Size">A-</button>
+                        </div>
+                        <span class="divider">|</span>
+                        
+                        <!-- Contact Email -->
+                        <a href="mailto:nmmclibrary2@gmail.com" class="utility-link-item">
+                            nmmclibrary2@gmail.com
+                        </a>
+                    </div>
+                    
+                    <!-- ========== RIGHT GROUP ========== -->
+                    <div class="utility-right-group">
+                        <!-- Language Toggle - Pill Style -->
+                        <div class="lang-pill-group">
+                            <button onclick="switchToEnglish()" class="lang-pill-btn active-lang" id="lang-btn-english">English</button>
+                            <button onclick="switchToMarathi()" class="lang-pill-btn" id="lang-btn-marathi-top">मराठी</button>
+                        </div>
+                        <span class="divider">|</span>
+                        
+                        <!-- NMMC Official Link -->
+                        <a href="https://www.nmmc.gov.in/" target="_blank" class="utility-link-item">
+                            NMMC Official
+                        </a>
+                        
+                        {% if request.session.library_db and request.path != '/' and membership_page_link %}
+                            <span class="divider">|</span>
+                            <a href="https://www.nmmclibrary.in/" target="_blank" class="utility-link-item desktop-only" title="NMMC Library">
+                                NMMC Library
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="headerUtilityRow" id="head-marathi">
+                    <!-- ========== LEFT GROUP ========== -->
+                    <div class="utility-left-group">
+                        <!-- Skip to main content -->
+                        <a href="#main-content" class="utility-link-item" aria-label="मुख्य सामग्रीवर जा">
+                            पृष्ठ सामग्रीवर जा
+                        </a>
+                        <span class="divider">|</span>
+                        
+                        <!-- Font Size Buttons: अ+ | अ | अ- -->
+                        <div class="font-btns-group">
+                            <button onclick="increaseFont()" class="font-btn" title="अक्षर आकार वाढवा">अ+</button>
+                            <span class="divider">|</span>
+                            <button onclick="resetFont()" class="font-btn" title="अक्षर आकार रीसेट करा">अ</button>
+                            <span class="divider">|</span>
+                            <button onclick="decreaseFont()" class="font-btn" title="अक्षर आकार कमी करा">अ-</button>
+                        </div>
+                        <span class="divider">|</span>
+                        
+                        <!-- Contact Email -->
+                        <a href="mailto:nmmclibrary2@gmail.com" class="utility-link-item">
+                            nmmclibrary2@gmail.com
+                        </a>
+                    </div>
+                    
+                    <!-- ========== RIGHT GROUP ========== -->
+                    <div class="utility-right-group">
+                        <!-- Language Toggle - Pill Style -->
+                        <div class="lang-pill-group">
+                            <button onclick="switchToEnglish()" class="lang-pill-btn" id="lang-btn-english-top">English</button>
+                            <button onclick="switchToMarathi()" class="lang-pill-btn active-lang" id="lang-btn-marathi">मराठी</button>
+                        </div>
+                        <span class="divider">|</span>
+                        
+                        <!-- NMMC Official Link -->
+                        <a href="https://www.nmmc.gov.in/" target="_blank" class="utility-link-item">
+                            नवी मुंबई महानगरपालिका
+                        </a>
+                        
+                        {% if request.session.library_db and request.path != '/' and membership_page_link %}
+                            <span class="divider">|</span>
+                            <a href="https://www.nmmclibrary.in/" target="_blank" class="utility-link-item desktop-only" title="नवी मुंबई महानगरपालिका ग्रंथालय">
+                                न.म.म.पा. ग्रंथालय
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% comment %} <div class="headerUtilityRow" id="head-english" style="display: none;">
                     <div class="govLinkContainer">
                         <a href="https://www.nmmc.gov.in/" target="_blank" class="govLink"
                             aria-label="Welcome to NMMC Library official website">
@@ -169,13 +420,11 @@
                         </a>
                     </div>
                     
-                    <!-- Add this contact info section -->
                     <div class="headerContactInfo">
                         <div class="contact-itemm email">contact@nmmc.gov.in</div>
                     </div>
                     
                     {% if request.session.library_db and request.path != '/'  and membership_page_link%}
-                        <!-- NMMC Library Link - Hidden on mobile and tablet -->
                         <div class="nmmc-library-link desktop-only">
                             <a href="https://www.nmmclibrary.in/" target="_blank" class="library-link" title="NMMC Library">
                                 NMMC Library
@@ -200,15 +449,11 @@
                         </a>
                     </div>
                     
-                    <!-- Marathi contact info -->
                     <div class="headerContactInfo">
                         <div class="contact-itemm email">contact@nmmc.gov.in</div>
-                        {% comment %} <div class="contact-itemm phone">+९१ २२ २७५६ १२३४</div>
-                        <div class="contact-itemm helpline">१८००-२२२-९९९</div> {% endcomment %}
                     </div>
                     
                     {% if request.session.library_db and request.path != '/'  and membership_page_link%}
-                        <!-- NMMC Library Link - Hidden on mobile and tablet, Marathi text -->
                         <div class="nmmc-library-link desktop-only">
                             <a href="https://www.nmmclibrary.in/" target="_blank" class="library-link" title="नवी मुंबई महानगरपालिका ग्रंथालय">
                                 नवी मुंबई महानगरपालिका ग्रंथालय
@@ -222,9 +467,9 @@
                         <button onclick="resetFont()" class="fontControlBtn" title="अक्षर आकार रीसेट करा">अ</button>
                         <button onclick="toggleLanguage()" class="fontControlBtnn" title="Change Language">English</button>
                     </div>
-                </div>
+                </div> {% endcomment %}
                 
-                <div class="top-bar">
+                {% comment %} <div class="top-bar">
                     <!-- Left: logo + title -->
                     <div class="brand-left" id="brand-english" style="display: none;">
                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}"alt="नवी मुंबई महानगरपालिका लोगो"class="logo"style="height:45px; width:auto; object-fit:contain;">
@@ -244,6 +489,30 @@
 
                     <!-- Right logo -->
                    <img src="{% static 'images/administrative/layout_img.png' %}"alt="NMMC Logo"class="logo right-logo"style="height:45px; width:auto; object-fit:contain;">
+                </div> {% endcomment %}
+
+                <div class="top-bar">
+                    <!-- Left: logo + title -->
+                    <div class="brand-left" id="brand-english" style="display: none;">
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo" style="height:55px; width:auto; object-fit:contain;">
+                        <div class="brand-text">
+                            <h3 class="header-title">Navi Mumbai Municipal Corporation</h3>
+                            <h4 class="sub-title">Library | Social Welfare Department</h4>
+                            {% comment %} <h5 class="sub-title">Social Welfare Department</h5> {% endcomment %}
+                        </div>
+                    </div>
+
+                    <div class="brand-left" id="brand-marathi">
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" alt="नवी मुंबई महानगरपालिका लोगो" class="logo" style="height:55px; width:auto; object-fit:contain;">
+                        <div class="brand-text">
+                            <h3 class="header-title">नवी मुंबई महानगरपालिका</h3>
+                            <h4 class="sub-title">ग्रंथालय | समाज कल्याण विभाग</h4>
+                            {% comment %} <h5 class="sub-title">समाज कल्याण विभाग</h5> {% endcomment %}
+                        </div>
+                    </div>
+
+                    <!-- Right logo -->
+                    <img src="{% static 'images/administrative/layout_img.png' %}" alt="NMMC Logo" class="logo right-logo" style="height:55px; width:auto; object-fit:contain;">
                 </div>
 
                 <!-- Navbar -->
@@ -401,7 +670,7 @@
 
         </header>
 
-        <main>
+        <main id="main-content">
             <!-- Page Content -->
             {% block content %}
             {% endblock %}
@@ -693,313 +962,517 @@
         <!-- Add before closing body tag - after other scripts -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/js/selectize.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-    </body>
+    
 
-    <script>
-        function toggleNavbar(navbarId) {
-            const navbar = document.getElementById(navbarId);
-            if (!navbar) return;
+        <script>
+            function toggleNavbar(navbarId) {
+                const navbar = document.getElementById(navbarId);
+                if (!navbar) return;
 
-            navbar.classList.toggle("responsive");
+                navbar.classList.toggle("responsive");
 
-            // Toggle dropdowns in mobile view
-            navbar.querySelectorAll('.dropbtn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    if (window.innerWidth <= 1000) { // mobile/tablet only
-                        const dropdown = this.nextElementSibling;
-                        dropdown.classList.toggle('show');
+                // Toggle dropdowns in mobile view
+                navbar.querySelectorAll('.dropbtn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        if (window.innerWidth <= 1000) { // mobile/tablet only
+                            const dropdown = this.nextElementSibling;
+                            dropdown.classList.toggle('show');
+                        }
+                    });
+                });
+            }
+        </script>
+
+        <!-- Script -->
+        <script>
+            // Show button only when user scrolls down
+            window.onscroll = function() {
+                let myBtn = document.getElementById("myBtn");
+                if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                    myBtn.style.display = "block";
+                } else {
+                    myBtn.style.display = "none";
+                }
+            };
+
+            // Scroll to top function
+            function topFunction() {
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            }
+        </script>
+
+        <script>
+            let currentScale = 1;
+            const scaleStep = 0.1;
+            const maxIncrease = 2; // can increase only twice
+            const maxDecrease = 2; // can decrease only twice
+            let increaseCount = 0;
+            let decreaseCount = 0;
+            const root = document.documentElement;
+
+            // Store the original values
+            const baseFontSizes = {
+            xxl: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-xxl')),
+            xl: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-xl')),
+            lg: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-lg')),
+            md: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-md')),
+            sm: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-sm')),
+            };
+
+            function applyFontScale() {
+            root.style.setProperty('--font-size-xxl', `${baseFontSizes.xxl * currentScale}rem`);
+            root.style.setProperty('--font-size-xl', `${baseFontSizes.xl * currentScale}rem`);
+            root.style.setProperty('--font-size-lg', `${baseFontSizes.lg * currentScale}rem`);
+            root.style.setProperty('--font-size-md', `${baseFontSizes.md * currentScale}rem`);
+            root.style.setProperty('--font-size-sm', `${baseFontSizes.sm * currentScale}rem`);
+            }
+
+            function increaseFont() {
+                if (increaseCount < maxIncrease) {
+                    currentScale += scaleStep;
+                    increaseCount++;
+                    decreaseCount = Math.max(0, decreaseCount - 1); // balance out if we go back
+                    applyFontScale();
+                } else {
+                    alert("Font size is already at maximum!");
+                }
+            }
+
+            function decreaseFont() {
+                if (decreaseCount < maxDecrease) {
+                    currentScale -= scaleStep;
+                    decreaseCount++;
+                    increaseCount = Math.max(0, increaseCount - 1);
+                    applyFontScale();
+                } else {
+                    alert("Font size is already at minimum!");
+                }
+            }
+
+            function resetFont() {
+                currentScale = 1;
+                increaseCount = 0;
+                decreaseCount = 0;
+                applyFontScale();
+            }
+
+        </script>
+
+        <script>
+            function toggleLanguage() {
+                // Get all elements
+                const marathiFooter = document.getElementById('footer-marathi');
+                const englishFooter = document.getElementById('footer-english');
+                const navbarMarathi = document.getElementById('navbar-marathi');
+                const navbarEnglish = document.getElementById('navbar-english');
+                const brandMarathi = document.getElementById('brand-marathi');
+                const brandEnglish = document.getElementById('brand-english');
+                const headMarathi = document.getElementById('head-marathi');
+                const headEnglish = document.getElementById('head-english');
+                const marathihero = document.getElementById('hero-marathi');
+                const englishhero = document.getElementById('hero-english');
+                const marathisection = document.getElementById('section-marathi');
+                const englishsection = document.getElementById('section-english');
+                const marathihead = document.getElementById('marathi-head');
+                const englishhead = document.getElementById('english-head');
+                const marathiheader = document.getElementById('marathi-header');
+                const englishheader = document.getElementById('english-header');
+            // const marathititle = document.getElementById('marathi-title');
+            // const englishtitle = document.getElementById('english-title');
+                
+                // Get the language toggle button
+                const langBtn = document.querySelector('.fontControlBtn[onclick="toggleLanguage()"]');
+
+                // Check current state by looking at header display
+                if (headEnglish.style.display === 'none' || window.getComputedStyle(headEnglish).display === 'none') {
+                    // Currently showing Marathi, switch to ENGLISH
+                    console.log('Switching to English');
+                    
+                    // Footer
+                    if (marathiFooter) marathiFooter.style.display = 'none';
+                    if (englishFooter) englishFooter.style.display = 'block';
+                    
+                    // Navbar
+                    if (navbarMarathi) navbarMarathi.style.display = 'none';
+                    if (navbarEnglish) navbarEnglish.style.display = 'block';
+                    
+                    // Brand
+                    if (brandMarathi) brandMarathi.style.display = 'none';
+                    if (brandEnglish) brandEnglish.style.display = 'flex';
+                    
+                    // Header
+                    if (headMarathi) headMarathi.style.display = 'none';
+                    if (headEnglish) headEnglish.style.display = 'flex';
+                    
+                    // Hero section
+                    if (marathihero) marathihero.style.display = 'none';
+                    if (englishhero) englishhero.style.display = 'block';
+
+                    //Index Heading
+                    if (marathihead) marathihead.style.display = 'none';
+                    if (englishhead) englishhead.style.display = 'block';
+
+                    //sub Index subHeading
+                    if (marathiheader) marathiheader.style.display = 'none';
+                    if (englishheader) englishheader.style.display = 'block';
+                    
+                    // Other sections
+                    if (marathisection) marathisection.style.display = 'none';
+                    if (englishsection) englishsection.style.display = 'block';
+                    
+                    // Titles
+                    //if (marathititle) marathititle.style.display = 'none';
+                    //if (englishtitle) englishtitle.style.display = 'block';
+                    
+                    // Update button text
+                    if (langBtn) langBtn.textContent = 'मराठी';
+                    
+                } else {
+                    // Currently showing English, switch to MARATHI
+                    console.log('Switching to Marathi');
+                    
+                    // Footer
+                    if (marathiFooter) marathiFooter.style.display = 'block';
+                    if (englishFooter) englishFooter.style.display = 'none';
+                    
+                    // Navbar
+                    if (navbarMarathi) navbarMarathi.style.display = 'block';
+                    if (navbarEnglish) navbarEnglish.style.display = 'none';
+                    
+                    // Brand
+                    if (brandMarathi) brandMarathi.style.display = 'flex';
+                    if (brandEnglish) brandEnglish.style.display = 'none';
+                    
+                    // Header
+                    if (headMarathi) headMarathi.style.display = 'flex';
+                    if (headEnglish) headEnglish.style.display = 'none';
+                    
+                    // Hero section
+                    if (marathihero) marathihero.style.display = 'block';
+                    if (englishhero) englishhero.style.display = 'none';
+
+                    //Index Heading
+                    if (marathihead) marathihead.style.display = 'block';
+                    if (englishhead) englishhead.style.display = 'none';
+
+                    //Sub Index Heading
+                    if (marathiheader) marathiheader.style.display = 'block';
+                    if (englishheader) englishheader.style.display = 'none';
+                    
+                    // Other sections
+                    if (marathisection) marathisection.style.display = 'block';
+                    if (englishsection) englishsection.style.display = 'none';
+                    
+                    // Titles
+                    //if (marathititle) marathititle.style.display = 'block';
+                    //if (englishtitle) englishtitle.style.display = 'none';
+                    
+                    // Update button text
+                    if (langBtn) langBtn.textContent = 'English';
+                }
+            }
+        </script>
+
+        <script>
+            $(document).ready(function () {
+
+                // ---------- Track clicks (EXCLUDE PDF LINKS) ----------
+                $('a').on('click', function (e) {
+                    let href = $(this).attr('href');
+                    
+                    // Check if it's a PDF link - if yes, let it open normally
+                    if (href && href.toLowerCase().includes('.pdf')) {
+                        return; // Do nothing, let the browser handle it normally
+                    }
+                    
+                    // For non-PDF links, track and handle manually
+                    e.preventDefault();
+                    
+                    let page = $(this).text().trim() || href;
+                    
+                    if (href && href !== "#") {
+                        $.ajax({
+                            type: "POST",
+                            url: "{% url 'track_click' %}",
+                            data: JSON.stringify({ page: page }),
+                            contentType: "application/json",
+                            headers: {
+                                "X-CSRFToken": "{{ csrf_token }}"
+                            },
+                            complete: function () {
+                                window.location.href = href;
+                            }
+                        });
                     }
                 });
-            });
-        }
-    </script>
 
-    <!-- Script -->
-    <script>
-        // Show button only when user scrolls down
-        window.onscroll = function() {
-            let myBtn = document.getElementById("myBtn");
-            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-                myBtn.style.display = "block";
-            } else {
-                myBtn.style.display = "none";
-            }
-        };
+                // ---------- Show popup after 5 minutes ----------
+                setTimeout(function () {
+                    const modal = new bootstrap.Modal(document.getElementById('leadModal'));
+                    modal.show();
+                }, 300000);
 
-        // Scroll to top function
-        function topFunction() {
-            document.body.scrollTop = 0;
-            document.documentElement.scrollTop = 0;
-        }
-    </script>
+                // Submit lead form
+                $('#leadForm').on('submit', function (e) {
+                    e.preventDefault();
 
-    <script>
-        let currentScale = 1;
-        const scaleStep = 0.1;
-        const maxIncrease = 2; // can increase only twice
-        const maxDecrease = 2; // can decrease only twice
-        let increaseCount = 0;
-        let decreaseCount = 0;
-        const root = document.documentElement;
+                    let name  = $('input[name="name"]').val().trim();
+                    let phone = $('input[name="phone"]').val().trim();
+                    let email = $('input[name="email"]').val().trim();
 
-        // Store the original values
-        const baseFontSizes = {
-        xxl: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-xxl')),
-        xl: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-xl')),
-        lg: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-lg')),
-        md: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-md')),
-        sm: parseFloat(getComputedStyle(root).getPropertyValue('--font-size-sm')),
-        };
+                    // 🔹 REGEX PATTERNS
+                    const nameRegex  = /^[A-Za-z\s]{2,}$/;
+                    const phoneRegex = /^[0-9]{10}$/;
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        function applyFontScale() {
-        root.style.setProperty('--font-size-xxl', `${baseFontSizes.xxl * currentScale}rem`);
-        root.style.setProperty('--font-size-xl', `${baseFontSizes.xl * currentScale}rem`);
-        root.style.setProperty('--font-size-lg', `${baseFontSizes.lg * currentScale}rem`);
-        root.style.setProperty('--font-size-md', `${baseFontSizes.md * currentScale}rem`);
-        root.style.setProperty('--font-size-sm', `${baseFontSizes.sm * currentScale}rem`);
-        }
+                    // 🔴 Name validation (always required)
+                    if (!nameRegex.test(name)) {
+                        alert("Name should contain only letters and spaces (minimum 2 characters).");
+                        return;
+                    }
 
-        function increaseFont() {
-            if (increaseCount < maxIncrease) {
-                currentScale += scaleStep;
-                increaseCount++;
-                decreaseCount = Math.max(0, decreaseCount - 1); // balance out if we go back
-                applyFontScale();
-            } else {
-                alert("Font size is already at maximum!");
-            }
-        }
+                    // 🔴 At least ONE of phone or email must be provided
+                    if (phone === '' && email === '') {
+                        alert("Please enter either a phone number or an email address.");
+                        return;
+                    }
 
-        function decreaseFont() {
-            if (decreaseCount < maxDecrease) {
-                currentScale -= scaleStep;
-                decreaseCount++;
-                increaseCount = Math.max(0, increaseCount - 1);
-                applyFontScale();
-            } else {
-                alert("Font size is already at minimum!");
-            }
-        }
+                    // 🔴 Phone validation (ONLY if provided)
+                    if (phone !== '' && !phoneRegex.test(phone)) {
+                        alert("Phone number must be exactly 10 digits.");
+                        return;
+                    }
 
-        function resetFont() {
-            currentScale = 1;
-            increaseCount = 0;
-            decreaseCount = 0;
-            applyFontScale();
-        }
+                    // 🔴 Email validation (ONLY if provided)
+                    if (email !== '' && !emailRegex.test(email)) {
+                        alert("Please enter a valid email address.");
+                        return;
+                    }
 
-    </script>
-
-    <script>
-        function toggleLanguage() {
-            // Get all elements
-            const marathiFooter = document.getElementById('footer-marathi');
-            const englishFooter = document.getElementById('footer-english');
-            const navbarMarathi = document.getElementById('navbar-marathi');
-            const navbarEnglish = document.getElementById('navbar-english');
-            const brandMarathi = document.getElementById('brand-marathi');
-            const brandEnglish = document.getElementById('brand-english');
-            const headMarathi = document.getElementById('head-marathi');
-            const headEnglish = document.getElementById('head-english');
-            const marathihero = document.getElementById('hero-marathi');
-            const englishhero = document.getElementById('hero-english');
-            const marathisection = document.getElementById('section-marathi');
-            const englishsection = document.getElementById('section-english');
-             const marathihead = document.getElementById('marathi-head');
-            const englishhead = document.getElementById('english-head');
-            const marathiheader = document.getElementById('marathi-header');
-            const englishheader = document.getElementById('english-header');
-           // const marathititle = document.getElementById('marathi-title');
-           // const englishtitle = document.getElementById('english-title');
-            
-            // Get the language toggle button
-            const langBtn = document.querySelector('.fontControlBtn[onclick="toggleLanguage()"]');
-
-            // Check current state by looking at header display
-            if (headEnglish.style.display === 'none' || window.getComputedStyle(headEnglish).display === 'none') {
-                // Currently showing Marathi, switch to ENGLISH
-                console.log('Switching to English');
-                
-                // Footer
-                if (marathiFooter) marathiFooter.style.display = 'none';
-                if (englishFooter) englishFooter.style.display = 'block';
-                
-                // Navbar
-                if (navbarMarathi) navbarMarathi.style.display = 'none';
-                if (navbarEnglish) navbarEnglish.style.display = 'block';
-                
-                // Brand
-                if (brandMarathi) brandMarathi.style.display = 'none';
-                if (brandEnglish) brandEnglish.style.display = 'flex';
-                
-                // Header
-                if (headMarathi) headMarathi.style.display = 'none';
-                if (headEnglish) headEnglish.style.display = 'flex';
-                
-                // Hero section
-                if (marathihero) marathihero.style.display = 'none';
-                if (englishhero) englishhero.style.display = 'block';
-
-                //Index Heading
-                if (marathihead) marathihead.style.display = 'none';
-                if (englishhead) englishhead.style.display = 'block';
-
-                //sub Index subHeading
-                if (marathiheader) marathiheader.style.display = 'none';
-                if (englishheader) englishheader.style.display = 'block';
-                
-                // Other sections
-                if (marathisection) marathisection.style.display = 'none';
-                if (englishsection) englishsection.style.display = 'block';
-                
-                // Titles
-                //if (marathititle) marathititle.style.display = 'none';
-                //if (englishtitle) englishtitle.style.display = 'block';
-                
-                // Update button text
-                if (langBtn) langBtn.textContent = 'मराठी';
-                
-            } else {
-                // Currently showing English, switch to MARATHI
-                console.log('Switching to Marathi');
-                
-                // Footer
-                if (marathiFooter) marathiFooter.style.display = 'block';
-                if (englishFooter) englishFooter.style.display = 'none';
-                
-                // Navbar
-                if (navbarMarathi) navbarMarathi.style.display = 'block';
-                if (navbarEnglish) navbarEnglish.style.display = 'none';
-                
-                // Brand
-                if (brandMarathi) brandMarathi.style.display = 'flex';
-                if (brandEnglish) brandEnglish.style.display = 'none';
-                
-                // Header
-                if (headMarathi) headMarathi.style.display = 'flex';
-                if (headEnglish) headEnglish.style.display = 'none';
-                
-                // Hero section
-                if (marathihero) marathihero.style.display = 'block';
-                if (englishhero) englishhero.style.display = 'none';
-
-                 //Index Heading
-                if (marathihead) marathihead.style.display = 'block';
-                if (englishhead) englishhead.style.display = 'none';
-
-                //Sub Index Heading
-                if (marathiheader) marathiheader.style.display = 'block';
-                if (englishheader) englishheader.style.display = 'none';
-                
-                // Other sections
-                if (marathisection) marathisection.style.display = 'block';
-                if (englishsection) englishsection.style.display = 'none';
-                
-                // Titles
-                //if (marathititle) marathititle.style.display = 'block';
-                //if (englishtitle) englishtitle.style.display = 'none';
-                
-                // Update button text
-                if (langBtn) langBtn.textContent = 'English';
-            }
-        }
-    </script>
-
-    <script>
-        $(document).ready(function () {
-
-            // ---------- Track clicks (EXCLUDE PDF LINKS) ----------
-            $('a').on('click', function (e) {
-                let href = $(this).attr('href');
-                
-                // Check if it's a PDF link - if yes, let it open normally
-                if (href && href.toLowerCase().includes('.pdf')) {
-                    return; // Do nothing, let the browser handle it normally
-                }
-                
-                // For non-PDF links, track and handle manually
-                e.preventDefault();
-                
-                let page = $(this).text().trim() || href;
-                
-                if (href && href !== "#") {
+                    // ✅ If all validations pass → submit AJAX
                     $.ajax({
                         type: "POST",
-                        url: "{% url 'track_click' %}",
-                        data: JSON.stringify({ page: page }),
-                        contentType: "application/json",
+                        url: "{% url 'save_lead' %}",
+                        data: $(this).serialize(),
                         headers: {
                             "X-CSRFToken": "{{ csrf_token }}"
                         },
-                        complete: function () {
-                            window.location.href = href;
+                        success: function () {
+                            bootstrap.Modal.getInstance(
+                                document.getElementById('leadModal')
+                            ).hide();
+                            alert("Thank you!");
+                            $('#leadForm')[0].reset();
                         }
                     });
-                }
+                });
+
             });
+        </script>
 
-            // ---------- Show popup after 5 minutes ----------
-            setTimeout(function () {
-                const modal = new bootstrap.Modal(document.getElementById('leadModal'));
-                modal.show();
-            }, 300000);
+        <script>
 
-            // Submit lead form
-            $('#leadForm').on('submit', function (e) {
-                e.preventDefault();
-
-                let name  = $('input[name="name"]').val().trim();
-                let phone = $('input[name="phone"]').val().trim();
-                let email = $('input[name="email"]').val().trim();
-
-                // 🔹 REGEX PATTERNS
-                const nameRegex  = /^[A-Za-z\s]{2,}$/;
-                const phoneRegex = /^[0-9]{10}$/;
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-                // 🔴 Name validation (always required)
-                if (!nameRegex.test(name)) {
-                    alert("Name should contain only letters and spaces (minimum 2 characters).");
-                    return;
+            function switchToEnglish() {
+                // Show English, hide Marathi
+                const footerMarathi = document.getElementById('footer-marathi');
+                const footerEnglish = document.getElementById('footer-english');
+                const navbarMarathi = document.getElementById('navbar-marathi');
+                const navbarEnglish = document.getElementById('navbar-english');
+                const brandMarathi = document.getElementById('brand-marathi');
+                const brandEnglish = document.getElementById('brand-english');
+                const headMarathi = document.getElementById('head-marathi');
+                const headEnglish = document.getElementById('head-english');
+                
+                if (footerMarathi) footerMarathi.style.display = 'none';
+                if (footerEnglish) footerEnglish.style.display = 'block';
+                if (navbarMarathi) navbarMarathi.style.display = 'none';
+                if (navbarEnglish) navbarEnglish.style.display = 'block';
+                if (brandMarathi) brandMarathi.style.display = 'none';
+                if (brandEnglish) brandEnglish.style.display = 'flex';
+                if (headMarathi) headMarathi.style.display = 'none';
+                if (headEnglish) headEnglish.style.display = 'flex';
+                
+                // Toggle other sections
+                toggleSection('hero-marathi', 'hero-english', false);
+                toggleSection('section-marathi', 'section-english', false);
+                toggleSection('marathi-head', 'english-head', false);
+                toggleSection('marathi-header', 'english-header', false);
+                
+                // ========== ADD VISION MISSION PAGE TOGGLES ==========
+                // Banner
+                toggleSection('banner-marathi', 'banner-english', false);
+                // Vision title
+                toggleSection('vision-title-marathi', 'vision-title-english', false);
+                // Vision content
+                toggleSection('vision-content-marathi', 'vision-content-english', false);
+                // Vision features
+                toggleSection('vision-feature1-marathi', 'vision-feature1-english', false);
+                toggleSection('vision-feature2-marathi', 'vision-feature2-english', false);
+                toggleSection('vision-feature3-marathi', 'vision-feature3-english', false);
+                // Mission title
+                toggleSection('mission-title-marathi', 'mission-title-english', false);
+                // Mission content
+                toggleSection('mission-content-marathi', 'mission-content-english', false);
+                // Mission features
+                toggleSection('mission-feature1-marathi', 'mission-feature1-english', false);
+                toggleSection('mission-feature2-marathi', 'mission-feature2-english', false);
+                toggleSection('mission-feature3-marathi', 'mission-feature3-english', false);
+                // Objectives title
+                toggleSection('objectives-title-marathi', 'objectives-title-english', false);
+                // Individual objectives (1-7)
+                for(let i = 1; i <= 7; i++) {
+                    toggleSection(`obj${i}-marathi`, `obj${i}-english`, false);
                 }
+                // CTA section
+                toggleSection('cta-marathi', 'cta-english', false);
+                toggleSection('cta-btn-marathi', 'cta-btn-english', false);
+                toggleSection('home-btn-marathi', 'home-btn-english', false);
+                
+                // Update ALL language pill buttons
+                document.querySelectorAll('.lang-pill-btn').forEach(btn => {
+                    btn.classList.remove('active-lang');
+                });
+                document.querySelectorAll('#lang-btn-english, #lang-btn-english-top').forEach(btn => {
+                    btn.classList.add('active-lang');
+                });
 
-                // 🔴 At least ONE of phone or email must be provided
-                if (phone === '' && email === '') {
-                    alert("Please enter either a phone number or an email address.");
-                    return;
+                // ========== ADD THIS: Sync search guide language if on search page ==========
+                if (typeof syncGuideLanguage === 'function') {
+                    setTimeout(function() {
+                        // Reset currentLanguage to 'english' for the search page
+                        if (typeof setSearchPageLanguage === 'function') {
+                            setSearchPageLanguage('english');
+                        }
+                        if (typeof syncGuideLanguage === 'function') {
+                            syncGuideLanguage();
+                        }
+                    }, 100);
                 }
+                
+            }
 
-                // 🔴 Phone validation (ONLY if provided)
-                if (phone !== '' && !phoneRegex.test(phone)) {
-                    alert("Phone number must be exactly 10 digits.");
-                    return;
+            function switchToMarathi() {
+                // Show Marathi, hide English
+                const footerMarathi = document.getElementById('footer-marathi');
+                const footerEnglish = document.getElementById('footer-english');
+                const navbarMarathi = document.getElementById('navbar-marathi');
+                const navbarEnglish = document.getElementById('navbar-english');
+                const brandMarathi = document.getElementById('brand-marathi');
+                const brandEnglish = document.getElementById('brand-english');
+                const headMarathi = document.getElementById('head-marathi');
+                const headEnglish = document.getElementById('head-english');
+                
+                if (footerMarathi) footerMarathi.style.display = 'block';
+                if (footerEnglish) footerEnglish.style.display = 'none';
+                if (navbarMarathi) navbarMarathi.style.display = 'block';
+                if (navbarEnglish) navbarEnglish.style.display = 'none';
+                if (brandMarathi) brandMarathi.style.display = 'flex';
+                if (brandEnglish) brandEnglish.style.display = 'none';
+                if (headMarathi) headMarathi.style.display = 'flex';
+                if (headEnglish) headEnglish.style.display = 'none';
+                
+                // Toggle other sections
+                toggleSection('hero-marathi', 'hero-english', true);
+                toggleSection('section-marathi', 'section-english', true);
+                toggleSection('marathi-head', 'english-head', true);
+                toggleSection('marathi-header', 'english-header', true);
+                
+                // ========== ADD VISION MISSION PAGE TOGGLES ==========
+                // Banner
+                toggleSection('banner-marathi', 'banner-english', true);
+                // Vision title
+                toggleSection('vision-title-marathi', 'vision-title-english', true);
+                // Vision content
+                toggleSection('vision-content-marathi', 'vision-content-english', true);
+                // Vision features
+                toggleSection('vision-feature1-marathi', 'vision-feature1-english', true);
+                toggleSection('vision-feature2-marathi', 'vision-feature2-english', true);
+                toggleSection('vision-feature3-marathi', 'vision-feature3-english', true);
+                // Mission title
+                toggleSection('mission-title-marathi', 'mission-title-english', true);
+                // Mission content
+                toggleSection('mission-content-marathi', 'mission-content-english', true);
+                // Mission features
+                toggleSection('mission-feature1-marathi', 'mission-feature1-english', true);
+                toggleSection('mission-feature2-marathi', 'mission-feature2-english', true);
+                toggleSection('mission-feature3-marathi', 'mission-feature3-english', true);
+                // Objectives title
+                toggleSection('objectives-title-marathi', 'objectives-title-english', true);
+                // Individual objectives (1-7)
+                for(let i = 1; i <= 7; i++) {
+                    toggleSection(`obj${i}-marathi`, `obj${i}-english`, true);
                 }
+                // CTA section
+                toggleSection('cta-marathi', 'cta-english', true);
+                toggleSection('cta-btn-marathi', 'cta-btn-english', true);
+                toggleSection('home-btn-marathi', 'home-btn-english', true);
+                
+                // Update ALL language pill buttons
+                document.querySelectorAll('.lang-pill-btn').forEach(btn => {
+                    btn.classList.remove('active-lang');
+                });
+                document.querySelectorAll('#lang-btn-marathi, #lang-btn-marathi-top').forEach(btn => {
+                    btn.classList.add('active-lang');
+                });
 
-                // 🔴 Email validation (ONLY if provided)
-                if (email !== '' && !emailRegex.test(email)) {
-                    alert("Please enter a valid email address.");
-                    return;
+                // ========== ADD THIS: Sync search guide language if on search page ==========
+                if (typeof syncGuideLanguage === 'function') {
+                    setTimeout(function() {
+                        // Reset currentLanguage to 'marathi' for the search page
+                        if (typeof setSearchPageLanguage === 'function') {
+                            setSearchPageLanguage('marathi');
+                        }
+                        if (typeof syncGuideLanguage === 'function') {
+                            syncGuideLanguage();
+                        }
+                    }, 100);
                 }
+                
+            }
 
-                // ✅ If all validations pass → submit AJAX
-                $.ajax({
-                    type: "POST",
-                    url: "{% url 'save_lead' %}",
-                    data: $(this).serialize(),
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    },
-                    success: function () {
-                        bootstrap.Modal.getInstance(
-                            document.getElementById('leadModal')
-                        ).hide();
-                        alert("Thank you!");
-                        $('#leadForm')[0].reset();
+            // Helper function (make sure this exists - it should already be there)
+            function toggleSection(marathiId, englishId, showMarathi) {
+                // Toggle all elements that start with these IDs (for multiple libraries)
+                const marathiElements = document.querySelectorAll(`[id^="${marathiId}"]`);
+                const englishElements = document.querySelectorAll(`[id^="${englishId}"]`);
+                
+                marathiElements.forEach(el => {
+                    el.style.display = showMarathi ? '' : 'none';
+                    if (showMarathi && el.style.display === '') {
+                        el.style.display = 'block';
                     }
                 });
+                
+                englishElements.forEach(el => {
+                    el.style.display = showMarathi ? 'none' : '';
+                    if (!showMarathi && el.style.display === '') {
+                        el.style.display = 'block';
+                    }
+                });
+            }
+
+            // Keep old toggleLanguage for backward compatibility
+            function toggleLanguage() {
+                const headEnglish = document.getElementById('head-english');
+                if (headEnglish && (headEnglish.style.display === 'none' || window.getComputedStyle(headEnglish).display === 'none')) {
+                    switchToEnglish();
+                } else {
+                    switchToMarathi();
+                }
+            }
+        </script>
+
+        <script>
+            window.addEventListener('scroll', function() {
+                const navbars = document.querySelectorAll('.navbar');
+                if (window.scrollY > 50) {
+                    navbars.forEach(nav => nav.classList.add('navbar-scrolled'));
+                } else {
+                    navbars.forEach(nav => nav.classList.remove('navbar-scrolled'));
+                }
             });
-
-        });
-    </script>
-
+        </script>
+        
+    </body>
 </html>

@@ -152,1381 +152,1382 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
-{% if messages %}
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                    Swal.fire({
+                        title: "{{ message.tags|title }}",
+                        text: "{{ message|escapejs }}",
+                        icon: "{{ message.tags }}",
+                        confirmButtonText: "OK",
+                        background: theme === 'dark' ? '#343a40' : '#ffffff',
+                        color: theme === 'dark' ? '#f8f9fa' : '#212529',
+                        confirmButtonColor: '#0d6efd',
+                        customClass: {
+                            popup: 'rounded-4 shadow',
+                            confirmButton: 'btn btn-primary px-4 py-2'
+                        }
+                    });
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="{% static 'js/app.min.js' %}"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-            {% for message in messages %}
-                Swal.fire({
-                    title: "{{ message.tags|title }}",
-                    text: "{{ message|escapejs }}",
-                    icon: "{{ message.tags }}",
-                    confirmButtonText: "OK",
-                    background: theme === 'dark' ? '#343a40' : '#ffffff',
-                    color: theme === 'dark' ? '#f8f9fa' : '#212529',
-                    confirmButtonColor: '#0d6efd',
-                    customClass: {
-                        popup: 'rounded-4 shadow',
-                        confirmButton: 'btn btn-primary px-4 py-2'
-                    }
-                });
-            {% endfor %}
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         });
     </script>
-{% endif %}
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% comment %} Word translate {% endcomment %}
+    <script>
+        $(document).ready(function () {
+            $('.translate-marathi-input').on('blur', function () {
+                const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+                const input = $(this);
+                const text = input.val().trim();
 
-<script src="{% static 'js/app.min.js' %}"></script>
-<script>
-    // Back to Top Button
-    const backToTopButton = document.getElementById('backToTop');
-    
-    window.addEventListener('scroll', () => {
-        if (window.pageYOffset > 300) {
-            backToTopButton.classList.add('active');
-        } else {
-            backToTopButton.classList.remove('active');
-        }
-    });
-    
-    backToTopButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
+                if (text !== "") {
+                    $.ajax({
+                        url: "{% url 'translate_word' %}",
+                        type: "GET",
+                        data: { q: text },
+                        headers: { "X-CSRFToken": csrfToken },
+                        success: function(response) {
+                            input.closest('.row').find('.translate-marathi-output').val(response.translated || text);
+                        },
+                        error: function() {
+                            input.closest('.row').find('.translate-marathi-output').val(text);
+                        }
+                    });
+                }
+            });
         });
-    });
-</script>
+    </script>
 
-{% comment %} Word translate {% endcomment %}
-<script>
-    $(document).ready(function () {
-        $('.translate-marathi-input').on('blur', function () {
-            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
-            const input = $(this);
-            const text = input.val().trim();
+    {% comment %} userid check  {% endcomment %}
+    <script>
+        $(document).ready(function () {
+            const regex = /^[a-zA-Z0-9_]{5,20}$/;
 
-            if (text !== "") {
-                $.ajax({
-                    url: "{% url 'translate_word' %}",
-                    type: "GET",
-                    data: { q: text },
-                    headers: { "X-CSRFToken": csrfToken },
-                    success: function(response) {
-                        input.closest('.row').find('.translate-marathi-output').val(response.translated || text);
-                    },
-                    error: function() {
-                        input.closest('.row').find('.translate-marathi-output').val(text);
+            $("#userIdInput").on("blur", function () {
+                debugger;
+                const userId = $(this).val().trim().toLowerCase();
+                const statusIcon = $("#userIdStatus");
+                const submitBtn = $(".btn-submit");
+                const errorMsg = $("#userIdError");
+                const userIdHelp = $("#userIdHelp");
+
+                if (userId !== "") {
+                    if (!regex.test(userId)) {
+                        // Show format error
+                        errorMsg.text("Invalid format: only letters, numbers, and underscore allowed (5–20 chars).")
+                                .removeClass("d-none");
+                        statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                        submitBtn.prop("disabled", true);
+                        userIdHelp.addClass("d-none");  // Hide help text
+                        return;
+                    } else {
+                        errorMsg.addClass("d-none");
+                        userIdHelp.removeClass("d-none");  // Show help text
                     }
-                });
-            }
-        });
-    });
-</script>
 
-{% comment %} userid check  {% endcomment %}
-<script>
-    $(document).ready(function () {
-        const regex = /^[a-zA-Z0-9_]{5,20}$/;
-
-        $("#userIdInput").on("blur", function () {
-            debugger;
-            const userId = $(this).val().trim().toLowerCase();
-            const statusIcon = $("#userIdStatus");
-            const submitBtn = $(".btn-submit");
-            const errorMsg = $("#userIdError");
-            const userIdHelp = $("#userIdHelp");
-
-            if (userId !== "") {
-                if (!regex.test(userId)) {
-                    // Show format error
-                    errorMsg.text("Invalid format: only letters, numbers, and underscore allowed (5–20 chars).")
-                            .removeClass("d-none");
-                    statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                    // Ajax call to check uniqueness
+                    $.ajax({
+                        url: "{% url 'L01:check_user_id' %}",
+                        type: "GET",
+                        data: { user_id: userId },
+                        success: function (response) {
+                            if (response.exists) {
+                                errorMsg.text("This User ID is already taken. Please choose another.")
+                                        .removeClass("d-none");
+                                statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                                submitBtn.prop("disabled", true);
+                            } else {
+                                errorMsg.addClass("d-none");
+                                statusIcon.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                                submitBtn.prop("disabled", false);
+                            }
+                        },
+                        error: function () {
+                            errorMsg.text("Something went wrong. Try again later.").removeClass("d-none");
+                            statusIcon.html('<i class="fa-solid fa-triangle-exclamation text-warning"></i>');
+                            submitBtn.prop("disabled", true);
+                        }
+                    });
+                } else {
+                    errorMsg.text("User ID cannot be empty.").removeClass("d-none");
+                    statusIcon.html("");
                     submitBtn.prop("disabled", true);
                     userIdHelp.addClass("d-none");  // Hide help text
-                    return;
-                } else {
-                    errorMsg.addClass("d-none");
-                    userIdHelp.removeClass("d-none");  // Show help text
                 }
+            });
 
-                // Ajax call to check uniqueness
-                $.ajax({
-                    url: "{% url 'L01:check_user_id' %}",
-                    type: "GET",
-                    data: { user_id: userId },
-                    success: function (response) {
-                        if (response.exists) {
-                            errorMsg.text("This User ID is already taken. Please choose another.")
-                                    .removeClass("d-none");
-                            statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
-                            submitBtn.prop("disabled", true);
-                        } else {
-                            errorMsg.addClass("d-none");
-                            statusIcon.html('<i class="fa-solid fa-circle-check text-success"></i>');
-                            submitBtn.prop("disabled", false);
-                        }
-                    },
-                    error: function () {
-                        errorMsg.text("Something went wrong. Try again later.").removeClass("d-none");
-                        statusIcon.html('<i class="fa-solid fa-triangle-exclamation text-warning"></i>');
+            // Extra safety: prevent form submit if disabled
+            $("#membershipForm").on("submit", function (e) {
+                if ($(".btn-submit").prop("disabled")) {
+                    e.preventDefault();
+                }
+            });
+
+            // Block spaces on typing
+            $("#userIdInput").on("keypress", function (e) {
+                if (e.which === 32) {
+                    e.preventDefault();
+                }
+            });
+
+            // Clean pasted input (remove spaces)
+            $("#userIdInput").on("input", function () {
+                this.value = this.value.replace(/\s/g, "");
+            });
+
+        });
+    </script>
+
+    {% comment %} aadhar card check {% endcomment %}
+    <script>
+        $(document).ready(function () {
+            const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+            // Aadhar validation function
+            $("#aadharInput").on("blur", function () {
+                const aadharNumber = $(this).val().trim();
+                const statusIcon = $("#aadharStatus");
+                const submitBtn = $(".btn-submit");
+                const errorMsg = $("#aadharError");
+                const aadharHelp = $("#aadharHelp");
+
+                // Regex for 12 digits
+                const regex = /^[0-9]{12}$/;
+
+                if (aadharNumber !== "") {
+                    // Validate format: 12 digits
+                    if (!regex.test(aadharNumber)) {
+                        errorMsg.text("Invalid Aadhar format: must be 12 digits (no spaces, no dashes).")
+                                .removeClass("d-none");
+                        statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
                         submitBtn.prop("disabled", true);
+                        aadharHelp.addClass("d-none");  // Hide help text
+                        return;
+                    } else {
+                        errorMsg.addClass("d-none");
+                        aadharHelp.removeClass("d-none");  // Show help text
                     }
-                });
-            } else {
-                errorMsg.text("User ID cannot be empty.").removeClass("d-none");
-                statusIcon.html("");
-                submitBtn.prop("disabled", true);
-                userIdHelp.addClass("d-none");  // Hide help text
-            }
-        });
 
-        // Extra safety: prevent form submit if disabled
-        $("#membershipForm").on("submit", function (e) {
-            if ($(".btn-submit").prop("disabled")) {
-                e.preventDefault();
-            }
-        });
-
-        // Block spaces on typing
-        $("#userIdInput").on("keypress", function (e) {
-            if (e.which === 32) {
-                e.preventDefault();
-            }
-        });
-
-        // Clean pasted input (remove spaces)
-        $("#userIdInput").on("input", function () {
-            this.value = this.value.replace(/\s/g, "");
-        });
-
-    });
-</script>
-
-{% comment %} aadhar card check {% endcomment %}
-<script>
-    $(document).ready(function () {
-        const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
-
-        // Aadhar validation function
-        $("#aadharInput").on("blur", function () {
-            const aadharNumber = $(this).val().trim();
-            const statusIcon = $("#aadharStatus");
-            const submitBtn = $(".btn-submit");
-            const errorMsg = $("#aadharError");
-            const aadharHelp = $("#aadharHelp");
-
-            // Regex for 12 digits
-            const regex = /^[0-9]{12}$/;
-
-            if (aadharNumber !== "") {
-                // Validate format: 12 digits
-                if (!regex.test(aadharNumber)) {
-                    errorMsg.text("Invalid Aadhar format: must be 12 digits (no spaces, no dashes).")
-                            .removeClass("d-none");
-                    statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                    // AJAX call to check uniqueness of Aadhar number
+                    $.ajax({
+                        url: "{% url 'L01:check_aadhar' %}",
+                        type: "GET",
+                        data: { aadhar_number: aadharNumber },
+                        headers: { "X-CSRFToken": csrfToken },
+                        success: function (response) {
+                            if (response.exists) {
+                                errorMsg.text("This Aadhar number is already registered. Please use a different one.")
+                                        .removeClass("d-none");
+                                statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                                submitBtn.prop("disabled", true);
+                            } else {
+                                errorMsg.addClass("d-none");
+                                statusIcon.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                                submitBtn.prop("disabled", false);
+                            }
+                        },
+                        error: function () {
+                            errorMsg.text("Something went wrong. Try again later.").removeClass("d-none");
+                            statusIcon.html('<i class="fa-solid fa-triangle-exclamation text-warning"></i>');
+                            submitBtn.prop("disabled", true);
+                        }
+                    });
+                } else {
+                    errorMsg.text("Aadhar number cannot be empty.").removeClass("d-none");
+                    statusIcon.html("");
                     submitBtn.prop("disabled", true);
                     aadharHelp.addClass("d-none");  // Hide help text
-                    return;
-                } else {
-                    errorMsg.addClass("d-none");
-                    aadharHelp.removeClass("d-none");  // Show help text
                 }
+            });
 
-                // AJAX call to check uniqueness of Aadhar number
-                $.ajax({
-                    url: "{% url 'L01:check_aadhar' %}",
-                    type: "GET",
-                    data: { aadhar_number: aadharNumber },
-                    headers: { "X-CSRFToken": csrfToken },
-                    success: function (response) {
-                        if (response.exists) {
-                            errorMsg.text("This Aadhar number is already registered. Please use a different one.")
-                                    .removeClass("d-none");
-                            statusIcon.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
-                            submitBtn.prop("disabled", true);
-                        } else {
-                            errorMsg.addClass("d-none");
-                            statusIcon.html('<i class="fa-solid fa-circle-check text-success"></i>');
-                            submitBtn.prop("disabled", false);
-                        }
-                    },
-                    error: function () {
-                        errorMsg.text("Something went wrong. Try again later.").removeClass("d-none");
-                        statusIcon.html('<i class="fa-solid fa-triangle-exclamation text-warning"></i>');
-                        submitBtn.prop("disabled", true);
+            // Extra safety: prevent form submit if disabled
+            $("#membershipForm").on("submit", function (e) {
+                if ($(".btn-submit").prop("disabled")) {
+                    e.preventDefault();
+                }
+            });
+
+            // Block spaces while typing in Aadhar input field
+            $("#aadharInput").on("keypress", function (e) {
+                if (e.which === 32) {
+                    e.preventDefault();
+                }
+            });
+
+            // Clean pasted input (remove spaces)
+            $("#aadharInput").on("input", function () {
+                this.value = this.value.replace(/\s/g, "");
+            });
+        });
+    </script>
+
+    {% comment %} Member Type / सदस्य प्रकार Logic to show fields accordingly student / employed / retired {% endcomment %}
+    <script>
+
+        $(document).ready(function () {
+            // Hide all rows initially
+            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row').hide();
+
+            function toggleMemberFields(val) {
+                // Hide all first
+                $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row')
+                    .hide()
+                    .find('input, select').prop('required', false);
+
+                if (val === '1') { // Student
+                    $('#education_row, #institution_row').show()
+                        .find('input').prop('required', true);
+                } else if (val === '2' || val === '3') { // Employed/ Govt
+                    $('#occupation_row, #phone_row').show()
+                        .find('input').prop('required', true);
+                } else if (val === '4') { // Retired / Senior Citizen
+                    $('#referrer_row').show()
+                        .find('input').prop('required', true);
+                }
+            }
+
+            // Run on change
+            $('#membertype').change(function () {
+                toggleMemberFields($(this).val());
+            });
+
+            // 🔑 Run once on page load if editing
+            let preselected = "{{ membership.member_type_id }}";
+            if (preselected) {
+                toggleMemberFields(preselected);
+            }
+        });
+
+    </script>
+
+    {% comment %} file upload validation & preview {% endcomment %}
+    <script>
+        $(document).ready(function () {
+
+            function validateFileSize(input, errorId) {
+                const file = input.files[0];
+
+                if (file && file.size > 4 * 1024 * 1024) { // 4 MB
+                    $('#' + errorId).text('File size exceeds 4 MB.').removeClass('d-none');
+                    input.value = ''; // reset file input
+                } else {
+                    $('#' + errorId).addClass('d-none').text('');
+                }
+            }
+
+            function previewFile(input, previewDiv) {
+                const file = input.files[0];
+                const previewContainer = $(previewDiv);
+                previewContainer.empty();
+
+                if (file) {
+                    const fileType = file.type;
+                    if (fileType.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            previewContainer.html(
+                                `<img src="${e.target.result}" alt="Preview" class="img-thumbnail" style="max-width:150px;">`
+                            );
+                        };
+                        reader.readAsDataURL(file);
+                    } else if (fileType === 'application/pdf') {
+                        const fileURL = URL.createObjectURL(file);
+                        previewContainer.html(`<a href="${fileURL}" target="_blank">${file.name} (PDF)</a>`);
+                    } else {
+                        previewContainer.html(`<p>${file.name}</p>`);
                     }
-                });
-            } else {
-                errorMsg.text("Aadhar number cannot be empty.").removeClass("d-none");
-                statusIcon.html("");
-                submitBtn.prop("disabled", true);
-                aadharHelp.addClass("d-none");  // Hide help text
-            }
-        });
-
-        // Extra safety: prevent form submit if disabled
-        $("#membershipForm").on("submit", function (e) {
-            if ($(".btn-submit").prop("disabled")) {
-                e.preventDefault();
-            }
-        });
-
-        // Block spaces while typing in Aadhar input field
-        $("#aadharInput").on("keypress", function (e) {
-            if (e.which === 32) {
-                e.preventDefault();
-            }
-        });
-
-        // Clean pasted input (remove spaces)
-        $("#aadharInput").on("input", function () {
-            this.value = this.value.replace(/\s/g, "");
-        });
-    });
-</script>
-
-{% comment %} Member Type / सदस्य प्रकार Logic to show fields accordingly student / employed / retired {% endcomment %}
-<script>
-
-    $(document).ready(function () {
-        // Hide all rows initially
-        $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row').hide();
-
-        function toggleMemberFields(val) {
-            // Hide all first
-            $('#occupation_row, #phone_row, #education_row, #institution_row, #referrer_row')
-                .hide()
-                .find('input, select').prop('required', false);
-
-            if (val === '1') { // Student
-                $('#education_row, #institution_row').show()
-                    .find('input').prop('required', true);
-            } else if (val === '2' || val === '3') { // Employed/ Govt
-                $('#occupation_row, #phone_row').show()
-                    .find('input').prop('required', true);
-            } else if (val === '4') { // Retired / Senior Citizen
-                $('#referrer_row').show()
-                    .find('input').prop('required', true);
-            }
-        }
-
-        // Run on change
-        $('#membertype').change(function () {
-            toggleMemberFields($(this).val());
-        });
-
-        // 🔑 Run once on page load if editing
-        let preselected = "{{ membership.member_type_id }}";
-        if (preselected) {
-            toggleMemberFields(preselected);
-        }
-    });
-
-</script>
-
-{% comment %} file upload validation & preview {% endcomment %}
-<script>
-    $(document).ready(function () {
-
-        function validateFileSize(input, errorId) {
-            const file = input.files[0];
-
-            if (file && file.size > 4 * 1024 * 1024) { // 4 MB
-                $('#' + errorId).text('File size exceeds 4 MB.').removeClass('d-none');
-                input.value = ''; // reset file input
-            } else {
-                $('#' + errorId).addClass('d-none').text('');
-            }
-        }
-
-        function previewFile(input, previewDiv) {
-            const file = input.files[0];
-            const previewContainer = $(previewDiv);
-            previewContainer.empty();
-
-            if (file) {
-                const fileType = file.type;
-                if (fileType.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        previewContainer.html(
-                            `<img src="${e.target.result}" alt="Preview" class="img-thumbnail" style="max-width:150px;">`
-                        );
-                    };
-                    reader.readAsDataURL(file);
-                } else if (fileType === 'application/pdf') {
-                    const fileURL = URL.createObjectURL(file);
-                    previewContainer.html(`<a href="${fileURL}" target="_blank">${file.name} (PDF)</a>`);
-                } else {
-                    previewContainer.html(`<p>${file.name}</p>`);
                 }
             }
-        }
 
-        // Event listeners for all inputs
-        $('#photo_upload').change(function () {
-            validateFileSize(this, 'photoError');
-            previewFile(this, '#photoPreview');
+            // Event listeners for all inputs
+            $('#photo_upload').change(function () {
+                validateFileSize(this, 'photoError');
+                previewFile(this, '#photoPreview');
+            });
+
+            $('#id_upload').change(function () {
+                validateFileSize(this, 'idError');
+                previewFile(this, '#idPreview');
+            });
+
+            // ✅ Agreement Copy
+            $('#agreement_copy').change(function () {
+                validateFileSize(this, 'agreementError');
+                previewFile(this, '#agreementPreview');
+            });
+
+            // ✅ Nagarsevak Letter
+            $('#nagarsevak_letter').change(function () {
+                validateFileSize(this, 'nagarsevakError');
+                previewFile(this, '#nagarsevakPreview');
+            });
+
+            // ✅ Employee ID upload
+            $('#employee_letter').change(function () {
+                validateFileSize(this, 'employeeError');
+                previewFile(this, '#employeePreview');
+            });
         });
+    </script>
 
-        $('#id_upload').change(function () {
-            validateFileSize(this, 'idError');
-            previewFile(this, '#idPreview');
-        });
-
-        // ✅ Agreement Copy
-        $('#agreement_copy').change(function () {
-            validateFileSize(this, 'agreementError');
-            previewFile(this, '#agreementPreview');
-        });
-
-        // ✅ Nagarsevak Letter
-        $('#nagarsevak_letter').change(function () {
-            validateFileSize(this, 'nagarsevakError');
-            previewFile(this, '#nagarsevakPreview');
-        });
-
-        // ✅ Employee ID upload
-        $('#employee_letter').change(function () {
-            validateFileSize(this, 'employeeError');
-            previewFile(this, '#employeePreview');
-        });
-    });
-</script>
-
-{% comment %} NMMC Resident Logic and aadhar card {% endcomment %}
-<script>
-    
-    $(document).ready(function () {
-        function resetFields(divSelector) {
-            const div = $(divSelector);
-            div.find('input[type="file"]').val('');
-            div.find('input[type="radio"]').prop('checked', false);
-            div.find('[required]').removeAttr('required');
-        }
-
-        function toggleAgreement() {
-            const sameNo = $('#same_aadhar_no').is(':checked');
-            if (sameNo) {
-                $('#agreement_row').removeClass('d-none');
-                // $('#agreement_copy').attr('required', true);
-                $('.agreement-required-star').show();
-            } else {
-                $('#agreement_row').addClass('d-none');
-                $('#agreement_copy').removeAttr('required');
-                $('.agreement-required-star').hide();
+    {% comment %} NMMC Resident Logic and aadhar card {% endcomment %}
+    <script>
+        
+        $(document).ready(function () {
+            function resetFields(divSelector) {
+                const div = $(divSelector);
+                div.find('input[type="file"]').val('');
+                div.find('input[type="radio"]').prop('checked', false);
+                div.find('[required]').removeAttr('required');
             }
-        }
 
-        function toggleFields() {
-            const nmmcYes = $('#nmmc_yes').is(':checked');
-            const nmmcNo = $('#nmmc_no').is(':checked');
+            function toggleAgreement() {
+                const sameNo = $('#same_aadhar_no').is(':checked');
+                if (sameNo) {
+                    $('#agreement_row').removeClass('d-none');
+                    // $('#agreement_copy').attr('required', true);
+                    $('.agreement-required-star').show();
+                } else {
+                    $('#agreement_row').addClass('d-none');
+                    $('#agreement_copy').removeAttr('required');
+                    $('.agreement-required-star').hide();
+                }
+            }
 
-            // Always show local address
-            $('#local_address_row').removeClass('d-none');
-            $('#local_address').attr('required', true);
+            function toggleFields() {
+                const nmmcYes = $('#nmmc_yes').is(':checked');
+                const nmmcNo = $('#nmmc_no').is(':checked');
 
-            if (nmmcYes) {
-                $('#same_aadhar_row').removeClass('d-none');
-                $('#nagarsevak_row').addClass('d-none');
-                resetFields('#nagarsevak_row');
+                // Always show local address
+                $('#local_address_row').removeClass('d-none');
+                $('#local_address').attr('required', true);
+
+                if (nmmcYes) {
+                    $('#same_aadhar_row').removeClass('d-none');
+                    $('#nagarsevak_row').addClass('d-none');
+                    resetFields('#nagarsevak_row');
+                    toggleAgreement();
+                } else if (nmmcNo) {
+                    $('#same_aadhar_row, #agreement_row').addClass('d-none');
+                    //resetFields('#same_aadhar_row, #agreement_row');
+                    resetFields('#agreement_row');
+                    $('#nagarsevak_row').removeClass('d-none');
+                    //$('#nagarsevak_letter').attr('required', true);
+                }
+            }
+
+            $('input[name="is_nmmc"]').change(function () {
+                toggleFields();
+            });
+
+            $('input[name="same_aadhar"]').change(function () {
                 toggleAgreement();
-            } else if (nmmcNo) {
-                $('#same_aadhar_row, #agreement_row').addClass('d-none');
-                //resetFields('#same_aadhar_row, #agreement_row');
-                resetFields('#agreement_row');
-                $('#nagarsevak_row').removeClass('d-none');
-                //$('#nagarsevak_letter').attr('required', true);
-            }
-        }
+            });
 
-        $('input[name="is_nmmc"]').change(function () {
+            // 🔑 Initialize on page load (edit mode)
             toggleFields();
         });
 
-        $('input[name="same_aadhar"]').change(function () {
-            toggleAgreement();
-        });
 
-        // 🔑 Initialize on page load (edit mode)
-        toggleFields();
-    });
+    </script>
 
+    {% comment %} Ward Name & Pincode Logic {% endcomment %}
+    <script>
+        $(document).ready(function() {
+            $('#ward_name').change(function() {
+                const wardName = $(this).val();
 
-</script>
+                if (wardName) {
+                    // show pincode field & make it required
+                    $('#pincode_row').removeClass('d-none');
+                    $('#pincode').prop('required', true);
 
-{% comment %} Ward Name & Pincode Logic {% endcomment %}
-<script>
-    $(document).ready(function() {
-        $('#ward_name').change(function() {
-            const wardName = $(this).val();
-
-            if (wardName) {
-                // show pincode field & make it required
-                $('#pincode_row').removeClass('d-none');
-                $('#pincode').prop('required', true);
-
-                $.ajax({
-                    url: "{% url 'L01:get_pincodes' %}",
-                    type: "GET",
-                    data: { wardname: wardName },
-                    success: function(response) {
-                        let options = '<option value="">Select Pincode</option>';
-                        response.pincodes.forEach(function(pincode) {
-                            const selected = (pincode == $('#saved_pincode').val()) ? 'selected' : '';
-                            options += `<option value="${pincode}" ${selected}>${pincode}</option>`;
-                        });
-                        $('#pincode').html(options);
-                    }
-                });
-            } else {
-                // hide pincode & remove required
-                $('#pincode_row').addClass('d-none');
-                $('#pincode').prop('required', false)
-                            .html('<option value="">Select Pincode</option>');
-            }
-        });
-    });
-</script>
-
-{% comment %} Membership Type / सदस्यत्व प्रकार {% endcomment %}
-<script>
-    function formatCurrency(amount) {
-        if (!amount) return "₹ 0";
-        let num = parseFloat(amount);
-        return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
-    }
-
-    $(document).ready(function () {
-
-        // --- Create FY Cap note container dynamically ---
-        if ($("#membershipDuration").length && $("#notesContainer").length === 0) {
-            let notesContainer = $(`
-                <div id="notesContainer" style="margin-top:5px;">
-                    <div id="fyCapNote" style="display:none; color:red; font-weight:bold;"></div>
-                </div>
-            `);
-            $("#membershipDuration").append(notesContainer);
-        }
-
-        let baseDeposit = 0;
-        let baseEntryFees = 0;
-        let baseSubscription = 0;
-
-        $("#membershiptype").change(function () {
-            var encId = $(this).val();
-            resetMembershipForm();
-            debugger;
-            if (encId) {
-
-                var membershipDetailId = $("#membershipDetailId").val();
-
-                $.ajax({
-                    url: "{% url 'L01:get_membership_details' %}",
-                    type: "GET",
-                    data: { 
-                        id: encId,
-                        membership_detail_id: membershipDetailId 
-                    },
-                    success: function (response) {
-                        debugger;
-                        if (response.success) {
-
-                            $(document).trigger('ajaxMembershipDataLoaded', [response]);
-
-                            baseDeposit = parseFloat(response.data.deposit) || 0;
-                            baseEntryFees = parseFloat(response.data.entry_fees) || 0;
-                            baseSubscription = parseFloat(response.data.subscription_fees) || 0;
-
-                            basefrom_date = response.data1.from_date;
-                            basemembership_duration = response.data1.membership_duration;
-                            baseto_date = response.data1.to_date;
-
-                            if (basefrom_date) {
-                                $("#fromDate").val(basefrom_date);
-                                $("#months").val(basemembership_duration);
-
-                                // NEW: only use backend to_date if available
-                                if (baseto_date) {
-                                    $("#toDate").val(baseto_date);
-                                    $("#fyCapNote").hide();
-                                } else {
-                                    updateToDate();
-                                }
-
-                                $("#depositInput").val(parseFloat(response.data1.deposit) || 0);
-                                $("#entryFeesInput").val(parseFloat(response.data1.entry_fees) || 0);
-                                $("#subscriptionInput").val(parseFloat(response.data1.subscription) || 0);
-                            }
-
-                            $("#depositCell").text(formatCurrency(baseDeposit));
-                            $("#entryFeesCell").text(formatCurrency(baseEntryFees));
-                            $("#subscriptionCell").text(formatCurrency(baseSubscription));
-
-                            if (encId == "5" || encId == "6") {
-                                // Lifetime or Patron Branch
-                                $("#membershipDetails, #amountFields").fadeIn();
-                                $("#membershipDuration").show();
-                                $("#months, #toDate").closest(".col-md-6").hide();
-                                $("#fromDate").closest(".col-md-6").show();
-
-                                // Set amounts
-                                $("#depositInput").val(baseDeposit);
-                                $("#entryFeesInput").val(baseEntryFees);
-                                $("#subscriptionInput").val(baseSubscription); // show fixed subscription
-                                $("#depositHidden").val(baseDeposit);
-                                $("#entryFeesHidden").val(baseEntryFees);
-                                $("#subscriptionHidden").val(baseSubscription);
-
-                                // Ensure input fields are visible
-                                $("#subscriptionInput").closest(".col-md-6").show();
-
-                                let noteText = "";
-                                if (encId == "5") {
-                                    noteText = "Note: For Lifetime Branch (आजीव शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
-                                } else if (encId == "6") {
-                                    noteText = "Note: For Patron Branch (आश्रयदाते शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
-                                }
-                                $("#durationNote").html(noteText).fadeIn();
-
-                            } else {
-                                // Normal membership types
-                                $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
-                                $("#months, #toDate").closest(".col-md-6").show();
-                                $("#durationNote").hide();
-                                //updateToDate();
-                                if (baseto_date) {
-                                    $("#toDate").val(baseto_date);
-                                    $("#fyCapNote").hide();
-                                } else {
-                                    updateToDate();
-                                }
-                            }
-                        } else {
-                            $("#membershipDetails, #membershipDuration, #amountFields").hide();
-                            alert("Membership not found");
+                    $.ajax({
+                        url: "{% url 'L01:get_pincodes' %}",
+                        type: "GET",
+                        data: { wardname: wardName },
+                        success: function(response) {
+                            let options = '<option value="">Select Pincode</option>';
+                            response.pincodes.forEach(function(pincode) {
+                                const selected = (pincode == $('#saved_pincode').val()) ? 'selected' : '';
+                                options += `<option value="${pincode}" ${selected}>${pincode}</option>`;
+                            });
+                            $('#pincode').html(options);
                         }
-                    }
-                });
-            } else {
-                $("#membershipDetails, #membershipDuration, #amountFields").hide();
-            }
+                    });
+                } else {
+                    // hide pincode & remove required
+                    $('#pincode_row').addClass('d-none');
+                    $('#pincode').prop('required', false)
+                                .html('<option value="">Select Pincode</option>');
+                }
+            });
         });
+    </script>
 
-        $("#months").on("input change", function() {
-            let val = parseInt($(this).val());
-            if (val > 12) $(this).val(12);
-            else if (val < 1) $(this).val("");
-            updateToDate();
-        });
-
-        $("#fromDate").on("change", function() {
-            debugger;
-            updateToDate();
-        });
-
-        function monthsSpannedInclusive(startDate, endDate) {
-            const startYear = startDate.getFullYear();
-            const startMonth = startDate.getMonth();
-            const endYear = endDate.getFullYear();
-            const endMonth = endDate.getMonth();
-            let monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
-            return monthsDiff + 1; // inclusive
+    {% comment %} Membership Type / सदस्यत्व प्रकार {% endcomment %}
+    <script>
+        function formatCurrency(amount) {
+            if (!amount) return "₹ 0";
+            let num = parseFloat(amount);
+            return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
         }
 
-        function updateToDate() {
-            let requestedMonths = parseInt($("#months").val());
-            let fromDateStr = $("#fromDate").val();
+        $(document).ready(function () {
 
-            if (!fromDateStr) {
-                $("#toDate").val("");
-                $("#subscriptionInput").val("");
-                $("#subscriptionHidden").val("");
-                $("#fyCapNote").hide();
-                return;
+            // --- Create FY Cap note container dynamically ---
+            if ($("#membershipDuration").length && $("#notesContainer").length === 0) {
+                let notesContainer = $(`
+                    <div id="notesContainer" style="margin-top:5px;">
+                        <div id="fyCapNote" style="display:none; color:red; font-weight:bold;"></div>
+                    </div>
+                `);
+                $("#membershipDuration").append(notesContainer);
             }
 
-            let from = new Date(fromDateStr);
-            let fromYear = from.getFullYear();
-            let fromMonth = from.getMonth();
+            let baseDeposit = 0;
+            let baseEntryFees = 0;
+            let baseSubscription = 0;
 
-            // Calculate target month (for 1 month: same month, for 2 months: next month, etc.)
-            let targetYear = fromYear;
-            let targetMonth = fromMonth + requestedMonths - 1; // -1 because 1 month = same month
-            
-            // Adjust year if months go beyond 12
-            targetYear += Math.floor(targetMonth / 12);
-            targetMonth = targetMonth % 12;
+            $("#membershiptype").change(function () {
+                var encId = $(this).val();
+                resetMembershipForm();
+                debugger;
+                if (encId) {
 
-            // Always get last day of target month
-            let normalToDate = new Date(targetYear, targetMonth + 1, 0);
+                    var membershipDetailId = $("#membershipDetailId").val();
 
-            // Calculate FY cap (March 31)
-            let fromMonthNum = from.getMonth() + 1;
-            let capYear = (fromMonthNum <= 3) ? fromYear : fromYear + 1;
-            let fyCapDate = new Date(capYear, 2, 31); // March 31
+                    $.ajax({
+                        url: "{% url 'L01:get_membership_details' %}",
+                        type: "GET",
+                        data: { 
+                            id: encId,
+                            membership_detail_id: membershipDetailId 
+                        },
+                        success: function (response) {
+                            debugger;
+                            if (response.success) {
 
-            let finalDate;
-            if (!isNaN(requestedMonths) && normalToDate > fyCapDate) {
-                finalDate = fyCapDate;
-                $("#fyCapNote").html(
-                    `⚠ FY cap applied: Membership cannot extend beyond 31-Mar-${capYear}. Please see the librarian for further options.`
-                ).fadeIn();
-                
-                let actualMonths = monthsSpannedInclusive(from, finalDate);
-                $("#months").val(actualMonths);
-            } else {
-                finalDate = normalToDate;
-                $("#fyCapNote").hide();
-            }
+                                $(document).trigger('ajaxMembershipDataLoaded', [response]);
 
-            // Format and set
-            const yyyy = finalDate.getFullYear();
-            const mm = String(finalDate.getMonth() + 1).padStart(2, "0");
-            const dd = String(finalDate.getDate()).padStart(2, "0");
-            $("#toDate").val(`${yyyy}-${mm}-${dd}`);
+                                baseDeposit = parseFloat(response.data.deposit) || 0;
+                                baseEntryFees = parseFloat(response.data.entry_fees) || 0;
+                                baseSubscription = parseFloat(response.data.subscription_fees) || 0;
 
-            updateAmountFields();
-        }
+                                basefrom_date = response.data1.from_date;
+                                basemembership_duration = response.data1.membership_duration;
+                                baseto_date = response.data1.to_date;
 
-        function updateAmountFields() {
-            let months = parseInt($("#months").val()) || 0;
+                                if (basefrom_date) {
+                                    $("#fromDate").val(basefrom_date);
+                                    $("#months").val(basemembership_duration);
 
-            let deposit = Number(baseDeposit) || 0;
-            let entry = Number(baseEntryFees) || 0;
-            let subscription;
+                                    // NEW: only use backend to_date if available
+                                    if (baseto_date) {
+                                        $("#toDate").val(baseto_date);
+                                        $("#fyCapNote").hide();
+                                    } else {
+                                        updateToDate();
+                                    }
 
-            // If membership is 5 or 6, subscription is fixed
-            let encId = $("#membershiptype").val();
-            if (encId == "5" || encId == "6") {
-                subscription = Number(baseSubscription) || 0;
-            } else {
-                subscription = (Number(baseSubscription) || 0) * months;
-            }
+                                    $("#depositInput").val(parseFloat(response.data1.deposit) || 0);
+                                    $("#entryFeesInput").val(parseFloat(response.data1.entry_fees) || 0);
+                                    $("#subscriptionInput").val(parseFloat(response.data1.subscription) || 0);
+                                }
 
-            $("#depositInput").val(deposit);
-            $("#entryFeesInput").val(entry);
-            $("#subscriptionInput").val(subscription);
+                                $("#depositCell").text(formatCurrency(baseDeposit));
+                                $("#entryFeesCell").text(formatCurrency(baseEntryFees));
+                                $("#subscriptionCell").text(formatCurrency(baseSubscription));
 
-            $("#depositHidden").val(deposit);
-            $("#entryFeesHidden").val(entry);
-            $("#subscriptionHidden").val(subscription);
-        }
+                                if (encId == "3" || encId == "5" || encId == "6") {
+                                    // Book Branch (NMC), Lifetime or Patron Branch
+                                    $("#membershipDetails, #amountFields").fadeIn();
+                                    $("#membershipDuration").show();
+                                    $("#months, #toDate").closest(".col-md-6").hide();
+                                    $("#fromDate").closest(".col-md-6").show();
 
-        function resetMembershipForm() {
-            $("#membershipDetails, #membershipDuration, #amountFields").hide();
-            $("#depositCell, #entryFeesCell, #subscriptionCell").text("");
-            $("#months").val("");
-            $("#fromDate").val("");
-            $("#toDate").val("");
-            $("#depositInput, #entryFeesInput, #subscriptionInput").val("");
-            $("#depositHidden, #entryFeesHidden, #subscriptionHidden").val("");
-            $("#fyCapNote").hide();
-            baseDeposit = 0;
-            baseEntryFees = 0;
-            baseSubscription = 0;
-        }
+                                    // Set amounts
+                                    $("#depositInput").val(baseDeposit);
+                                    $("#entryFeesInput").val(baseEntryFees);
+                                    $("#subscriptionInput").val(baseSubscription);
+                                    $("#depositHidden").val(baseDeposit);
+                                    $("#entryFeesHidden").val(baseEntryFees);
+                                    $("#subscriptionHidden").val(baseSubscription);
 
-        let initialMembershipType = $("#membershiptype").val();
-         if (initialMembershipType) {
-            $("#membershiptype").trigger("change");
-            
-            // ========== ADD THIS LINE ==========
-            // Calculate toDate immediately after triggering change
-            setTimeout(function() {
+                                    // Ensure input fields are visible
+                                    $("#subscriptionInput").closest(".col-md-6").show();
+
+                                    let noteText = "";
+                                    if (encId == "3") {
+                                        noteText = "Note: For Book Branch (NMC) (पुस्तक शाखा (नमुंमपा)) — only From Date is mandatory. Do not enter Duration or To Date.";
+                                    } else if (encId == "5") {
+                                        noteText = "Note: For Lifetime Branch (आजीव शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
+                                    } else if (encId == "6") {
+                                        noteText = "Note: For Patron Branch (आश्रयदाते शाखा) — only From Date is mandatory. Do not enter Duration or To Date.";
+                                    }
+                                    $("#durationNote").html(noteText).fadeIn();
+
+                                } else {
+                                    // Normal membership types
+                                    $("#membershipDetails, #membershipDuration, #amountFields").fadeIn();
+                                    $("#months, #toDate").closest(".col-md-6").show();
+                                    $("#durationNote").hide();
+                                    if (baseto_date) {
+                                        $("#toDate").val(baseto_date);
+                                        $("#fyCapNote").hide();
+                                    } else {
+                                        updateToDate();
+                                    }
+                                }
+                            } else {
+                                $("#membershipDetails, #membershipDuration, #amountFields").hide();
+                                alert("Membership not found");
+                            }
+                        }
+                    });
+                } else {
+                    $("#membershipDetails, #membershipDuration, #amountFields").hide();
+                }
+            });
+
+            $("#months").on("input change", function() {
+                let val = parseInt($(this).val());
+                if (val > 12) $(this).val(12);
+                else if (val < 1) $(this).val("");
                 updateToDate();
-            }, 300);
-        }
+            });
 
-        // ========== ALSO ADD THIS ==========
-        // Force calculate toDate on page load if fromDate exists
-        $(window).on('load', function() {
-            const fromDate = $("#fromDate").val();
-            const months = $("#months").val();
-            
-            if (fromDate && months) {
-                // Small delay to ensure all calculations are ready
+            $("#fromDate").on("change", function() {
+                debugger;
+                updateToDate();
+            });
+
+            function monthsSpannedInclusive(startDate, endDate) {
+                const startYear = startDate.getFullYear();
+                const startMonth = startDate.getMonth();
+                const endYear = endDate.getFullYear();
+                const endMonth = endDate.getMonth();
+                let monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
+                return monthsDiff + 1; // inclusive
+            }
+
+            function updateToDate() {
+                let requestedMonths = parseInt($("#months").val());
+                let fromDateStr = $("#fromDate").val();
+
+                if (!fromDateStr) {
+                    $("#toDate").val("");
+                    $("#subscriptionInput").val("");
+                    $("#subscriptionHidden").val("");
+                    $("#fyCapNote").hide();
+                    return;
+                }
+
+                let from = new Date(fromDateStr);
+                let fromYear = from.getFullYear();
+                let fromMonth = from.getMonth();
+
+                // Calculate target month (for 1 month: same month, for 2 months: next month, etc.)
+                let targetYear = fromYear;
+                let targetMonth = fromMonth + requestedMonths - 1; // -1 because 1 month = same month
+                
+                // Adjust year if months go beyond 12
+                targetYear += Math.floor(targetMonth / 12);
+                targetMonth = targetMonth % 12;
+
+                // Always get last day of target month
+                let normalToDate = new Date(targetYear, targetMonth + 1, 0);
+
+                // Calculate FY cap (March 31)
+                let fromMonthNum = from.getMonth() + 1;
+                let capYear = (fromMonthNum <= 3) ? fromYear : fromYear + 1;
+                let fyCapDate = new Date(capYear, 2, 31); // March 31
+
+                let finalDate;
+                if (!isNaN(requestedMonths) && normalToDate > fyCapDate) {
+                    finalDate = fyCapDate;
+                    $("#fyCapNote").html(
+                        `⚠ FY cap applied: Membership cannot extend beyond 31-Mar-${capYear}. Please see the librarian for further options.`
+                    ).fadeIn();
+                    
+                    let actualMonths = monthsSpannedInclusive(from, finalDate);
+                    $("#months").val(actualMonths);
+                } else {
+                    finalDate = normalToDate;
+                    $("#fyCapNote").hide();
+                }
+
+                // Format and set
+                const yyyy = finalDate.getFullYear();
+                const mm = String(finalDate.getMonth() + 1).padStart(2, "0");
+                const dd = String(finalDate.getDate()).padStart(2, "0");
+                $("#toDate").val(`${yyyy}-${mm}-${dd}`);
+
+                updateAmountFields();
+            }
+
+            function updateAmountFields() {
+                let months = parseInt($("#months").val()) || 0;
+
+                let deposit = Number(baseDeposit) || 0;
+                let entry = Number(baseEntryFees) || 0;
+                let subscription;
+
+                // If membership is 3, 5, or 6, subscription is fixed
+                let encId = $("#membershiptype").val();
+                if (encId == "3" || encId == "5" || encId == "6") {
+                    subscription = Number(baseSubscription) || 0;
+                } else {
+                    subscription = (Number(baseSubscription) || 0) * months;
+                }
+
+                $("#depositInput").val(deposit);
+                $("#entryFeesInput").val(entry);
+                $("#subscriptionInput").val(subscription);
+
+                $("#depositHidden").val(deposit);
+                $("#entryFeesHidden").val(entry);
+                $("#subscriptionHidden").val(subscription);
+            }
+
+            function resetMembershipForm() {
+                $("#membershipDetails, #membershipDuration, #amountFields").hide();
+                $("#depositCell, #entryFeesCell, #subscriptionCell").text("");
+                $("#months").val("");
+                $("#fromDate").val("");
+                $("#toDate").val("");
+                $("#depositInput, #entryFeesInput, #subscriptionInput").val("");
+                $("#depositHidden, #entryFeesHidden, #subscriptionHidden").val("");
+                $("#fyCapNote").hide();
+                baseDeposit = 0;
+                baseEntryFees = 0;
+                baseSubscription = 0;
+            }
+
+            let initialMembershipType = $("#membershiptype").val();
+            if (initialMembershipType) {
+                $("#membershiptype").trigger("change");
+                
+                // ========== ADD THIS LINE ==========
+                // Calculate toDate immediately after triggering change
                 setTimeout(function() {
                     updateToDate();
-                }, 400);
+                }, 300);
             }
+
+            // ========== ALSO ADD THIS ==========
+            // Force calculate toDate on page load if fromDate exists
+            $(window).on('load', function() {
+                const fromDate = $("#fromDate").val();
+                const months = $("#months").val();
+                
+                if (fromDate && months) {
+                    // Small delay to ensure all calculations are ready
+                    setTimeout(function() {
+                        updateToDate();
+                    }, 400);
+                }
+            });
+
+            // Set min date for From Date to today
+            const fromDateInput = $("#fromDate");
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, "0");
+            const dd = String(today.getDate()).padStart(2, "0");
+            const minDate = `${yyyy}-${mm}-${dd}`;
+            fromDateInput.attr("min", minDate);
+
         });
+    </script>
 
-        // Set min date for From Date to today
-        const fromDateInput = $("#fromDate");
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, "0");
-        const dd = String(today.getDate()).padStart(2, "0");
-        const minDate = `${yyyy}-${mm}-${dd}`;
-        fromDateInput.attr("min", minDate);
+    {% comment %} Employee ID Upload (NMMC Employee + Membership Type 3 or 4) {% endcomment %}
+    <script>
+        $(document).ready(function() {
+            function toggleEmployeeUpload() {
+                const memberType = $('#membertype').val(); // e.g., "Government Employee (NMMC)"
+                const membershipType = $('#membershiptype').val(); // e.g., "3"
 
-    });
-</script>
-
-{% comment %} Employee ID Upload (NMMC Employee + Membership Type 3 or 4) {% endcomment %}
-<script>
-    $(document).ready(function() {
-        function toggleEmployeeUpload() {
-            const memberType = $('#membertype').val(); // e.g., "Government Employee (NMMC)"
-            const membershipType = $('#membershiptype').val(); // e.g., "3"
-
-            if (memberType === '3' && (membershipType === '3' || membershipType === '4')) {
-                $('#employee_row').removeClass('d-none');
-                // $('#employee_letter').attr('required', true); // Make it required
-            } else {
-                $('#employee_row').addClass('d-none');
-                $('#employee_letter').removeAttr('required'); // Remove required
-                // Optional: clear file input if hiding
-                $('#employee_letter').val('');
-                $('#employeePreview').html('');
-                $('#employeeError').addClass('d-none').text('');
+                if (memberType === '3' && (membershipType === '3' || membershipType === '4')) {
+                    $('#employee_row').removeClass('d-none');
+                    // $('#employee_letter').attr('required', true); // Make it required
+                } else {
+                    $('#employee_row').addClass('d-none');
+                    $('#employee_letter').removeAttr('required'); // Remove required
+                    // Optional: clear file input if hiding
+                    $('#employee_letter').val('');
+                    $('#employeePreview').html('');
+                    $('#employeeError').addClass('d-none').text('');
+                }
             }
+
+            // Run whenever either dropdown changes
+            $('#membertype, #membershiptype').on('change', toggleEmployeeUpload);
+
+            // Run on page load in case default values are set
+            toggleEmployeeUpload();
+        });
+    </script>
+
+    {% comment %} Email & Mobile Validation password Validation {% endcomment %}
+    <script>
+        $(document).ready(function () {
+            const submitBtn = $(".btn-submit");
+
+            // Email validation
+            $("#email").on("blur input", function () {
+                const emailVal = $(this).val().trim();
+                const emailStatus = $("#emailStatus");
+                const emailError = $("#emailError");
+                const emailHelp = $("#emailHelp");
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (emailVal === "") {
+                    emailError.text("Email cannot be empty.").removeClass("d-none");
+                    emailStatus.html("");
+                    submitBtn.prop("disabled", true);
+                    emailHelp.addClass("d-none");
+                } else if (!emailRegex.test(emailVal)) {
+                    emailError.text("Invalid email format.").removeClass("d-none");
+                    emailStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                    submitBtn.prop("disabled", true);
+                    emailHelp.addClass("d-none");
+                } else {
+                    emailError.addClass("d-none");
+                    emailStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                    submitBtn.prop("disabled", false);
+                    emailHelp.removeClass("d-none");
+                }
+            });
+
+            // Mobile validation
+            $("#mobile_number").on("blur input", function () {
+                const mobileVal = $(this).val().trim();
+                const mobileStatus = $("#mobileStatus");
+                const mobileError = $("#mobileError");
+                const mobileHelp = $("#mobileHelp");
+
+                const mobileRegex = /^[0-9]{10}$/;
+
+                if (mobileVal === "") {
+                    mobileError.text("Mobile number cannot be empty.").removeClass("d-none");
+                    mobileStatus.html("");
+                    submitBtn.prop("disabled", true);
+                    mobileHelp.addClass("d-none");
+                } else if (!mobileRegex.test(mobileVal)) {
+                    mobileError.text("Invalid mobile number: must be 10 digits.").removeClass("d-none");
+                    mobileStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
+                    submitBtn.prop("disabled", true);
+                    mobileHelp.addClass("d-none");
+                } else {
+                    mobileError.addClass("d-none");
+                    mobileStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
+                    submitBtn.prop("disabled", false);
+                    mobileHelp.removeClass("d-none");
+                }
+            });
+
+            // Block spaces in mobile
+            $("#mobile_number").on("keypress", function (e) {
+                if (e.which === 32) e.preventDefault();
+            });
+
+            $("#mobile_number").on("input", function () {
+                this.value = this.value.replace(/\s/g, "");
+            });
+
+            // Password validation
+            function validatePassword() {
+                const pwd = $("#new_password").val();
+                const repeatPwd = $("#repeat_password").val();
+                const pwdError = $("#passwordError");
+                const repeatError = $("#repeatPasswordError");
+
+                // Regex: 8-16 chars, at least 1 upper, 1 lower, 1 digit, 1 special char
+                const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
+
+                let valid = true;
+
+                if (!pwdRegex.test(pwd)) {
+                    pwdError.text("Password must be 8-16 chars, include uppercase, lowercase, digit & special char.")
+                            .removeClass("d-none");
+                    valid = false;
+                } else {
+                    pwdError.addClass("d-none");
+                }
+
+                if (pwd !== repeatPwd) {
+                    repeatError.text("Passwords do not match.").removeClass("d-none");
+                    valid = false;
+                } else {
+                    repeatError.addClass("d-none");
+                }
+
+                submitBtn.prop("disabled", !valid);
+                return valid;
+            }
+
+            $("#new_password, #repeat_password").on("blur input", validatePassword);
+
+            // Prevent form submission if invalid
+            $("#membershipForm").on("submit", function (e) {
+                if ($(".btn-submit").prop("disabled")) e.preventDefault();
+            });
+        });
+    </script>
+
+    {% comment %} form final submission with confirmation {% endcomment %}
+    <script>
+        document.getElementById("membershipForm").addEventListener("submit", function(e) {
+            e.preventDefault(); // stop normal submission
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "Do you want to submit this membership form?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, submit',
+                cancelButtonText: 'No, cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit(); // now submit
+                }
+            });
+        });
+    </script>
+
+    {% comment %} Renewal Fine Calculation (Works WITH your existing code) {% endcomment %}
+    <script>
+        // Helper functions
+        function formatFineCurrency(amount) {
+            if (!amount) return "₹ 0";
+            let num = parseFloat(amount);
+            return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
         }
 
-        // Run whenever either dropdown changes
-        $('#membertype, #membershiptype').on('change', toggleEmployeeUpload);
-
-        // Run on page load in case default values are set
-        toggleEmployeeUpload();
-    });
-</script>
-
-{% comment %} Email & Mobile Validation password Validation {% endcomment %}
-<script>
-    $(document).ready(function () {
-        const submitBtn = $(".btn-submit");
-
-        // Email validation
-        $("#email").on("blur input", function () {
-            const emailVal = $(this).val().trim();
-            const emailStatus = $("#emailStatus");
-            const emailError = $("#emailError");
-            const emailHelp = $("#emailHelp");
-
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            if (emailVal === "") {
-                emailError.text("Email cannot be empty.").removeClass("d-none");
-                emailStatus.html("");
-                submitBtn.prop("disabled", true);
-                emailHelp.addClass("d-none");
-            } else if (!emailRegex.test(emailVal)) {
-                emailError.text("Invalid email format.").removeClass("d-none");
-                emailStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
-                submitBtn.prop("disabled", true);
-                emailHelp.addClass("d-none");
-            } else {
-                emailError.addClass("d-none");
-                emailStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
-                submitBtn.prop("disabled", false);
-                emailHelp.removeClass("d-none");
-            }
-        });
-
-        // Mobile validation
-        $("#mobile_number").on("blur input", function () {
-            const mobileVal = $(this).val().trim();
-            const mobileStatus = $("#mobileStatus");
-            const mobileError = $("#mobileError");
-            const mobileHelp = $("#mobileHelp");
-
-            const mobileRegex = /^[0-9]{10}$/;
-
-            if (mobileVal === "") {
-                mobileError.text("Mobile number cannot be empty.").removeClass("d-none");
-                mobileStatus.html("");
-                submitBtn.prop("disabled", true);
-                mobileHelp.addClass("d-none");
-            } else if (!mobileRegex.test(mobileVal)) {
-                mobileError.text("Invalid mobile number: must be 10 digits.").removeClass("d-none");
-                mobileStatus.html('<i class="fa-solid fa-circle-xmark text-danger"></i>');
-                submitBtn.prop("disabled", true);
-                mobileHelp.addClass("d-none");
-            } else {
-                mobileError.addClass("d-none");
-                mobileStatus.html('<i class="fa-solid fa-circle-check text-success"></i>');
-                submitBtn.prop("disabled", false);
-                mobileHelp.removeClass("d-none");
-            }
-        });
-
-        // Block spaces in mobile
-        $("#mobile_number").on("keypress", function (e) {
-            if (e.which === 32) e.preventDefault();
-        });
-
-        $("#mobile_number").on("input", function () {
-            this.value = this.value.replace(/\s/g, "");
-        });
-
-        // Password validation
-        function validatePassword() {
-            const pwd = $("#new_password").val();
-            const repeatPwd = $("#repeat_password").val();
-            const pwdError = $("#passwordError");
-            const repeatError = $("#repeatPasswordError");
-
-            // Regex: 8-16 chars, at least 1 upper, 1 lower, 1 digit, 1 special char
-            const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
-
-            let valid = true;
-
-            if (!pwdRegex.test(pwd)) {
-                pwdError.text("Password must be 8-16 chars, include uppercase, lowercase, digit & special char.")
-                        .removeClass("d-none");
-                valid = false;
-            } else {
-                pwdError.addClass("d-none");
-            }
-
-            if (pwd !== repeatPwd) {
-                repeatError.text("Passwords do not match.").removeClass("d-none");
-                valid = false;
-            } else {
-                repeatError.addClass("d-none");
-            }
-
-            submitBtn.prop("disabled", !valid);
-            return valid;
+        function formatFineDate(dateStr) {
+            if (!dateStr) return "-";
+            let date = new Date(dateStr);
+            let day = date.getDate().toString().padStart(2, '0');
+            let month = (date.getMonth() + 1).toString().padStart(2, '0');
+            let year = date.getFullYear();
+            return `${day}-${month}-${year}`;
         }
 
-        $("#new_password, #repeat_password").on("blur input", validatePassword);
+        function calculateRenewalGapMonths(startDate, endDate) {
+            if (!startDate || !endDate) return 0;
+            
+            let prevEnd = new Date(startDate);
+            let newStart = new Date(endDate);
+            
+            // If same or earlier month, no gap
+            if (newStart <= prevEnd) return 0;
+            
+            // Get months difference
+            let prevYear = prevEnd.getFullYear();
+            let prevMonth = prevEnd.getMonth();
+            let newYear = newStart.getFullYear();
+            let newMonth = newStart.getMonth();
+            
+            // Calculate total months difference
+            let totalMonthsDiff = (newYear - prevYear) * 12 + (newMonth - prevMonth);
+            
+            // If member starts in the same month they ended, no gap
+            // Example: Ends April 26, starts April 30 → no gap
+            if (totalMonthsDiff === 0) return 0;
+            
+            // The gap is total months difference minus 1
+            // Because if they end in April and start in August:
+            // April to August = 4 months difference, but gap is May, June, July = 3 months
+            return totalMonthsDiff - 1;
+        }
 
-        // Prevent form submission if invalid
-        $("#membershipForm").on("submit", function (e) {
-            if ($(".btn-submit").prop("disabled")) e.preventDefault();
-        });
-    });
-</script>
+        $(document).ready(function() {
+            // Store variables for fine calculation
+            let previousMembershipEndDate = null;
+            let monthlySubscriptionFee = 0;
+            let monthlyFineFee = 0;
+            let currentMembershipId = null;
+            
+            // Get data from your AJAX response
+            $(document).on('ajaxMembershipDataLoaded', function(event, response) {
+                if (response && response.success) {
+                    console.log("AJAX Response Data:", response.data);
+                    console.log("fine_membership value:", response.data.fine_membership);
+                    
+                    previousMembershipEndDate = response.data1.to_date;
+                    monthlySubscriptionFee = parseFloat(response.data.subscription_fees) || 0;
+                    monthlyFineFee = parseFloat(response.data.fine_membership) || 0;
+                    currentMembershipId = $("#membershiptype").val();
+                    
+                    console.log("Parsed Values:", {
+                        subscription: monthlySubscriptionFee,
+                        fine: monthlyFineFee,
+                        total: monthlySubscriptionFee + monthlyFineFee
+                    });
+                    
+                    // Calculate fines
+                    calculateAndDisplayRenewalFines();
+                }
+            });
 
-{% comment %} form final submission with confirmation {% endcomment %}
-<script>
-    document.getElementById("membershipForm").addEventListener("submit", function(e) {
-        e.preventDefault(); // stop normal submission
-
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "Do you want to submit this membership form?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, submit',
-            cancelButtonText: 'No, cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                e.target.submit(); // now submit
-            }
-        });
-    });
-</script>
-
-{% comment %} Renewal Fine Calculation (Works WITH your existing code) {% endcomment %}
-<script>
-    // Helper functions
-    function formatFineCurrency(amount) {
-        if (!amount) return "₹ 0";
-        let num = parseFloat(amount);
-        return "₹ " + (Number.isInteger(num) ? num : num.toFixed(2));
-    }
-
-    function formatFineDate(dateStr) {
-        if (!dateStr) return "-";
-        let date = new Date(dateStr);
-        let day = date.getDate().toString().padStart(2, '0');
-        let month = (date.getMonth() + 1).toString().padStart(2, '0');
-        let year = date.getFullYear();
-        return `${day}-${month}-${year}`;
-    }
-
-    function calculateRenewalGapMonths(startDate, endDate) {
-        if (!startDate || !endDate) return 0;
-        
-        let prevEnd = new Date(startDate);
-        let newStart = new Date(endDate);
-        
-        // If same or earlier month, no gap
-        if (newStart <= prevEnd) return 0;
-        
-        // Get months difference
-        let prevYear = prevEnd.getFullYear();
-        let prevMonth = prevEnd.getMonth();
-        let newYear = newStart.getFullYear();
-        let newMonth = newStart.getMonth();
-        
-        // Calculate total months difference
-        let totalMonthsDiff = (newYear - prevYear) * 12 + (newMonth - prevMonth);
-        
-        // If member starts in the same month they ended, no gap
-        // Example: Ends April 26, starts April 30 → no gap
-        if (totalMonthsDiff === 0) return 0;
-        
-        // The gap is total months difference minus 1
-        // Because if they end in April and start in August:
-        // April to August = 4 months difference, but gap is May, June, July = 3 months
-        return totalMonthsDiff - 1;
-    }
-
-    $(document).ready(function() {
-        // Store variables for fine calculation
-        let previousMembershipEndDate = null;
-        let monthlySubscriptionFee = 0;
-        let monthlyFineFee = 0;
-        let currentMembershipId = null;
-        
-        // Get data from your AJAX response
-        $(document).on('ajaxMembershipDataLoaded', function(event, response) {
-            if (response && response.success) {
-                console.log("AJAX Response Data:", response.data);
-                console.log("fine_membership value:", response.data.fine_membership);
-                
-                previousMembershipEndDate = response.data1.to_date;
-                monthlySubscriptionFee = parseFloat(response.data.subscription_fees) || 0;
-                monthlyFineFee = parseFloat(response.data.fine_membership) || 0;
-                currentMembershipId = $("#membershiptype").val();
-                
-                console.log("Parsed Values:", {
-                    subscription: monthlySubscriptionFee,
-                    fine: monthlyFineFee,
-                    total: monthlySubscriptionFee + monthlyFineFee
-                });
-                
-                // Calculate fines
-                calculateAndDisplayRenewalFines();
-            }
-        });
-
-        // Add CSS for the fine section (only if not already added)
-        if (!$('#renewalFineSection').length) {
-            const fineSectionCSS = `
-                <style>
-                    .renewal-fine-section {
-                        background: linear-gradient(135deg, #fff3cd, #fff8e1);
-                        border: 2px solid #ffc107;
-                        border-radius: 10px;
-                        padding: 20px;
-                        margin-top: 25px;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .renewal-fine-section h5 {
-                        color: #856404;
-                        border-bottom: 2px solid #ffc107;
-                        padding-bottom: 10px;
-                    }
-                    
-                    .fine-breakdown {
-                        background: white;
-                        border-radius: 8px;
-                        padding: 15px;
-                        margin-top: 15px;
-                        border: 1px solid #dee2e6;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .fine-item {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 8px 0;
-                        border-bottom: 1px dashed #dee2e6;
-                    }
-                    
-                    .fine-item:last-child {
-                        border-bottom: none;
-                    }
-                    
-                    .fine-label {
-                        font-weight: 600;
-                        color: #495057;
-                    }
-                    
-                    .fine-value {
-                        font-weight: 700;
-                        color: #dc3545;
-                    }
-                    
-                    .fine-total {
-                        background: #dc3545;
-                        color: white;
-                        padding: 12px;
-                        border-radius: 8px;
-                        margin-top: 15px;
-                        font-weight: bold;
-                        font-size: 1.2em;
-                        text-align: center;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .fine-note {
-                        font-size: 0.9em;
-                        color: #6c757d;
-                        margin-top: 10px;
-                        padding: 8px;
-                        background: #f8f9fa;
-                        border-radius: 5px;
-                        border-left: 3px solid #6c757d;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    .date-display {
-                        background: #e9ecef;
-                        padding: 8px 12px;
-                        border-radius: 5px;
-                        font-weight: 600;
-                        color: #495057;
-                        margin: 5px 0;
-                        transition: all 0.3s ease;
-                    }
-                    
-                    /* ========== DARK MODE STYLES ========== */
-                    [data-bs-theme="dark"] .renewal-fine-section {
-                        background: linear-gradient(135deg, #1a365d, #2d3748);
-                        border: 2px solid #4299e1;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-                    }
-                    
-                    [data-bs-theme="dark"] .renewal-fine-section h5 {
-                        color: #90cdf4;
-                        border-bottom-color: #4299e1;
-                    }
-                    
-                    [data-bs-theme="dark"] .fine-breakdown {
-                        background: #2d3748;
-                        border-color: #4a5568;
-                    }
-                    
-                    [data-bs-theme="dark"] .fine-item {
-                        border-bottom-color: #4a5568;
-                    }
-                    
-                    [data-bs-theme="dark"] .fine-label {
-                        color: #e2e8f0;
-                    }
-                    
-                    [data-bs-theme="dark"] .fine-value {
-                        color: #fc8181;
-                    }
-                    
-                    [data-bs-theme="dark"] .fine-total {
-                        background: #c53030;
-                        color: #f7fafc;
-                        box-shadow: 0 4px 6px rgba(197, 48, 48, 0.3);
-                    }
-                    
-                    [data-bs-theme="dark"] .fine-note {
-                        background: #4a5568;
-                        color: #cbd5e0;
-                        border-left-color: #4299e1;
-                    }
-                    
-                    [data-bs-theme="dark"] .date-display {
-                        background: #4a5568;
-                        color: #e2e8f0;
-                        border: 1px solid #718096;
-                    }
-                    
-                    /* Dark mode icons */
-                    [data-bs-theme="dark"] .renewal-fine-section h5 i,
-                    [data-bs-theme="dark"] .date-display i,
-                    [data-bs-theme="dark"] .fine-total i,
-                    [data-bs-theme="dark"] .fine-note i {
-                        color: #90cdf4;
-                    }
-                    
-                    /* Responsive adjustments */
-                    @media (max-width: 768px) {
+            // Add CSS for the fine section (only if not already added)
+            if (!$('#renewalFineSection').length) {
+                const fineSectionCSS = `
+                    <style>
                         .renewal-fine-section {
-                            padding: 15px;
-                            margin-top: 20px;
+                            background: linear-gradient(135deg, #fff3cd, #fff8e1);
+                            border: 2px solid #ffc107;
+                            border-radius: 10px;
+                            padding: 20px;
+                            margin-top: 25px;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                            transition: all 0.3s ease;
+                        }
+                        
+                        .renewal-fine-section h5 {
+                            color: #856404;
+                            border-bottom: 2px solid #ffc107;
+                            padding-bottom: 10px;
                         }
                         
                         .fine-breakdown {
-                            padding: 12px;
-                        }
-                        
-                        .date-display {
-                            font-size: 0.9em;
-                            padding: 6px 10px;
+                            background: white;
+                            border-radius: 8px;
+                            padding: 15px;
+                            margin-top: 15px;
+                            border: 1px solid #dee2e6;
+                            transition: all 0.3s ease;
                         }
                         
                         .fine-item {
-                            flex-direction: column;
-                            align-items: flex-start;
-                            gap: 5px;
+                            display: flex;
+                            justify-content: space-between;
+                            padding: 8px 0;
+                            border-bottom: 1px dashed #dee2e6;
                         }
                         
-                        .fine-item .fine-value {
-                            align-self: flex-end;
+                        .fine-item:last-child {
+                            border-bottom: none;
                         }
+                        
+                        .fine-label {
+                            font-weight: 600;
+                            color: #495057;
+                        }
+                        
+                        .fine-value {
+                            font-weight: 700;
+                            color: #dc3545;
+                        }
+                        
+                        .fine-total {
+                            background: #dc3545;
+                            color: white;
+                            padding: 12px;
+                            border-radius: 8px;
+                            margin-top: 15px;
+                            font-weight: bold;
+                            font-size: 1.2em;
+                            text-align: center;
+                            transition: all 0.3s ease;
+                        }
+                        
+                        .fine-note {
+                            font-size: 0.9em;
+                            color: #6c757d;
+                            margin-top: 10px;
+                            padding: 8px;
+                            background: #f8f9fa;
+                            border-radius: 5px;
+                            border-left: 3px solid #6c757d;
+                            transition: all 0.3s ease;
+                        }
+                        
+                        .date-display {
+                            background: #e9ecef;
+                            padding: 8px 12px;
+                            border-radius: 5px;
+                            font-weight: 600;
+                            color: #495057;
+                            margin: 5px 0;
+                            transition: all 0.3s ease;
+                        }
+                        
+                        /* ========== DARK MODE STYLES ========== */
+                        [data-bs-theme="dark"] .renewal-fine-section {
+                            background: linear-gradient(135deg, #1a365d, #2d3748);
+                            border: 2px solid #4299e1;
+                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                        }
+                        
+                        [data-bs-theme="dark"] .renewal-fine-section h5 {
+                            color: #90cdf4;
+                            border-bottom-color: #4299e1;
+                        }
+                        
+                        [data-bs-theme="dark"] .fine-breakdown {
+                            background: #2d3748;
+                            border-color: #4a5568;
+                        }
+                        
+                        [data-bs-theme="dark"] .fine-item {
+                            border-bottom-color: #4a5568;
+                        }
+                        
+                        [data-bs-theme="dark"] .fine-label {
+                            color: #e2e8f0;
+                        }
+                        
+                        [data-bs-theme="dark"] .fine-value {
+                            color: #fc8181;
+                        }
+                        
+                        [data-bs-theme="dark"] .fine-total {
+                            background: #c53030;
+                            color: #f7fafc;
+                            box-shadow: 0 4px 6px rgba(197, 48, 48, 0.3);
+                        }
+                        
+                        [data-bs-theme="dark"] .fine-note {
+                            background: #4a5568;
+                            color: #cbd5e0;
+                            border-left-color: #4299e1;
+                        }
+                        
+                        [data-bs-theme="dark"] .date-display {
+                            background: #4a5568;
+                            color: #e2e8f0;
+                            border: 1px solid #718096;
+                        }
+                        
+                        /* Dark mode icons */
+                        [data-bs-theme="dark"] .renewal-fine-section h5 i,
+                        [data-bs-theme="dark"] .date-display i,
+                        [data-bs-theme="dark"] .fine-total i,
+                        [data-bs-theme="dark"] .fine-note i {
+                            color: #90cdf4;
+                        }
+                        
+                        /* Responsive adjustments */
+                        @media (max-width: 768px) {
+                            .renewal-fine-section {
+                                padding: 15px;
+                                margin-top: 20px;
+                            }
+                            
+                            .fine-breakdown {
+                                padding: 12px;
+                            }
+                            
+                            .date-display {
+                                font-size: 0.9em;
+                                padding: 6px 10px;
+                            }
+                            
+                            .fine-item {
+                                flex-direction: column;
+                                align-items: flex-start;
+                                gap: 5px;
+                            }
+                            
+                            .fine-item .fine-value {
+                                align-self: flex-end;
+                            }
+                        }
+                    </style>
+                `;
+                
+                $('head').append(fineSectionCSS);
+                
+                // Create the fine calculation section HTML
+                const fineSectionHTML = `
+                    <div id="renewalFineSection" class="renewal-fine-section" style="display: none;">
+                        <h5 class="mb-3">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Late Renewal Charges / विलंबित नूतनीकरण शुल्क
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="date-display">
+                                    <i class="fas fa-calendar-times me-2"></i>
+                                    Previous Membership End: <span id="prevEndDateDisplay">-</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="date-display">
+                                    <i class="fas fa-calendar-plus me-2"></i>
+                                    New Membership Start: <span id="newStartDateDisplay">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="fine-breakdown">
+                            <div id="gapInfo" style="display: none;">
+                                <div class="fine-item">
+                                    <span class="fine-label">Gap Period:</span>
+                                    <span id="gapMonthsDisplay">0 month(s)</span>
+                                </div>
+                                <!-- ADD THIS LINE -->
+                                <div class="fine-item">
+                                    <span class="fine-label">Gap Dates:</span>
+                                    <span id="gapPeriodDates" style="color: #6c757d; font-style: italic;"></span>
+                                </div>
+                                <div class="fine-item">
+                                    <span class="fine-label">Monthly Fine (Subscription + Fine):</span>
+                                    <span id="monthlyFineRate">₹0</span>
+                                </div>
+                                <div class="fine-item">
+                                    <span class="fine-label">Total Gap Fine:</span>
+                                    <span id="totalGapFine" class="fine-value">₹0</span>
+                                </div>
+                            </div>
+                            
+                            <div id="lateFeeInfo" style="display: none;">
+                                <div class="fine-item">
+                                    <span class="fine-label">Late Fee (after 10th of month):</span>
+                                    <span id="lateFeeDisplay" class="fine-value">₹0</span>
+                                </div>
+                            </div>
+                            
+                            <div class="fine-total">
+                                <i class="fas fa-calculator me-2"></i>
+                                Total Late Charges: <span id="totalLateCharges">₹0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="fine-note">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Note: Late renewal charges are calculated based on gap months between previous membership end and new start date. Additional ₹5 late fee applies ONLY if renewal is AFTER expiry date AND date is after 10th of the month.
+                        </div>
+                    </div>
+                `;
+                
+                // Insert after the amount fields
+                $('#amountFields').after(fineSectionHTML);
+            }
+
+            // Function to update fine calculation
+            function calculateAndDisplayRenewalFines() {
+                // Skip for lifetime memberships (5, 6)
+                if (currentMembershipId === "3" || currentMembershipId === "5" || currentMembershipId === "6") {
+                    $("#renewalFineSection").hide();
+                    return;
+                }
+                
+                let newFromDateStr = $("#fromDate").val();
+                
+                // Check if we have all required data
+                if (!previousMembershipEndDate || !newFromDateStr || monthlySubscriptionFee === 0) {
+                    $("#renewalFineSection").hide();
+                    return;
+                }
+                
+                let prevEndDate = new Date(previousMembershipEndDate);
+                let newStartDate = new Date(newFromDateStr);
+                
+                // Update date displays
+                $("#prevEndDateDisplay").text(formatFineDate(previousMembershipEndDate));
+                $("#newStartDateDisplay").text(formatFineDate(newFromDateStr));
+                
+                // Calculate gap months
+                let gapMonths = calculateRenewalGapMonths(prevEndDate, newStartDate);
+                
+                // Calculate fine for gap months - SEPARATE NOW!
+                let subscriptionPerMonth = monthlySubscriptionFee;  // ₹20
+                let finePerMonth = monthlyFineFee;                  // ₹5
+                let subscriptionDelayTotal = gapMonths * subscriptionPerMonth;  // gap months * ₹20
+                let gapFineTotal = gapMonths * finePerMonth;                    // gap months * ₹5
+                let totalGapFine = subscriptionDelayTotal + gapFineTotal;       // ₹25
+                
+                // ========== FIXED LATE FEE LOGIC ==========
+                let lateFee = 0;
+                let newDateDay = newStartDate.getDate();
+                
+                // Late fee ONLY applies if:
+                // 1. Renewal is AFTER expiry date, AND
+                // 2. Renewal day is after 10th of the month
+                if (newStartDate > prevEndDate && newDateDay > 10) {
+                    lateFee = 5;
+                }
+                // ==========================================
+                
+                // Total late charges
+                let totalLateCharges = totalGapFine + lateFee;
+                
+                // Update display
+                if (gapMonths > 0) {
+                    $("#gapInfo").show();
+                    $("#gapMonthsDisplay").text(gapMonths + " month(s)");
+                    $("#monthlyFineRate").text(formatFineCurrency(monthlySubscriptionFee) + " + " + formatFineCurrency(monthlyFineFee));
+                    $("#totalGapFine").text(formatFineCurrency(totalGapFine));
+                } else {
+                    $("#gapInfo").hide();
+                }
+
+                // Calculate gap period dates (EXCLUDING late fee month)
+                let gapPeriodFrom = null;
+                let gapPeriodTo = null;
+                let gapPeriodDisplay = "";
+                
+                if (gapMonths > 0) {
+                    // Gap start: day after previous membership ends
+                    gapPeriodFrom = new Date(prevEndDate);
+                    gapPeriodFrom.setDate(gapPeriodFrom.getDate() + 1);
+                    
+                    // Gap end: calculate based on gap months ONLY (not including late fee month)
+                    gapPeriodTo = new Date(gapPeriodFrom);
+                    
+                    // Move forward by (gapMonths) months, then back 1 day
+                    gapPeriodTo.setMonth(gapPeriodTo.getMonth() + gapMonths);
+                    gapPeriodTo.setDate(gapPeriodTo.getDate() - 1);
+                    
+                    // Format dates for display
+                    function formatDateForDisplay(date) {
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = date.getFullYear();
+                        return `${day}-${month}-${year}`;
                     }
-                </style>
-            `;
-            
-            $('head').append(fineSectionCSS);
-            
-            // Create the fine calculation section HTML
-            const fineSectionHTML = `
-                <div id="renewalFineSection" class="renewal-fine-section" style="display: none;">
-                    <h5 class="mb-3">
-                        <i class="fas fa-money-bill-wave me-2"></i>
-                        Late Renewal Charges / विलंबित नूतनीकरण शुल्क
-                    </h5>
                     
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="date-display">
-                                <i class="fas fa-calendar-times me-2"></i>
-                                Previous Membership End: <span id="prevEndDateDisplay">-</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="date-display">
-                                <i class="fas fa-calendar-plus me-2"></i>
-                                New Membership Start: <span id="newStartDateDisplay">-</span>
-                            </div>
-                        </div>
-                    </div>
+                    let gapFromDisplay = formatDateForDisplay(gapPeriodFrom);
+                    let gapToDisplay = formatDateForDisplay(gapPeriodTo);
+                    gapPeriodDisplay = `${gapFromDisplay} to ${gapToDisplay}`;
                     
-                    <div class="fine-breakdown">
-                        <div id="gapInfo" style="display: none;">
-                            <div class="fine-item">
-                                <span class="fine-label">Gap Period:</span>
-                                <span id="gapMonthsDisplay">0 month(s)</span>
-                            </div>
-                            <!-- ADD THIS LINE -->
-                            <div class="fine-item">
-                                <span class="fine-label">Gap Dates:</span>
-                                <span id="gapPeriodDates" style="color: #6c757d; font-style: italic;"></span>
-                            </div>
-                            <div class="fine-item">
-                                <span class="fine-label">Monthly Fine (Subscription + Fine):</span>
-                                <span id="monthlyFineRate">₹0</span>
-                            </div>
-                            <div class="fine-item">
-                                <span class="fine-label">Total Gap Fine:</span>
-                                <span id="totalGapFine" class="fine-value">₹0</span>
-                            </div>
-                        </div>
-                        
-                        <div id="lateFeeInfo" style="display: none;">
-                            <div class="fine-item">
-                                <span class="fine-label">Late Fee (after 10th of month):</span>
-                                <span id="lateFeeDisplay" class="fine-value">₹0</span>
-                            </div>
-                        </div>
-                        
-                        <div class="fine-total">
-                            <i class="fas fa-calculator me-2"></i>
-                            Total Late Charges: <span id="totalLateCharges">₹0</span>
-                        </div>
-                    </div>
+                    // Add to UI display
+                    $("#gapPeriodDates").text(gapPeriodDisplay).show();
                     
-                    <div class="fine-note">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Note: Late renewal charges are calculated based on gap months between previous membership end and new start date. Additional ₹5 late fee applies ONLY if renewal is AFTER expiry date AND date is after 10th of the month.
-                    </div>
-                </div>
-            `;
-            
-            // Insert after the amount fields
-            $('#amountFields').after(fineSectionHTML);
-        }
-
-        // Function to update fine calculation
-        function calculateAndDisplayRenewalFines() {
-            // Skip for lifetime memberships (5, 6)
-            if (currentMembershipId === "5" || currentMembershipId === "6") {
-                $("#renewalFineSection").hide();
-                return;
-            }
-            
-            let newFromDateStr = $("#fromDate").val();
-            
-            // Check if we have all required data
-            if (!previousMembershipEndDate || !newFromDateStr || monthlySubscriptionFee === 0) {
-                $("#renewalFineSection").hide();
-                return;
-            }
-            
-            let prevEndDate = new Date(previousMembershipEndDate);
-            let newStartDate = new Date(newFromDateStr);
-            
-            // Update date displays
-            $("#prevEndDateDisplay").text(formatFineDate(previousMembershipEndDate));
-            $("#newStartDateDisplay").text(formatFineDate(newFromDateStr));
-            
-            // Calculate gap months
-            let gapMonths = calculateRenewalGapMonths(prevEndDate, newStartDate);
-            
-            // Calculate fine for gap months - SEPARATE NOW!
-            let subscriptionPerMonth = monthlySubscriptionFee;  // ₹20
-            let finePerMonth = monthlyFineFee;                  // ₹5
-            let subscriptionDelayTotal = gapMonths * subscriptionPerMonth;  // gap months * ₹20
-            let gapFineTotal = gapMonths * finePerMonth;                    // gap months * ₹5
-            let totalGapFine = subscriptionDelayTotal + gapFineTotal;       // ₹25
-            
-            // ========== FIXED LATE FEE LOGIC ==========
-            let lateFee = 0;
-            let newDateDay = newStartDate.getDate();
-            
-            // Late fee ONLY applies if:
-            // 1. Renewal is AFTER expiry date, AND
-            // 2. Renewal day is after 10th of the month
-            if (newStartDate > prevEndDate && newDateDay > 10) {
-                lateFee = 5;
-            }
-            // ==========================================
-            
-            // Total late charges
-            let totalLateCharges = totalGapFine + lateFee;
-            
-            // Update display
-            if (gapMonths > 0) {
-                $("#gapInfo").show();
-                $("#gapMonthsDisplay").text(gapMonths + " month(s)");
-                $("#monthlyFineRate").text(formatFineCurrency(monthlySubscriptionFee) + " + " + formatFineCurrency(monthlyFineFee));
-                $("#totalGapFine").text(formatFineCurrency(totalGapFine));
-            } else {
-                $("#gapInfo").hide();
-            }
-
-            // Calculate gap period dates (EXCLUDING late fee month)
-            let gapPeriodFrom = null;
-            let gapPeriodTo = null;
-            let gapPeriodDisplay = "";
-            
-            if (gapMonths > 0) {
-                // Gap start: day after previous membership ends
-                gapPeriodFrom = new Date(prevEndDate);
-                gapPeriodFrom.setDate(gapPeriodFrom.getDate() + 1);
-                
-                // Gap end: calculate based on gap months ONLY (not including late fee month)
-                gapPeriodTo = new Date(gapPeriodFrom);
-                
-                // Move forward by (gapMonths) months, then back 1 day
-                gapPeriodTo.setMonth(gapPeriodTo.getMonth() + gapMonths);
-                gapPeriodTo.setDate(gapPeriodTo.getDate() - 1);
-                
-                // Format dates for display
-                function formatDateForDisplay(date) {
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const year = date.getFullYear();
-                    return `${day}-${month}-${year}`;
+                    // Create hidden fields for form submission
+                    $("#gapPeriodFromHidden, #gapPeriodToHidden, #gapPeriodDisplayHidden").remove();
+                    
+                    // Format for database (YYYY-MM-DD)
+                    function formatDateForDB(date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }
+                    
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'gapPeriodFromHidden',
+                        name: 'gap_period_from_date',
+                        value: formatDateForDB(gapPeriodFrom)
+                    }).appendTo('#membershipForm');
+                    
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'gapPeriodToHidden',
+                        name: 'gap_period_to_date',
+                        value: formatDateForDB(gapPeriodTo)
+                    }).appendTo('#membershipForm');
+                    
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'gapPeriodDisplayHidden',
+                        name: 'gap_period_display',
+                        value: gapPeriodDisplay
+                    }).appendTo('#membershipForm');
                 }
                 
-                let gapFromDisplay = formatDateForDisplay(gapPeriodFrom);
-                let gapToDisplay = formatDateForDisplay(gapPeriodTo);
-                gapPeriodDisplay = `${gapFromDisplay} to ${gapToDisplay}`;
-                
-                // Add to UI display
-                $("#gapPeriodDates").text(gapPeriodDisplay).show();
-                
-                // Create hidden fields for form submission
-                $("#gapPeriodFromHidden, #gapPeriodToHidden, #gapPeriodDisplayHidden").remove();
-                
-                // Format for database (YYYY-MM-DD)
-                function formatDateForDB(date) {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    return `${year}-${month}-${day}`;
+                if (lateFee > 0) {
+                    $("#lateFeeInfo").show();
+                    $("#lateFeeDisplay").text(formatFineCurrency(lateFee));
+                } else {
+                    $("#lateFeeInfo").hide();
                 }
                 
+                $("#totalLateCharges").text(formatFineCurrency(totalLateCharges));
+                
+                // Show the section
+                $("#renewalFineSection").show();
+                
+                // Store in hidden fields for submission - ADD NEW FIELD!
+                $("#gapMonthsHidden, #subscriptionDelayHidden, #gapFineHidden, #lateFeeHidden").remove();
+                
                 $('<input>').attr({
                     type: 'hidden',
-                    id: 'gapPeriodFromHidden',
-                    name: 'gap_period_from_date',
-                    value: formatDateForDB(gapPeriodFrom)
+                    id: 'gapMonthsHidden',
+                    name: 'gap_months',
+                    value: gapMonths
                 }).appendTo('#membershipForm');
                 
                 $('<input>').attr({
                     type: 'hidden',
-                    id: 'gapPeriodToHidden',
-                    name: 'gap_period_to_date',
-                    value: formatDateForDB(gapPeriodTo)
+                    id: 'subscriptionDelayHidden',  // NEW
+                    name: 'subscription_delay',
+                    value: subscriptionDelayTotal   // ₹20 * gap months
                 }).appendTo('#membershipForm');
                 
                 $('<input>').attr({
                     type: 'hidden',
-                    id: 'gapPeriodDisplayHidden',
-                    name: 'gap_period_display',
-                    value: gapPeriodDisplay
+                    id: 'gapFineHidden',
+                    name: 'gap_fine',
+                    value: gapFineTotal             // ₹5 * gap months
+                }).appendTo('#membershipForm');
+                
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'lateFeeHidden',
+                    name: 'late_fee',
+                    value: lateFee
                 }).appendTo('#membershipForm');
             }
             
-            if (lateFee > 0) {
-                $("#lateFeeInfo").show();
-                $("#lateFeeDisplay").text(formatFineCurrency(lateFee));
-            } else {
-                $("#lateFeeInfo").hide();
-            }
+            // ========== SIMPLE INTEGRATION ==========
+            // Add fine calculation to your existing event handlers WITHOUT overriding them
             
-            $("#totalLateCharges").text(formatFineCurrency(totalLateCharges));
+            // Store original handlers
+            const originalFromDateChange = $("#fromDate").data('events')?.change;
+            const originalMonthsChange = $("#months").data('events')?.change;
             
-            // Show the section
-            $("#renewalFineSection").show();
+            // Add fine calculation AFTER your existing handlers run
+            $("#fromDate").on("change.fineCalculation", function() {
+                setTimeout(calculateAndDisplayRenewalFines, 100);
+            });
             
-            // Store in hidden fields for submission - ADD NEW FIELD!
-            $("#gapMonthsHidden, #subscriptionDelayHidden, #gapFineHidden, #lateFeeHidden").remove();
+            $("#months").on("change.fineCalculation input.fineCalculation", function() {
+                setTimeout(calculateAndDisplayRenewalFines, 100);
+            });
             
-            $('<input>').attr({
-                type: 'hidden',
-                id: 'gapMonthsHidden',
-                name: 'gap_months',
-                value: gapMonths
-            }).appendTo('#membershipForm');
-            
-            $('<input>').attr({
-                type: 'hidden',
-                id: 'subscriptionDelayHidden',  // NEW
-                name: 'subscription_delay',
-                value: subscriptionDelayTotal   // ₹20 * gap months
-            }).appendTo('#membershipForm');
-            
-            $('<input>').attr({
-                type: 'hidden',
-                id: 'gapFineHidden',
-                name: 'gap_fine',
-                value: gapFineTotal             // ₹5 * gap months
-            }).appendTo('#membershipForm');
-            
-            $('<input>').attr({
-                type: 'hidden',
-                id: 'lateFeeHidden',
-                name: 'late_fee',
-                value: lateFee
-            }).appendTo('#membershipForm');
-        }
-        
-        // ========== SIMPLE INTEGRATION ==========
-        // Add fine calculation to your existing event handlers WITHOUT overriding them
-        
-        // Store original handlers
-        const originalFromDateChange = $("#fromDate").data('events')?.change;
-        const originalMonthsChange = $("#months").data('events')?.change;
-        
-        // Add fine calculation AFTER your existing handlers run
-        $("#fromDate").on("change.fineCalculation", function() {
-            setTimeout(calculateAndDisplayRenewalFines, 100);
+            // Also trigger from your AJAX success
+            $(document).on('ajaxSuccess', function(event, xhr, settings) {
+                if (settings.url && settings.url.includes('get_membership_details')) {
+                    setTimeout(calculateAndDisplayRenewalFines, 200);
+                }
+            });
         });
-        
-        $("#months").on("change.fineCalculation input.fineCalculation", function() {
-            setTimeout(calculateAndDisplayRenewalFines, 100);
-        });
-        
-        // Also trigger from your AJAX success
-        $(document).on('ajaxSuccess', function(event, xhr, settings) {
-            if (settings.url && settings.url.includes('get_membership_details')) {
-                setTimeout(calculateAndDisplayRenewalFines, 200);
-            }
-        });
-    });
-</script>
+    </script>
 
 {% endblock %}

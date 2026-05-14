@@ -334,8 +334,8 @@
                     </div>
                 </div>
 
-                {% if membership.membership_id != 5 and membership.membership_id != 6 %}
-                    <!-- Months + Date Fields -->
+                {% if membership.membership_id != 3 and membership.membership_id != 5 and membership.membership_id != 6 %}
+                    <!-- Show months, from date, to date for normal memberships -->
                     <div id="membershipDuration" style="margin-top: 20px;">
                         <div class="mb-3 row">
                             <!-- Number of Months -->
@@ -345,7 +345,7 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <input type="number" id="months" name="months" class="form-control" 
-                                    min="1" max="12" required placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}" disabled>
+                                    min="1" max="12" placeholder="Enter months (1-12)" value="{{ membership.membership_duration }}" disabled>
                             </div>
 
                             <!-- From Date -->
@@ -382,18 +382,39 @@
                         </div>
                     </div>
                 {% else %}
-                <!-- Months + Date Fields -->
+                    <!-- For membership types 3, 5, 6: Show ONLY From Date -->
                     <div id="membershipDuration" style="margin-top: 20px;">
                         <div class="mb-3 row">
-                           
-                            <!-- From Date -->
+                            <!-- From Date only -->
                             <div class="col-md-6">
                                 <label class="form-label">
                                     Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
                                 </label>
                                 <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" readonly>
                             </div>
-
+                        </div>
+                    </div>
+                    
+                    <!-- For membership types 3, 5, 6: Show amounts but with note -->
+                    <div id="amountFields" style="margin-top: 15px;">
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> For this membership type ({% if membership.membership_id == 3 %}Book Branch NMC{% elif membership.membership_id == 5 %}Lifetime Branch{% else %}Patron Branch{% endif %}), 
+                            only From Date is required. Duration and To Date are not applicable.
+                        </div>
+                        <div class="mb-3 row">
+                            <div class="col-md-4">
+                                <label class="form-label">Deposit / ठेव</label>
+                                <input type="text" class="form-control" value="{{ membership.deposit }}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Entry Fees / प्रवेश शुल्क</label>
+                                <input type="text" class="form-control" value="{{ membership.entry_fees }}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Subscription / सभासद फी</label>
+                                <input type="text" class="form-control" value="{{ membership.subscription }}" readonly>
+                            </div>
                         </div>
                     </div>
                 {% endif %}

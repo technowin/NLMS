@@ -2,913 +2,740 @@
 {% load static %}
 {% block content %}
 
-<style>
-
-    /* Ensure login button is hidden when not applicable */
-    .login-btn[style*="display: none"] {
-        display: none !important;
-    }
-
-    /* Optional: Add a transition for smooth show/hide */
-    .login-btn {
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-
-    /* Target all dropdown options */
-    .dropdownoption {
-        padding: 10px 15px;
-    }
-
-    /* Target specific types */
-    .slum-library-option {
-        font-style: italic;
-    }
-
-    .special-library-option {
-        color: #4caf50 !important;
-        font-weight: bold;
-    }
-
-    /* Add to your CSS */
-    .login-badge {
-        margin-left: 8px;
-        font-size: 0.9em;
-        color: #015296;
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% { opacity: 0.6; }
-        50% { opacity: 1; }
-        100% { opacity: 0.6; }
-    }
-
-    /* ================= DROPDOWN ALIGNMENT FIXES ================= */
-    .dropdown-container {
-        text-align: left !important;
-    }
-
-    /* Smooth transitions */
-    .library-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .library-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Alert styling */
-    .alert {
-        grid-column: 1 / -1;
-        margin: 1rem 0;
-    }
-
-    /* Optional: Update card button to match primary color */
-    .card-btn {
-        background-color: #015296;
-        color: white;
-        border: none;
-        padding: 0.6rem 1.5rem;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        display: inline-block;
-        cursor: pointer;
-    }
-
-    .card-btn:hover {
-        background-color: #013a6b;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(1, 82, 150, 0.2);
-    }
-
-    .card-btn:active {
-        transform: translateY(0);
-    }
-
-    /* CHANGED: 3 columns in grid view on desktop instead of 2 */
-    @media (min-width: 992px) {
-        .card-grid.grid-view {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-            margin: 0% 10%;
-        }
-        
-        .card-grid.list-view {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            margin: 0% 10%;
-        }
-    }
-
-    /* For medium screens (768px to 991px), show 2 columns */
-    @media (min-width: 768px) and (max-width: 991px) {
-        .card-grid.grid-view {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-        }
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 767px) {
-        .card-grid.grid-view {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Pagination Styles with Primary Color #015296 */
-    .pagination-container {
-        padding: 1.5rem 0;
-        border-top: 1px solid #e0e0e0;
-    }
-
-    .pagination {
-        margin-bottom: 0.5rem;
-        --primary-color: #015296;
-        --primary-hover: #013a6b;
-        --primary-light: #e6f0fa;
-    }
-
-    .page-item .page-link {
-        color: #015296;
-        background-color: white;
-        border: 1px solid #dee2e6;
-        padding: 0.6rem 1.2rem;
-        margin: 0 0.25rem;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .page-item.active .page-link {
-        background-color: #015296;
-        border-color: #015296;
-        color: white;
-        box-shadow: 0 2px 5px rgba(1, 82, 150, 0.3);
-    }
-
-    .page-item:not(.disabled):not(.active) .page-link:hover {
-        background-color: #e6f0fa;
-        border-color: #015296;
-        color: #015296;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .page-item.disabled .page-link {
-        color: #adb5bd;
-        pointer-events: none;
-        background-color: #f8f9fa;
-        border-color: #dee2e6;
-    }
-
-    .pagination-info {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-
-    /* Dark mode support */
-    [data-bs-theme="dark"] .pagination-container {
-        border-top-color: #444;
-    }
-
-    [data-bs-theme="dark"] .page-link {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-
-    [data-bs-theme="dark"] .page-item.active .page-link {
-        background-color: #015296;
-        border-color: #015296;
-        color: white;
-    }
-
-    /* SWD Corner Button Styles */
-    .swd-corner-container {
-        position: absolute;
-        top: 30px;
-        right: 30px;
-        z-index: 100;
-        animation: slideInRight 0.6s ease-out;
-    }
-
-    .swd-corner-button {
-        display: flex;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 12px;
-        padding: 12px 18px;
-        text-decoration: none;
-        color: #2c3e50;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-        max-width: 280px;
-        backdrop-filter: blur(5px);
-    }
-
-    .swd-corner-button:hover {
-        transform: translateY(-3px) translateX(-3px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-        border-color: #D4AF37;
-        background: white;
-        color: #B8860B;
-    }
-
-    .swd-corner-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        overflow: hidden;
-        margin-right: 12px;
-        flex-shrink: 0;
-        border: 3px solid white;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-        background: linear-gradient(135deg, #D4AF37, #B8860B);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .swd-corner-text {
-        flex: 1;
-        text-align: left;
-    }
-
-    .swd-corner-text span {
-        display: block;
-        font-size: 1rem;
-        font-weight: 700;
-        margin-bottom: 2px;
-        color: inherit;
-        line-height: 1.2;
-    }
-
-    .swd-corner-text small {
-        display: block;
-        font-size: 0.8rem;
-        color: #666;
-        font-weight: 500;
-        opacity: 0.9;
-        line-height: 1.2;
-    }
-
-    @keyframes slideInRight {
-        from {
-            opacity: 0;
-            transform: translateX(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    /* Event Corner Styles */
-    .event-corner-container {
-        position: absolute;
-        top: 30px;
-        left: 30px;
-        z-index: 100;
-        animation: slideInLeft 0.6s ease-out;
-    }
-
-    .event-corner-button {
-        display: flex;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 12px;
-        padding: 12px 18px;
-        text-decoration: none;
-        color: #2c3e50;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-        max-width: 280px;
-        backdrop-filter: blur(5px);
-    }
-
-    .event-corner-button:hover {
-        transform: translateY(-3px) translateX(3px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-        border-color: #D4AF37;
-        background: white;
-        color: #B8860B;
-    }
-
-    .event-corner-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        overflow: hidden;
-        margin-right: 12px;
-        flex-shrink: 0;
-        border: 3px solid white;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-        background: linear-gradient(135deg, #D4AF37, #B8860B);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .event-corner-text {
-        flex: 1;
-        text-align: left;
-    }
-
-    .event-corner-text span {
-        display: block;
-        font-size: 1rem;
-        font-weight: 700;
-        margin-bottom: 2px;
-        color: inherit;
-        line-height: 1.2;
-    }
-
-    .event-corner-text small {
-        display: block;
-        font-size: 0.8rem;
-        color: #666;
-        font-weight: 500;
-        opacity: 0.9;
-        line-height: 1.2;
-    }
-
-    .notify-active {
-        background: linear-gradient(135deg, #ff9800, #ff6f00);
-        color: #fff !important;
-        animation: glowPulse 1.8s infinite;
-    }
-
-    @keyframes glowPulse {
-        0% {
-            box-shadow: 0 0 6px rgba(255,152,0,0.5), 0 0 12px rgba(255,152,0,0.3);
-        }
-        50% {
-            box-shadow: 0 0 14px rgba(255,152,0,0.9), 0 0 28px rgba(255,152,0,0.7);
-        }
-        100% {
-            box-shadow: 0 0 6px rgba(255,152,0,0.5), 0 0 12px rgba(255,152,0,0.3);
-        }
-    }
-
-    .notify-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        min-width: 18px;
-        height: 18px;
-        background: #ff1744;
-        color: white;
-        font-size: 11px;
-        font-weight: bold;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 4px;
-        border: 2px solid white;
-        box-shadow: 0 0 6px rgba(255,23,68,0.8);
-    }
-
-    @keyframes slideInLeft {
-        from {
-            opacity: 0;
-            transform: translateX(-25px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    /* ================= ENHANCED DROPDOWN STYLES FOR BETTER READABILITY ================= */
-
-    /* Selectize Custom Styling - Enhanced for better readability */
-    .selectize-control {
-        width: 100%;
-    }
-
-    .selectize-input {
-        padding: 16px 22px !important;
-        border: 2px solid rgba(255, 255, 255, 0.2) !important;
-        border-radius: 50px !important;
-        font-size: 1.05rem !important;
-        line-height: 1.5 !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
-        min-height: 60px !important;
-        background: rgba(255, 255, 255, 0.98) !important;
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease !important;
-        font-family: 'Merriweather', serif;
-    }
-
-    /* Selected item styling */
-    .selectize-input .item {
-        display: block;
-        padding: 4px 0;
-        font-weight: 500;
-        color: #2c3e50;
-        line-height: 1.6;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 90%;
-    }
-
-    /* Lock icon in selected item */
-    .selectize-input .item span {
-        display: inline-block;
-        margin-left: 8px;
-        font-size: 1.1rem;
-    }
-
-    .selectize-input:hover {
-        border-color: #015296 !important;
-        background: white !important;
-        transform: translateY(-2px);
-        box-shadow: 0 15px 35px rgba(1, 82, 150, 0.25) !important;
-    }
-
-    .selectize-input.focus {
-        border-color: #015296 !important;
-        box-shadow: 0 0 0 5px rgba(1, 82, 150, 0.2), 0 10px 30px rgba(0, 0, 0, 0.15) !important;
-        background: white !important;
-    }
-
-    /* Dropdown arrow styling */
-    .selectize-input:after {
-        border-color: #015296 transparent transparent transparent !important;
-        border-width: 7px 7px 0 7px !important;
-        right: 25px !important;
-        margin-top: -3px !important;
-    }
-
-    /* ================= DROPDOWN MENU STYLING ================= */
-    .selectize-dropdown {
-        border: none !important;
-        border-radius: 20px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-        font-size: 1rem !important;
-        margin-top: 12px !important;
-        overflow: hidden !important;
-        background: white !important;
-        border: 1px solid rgba(1, 82, 150, 0.1) !important;
-        padding: 8px 0 !important;
-    }
-
-    .selectize-dropdown-content {
-        max-height: 350px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: #015296 #f0f0f0;
-    }
-
-    /* Individual dropdown option styling */
-    .selectize-dropdown .option {
-        padding: 14px 22px !important;
-        line-height: 1.5 !important;
-        border-bottom: 1px solid #f0f0f0 !important;
-        font-family: 'Merriweather', serif;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        white-space: normal !important;
-        word-wrap: break-word !important;
-        font-size: 1rem;
-        color: #2c3e50;
-        position: relative;
-        padding: 18px 26px !important;
-        line-height: 1.7 !important;
-    }
-
-    /* Add subtle left border on hover */
-    .selectize-dropdown .option:hover {
-        background-color: #f8faff !important;
-        padding-left: 28px !important;
-    }
-
-    /* Active/highlighted option */
-    .selectize-dropdown .active {
-        background: linear-gradient(135deg, #f0f7ff, #e6f0fa) !important;
-        color: #015296 !important;
-        padding-left: 28px !important;
-        font-weight: 600;
-        border-left: 4px solid #015296;
-    }
-
-    /* Search highlight */
-    .selectize-dropdown .highlight {
-        background: #ffd700 !important;
-        color: #333 !important;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 4px;
-        margin: 0 2px;
-        box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-    }
-
-    /* Lock icon styling in dropdown */
-    .selectize-dropdown .option span[style*="color: #015296"] {
-        display: inline-block;
-        margin-left: 10px;
-        font-size: 1.2rem;
-        background: rgba(1, 82, 150, 0.1);
-        padding: 2px 8px;
-        border-radius: 20px;
-        animation: gentlePulse 2s infinite;
-    }
-
-    @keyframes gentlePulse {
-        0% { opacity: 0.8; transform: scale(1); background: rgba(1, 82, 150, 0.1); }
-        50% { opacity: 1; transform: scale(1.05); background: rgba(1, 82, 150, 0.15); }
-        100% { opacity: 0.8; transform: scale(1); background: rgba(1, 82, 150, 0.1); }
-    }
-
-    /* Long text handling */
-    .selectize-dropdown .option {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
-    /* First line of long text */
-    .selectize-dropdown .option > div:first-child {
-        flex: 1;
-        word-break: break-word;
-        padding-right: 10px;
-    }
-
-    /* Category grouping for better readability (optional - add data attributes in HTML) */
-    .selectize-dropdown .option[data-category="slum"] {
-        border-left: 3px solid #ff9800;
-    }
-
-    .selectize-dropdown .option[data-category="main"] {
-        border-left: 3px solid #015296;
-    }
-
-    /* ================= TOOLTIP FOR LOGIN AVAILABLE ================= */
-    .selectize-dropdown .option[data-membership="1"] {
-        position: relative;
-    }
-
-    .selectize-dropdown .option[data-membership="1"]:hover::after {
-        content: '✓ Login Available';
-        position: absolute;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: #015296;
-        color: white;
-        padding: 5px 12px;
-        border-radius: 30px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-        animation: fadeIn 0.3s ease;
-        white-space: nowrap;
-        box-shadow: 0 4px 12px rgba(1, 82, 150, 0.3);
-        z-index: 10;
-    }
-
-    /* Adjust for very long items */
-    @media (max-width: 768px) {
-        .selectize-dropdown .option[data-membership="1"]:hover::after {
-            content: '✓ Login';
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            right: 10px;
-        }
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-50%) translateX(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(-50%) translateX(0);
-        }
-    }
-
-    /* ================= CUSTOM SCROLLBAR ================= */
-    .selectize-dropdown-content::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    .selectize-dropdown-content::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .selectize-dropdown-content::-webkit-scrollbar-thumb {
-        background: #015296;
-        border-radius: 10px;
-        border: 2px solid #f1f1f1;
-    }
-
-    .selectize-dropdown-content::-webkit-scrollbar-thumb:hover {
-        background: #013a6b;
-    }
-
-    /* ================= PLACEHOLDER STYLING ================= */
-    .selectize-input::-webkit-input-placeholder {
-        color: #999;
-        font-style: italic;
-        opacity: 0.8;
-        font-size: 1rem;
-    }
-
-    /* ================= EMPTY MESSAGE ================= */
-    .selectize-dropdown .no-results {
-        padding: 20px;
-        text-align: center;
-        color: #999;
-        font-style: italic;
-        font-size: 0.95rem;
-    }
-
-    /* ================= DARK MODE SUPPORT ================= */
-    [data-bs-theme="dark"] .selectize-input {
-        background: rgba(35, 45, 60, 0.98) !important;
-        color: #e2e8f0 !important;
-        border-color: rgba(255, 255, 255, 0.15) !important;
-    }
-
-    [data-bs-theme="dark"] .selectize-input .item {
-        color: #e2e8f0 !important;
-    }
-
-    [data-bs-theme="dark"] .selectize-dropdown {
-        background: #2d3748 !important;
-        border-color: #4a5568 !important;
-    }
-
-    [data-bs-theme="dark"] .selectize-dropdown .option {
-        color: #e2e8f0 !important;
-        border-bottom-color: #4a5568 !important;
-    }
-
-    [data-bs-theme="dark"] .selectize-dropdown .active {
-        background: #015296 !important;
-        color: white !important;
-    }
-
-    [data-bs-theme="dark"] .selectize-dropdown .option:hover {
-        background-color: #3a4a5f !important;
-    }
-
-    /* ================= RESPONSIVE ADJUSTMENTS ================= */
-    @media (max-width: 992px) {
-        .selectize-input {
-            padding: 14px 20px !important;
-            font-size: 1rem !important;
-            min-height: 55px !important;
-        }
-        
-        .selectize-dropdown .option {
-            padding: 12px 18px !important;
-            font-size: 0.95rem !important;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .selectize-input {
-            padding: 12px 18px !important;
-            min-height: 50px !important;
-        }
-        
-        .selectize-dropdown {
-            max-width: 95vw !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-        }
-        
-        .selectize-dropdown .option {
-            padding: 12px 15px !important;
-            font-size: 0.95rem !important;
-            line-height: 1.4 !important;
-        }
-    }
-
-    /* ================= ANIMATION FOR DROPDOWN APPEARANCE ================= */
-    .selectize-dropdown {
-        animation: slideDown 0.25s ease-out;
-    }
-
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Hide on mobile */
-    @media (max-width: 767px) {
-        .swd-corner-container,
-        .event-corner-container {
-            display: none !important;
-        }
-    }
-</style>
-
-<section class="hero-section" id="hero-english"
-    style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); display:none">
-
-    <!-- Event Button - TOP LEFT CORNER -->
-    <div class="event-corner-container">
-        <a href="{% url 'event_list' %}"
-        class="event-corner-button {% if upcoming_count > 0 %}notify-active{% endif %}"
-        title="{{ upcoming_count }} upcoming events">
-            <div class="event-corner-icon">🎉</div>
-            <div class="event-corner-text">
-                <span>Events</span>
-                <small>View Details</small>
-            </div>
-            {% if upcoming_count > 0 %}
-                <span class="notify-badge">{{ upcoming_count }}</span>
-            {% endif %}
-        </a>
-    </div>
-
-    <!-- SWD Button - TOP RIGHT CORNER -->
-    <div class="swd-corner-container">
-        <a href="{% url 'swd_libraries' %}" class="swd-corner-button">
-            <div class="swd-corner-icon">
-                <i class="fas fa-handshake-angle"></i>
-            </div>
-            <div class="swd-corner-text">
-                <span id="swd-button-english-hero">Social Welfare Dept.</span>
-                <small id="swd-subtitle-english-hero">View Libraries</small>
-            </div>
-        </a>
-    </div>
-    
-    <div class="hero-overlay">
-        <div class="hero-text">
-            <h1>Welcome to NMMC Library</h1>
-            <p>Explore our libraries and discover knowledge.</p>
-
-            <!-- ENGLISH DROPDOWN FORM - SELECTIZE VERSION -->
-            <form method="POST" action="{% url 'service_redirect' %}" id="dropdown-form-english">
-                {% csrf_token %}
+    <!-- ==================== ENGLISH HERO CAROUSEL ==================== -->
+    <section class="hero-carousel-section" id="hero-english" style="display:none;">
+        <div class="hero-carousel-container">
+            <div class="hero-carousel" id="hero-carousel-english">
                 
-                <div class="dropdown-container hero-dropdown">
-                    <select id="library-select-english" name="library_code" class="library-select" placeholder="Search and select a library..." required>
-                        <option value="">Select a library...</option>
-                        {% for library in all_libraries %}
-                            {% with membership_link=library.membership_page_link|default:""|stringformat:"s"|cut:" " %}
-                            <option class="dropdownoption" value="{{ library.libraries }}" 
-                                    data-membership="{% if membership_link and membership_link != 'None' and membership_link != '' %}1{% else %}0{% endif %}"
-                                    {% if forloop.first %}selected{% endif %}>
-                                {{ library.library_name }}
-                                {% if library.membership_page_link and library.membership_page_link.strip %} 🔐{% endif %}
-                            </option>
-                            {% endwith %}
-                        {% endfor %}
-                    </select>
-                    
-                    <!-- Hidden field to store membership status -->
-                    <input type="hidden" name="has_membership_link" id="has-membership-english" 
-                           value="{% if initial_has_membership %}1{% else %}0{% endif %}">
+                <!-- Slide 1: Welcome with Stats - SPLIT LAYOUT -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}');"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-welcome-split">
+                        
+                        <!-- LEFT: Welcome Text -->
+                        <div class="welcome-left">
+                            <div class="hero-slide-icon"><i class="fas fa-book-open"></i></div>
+                            <h1 class="hero-slide-title">Welcome to NMMC Library</h1>
+                            <p class="hero-slide-desc">Navi Mumbai Municipal Corporation brings world-class library facilities to citizens. Explore knowledge, empower your future.</p>
+                        </div>
+                        
+                        <!-- RIGHT: Stats + Proposal -->
+                        <div class="welcome-right">
+                            <!-- Stats Row -->
+                            <div class="hero-stats-row">
+                                <div class="hero-stat-card">
+                                    <span class="hero-stat-label">Running</span>
+                                    <span class="hero-stat-number">34</span>
+                                    <span class="hero-stat-subtitle">Libraries & Study Centers</span>
+                                </div>
+                                <div class="hero-stat-card">
+                                    <span class="hero-stat-label">Proposed</span>
+                                    <span class="hero-stat-number">02</span>
+                                    <span class="hero-stat-subtitle">Libraries & Study Centers</span>
+                                </div>
+                                <div class="hero-stat-card">
+                                    <span class="hero-stat-label">Special</span>
+                                    <span class="hero-stat-number">01</span>
+                                    <span class="hero-stat-subtitle">Training Center</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Special Proposal -->
+                            <div class="hero-proposal-section">
+                                <span class="hero-proposal-badge">★ Special Proposal</span>
+                                <p class="hero-proposal-text">Establishing a competitive examination training center to create awareness among students and provide proper guidance for competitive examinations.</p>
+                                <div class="hero-proposal-features">
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Competitive Exam Guidance
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Special Training Sessions
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Reference Material Availability
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
                 </div>
+                
+                <!-- Slide 2: Vishnudas Bhave Library (English) -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}');"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-split">
+                        
+                        <!-- LEFT: Content -->
+                        <div class="hero-split-text">
+                            <div class="hero-slide-icon"><i class="fas fa-landmark"></i></div>
+                            <h1 class="hero-slide-title">Vishnudas Bhave Library</h1>
+                            <p class="hero-slide-desc">NMMC's first fully digitized library in Vashi — empowering citizens with modern library services and online access.</p>
+                            
+                            <!-- Stats in 2x2 Grid -->
+                            <div class="hero-stats-grid">
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">4,644</span>
+                                    <span class="hero-stat-mini-label">Total Books</span>
+                                </div>
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">430</span>
+                                    <span class="hero-stat-mini-label">Active Members</span>
+                                </div>
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">7</span>
+                                    <span class="hero-stat-mini-label">Member Types</span>
+                                </div>
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">250+</span>
+                                    <span class="hero-stat-mini-label">Daily Visitors</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Digital Features -->
+                            <div class="hero-digital-features">
+                                <span class="hero-feature-tag"><i class="fas fa-search"></i> Digital Catalogue</span>
+                                <span class="hero-feature-tag"><i class="fas fa-id-card"></i> Online Membership</span>
+                                <span class="hero-feature-tag"><i class="fas fa-book-reader"></i> E-Books</span>
+                                <span class="hero-feature-tag"><i class="fas fa-credit-card"></i> Fee Payment</span>
+                                <span class="hero-feature-tag"><i class="fas fa-exchange-alt"></i> Issue/Return</span>
+                                <span class="hero-feature-tag"><i class="fas fa-clock"></i> 24/7 Portal</span>
+                            </div>
+                        </div>
+                        
+                        <!-- RIGHT: Library Image (hidden on mobile) -->
+                        <div class="hero-split-image">
+                            <img src="{% static 'images/administrative/Vishnudas-Bhave.jpg' %}" 
+                                alt="Vishnudas Bhave Library" 
+                                class="hero-library-img">
+                            <div class="hero-image-badge">★ First Digitized NMMC Library</div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Slide 3: Sanpada Library Coming Soon (English) - SPLIT LAYOUT -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); background-color: #1a3650;"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-comingsoon-split">
+                        
+                        <!-- LEFT: Coming Soon Content -->
+                        <div class="comingsoon-left">
+                            <!-- Coming Soon Badge -->
+                            <div class="comingsoon-badge">
+                                <span class="comingsoon-pulse"></span>
+                                Coming Soon
+                            </div>
+                            
+                            <div class="hero-slide-icon"><i class="fas fa-building"></i></div>
+                            <h1 class="hero-slide-title">Sanpada Library</h1>
+                            <p class="hero-slide-desc">NMMC's next fully digitized library coming to Sanpada — bringing modern library services, digital catalogue, and online membership to the community.</p>
+                        </div>
+                        
+                        <!-- RIGHT: Info Cards + What to Expect -->
+                        <div class="comingsoon-right">
+                            <!-- Location & Features -->
+                            <div class="comingsoon-info-row">
+                                <div class="comingsoon-info-card">
+                                    <div class="comingsoon-info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                                    <div>
+                                        <span class="comingsoon-info-label">Location</span>
+                                        <span class="comingsoon-info-value">Sanpada, Navi Mumbai</span>
+                                    </div>
+                                </div>
+                                <div class="comingsoon-info-card">
+                                    <div class="comingsoon-info-icon"><i class="fas fa-clock"></i></div>
+                                    <div>
+                                        <span class="comingsoon-info-label">Status</span>
+                                        <span class="comingsoon-info-value">Digitization in Progress</span>
+                                    </div>
+                                </div>
+                                <div class="comingsoon-info-card">
+                                    <div class="comingsoon-info-icon"><i class="fas fa-calendar-check"></i></div>
+                                    <div>
+                                        <span class="comingsoon-info-label">Expected</span>
+                                        <span class="comingsoon-info-value">Launching Soon</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- What to Expect -->
+                            <div class="hero-proposal-section">
+                                <span class="hero-proposal-badge">★ What to Expect</span>
+                                <div class="hero-proposal-features">
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Full Digital Catalogue
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Online Membership
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> E-Book Access
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Digital Fee Payment
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> Issue & Return Tracking
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> 24/7 Online Portal
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Slide 4: Events & Digital Services (English) -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); background-color: #1a3650;"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-events-digital">
 
-                <div class="hero-buttons mt-3">
-                    <button type="submit" class="hero-btn primary-btn" id="view-more-english">
-                        View More
-                    </button>
-                    <button type="submit"
-                            formaction="{% url 'set_library_session_and_login' %}"
-                            class="hero-btn secondary-btn login-btn" 
-                            id="login-btn-english"
-                            style="display: {% if initial_has_membership %}inline-block{% else %}none{% endif %};">
-                        Login
-                    </button>
+                        
+                        <!-- LEFT: Events Section -->
+                        <div class="services-left">
+                            <div class="hero-slide-icon"><i class="fas fa-calendar-alt"></i></div>
+                            <h1 class="hero-slide-title">Library Events & Programs</h1>
+                            <p class="hero-slide-desc">Join our exciting events, workshops, reading clubs, and cultural programs for all age groups.</p>
+                            
+                            {% if upcoming_count > 0 %}
+                            <div class="hero-slide-event-badge">
+                                <span class="event-badge-number">{{ upcoming_count }}</span>
+                                <span class="event-badge-text">Upcoming Events</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="event-types-row">
+                                <span class="event-type-tag"><i class="fas fa-chalkboard-teacher"></i> Workshops</span>
+                                <span class="event-type-tag"><i class="fas fa-book-reader"></i> Reading Clubs</span>
+                                <span class="event-type-tag"><i class="fas fa-theater-masks"></i> Cultural Programs</span>
+                                <span class="event-type-tag"><i class="fas fa-child"></i> Kids Activities</span>
+                            </div>
+                            
+                            <a href="{% url 'event_list' %}" class="hero-slide-btn">
+                                <i class="fas fa-arrow-right"></i> View Events
+                            </a>
+                        </div>
+                        
+                        <!-- RIGHT: Digital Services Showcase -->
+                        <div class="services-right">
+                            <div class="digital-showcase">
+                                <h3 class="digital-showcase-title">
+                                    <i class="fas fa-microchip"></i> Digital Services
+                                </h3>
+                                
+                                <!-- Service Icons Grid -->
+                                <div class="digital-services-grid">
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                        <span class="digital-service-name">OPAC Search</span>
+                                        <span class="digital-service-desc">Find any book instantly</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-desktop"></i>
+                                        </div>
+                                        <span class="digital-service-name">Kiosk System</span>
+                                        <span class="digital-service-desc">Self-service access</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-chart-line"></i>
+                                        </div>
+                                        <span class="digital-service-name">Dashboards</span>
+                                        <span class="digital-service-desc">Real-time analytics</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-qrcode"></i>
+                                        </div>
+                                        <span class="digital-service-name">Digital ID</span>
+                                        <span class="digital-service-desc">QR membership card</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <span class="digital-service-name">Mobile Access</span>
+                                        <span class="digital-service-desc">Anywhere, anytime</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-cloud-download-alt"></i>
+                                        </div>
+                                        <span class="digital-service-name">E-Resources</span>
+                                        <span class="digital-service-desc">Digital library access</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+            
+            <button class="carousel-arrow carousel-prev" onclick="changeSlide('hero-carousel-english', -1)" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-arrow carousel-next" onclick="changeSlide('hero-carousel-english', 1)" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            
+            <div class="carousel-dots" id="carousel-dots-english">
+                <span class="carousel-dot active" onclick="goToSlide('hero-carousel-english', 0)"></span>
+                <span class="carousel-dot" onclick="goToSlide('hero-carousel-english', 1)"></span>
+                <span class="carousel-dot" onclick="goToSlide('hero-carousel-english', 2)"></span>
+                <span class="carousel-dot" onclick="goToSlide('hero-carousel-english', 3)"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== MARATHI HERO CAROUSEL ==================== -->
+    <section class="hero-carousel-section" id="hero-marathi">
+        <div class="hero-carousel-container">
+            <div class="hero-carousel" id="hero-carousel-marathi">
+                
+                <!-- Slide 1: Welcome with Stats (Marathi) - SPLIT LAYOUT -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}');"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-welcome-split">
+                        
+                        <!-- LEFT: Welcome Text -->
+                        <div class="welcome-left">
+                            <div class="hero-slide-icon"><i class="fas fa-book-open"></i></div>
+                            <h1 class="hero-slide-title">नवी मुंबई महानगरपालिका ग्रंथालयात आपले स्वागत आहे</h1>
+                            <p class="hero-slide-desc">नवी मुंबई महानगरपालिका नागरिकांसाठी जागतिक दर्जाच्या ग्रंथालय सुविधा पुरवते. ज्ञानाचा शोध घ्या, आपले भविष्य सक्षम करा.</p>
+                        </div>
+                        
+                        <!-- RIGHT: Stats + Proposal -->
+                        <div class="welcome-right">
+                            <!-- Stats Row -->
+                            <div class="hero-stats-row">
+                                <div class="hero-stat-card">
+                                    <span class="hero-stat-label">चालू</span>
+                                    <span class="hero-stat-number">३४</span>
+                                    <span class="hero-stat-subtitle">ग्रंथालये आणि अभ्यास केंद्रे</span>
+                                </div>
+                                <div class="hero-stat-card">
+                                    <span class="hero-stat-label">प्रस्तावित</span>
+                                    <span class="hero-stat-number">०२</span>
+                                    <span class="hero-stat-subtitle">ग्रंथालये आणि अभ्यास केंद्रे</span>
+                                </div>
+                                <div class="hero-stat-card">
+                                    <span class="hero-stat-label">विशेष</span>
+                                    <span class="hero-stat-number">०१</span>
+                                    <span class="hero-stat-subtitle">प्रशिक्षण केंद्र</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Special Proposal -->
+                            <div class="hero-proposal-section">
+                                <span class="hero-proposal-badge">★ विशेष प्रस्ताव</span>
+                                <p class="hero-proposal-text">विद्यार्थ्यांमध्ये स्पर्धा परीक्षांबद्दल जागरूकता निर्माण करण्यासाठी तसेच त्यांना योग्य मार्गदर्शन देण्यासाठी स्पर्धा परीक्षा प्रशिक्षण केंद्र स्थापन करण्याचा प्रस्ताव.</p>
+                                <div class="hero-proposal-features">
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> स्पर्धा परीक्षा मार्गदर्शन
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> विशेष प्रशिक्षण सत्रे
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> संदर्भ साहित्य उपलब्धता
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Slide 2: Vishnudas Bhave Library (Marathi) -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}');"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-split">
+                        
+                        <!-- LEFT: Content -->
+                        <div class="hero-split-text">
+                            <div class="hero-slide-icon"><i class="fas fa-landmark"></i></div>
+                            <h1 class="hero-slide-title">विष्णुदास भावे ग्रंथालय</h1>
+                            <p class="hero-slide-desc">नवी मुंबई महानगरपालिकेचे पहिले पूर्णपणे डिजिटायझ्ड ग्रंथालय — वाशी. आधुनिक सेवा आणि ऑनलाइन प्रवेशाद्वारे नागरिकांना सक्षम करते.</p>
+                            
+                            <!-- Stats in 2x2 Grid -->
+                            <div class="hero-stats-grid">
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">४,६४४</span>
+                                    <span class="hero-stat-mini-label">एकूण पुस्तके</span>
+                                </div>
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">४३०</span>
+                                    <span class="hero-stat-mini-label">सक्रिय सदस्य</span>
+                                </div>
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">७</span>
+                                    <span class="hero-stat-mini-label">सदस्यत्व प्रकार</span>
+                                </div>
+                                <div class="hero-stat-mini">
+                                    <span class="hero-stat-mini-number">२५०+</span>
+                                    <span class="hero-stat-mini-label">दैनंदिन अभ्यागत</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Digital Features -->
+                            <div class="hero-digital-features">
+                                <span class="hero-feature-tag"><i class="fas fa-search"></i> डिजिटल कॅटलॉग</span>
+                                <span class="hero-feature-tag"><i class="fas fa-id-card"></i> ऑनलाइन सदस्यत्व</span>
+                                <span class="hero-feature-tag"><i class="fas fa-book-reader"></i> ई-पुस्तके</span>
+                                <span class="hero-feature-tag"><i class="fas fa-credit-card"></i> शुल्क भरणा</span>
+                                <span class="hero-feature-tag"><i class="fas fa-exchange-alt"></i> निर्गम/परतावा</span>
+                                <span class="hero-feature-tag"><i class="fas fa-clock"></i> २४/७ पोर्टल</span>
+                            </div>
+
+                        </div>
+                        
+                        <!-- RIGHT: Library Image (hidden on mobile) -->
+                        <div class="hero-split-image">
+                            <img src="{% static 'images/administrative/Vishnudas-Bhave.jpg' %}" 
+                                alt="विष्णुदास भावे ग्रंथालय" 
+                                class="hero-library-img">
+                            <div class="hero-image-badge">★ पहिले डिजिटायझ्ड NMMC ग्रंथालय</div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Slide 3: Sanpada Library Coming Soon (Marathi) - SPLIT LAYOUT -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); background-color: #1a3650;"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-comingsoon-split">
+                        
+                        <!-- LEFT: Coming Soon Content -->
+                        <div class="comingsoon-left">
+                            <!-- Coming Soon Badge -->
+                            <div class="comingsoon-badge">
+                                <span class="comingsoon-pulse"></span>
+                                लवकरच येत आहे
+                            </div>
+                            
+                            <div class="hero-slide-icon"><i class="fas fa-building"></i></div>
+                            <h1 class="hero-slide-title">सानपाडा ग्रंथालय</h1>
+                            <p class="hero-slide-desc">नवी मुंबई महानगरपालिकेचे पुढील पूर्णपणे डिजिटायझ्ड ग्रंथालय सानपाडा येथे येत आहे — आधुनिक ग्रंथालय सेवा, डिजिटल कॅटलॉग आणि ऑनलाइन सदस्यत्व समुदायासाठी.</p>
+                        </div>
+                        
+                        <!-- RIGHT: Info Cards + What to Expect -->
+                        <div class="comingsoon-right">
+                            <!-- Location & Features -->
+                            <div class="comingsoon-info-row">
+                                <div class="comingsoon-info-card">
+                                    <div class="comingsoon-info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                                    <div>
+                                        <span class="comingsoon-info-label">स्थान</span>
+                                        <span class="comingsoon-info-value">सानपाडा, नवी मुंबई</span>
+                                    </div>
+                                </div>
+                                <div class="comingsoon-info-card">
+                                    <div class="comingsoon-info-icon"><i class="fas fa-clock"></i></div>
+                                    <div>
+                                        <span class="comingsoon-info-label">स्थिती</span>
+                                        <span class="comingsoon-info-value">डिजिटायझेशन प्रगतीपथावर</span>
+                                    </div>
+                                </div>
+                                <div class="comingsoon-info-card">
+                                    <div class="comingsoon-info-icon"><i class="fas fa-calendar-check"></i></div>
+                                    <div>
+                                        <span class="comingsoon-info-label">अपेक्षित</span>
+                                        <span class="comingsoon-info-value">लवकरच लाँच होत आहे</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- What to Expect -->
+                            <div class="hero-proposal-section">
+                                <span class="hero-proposal-badge">★ काय अपेक्षा करावी</span>
+                                <div class="hero-proposal-features">
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> पूर्ण डिजिटल कॅटलॉग
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> ऑनलाइन सदस्यत्व
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> ई-पुस्तक प्रवेश
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> डिजिटल शुल्क भरणा
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> निर्गम आणि परतावा ट्रॅकिंग
+                                    </div>
+                                    <div class="hero-proposal-feature">
+                                        <i class="fas fa-check"></i> २४/७ ऑनलाइन पोर्टल
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Slide 4: Events & Digital Services (Marathi) -->
+                <div class="hero-slide">
+                    <div class="hero-slide-bg" style="background-image: url('{% static 'images/administrative/slider.jpg' %}'); background-color: #1a3650;"></div>
+                    <div class="hero-slide-overlay"></div>
+                    <div class="hero-slide-content hero-slide-events-digital">
+
+                        
+                        <!-- LEFT: Events Section -->
+                        <div class="services-left">
+                            <div class="hero-slide-icon"><i class="fas fa-calendar-alt"></i></div>
+                            <h1 class="hero-slide-title">ग्रंथालय कार्यक्रम</h1>
+                            <p class="hero-slide-desc">सर्व वयोगटांसाठी डिझाइन केलेले आमचे रोमांचक कार्यक्रम, कार्यशाळा, वाचन क्लब आणि सांस्कृतिक कार्यक्रम.</p>
+                            
+                            {% if upcoming_count > 0 %}
+                            <div class="hero-slide-event-badge">
+                                <span class="event-badge-number">{{ upcoming_count }}</span>
+                                <span class="event-badge-text">आगामी कार्यक्रम</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="event-types-row">
+                                <span class="event-type-tag"><i class="fas fa-chalkboard-teacher"></i> कार्यशाळा</span>
+                                <span class="event-type-tag"><i class="fas fa-book-reader"></i> वाचन क्लब</span>
+                                <span class="event-type-tag"><i class="fas fa-theater-masks"></i> सांस्कृतिक कार्यक्रम</span>
+                                <span class="event-type-tag"><i class="fas fa-child"></i> बाल कार्यक्रम</span>
+                            </div>
+                            
+                            <a href="{% url 'event_list' %}" class="hero-slide-btn">
+                                <i class="fas fa-arrow-right"></i> कार्यक्रम पहा
+                            </a>
+                        </div>
+                        
+                        <!-- RIGHT: Digital Services Showcase -->
+                        <div class="services-right">
+                            <div class="digital-showcase">
+                                <h3 class="digital-showcase-title">
+                                    <i class="fas fa-microchip"></i> डिजिटल सेवा
+                                </h3>
+                                
+                                <!-- Service Icons Grid -->
+                                <div class="digital-services-grid">
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                        <span class="digital-service-name">OPAC शोध</span>
+                                        <span class="digital-service-desc">कोणतेही पुस्तक झटपट शोधा</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-desktop"></i>
+                                        </div>
+                                        <span class="digital-service-name">किओस्क सिस्टम</span>
+                                        <span class="digital-service-desc">स्वयं-सेवा प्रवेश</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-chart-line"></i>
+                                        </div>
+                                        <span class="digital-service-name">डॅशबोर्ड</span>
+                                        <span class="digital-service-desc">रिअल-टाइम विश्लेषण</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-qrcode"></i>
+                                        </div>
+                                        <span class="digital-service-name">डिजिटल आयडी</span>
+                                        <span class="digital-service-desc">QR सदस्यत्व कार्ड</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <span class="digital-service-name">मोबाईल प्रवेश</span>
+                                        <span class="digital-service-desc">कुठेही, केव्हाही</span>
+                                    </div>
+                                    
+                                    <div class="digital-service-card">
+                                        <div class="digital-service-icon">
+                                            <i class="fas fa-cloud-download-alt"></i>
+                                        </div>
+                                        <span class="digital-service-name">ई-संसाधने</span>
+                                        <span class="digital-service-desc">डिजिटल लायब्ररी प्रवेश</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+              
+            </div>
+            
+            <button class="carousel-arrow carousel-prev" onclick="changeSlide('hero-carousel-marathi', -1)" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-arrow carousel-next" onclick="changeSlide('hero-carousel-marathi', 1)" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            
+            <div class="carousel-dots" id="carousel-dots-marathi">
+                <span class="carousel-dot active" onclick="goToSlide('hero-carousel-marathi', 0)"></span>
+                <span class="carousel-dot" onclick="goToSlide('hero-carousel-marathi', 1)"></span>
+                <span class="carousel-dot" onclick="goToSlide('hero-carousel-marathi', 2)"></span>
+                <span class="carousel-dot" onclick="goToSlide('hero-carousel-marathi', 3)"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== LIBRARY SEARCH SECTION ==================== -->
+    <section id="library-search-english" class="library-search-section" style="display:none;">
+        <div class="library-search-wrapper">
+            <form method="POST" action="{% url 'service_redirect' %}" id="search-form-english" class="search-form">
+                {% csrf_token %}
+                <div class="search-compact-row">
+                    <!-- HEADER LABEL -->
+                    <div class="search-header-label">
+                        <i class="fas fa-book-open"></i>
+                        <span>Find Library</span>
+                    </div>
+                    <span class="search-divider">|</span>
+                    
+                    <div class="search-input-group">
+                        <div class="search-input-wrapper">
+                            <span class="search-input-icon"><i class="fas fa-search"></i></span>
+                            <select id="search-select-english" name="library_code" class="library-select" placeholder="Search and select a library..." required>
+                                <option value="">Search and select a library...</option>
+                                {% for library in all_libraries %}
+                                    {% with membership_link=library.membership_page_link|default:""|stringformat:"s"|cut:" " %}
+                                    <option class="dropdownoption" value="{{ library.libraries }}" 
+                                            data-membership="{% if membership_link and membership_link != 'None' and membership_link != '' %}1{% else %}0{% endif %}"
+                                            {% if forloop.first %}selected{% endif %}>
+                                        {{ library.library_name }}
+                                        {% if library.membership_page_link and library.membership_page_link.strip %} 🔐{% endif %}
+                                    </option>
+                                    {% endwith %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <input type="hidden" name="has_membership_link" id="search-has-membership-english" value="{% if initial_has_membership %}1{% else %}0{% endif %}">
+                    </div>
+                    <div class="search-button-group">
+                        <button type="submit" class="search-btn search-btn-primary" id="search-view-more-english">
+                            <i class="fas fa-eye"></i><span>View More</span>
+                        </button>
+                        <button type="submit" formaction="{% url 'set_library_session_and_login' %}"
+                                class="search-btn search-btn-secondary login-btn" id="search-login-btn-english"
+                                style="display: {% if initial_has_membership %}inline-flex{% else %}none{% endif %};">
+                            <i class="fas fa-sign-in-alt"></i><span>Login</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="hero-section" id="hero-marathi" style="background-image: url('{% static "images/administrative/slider.jpg" %}');">
-
-    <!-- Event Button - TOP LEFT CORNER -->
-    <div class="event-corner-container">
-        <a href="{% url 'event_list' %}" class="event-corner-button {% if upcoming_count > 0 %}notify-active{% endif %}">
-            <div class="event-corner-icon">🎉</div>
-            <div class="event-corner-text">
-                <span>कार्यक्रम</span>
-                <small>तपशील पहा</small>
-            </div>
-            {% if upcoming_count > 0 %}
-                <span class="notify-badge">{{ upcoming_count }}</span>
-            {% endif %}
-        </a>
-    </div>
-
-    <!-- SWD Button - TOP RIGHT CORNER -->
-    <div class="swd-corner-container">
-        <a href="{% url 'swd_libraries' %}" class="swd-corner-button">
-            <div class="swd-corner-icon">
-                <i class="fas fa-handshake-angle"></i>
-            </div>
-            <div class="swd-corner-text">
-                <span id="swd-button-marathi-hero">समाज विकास विभाग</span>
-                <small id="swd-subtitle-marathi-hero">ग्रंथालये पहा</small>
-            </div>
-        </a>
-    </div>
-    
-    <div class="hero-overlay">
-        <div class="hero-text">
-            <h1 id="hero-title">नवी मुंबई महानगरपालिका ग्रंथालयात आपले स्वागत आहे</h1>
-            <p id="hero-subtitle">आमच्या ग्रंथालयांचा शोध घ्या आणि ज्ञान मिळवा.</p>
-
-            <!-- MARATHI DROPDOWN FORM - SELECTIZE VERSION -->
-            <form method="POST" action="{% url 'service_redirect' %}" id="dropdown-form-marathi">
+    <section id="library-search-marathi" class="library-search-section">
+        <div class="library-search-wrapper">
+            <form method="POST" action="{% url 'service_redirect' %}" id="search-form-marathi" class="search-form">
                 {% csrf_token %}
-                
-                <div class="dropdown-container hero-dropdown">
-                    <select id="library-select-marathi" name="library_code" class="library-select" placeholder="ग्रंथालय शोधा आणि निवडा..." required>
-                        <option value="">ग्रंथालय निवडा...</option>
-                        {% for library in all_libraries %}
-                            {% with membership_link=library.membership_page_link|default:""|stringformat:"s"|cut:" " %}
-                            <option class="dropdownoption" value="{{ library.libraries }}" 
-                                    data-membership="{% if membership_link and membership_link != 'None' and membership_link != '' %}1{% else %}0{% endif %}"
-                                    {% if forloop.first %}selected{% endif %}>
-                                {{ library.library_name }}
-                                {% if library.membership_page_link and library.membership_page_link.strip %} 🔐{% endif %}
-                            </option>
-                            {% endwith %}
-                        {% endfor %}
-                    </select>
+                <div class="search-compact-row">
+                    <!-- HEADER LABEL -->
+                    <div class="search-header-label">
+                        <i class="fas fa-book-open"></i>
+                        <span>ग्रंथालय शोधा</span>
+                    </div>
+                    <span class="search-divider">|</span>
                     
-                    <!-- Hidden field to store membership status -->
-                    <input type="hidden" name="has_membership_link" id="has-membership-marathi" 
-                           value="{% if initial_has_membership %}1{% else %}0{% endif %}">
-                </div>
-
-                <div class="hero-buttons mt-3">
-                    <button type="submit" class="hero-btn primary-btn" id="view-more-marathi">
-                        View More
-                    </button>
-                    <button type="submit"
-                            formaction="{% url 'set_library_session_and_login' %}"
-                            class="hero-btn secondary-btn login-btn" 
-                            id="login-btn-marathi"
-                            style="display: {% if initial_has_membership %}inline-block{% else %}none{% endif %};">
-                        Login
-                    </button>
+                    <div class="search-input-group">
+                        <div class="search-input-wrapper">
+                            <span class="search-input-icon"><i class="fas fa-search"></i></span>
+                            <select id="search-select-marathi" name="library_code" class="library-select" placeholder="ग्रंथालय शोधा आणि निवडा..." required>
+                                <option value="">ग्रंथालय शोधा आणि निवडा...</option>
+                                {% for library in all_libraries %}
+                                    {% with membership_link=library.membership_page_link|default:""|stringformat:"s"|cut:" " %}
+                                    <option class="dropdownoption" value="{{ library.libraries }}" 
+                                            data-membership="{% if membership_link and membership_link != 'None' and membership_link != '' %}1{% else %}0{% endif %}"
+                                            {% if forloop.first %}selected{% endif %}>
+                                        {{ library.library_name }}
+                                        {% if library.membership_page_link and library.membership_page_link.strip %} 🔐{% endif %}
+                                    </option>
+                                    {% endwith %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <input type="hidden" name="has_membership_link" id="search-has-membership-marathi" value="{% if initial_has_membership %}1{% else %}0{% endif %}">
+                    </div>
+                    <div class="search-button-group">
+                        <button type="submit" class="search-btn search-btn-primary" id="search-view-more-marathi">
+                            <i class="fas fa-eye"></i><span>अधिक पहा</span>
+                        </button>
+                        <button type="submit" formaction="{% url 'set_library_session_and_login' %}"
+                                class="search-btn search-btn-secondary login-btn" id="search-login-btn-marathi"
+                                style="display: {% if initial_has_membership %}inline-flex{% else %}none{% endif %};">
+                            <i class="fas fa-sign-in-alt"></i><span>लॉगिन</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
-    </div>
-</section>
+    </section>
 
-<section id="libraries-section">
-    <div class="">
+    <!-- ==================== LIBRARIES LIST SECTION ==================== -->
+    <section id="libraries-section">
+        
+        <!-- Our Network Header -->
+        <div id="our-network-english" class="network-header-wrapper" style="display:none;">
+            <div class="network-container">
+                <div class="network-header">
+                    <span class="network-badge">Our Network</span>
+                    <h2 class="network-title">Featured Libraries</h2>
+                    <p class="network-desc">30+ libraries spread across Navi Mumbai, serving every ward and community.</p>
+                    <div class="network-divider"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="our-network-marathi" class="network-header-wrapper">
+            <div class="network-container">
+                <div class="network-header anim-fade-up">
+                    <span class="network-badge">आमचे नेटवर्क</span>
+                    <h2 class="network-title">वैशिष्ट्यीकृत ग्रंथालये</h2>
+                    <p class="network-desc">नवी मुंबईभर पसरलेली ३०+ ग्रंथालये, प्रत्येक प्रभाग आणि समुदायाची सेवा करत आहेत.</p>
+                    <div class="network-divider"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Toggle -->
         <div class="section-header">
-            <!-- View Toggle -->
             <div class="view-toggle">
-                <button id="grid-view-btn" title="Grid View" class="active">
-                    <i class="fas fa-th-large"></i>
-                </button>
-                <button id="list-view-btn" title="List View">
-                    <i class="fas fa-list"></i>
-                </button>
+                <button id="grid-view-btn" title="Grid View" class="active"><i class="fas fa-th-large"></i></button>
+                <button id="list-view-btn" title="List View"><i class="fas fa-list"></i></button>
             </div>
         </div>
 
-        <!-- Libraries Container -->
-        <div id="libraries-container" class="card-grid">
-            <!-- Libraries will be loaded here via JavaScript -->
+        <!-- Library Cards -->
+
+        <div id="libraries-container" class="card-grid grid-view" style="position: relative; min-height: 200px;">
             {% for library in library_details %}
-                <div class="library-card">
+                <div class="library-card anim-fade-up anim-delay-{{ forloop.counter0|add:1 }}">
                     <img src="{{ library.main_image }}" alt="{{ library.library_name }}" class="library-img">
                     <div class="library-content">
                         <h3>{{ library.library_name_mar }}{% if library.location %} - {{ library.location.location_name }}{% endif %}</h3>
                         <h4>Established: {{ library.est_year }}</h4>
-                        <p>{{ library.about_library|truncatechars:200 }}</p>
-                        
+                        <p>{{ library.about_library|truncatechars:150 }}</p>
                         <form method="POST" action="{% url 'service_redirect' %}">
                             {% csrf_token %}
                             <input type="hidden" name="library_code" value="{{ library.libraries }}">
@@ -916,449 +743,775 @@
                         </form>
                     </div>
                 </div>
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align:center; padding: 60px 20px; color: #64748b;">
+                    <i class="fas fa-book-open" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <h3>No libraries found</h3>
+                </div>
             {% endfor %}
         </div>
 
-        <!-- JavaScript Pagination Controls (No URL changes) -->
-        <div id="js-pagination-container" class="pagination-container">
+        <!-- Pagination Controls -->
+        <div id="pagination-container" class="pagination-container">
             <nav aria-label="Library pagination">
-                <ul class="pagination justify-content-center" id="js-pagination">
-                    <!-- Pages will be generated by JavaScript -->
-                </ul>
+                <div class="pagination" id="pagination-links"></div>
             </nav>
-            
-            <div class="pagination-info text-center mt-2">
-                <span id="page-info" class="text-muted">
-                    Page 1 of {{ total_pages|default:1 }}
-                </span>
+            <div class="pagination-info">
+                <span id="page-info">Loading libraries...</span>
             </div>
         </div>
 
-        <!-- Hidden form -->
-        <form id="libraryForm" method="POST" action="{% url 'service_redirect' %}" style="display:none;">
-            {% csrf_token %}
-            <input type="hidden" name="library_code" id="libraryCodeInput">
-        </form>
-    </div>
-</section>
+    </section>
 
-<!-- CSRF Token for AJAX -->
-{% csrf_token %}
+    <!-- ==================== COMBINED ABOUT + SERVICES SECTION ==================== -->
+    <!-- ENGLISH -->
+    <section id="combined-about-services-english" class="combined-about-services-section" style="display:none;">
+        <div class="combined-about-services-container">
+            <!-- SECTION HEADER -->
+            <div class="combined-section-header anim-fade-up">
+                <span class="combined-section-badge anim-fade-up anim-delay-1">Who We Are & What We Do</span>
+                <h2 class="combined-section-title anim-fade-up anim-delay-2">Empowering Navi Mumbai Through Knowledge</h2>
+                <p class="combined-section-desc anim-fade-up anim-delay-3">Discover our story and explore the comprehensive library services we offer to every citizen</p>
+                <div class="combined-section-divider anim-fade-up anim-delay-4"></div>
+            </div>
 
-<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-{% if messages %}
-    <script>
-        $(document).ready(function() {
-            const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-            
-            {% for message in messages %}
-            Swal.fire({
-                icon: '{{ message.tags }}',
-                title: '{{ message.tags|title }}',
-                text: '{{ message|escapejs }}',
-                confirmButtonText: 'OK',
-                background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
-                color: theme === 'dark' ? '#f0f0f0' : '#212529',
-                confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
-                customClass: {
-                    popup: 'rounded-4 shadow',
-                    confirmButton: 'btn btn-primary px-4 py-2'
-                }
-            });
-            {% endfor %}
-        });
-    </script>
-{% endif %}
-
-<!-- SELECTIZE INITIALIZATION SCRIPT -->
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        console.log("Initializing Selectize dropdowns...");
-        
-        const selectizeConfig = {
-            create: false,
-            maxItems: 1,
-            hideSelected: true,
-            closeAfterSelect: true,
-            dropdownParent: 'body',
-            sortField: 'text',
-            searchField: ['text'],
-            labelField: 'text',
-            valueField: 'value',
-            highlight: true,
-            onInitialize: function() {
-                console.log('Selectize initialized');
-            },
-            onChange: function(value) {
-                console.log("Selected value:", value);
+            <div class="combined-grid">
                 
-                // Get the form and elements
-                const $select = this.$input;
-                const form = $select.closest('form');
-                const selectedOption = this.options[value];
+                <!-- LEFT: About Us (text only, no logo) -->
+                <div class="combined-about anim-fade-left">
+                    <span class="about-badge anim-fade-up anim-delay-1">About Us</span>
+                    <h2 class="about-title anim-fade-up anim-delay-2">Knowledge for Every Citizen of Navi Mumbai</h2>
+                    <p class="about-desc anim-fade-up anim-delay-3">
+                        Navi Mumbai Municipal Corporation's Public Library System is dedicated to providing free and accessible knowledge resources to all citizens across Navi Mumbai.
+                    </p>
+                    <div class="about-features-list anim-fade-up anim-delay-4">
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>Free membership for all Navi Mumbai residents</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>MPSC & UPSC preparation resources and e-books</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>Books in Marathi, Hindi, English & regional languages</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>Open Monday to Saturday, 9 AM to 10 PM</span></div>
+                    </div>
+                    <a href="{% url 'vision_mission' %}" class="about-btn anim-fade-up anim-delay-5">
+                        <i class="fas fa-eye"></i> Our Vision & Mission
+                    </a>
+                </div>
                 
-                if (form && selectedOption) {
-                    // Update membership hidden field
-                    const membershipField = form.querySelector('input[name="has_membership_link"]');
-                    const loginBtn = form.querySelector('.login-btn');
-                    const hasMembership = selectedOption.data && selectedOption.data('membership') === '1';
-                    
-                    console.log("Has membership:", hasMembership);
-                    
-                    if (membershipField) {
-                        membershipField.value = hasMembership ? '1' : '0';
-                    }
-                    
-                    // Show/hide login button
-                    if (loginBtn) {
-                        if (hasMembership) {
-                            loginBtn.style.display = 'inline-block';
-                        } else {
-                            loginBtn.style.display = 'none';
-                        }
-                    }
-                }
-            },
-            render: {
-                option: function(item, escape) {
-                    // Custom rendering for options
-                    const hasMembership = item.data && item.data('membership') === '1';
-                    const lockIcon = hasMembership ? ' <span style="color: #015296; margin-left: 5px;">🔐</span>' : '';
-                    
-                    // Add custom class based on condition
-                    let customClass = '';
-                    
-                    // Example: Add class for specific libraries
-                    if (item.text && item.text.includes('Slum')) {
-                        customClass = 'slum-library-option';
-                    }
-                    
-                    // Example: Add class based on value
-                    if (item.value === 'some_specific_value') {
-                        customClass = 'special-library-option';
-                    }
-                    
-                    return '<div class="dropdownoption ' + customClass + '">' + escape(item.text) + lockIcon + '</div>';
-                },
-                item: function(item, escape) {
-                    // Custom rendering for selected item
-                    const hasMembership = item.data && item.data('membership') === '1';
-                    const lockIcon = hasMembership ? ' 🔐' : '';
-                    
-                    return '<div>' + escape(item.text) + lockIcon + '</div>';
-                }
-            }
-        };
-        
-        // Initialize English dropdown
-        if ($('#library-select-english').length) {
-            $('#library-select-english').selectize(selectizeConfig);
-        }
-        
-        // Initialize Marathi dropdown
-        if ($('#library-select-marathi').length) {
-            $('#library-select-marathi').selectize(selectizeConfig);
-        }
-        
-        // Handle form submissions
-        $('form[id^="dropdown-form"]').on('submit', function(e) {
-            const form = $(this);
-            const select = form.find('.library-select')[0];
-            
-            if (select && select.selectize) {
-                const value = select.selectize.getValue();
-                
-                if (!value) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Library Required',
-                        text: 'Please select a library from the dropdown',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
-            }
-        });
-        
-        // Login button validation
-        $('.secondary-btn').on('click', function(e) {
-            const form = $(this).closest('form');
-            const select = form.find('.library-select')[0];
-            
-            if (select && select.selectize) {
-                const value = select.selectize.getValue();
-                const membershipField = form.find('input[name="has_membership_link"]').val();
-                
-                if (!value) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Library Required',
-                        text: 'Please select a library first',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
-                
-                if (membershipField !== '1') {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Login Not Available',
-                        text: 'This library does not have a membership/login system',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
-            }
-        });
-        
-        console.log("Selectize dropdowns initialized successfully");
-    });
-</script>
-
-<!-- Grid/List View Toggle -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const gridBtn = document.getElementById("grid-view-btn");
-        const listBtn = document.getElementById("list-view-btn");
-        const cardGrid = document.querySelector(".card-grid");
-        
-        if (gridBtn && listBtn && cardGrid) {
-            gridBtn.addEventListener("click", function () {
-                cardGrid.classList.add("grid-view");
-                cardGrid.classList.remove("list-view");
-                this.classList.add("active");
-                listBtn.classList.remove("active");
-            });
-
-            listBtn.addEventListener("click", function () {
-                cardGrid.classList.add("list-view");
-                cardGrid.classList.remove("grid-view");
-                this.classList.add("active");
-                gridBtn.classList.remove("active");
-            });
-        }
-    });
-</script>
-
-<!-- PAGINATION JAVASCRIPT -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        let currentPage = 1;
-        let totalPages = {{ total_pages|default:1 }};
-        
-        // Initialize pagination
-        initializePagination();
-        
-        function initializePagination() {
-            const paginationContainer = document.getElementById('js-pagination');
-            if (!paginationContainer) return;
-            
-            paginationContainer.innerHTML = '';
-            
-            // Previous button
-            const prevLi = document.createElement('li');
-            prevLi.className = 'page-item';
-            if (currentPage === 1) prevLi.classList.add('disabled');
-            
-            const prevLink = document.createElement('a');
-            prevLink.className = 'page-link';
-            prevLink.href = '#';
-            prevLink.innerHTML = '&laquo;';
-            prevLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadPage(currentPage);
-                }
-            });
-            
-            prevLi.appendChild(prevLink);
-            paginationContainer.appendChild(prevLi);
-            
-            // Page numbers (show up to 5 pages)
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, startPage + 4);
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageLi = document.createElement('li');
-                pageLi.className = 'page-item';
-                if (i === currentPage) pageLi.classList.add('active');
-                
-                const pageLink = document.createElement('a');
-                pageLink.className = 'page-link';
-                pageLink.href = '#';
-                pageLink.textContent = i;
-                pageLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    currentPage = i;
-                    loadPage(currentPage);
-                });
-                
-                pageLi.appendChild(pageLink);
-                paginationContainer.appendChild(pageLi);
-            }
-            
-            // Next button
-            const nextLi = document.createElement('li');
-            nextLi.className = 'page-item';
-            if (currentPage === totalPages) nextLi.classList.add('disabled');
-            
-            const nextLink = document.createElement('a');
-            nextLink.className = 'page-link';
-            nextLink.href = '#';
-            nextLink.innerHTML = '&raquo;';
-            nextLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadPage(currentPage);
-                }
-            });
-            
-            nextLi.appendChild(nextLink);
-            paginationContainer.appendChild(nextLi);
-            
-            // Update page info
-            const pageInfo = document.getElementById('page-info');
-            if (pageInfo) {
-                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            }
-        }
-        
-        function loadPage(page) {
-            // Get current scroll position to maintain it
-            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-            
-            // Show loading indicator
-            const librariesContainer = document.getElementById('libraries-container');
-            const originalContent = librariesContainer.innerHTML;
-            
-            // Add a subtle loading overlay
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.className = 'loading-overlay';
-            loadingOverlay.innerHTML = `
-                <div class="loading-spinner text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                <!-- RIGHT: Services Grid (2x2) -->
+                <div class="combined-services anim-fade-right">
+                    <div class="services-grid">
+                        <!-- Service 1: Book Lending -->
+                        <div class="service-card anim-scale-in anim-delay-1">
+                            <div class="service-card-icon"><i class="fas fa-book-open"></i></div>
+                            <h3 class="service-card-title">Book Lending</h3>
+                            <p class="service-card-desc">Borrow books across all genres in multiple languages.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">📚 50,000+ Books</span>
+                                <span class="service-card-tag">🌐 Multi-Language</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service 2: MPSC Preparation -->
+                        <div class="service-card anim-scale-in anim-delay-2">
+                            <div class="service-card-icon"><i class="fas fa-trophy"></i></div>
+                            <h3 class="service-card-title">MPSC Preparation</h3>
+                            <p class="service-card-desc">Free study materials and e-books for MPSC exams.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">📖 Free Materials</span>
+                                <span class="service-card-tag">🎯 Expert Guidance</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service 3: UPSC Preparation -->
+                        <div class="service-card anim-scale-in anim-delay-3">
+                            <div class="service-card-icon"><i class="fas fa-graduation-cap"></i></div>
+                            <h3 class="service-card-title">UPSC Preparation</h3>
+                            <p class="service-card-desc">Curated UPSC resources and digital library access.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">💻 Digital Access</span>
+                                <span class="service-card-tag">📋 Curated Content</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service 4: Cultural Events -->
+                        <div class="service-card anim-scale-in anim-delay-4">
+                            <div class="service-card-icon"><i class="fas fa-theater-masks"></i></div>
+                            <h3 class="service-card-title">Cultural Events</h3>
+                            <p class="service-card-desc">Workshops, book fairs, and cultural programs year-round.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">🎭 Workshops</span>
+                                <span class="service-card-tag">👨‍👩‍👧‍👦 All Ages</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            `;
-            
-            librariesContainer.style.position = 'relative';
-            librariesContainer.appendChild(loadingOverlay);
-            
-            // Send AJAX request
-            fetch(`?page=${page}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
                 
-                // Update total pages
-                totalPages = data.total_pages;
-                currentPage = data.current_page;
-                
-                // Remove loading overlay
-                const overlay = librariesContainer.querySelector('.loading-overlay');
-                if (overlay) {
-                    overlay.remove();
-                }
-                
-                // Render libraries
-                renderLibraries(data.libraries);
-                
-                // Update pagination
-                initializePagination();
+            </div>
+        </div>
+    </section>
 
-                setTimeout(scrollToViewToggle, 100);
-                
-                // Restore scroll position
-                window.scrollTo(0, scrollPosition);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                
-                // Remove loading overlay
-                const overlay = librariesContainer.querySelector('.loading-overlay');
-                if (overlay) {
-                    overlay.remove();
-                }
-                
-                // Show error message
-                librariesContainer.innerHTML = originalContent;
-                showErrorMessage('Failed to load libraries. Please try again.');
-                
-                // Re-initialize pagination
-                initializePagination();
-            });
-        }
+    <!-- MARATHI -->
+    <section id="combined-about-services-marathi" class="combined-about-services-section">
+        <div class="combined-about-services-container">
 
-        function scrollToViewToggle() {
-            const viewToggle = document.querySelector('.view-toggle');
-            const librariesSection = document.getElementById('libraries-section');
-            
-            if (viewToggle) {
-                const elementPosition = viewToggle.getBoundingClientRect().top;
-                const headerOffset = 100;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            <!-- SECTION HEADER -->
+            <div class="combined-section-header anim-fade-up">
+                <span class="combined-section-badge anim-fade-up anim-delay-1">आम्ही कोण आहोत आणि काय करतो</span>
+                <h2 class="combined-section-title anim-fade-up anim-delay-2">ज्ञानाद्वारे नवी मुंबईला सक्षम करणे</h2>
+                <p class="combined-section-desc anim-fade-up anim-delay-3">आमची कथा जाणून घ्या आणि प्रत्येक नागरिकाला दिल्या जाणाऱ्या सर्वसमावेशक ग्रंथालय सेवा एक्सप्लोर करा</p>
+                <div class="combined-section-divider anim-fade-up anim-delay-4"></div>
+            </div>
+
+            <div class="combined-grid">
                 
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: 'smooth'
+                <!-- LEFT: About Us (text only, no logo) -->
+                <div class="combined-about anim-fade-left">
+                    <span class="about-badge anim-fade-up anim-delay-1">आमच्याबद्दल</span>
+                    <h2 class="about-title anim-fade-up anim-delay-2">नवी मुंबईच्या प्रत्येक नागरिकासाठी ज्ञान</h2>
+                    <p class="about-desc anim-fade-up anim-delay-3">
+                        नवी मुंबई महानगरपालिकेची सार्वजनिक ग्रंथालय प्रणाली संपूर्ण नवी मुंबईतील सर्व नागरिकांना मोफत आणि सुलभ ज्ञान संसाधने प्रदान करण्यासाठी समर्पित आहे.
+                    </p>
+                    <div class="about-features-list anim-fade-up anim-delay-4">
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>सर्व नवी मुंबई रहिवाशांसाठी मोफत सदस्यत्व</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>MPSC आणि UPSC तयारी संसाधने आणि ई-पुस्तके</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>मराठी, हिंदी, इंग्रजी आणि प्रादेशिक भाषेतील पुस्तके</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>सोमवार ते शनिवार, सकाळी ९ ते रात्री १० खुले</span></div>
+                    </div>
+                    <a href="{% url 'vision_mission' %}" class="about-btn anim-fade-up anim-delay-5">
+                        <i class="fas fa-eye"></i> आमची दृष्टी आणि ध्येय
+                    </a>
+                </div>
+                
+                <!-- RIGHT: Services Grid (2x2) -->
+                <div class="combined-services anim-fade-right">
+                    <div class="services-grid">
+                        <!-- Service 1: Book Lending -->
+                        <div class="service-card anim-scale-in anim-delay-1">
+                            <div class="service-card-icon"><i class="fas fa-book-open"></i></div>
+                            <h3 class="service-card-title">पुस्तक उधार</h3>
+                            <p class="service-card-desc">सर्व शैलींमध्ये अनेक भाषांमध्ये पुस्तके उधार घ्या.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">📚 ५०,०००+ पुस्तके</span>
+                                <span class="service-card-tag">🌐 बहुभाषिक</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service 2: MPSC Preparation -->
+                        <div class="service-card anim-scale-in anim-delay-2">
+                            <div class="service-card-icon"><i class="fas fa-trophy"></i></div>
+                            <h3 class="service-card-title">MPSC तयारी</h3>
+                            <p class="service-card-desc">MPSC परीक्षांसाठी मोफत अभ्यास साहित्य आणि ई-पुस्तके.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">📖 मोफत साहित्य</span>
+                                <span class="service-card-tag">🎯 तज्ञ मार्गदर्शन</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service 3: UPSC Preparation -->
+                        <div class="service-card anim-scale-in anim-delay-3">
+                            <div class="service-card-icon"><i class="fas fa-graduation-cap"></i></div>
+                            <h3 class="service-card-title">UPSC तयारी</h3>
+                            <p class="service-card-desc">क्युरेटेड UPSC संसाधने आणि डिजिटल लायब्ररी प्रवेश.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">💻 डिजिटल प्रवेश</span>
+                                <span class="service-card-tag">📋 क्युरेटेड सामग्री</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Service 4: Cultural Events -->
+                        <div class="service-card anim-scale-in anim-delay-4">
+                            <div class="service-card-icon"><i class="fas fa-theater-masks"></i></div>
+                            <h3 class="service-card-title">सांस्कृतिक कार्यक्रम</h3>
+                            <p class="service-card-desc">वर्षभर कार्यशाळा, पुस्तक मेळावे आणि सांस्कृतिक कार्यक्रम.</p>
+                            <div class="service-card-footer">
+                                <span class="service-card-tag">🎭 कार्यशाळा</span>
+                                <span class="service-card-tag">👨‍👩‍👧‍👦 सर्व वयोगट</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== DIGNITARIES SECTION ==================== -->
+    <!-- ENGLISH -->
+    <section id="dignitaries-english" class="dignitaries-section" style="display:none;">
+        <div class="dignitaries-container">
+            
+            <!-- Header -->
+            {% comment %} <div class="dignitaries-header">
+                <span class="dignitaries-badge anim-fade-up anim-delay-1">Our Leadership</span>
+                <h2 class="dignitaries-title anim-fade-up anim-delay-2">Guiding NMMC Library Forward</h2>
+                <p class="dignitaries-desc anim-fade-up anim-delay-3">Under the visionary leadership of our esteemed dignitaries, NMMC Public Library continues to empower citizens through knowledge</p>
+                <div class="dignitaries-divider anim-fade-up anim-delay-4"></div>
+            </div> {% endcomment %}
+            
+            <!-- Cards Row -->
+            <div class="dignitaries-row">
+                
+                <!-- Card 1: Commissioner -->
+                <div class="dignitary-card anim-scale-in anim-delay-1">
+                    <div class="dignitary-photo-wrapper">
+                        <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
+                             alt="Dr. Kailas Shinde" 
+                             class="dignitary-photo">
+                        <div class="dignitary-photo-overlay"></div>
+                    </div>
+                    <div class="dignitary-info">
+                        <span class="dignitary-designation">Commissioner</span>
+                        <h3 class="dignitary-name">Dr. Kailas Shinde (IAS)</h3>
+                        <h4 class="dignitary-name-marathi">डॉ. कैलास शिंदे (भा. प्र. से.)</h4>
+                        <p style="font-size:0.85rem;color:#64748b;">आयुक्त</p>
+                    </div>
+                </div>
+                
+                <!-- Card 2: Mayor -->
+                <div class="dignitary-card anim-scale-in anim-delay-2">
+                    <div class="dignitary-photo-wrapper">
+                        <img src="{% static 'images/administrative/Mayor.jfif' %}" 
+                             alt="Mayor Sujata Patil" 
+                             class="dignitary-photo">
+                        <div class="dignitary-photo-overlay"></div>
+                    </div>
+                    <div class="dignitary-info">
+                        <span class="dignitary-designation">Mayor</span>
+                        <h3 class="dignitary-name">Smt. Sujata Suraj Patil</h3>
+                        <h4 class="dignitary-name-marathi">श्रीम. सुजाता सुरज पाटील</h4>
+                        <p style="font-size:0.85rem;color:#64748b;">महापौर</p>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+
+    <!-- MARATHI -->
+    <section id="dignitaries-marathi" class="dignitaries-section">
+        <div class="dignitaries-container">
+            
+            <!-- Header -->
+            {% comment %} <div class="dignitaries-header">
+                <span class="dignitaries-badge anim-fade-up anim-delay-1">आमचे नेतृत्व</span>
+                <h2 class="dignitaries-title anim-fade-up anim-delay-2">NMMC ग्रंथालयाला पुढे नेणारे</h2>
+                <p class="dignitaries-desc anim-fade-up anim-delay-3">आमच्या आदरणीय मान्यवरांच्या दूरदर्शी नेतृत्वाखाली, NMMC सार्वजनिक ग्रंथालय ज्ञानाद्वारे नागरिकांना सक्षम करत आहे</p>
+                <div class="dignitaries-divider anim-fade-up anim-delay-4"></div>
+            </div> {% endcomment %}
+            
+            <!-- Cards Row -->
+            <div class="dignitaries-row">
+                
+                <!-- Card 1: Commissioner -->
+                <div class="dignitary-card anim-scale-in anim-delay-1">
+                    <div class="dignitary-photo-wrapper">
+                        <img src="{% static 'images/administrative/Hon_Comm_Kailas_Shinde.jpg' %}" 
+                             alt="डॉ. कैलास शिंदे" 
+                             class="dignitary-photo">
+                        <div class="dignitary-photo-overlay"></div>
+                    </div>
+                    <div class="dignitary-info">
+                        <span class="dignitary-designation">आयुक्त</span>
+                        <h3 class="dignitary-name-marathi">डॉ. कैलास शिंदे (भा. प्र. से.)</h3>
+                        <h4 class="dignitary-name">Dr. Kailas Shinde (IAS)</h4>
+                        <p style="font-size:0.85rem;color:#64748b;">Commissioner, NMMC</p>
+                    </div>
+                </div>
+                
+                <!-- Card 2: Mayor -->
+                <div class="dignitary-card anim-scale-in anim-delay-2">
+                    <div class="dignitary-photo-wrapper">
+                        <img src="{% static 'images/administrative/Mayor.jfif' %}" 
+                             alt="सुजाता पाटील" 
+                             class="dignitary-photo">
+                        <div class="dignitary-photo-overlay"></div>
+                    </div>
+                    <div class="dignitary-info">
+                        <span class="dignitary-designation">महापौर</span>
+                        <h3 class="dignitary-name-marathi">श्रीम. सुजाता सुरज पाटील</h3>
+                        <h4 class="dignitary-name">Smt. Sujata Suraj Patil</h4>
+                        <p style="font-size:0.85rem;color:#64748b;">Mayor, Navi Mumbai</p>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+
+    {% comment %} <!-- ==================== ABOUT NMMC LIBRARY SECTION ==================== -->
+    <section id="about-library-english" class="about-library-section" style="display:none;">
+        <div class="about-library-container">
+            <div class="about-library-grid">
+                <!-- LEFT: Logo - slides in from left -->
+                <div class="about-library-logo anim-fade-left">
+                    <div class="about-logo-wrapper anim-scale-in anim-delay-2">
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" 
+                            alt="NMMC Logo" class="about-logo-img">
+                        <div class="about-logo-years">
+                            <span class="years-number">22+</span>
+                            <span class="years-text">Years of Service</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Content - fades up with stagger -->
+                <div class="about-library-content anim-fade-right">
+                    <span class="about-badge anim-fade-up anim-delay-1">About Us</span>
+                    <h2 class="about-title anim-fade-up anim-delay-2">Knowledge for Every Citizen of Navi Mumbai</h2>
+                    <p class="about-desc anim-fade-up anim-delay-3">
+                        Navi Mumbai Municipal Corporation's Public Library System...
+                    </p>
+                    <div class="about-features-list anim-fade-up anim-delay-4">
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>Free membership...</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>MPSC & UPSC...</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>Marathi, Hindi...</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>Open Monday to Saturday...</span></div>
+                    </div>
+                    <div class="about-buttons anim-fade-up anim-delay-5">
+                        <a href="{% url 'swd_libraries' %}" class="about-btn about-btn-primary">
+                            <i class="fas fa-eye"></i> Our Vision & Mission
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about-library-marathi" class="about-library-section">
+        <div class="about-library-container">
+            <div class="about-library-grid">
+                <!-- LEFT: Logo - slides in from left -->
+                <div class="about-library-logo anim-fade-left">
+                    <div class="about-logo-wrapper anim-scale-in anim-delay-2">
+                        <img src="{% static 'images/administrative/nmmc-logo.jpeg' %}" 
+                            alt="NMMC लोगो" class="about-logo-img">
+                        <div class="about-logo-years">
+                            <span class="years-number">२२+</span>
+                            <span class="years-text">वर्षांची सेवा</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- RIGHT: Content - fades up with stagger -->
+                <div class="about-library-content anim-fade-right">
+                    <span class="about-badge anim-fade-up anim-delay-1">आमच्याबद्दल</span>
+                    <h2 class="about-title anim-fade-up anim-delay-2">नवी मुंबईच्या प्रत्येक नागरिकासाठी ज्ञान</h2>
+                    <p class="about-desc anim-fade-up anim-delay-3">
+                        नवी मुंबई महानगरपालिकेची सार्वजनिक ग्रंथालय प्रणाली...
+                    </p>
+                    <div class="about-features-list anim-fade-up anim-delay-4">
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>सर्व नवी मुंबई रहिवाशांसाठी मोफत सदस्यत्व</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>MPSC आणि UPSC तयारी संसाधने आणि ई-पुस्तके</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>मराठी, हिंदी, इंग्रजी आणि प्रादेशिक भाषेतील पुस्तके</span></div>
+                        <div class="about-feature-item"><i class="fas fa-check-circle"></i><span>सोमवार ते शनिवार, सकाळी ९ ते रात्री १० खुले</span></div>
+                    </div>
+                    <div class="about-buttons anim-fade-up anim-delay-5">
+                        <a href="{% url 'swd_libraries' %}" class="about-btn about-btn-primary">
+                            <i class="fas fa-eye"></i> आमची दृष्टी आणि ध्येय
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== OUR SERVICES SECTION ==================== -->
+    <section id="our-services-english" class="our-services-section" style="display:none;">
+        <div class="services-container">
+            <div class="services-header anim-fade-up">
+                <span class="services-badge">Our Services</span>
+                <h2 class="services-title">What We Offer</h2>
+                <p class="services-desc">Comprehensive library services designed to empower...</p>
+                <div class="services-divider"></div>
+            </div>
+            
+            <div class="services-grid">
+                <!-- Service 1: Book Lending -->
+                <div class="service-card anim-scale-in anim-delay-1">
+                    <div class="service-card-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3 class="service-card-title">Book Lending</h3>
+                    <p class="service-card-desc">Borrow books across all genres in multiple languages with our easy membership system.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">📚 50,000+ Books</span>
+                        <span class="service-card-tag">🌐 Multi-Language</span>
+                    </div>
+                </div>
+                
+                <!-- Service 2: MPSC Preparation -->
+                <div class="service-card anim-scale-in anim-delay-1">
+                    <div class="service-card-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3 class="service-card-title">MPSC Preparation</h3>
+                    <p class="service-card-desc">Free study materials, e-books, and reference guides for Maharashtra Public Service Commission exams.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">📖 Free Materials</span>
+                        <span class="service-card-tag">🎯 Expert Guidance</span>
+                    </div>
+                </div>
+                
+                <!-- Service 3: UPSC Preparation -->
+                <div class="service-card anim-scale-in anim-delay-1">
+                    <div class="service-card-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="service-card-title">UPSC Preparation</h3>
+                    <p class="service-card-desc">Curated UPSC resources, digital library access, and comprehensive study materials for aspirants.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">💻 Digital Access</span>
+                        <span class="service-card-tag">📋 Curated Content</span>
+                    </div>
+                </div>
+                
+                <!-- Service 4: Cultural Events -->
+                <div class="service-card anim-scale-in anim-delay-1">
+                    <div class="service-card-icon">
+                        <i class="fas fa-theater-masks"></i>
+                    </div>
+                    <h3 class="service-card-title">Cultural Events</h3>
+                    <p class="service-card-desc">Workshops, book fairs, reading sessions, and cultural programs for all age groups throughout the year.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">🎭 Workshops</span>
+                        <span class="service-card-tag">👨‍👩‍👧‍👦 All Ages</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="our-services-marathi" class="our-services-section">
+        <div class="services-container">
+            <div class="services-header anim-fade-up">
+                <span class="services-badge">आमच्या सेवा</span>
+                <h2 class="services-title">आम्ही काय ऑफर करतो</h2>
+                <p class="services-desc">आमच्या समुदायाला सक्षम, शिक्षित आणि प्रेरित करण्यासाठी...</p>
+                <div class="services-divider"></div>
+            </div>
+            
+            <div class="services-grid">
+                <!-- Service 1: Book Lending -->
+                <div class="service-card anim-scale-in anim-delay-1">
+                    <div class="service-card-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3 class="service-card-title">पुस्तक उधार</h3>
+                    <p class="service-card-desc">आमच्या सोप्या सदस्यत्व प्रणालीसह सर्व शैलींमध्ये अनेक भाषांमध्ये पुस्तके उधार घ्या.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">📚 ५०,०००+ पुस्तके</span>
+                        <span class="service-card-tag">🌐 बहुभाषिक</span>
+                    </div>
+                </div>
+                
+                <!-- Service 2: MPSC Preparation -->
+                <div class="service-card anim-scale-in anim-delay-2">
+                    <div class="service-card-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3 class="service-card-title">MPSC तयारी</h3>
+                    <p class="service-card-desc">महाराष्ट्र लोकसेवा आयोगाच्या परीक्षांसाठी मोफत अभ्यास साहित्य, ई-पुस्तके आणि संदर्भ मार्गदर्शिका.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">📖 मोफत साहित्य</span>
+                        <span class="service-card-tag">🎯 तज्ञ मार्गदर्शन</span>
+                    </div>
+                </div>
+                
+                <!-- Service 3: UPSC Preparation -->
+                <div class="service-card anim-scale-in anim-delay-3">
+                    <div class="service-card-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="service-card-title">UPSC तयारी</h3>
+                    <p class="service-card-desc">इच्छुकांसाठी क्युरेटेड UPSC संसाधने, डिजिटल लायब्ररी प्रवेश आणि सर्वसमावेशक अभ्यास साहित्य.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">💻 डिजिटल प्रवेश</span>
+                        <span class="service-card-tag">📋 क्युरेटेड सामग्री</span>
+                    </div>
+                </div>
+                
+                <!-- Service 4: Cultural Events -->
+                <div class="service-card anim-scale-in anim-delay-4">
+                    <div class="service-card-icon">
+                        <i class="fas fa-theater-masks"></i>
+                    </div>
+                    <h3 class="service-card-title">सांस्कृतिक कार्यक्रम</h3>
+                    <p class="service-card-desc">वर्षभर सर्व वयोगटांसाठी कार्यशाळा, पुस्तक मेळावे, वाचन सत्रे आणि सांस्कृतिक कार्यक्रम.</p>
+                    <div class="service-card-footer">
+                        <span class="service-card-tag">🎭 कार्यशाळा</span>
+                        <span class="service-card-tag">👨‍👩‍👧‍👦 सर्व वयोगट</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section> {% endcomment %}
+
+    {% csrf_token %}
+
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {% if messages %}
+        <script>
+            $(document).ready(function() {
+                const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags }}',
+                    title: '{{ message.tags|title }}',
+                    text: '{{ message|escapejs }}',
+                    confirmButtonText: 'OK',
+                    background: theme === 'dark' ? '#1e1e2f' : '#ffffff',
+                    color: theme === 'dark' ? '#f0f0f0' : '#212529',
+                    confirmButtonColor: theme === 'dark' ? '#6366f1' : '#0d6efd',
+                    customClass: { popup: 'rounded-4 shadow', confirmButton: 'btn btn-primary px-4 py-2' }
                 });
-            } else if (librariesSection) {
-                librariesSection.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start'
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // ========== PAGINATION STATE ==========
+            let currentPage = 1;
+            let totalPages = 1;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            let currentView = 'grid'; // 'grid' or 'list'
+            
+            // ========== CAROUSEL ==========
+            const carouselState = {};
+
+            function initializeCarousel(carouselId) {
+                if (!carouselState[carouselId]) carouselState[carouselId] = { currentSlide: 0, totalSlides: 0, interval: null };
+                const carousel = document.getElementById(carouselId);
+                if (!carousel) return;
+                const slides = carousel.querySelectorAll('.hero-slide');
+                carouselState[carouselId].totalSlides = slides.length;
+                showSlide(carouselId, 0);
+                startAutoPlay(carouselId);
+                carousel.addEventListener('mouseenter', () => stopAutoPlay(carouselId));
+                carousel.addEventListener('mouseleave', () => startAutoPlay(carouselId));
+                let touchStartX = 0;
+                carousel.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+                carousel.addEventListener('touchend', (e) => {
+                    const diff = touchStartX - e.changedTouches[0].screenX;
+                    if (Math.abs(diff) > 50) window.changeSlide(carouselId, diff > 0 ? 1 : -1);
                 });
             }
-        }
-        
-        function renderLibraries(libraries) {
-            const librariesContainer = document.getElementById('libraries-container');
-            
-            if (!libraries || libraries.length === 0) {
-                librariesContainer.innerHTML = `
-                    <div class="no-libraries text-center py-5">
-                        <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
-                        <h4>No libraries found</h4>
+
+            function showSlide(carouselId, index) {
+                const carousel = document.getElementById(carouselId);
+                if (!carousel) return;
+                const slides = carousel.querySelectorAll('.hero-slide');
+                const state = carouselState[carouselId];
+                if (!state || slides.length === 0) return;
+                if (index >= slides.length) index = 0;
+                if (index < 0) index = slides.length - 1;
+                state.currentSlide = index;
+                slides.forEach(s => s.classList.remove('active'));
+                slides[index].classList.add('active');
+                const dotsContainer = document.getElementById('carousel-dots-' + carouselId.split('-').pop());
+                if (dotsContainer) {
+                    dotsContainer.querySelectorAll('.carousel-dot').forEach((dot, i) => dot.classList.toggle('active', i === index));
+                }
+            }
+
+            window.changeSlide = function(carouselId, direction) {
+                const state = carouselState[carouselId];
+                if (!state) return;
+                showSlide(carouselId, state.currentSlide + direction);
+                stopAutoPlay(carouselId);
+                startAutoPlay(carouselId);
+            };
+
+            window.goToSlide = function(carouselId, index) {
+                showSlide(carouselId, index);
+                stopAutoPlay(carouselId);
+                startAutoPlay(carouselId);
+            };
+
+            function startAutoPlay(carouselId) {
+                stopAutoPlay(carouselId);
+                carouselState[carouselId].interval = setInterval(() => window.changeSlide(carouselId, 1), 15000);
+            }
+
+            function stopAutoPlay(carouselId) {
+                if (carouselState[carouselId]?.interval) {
+                    clearInterval(carouselState[carouselId].interval);
+                    carouselState[carouselId].interval = null;
+                }
+            }
+
+            initializeCarousel('hero-carousel-english');
+            initializeCarousel('hero-carousel-marathi');
+
+            // ========== SELECTIZE ==========
+            const selectizeConfig = {
+                create: false, maxItems: 1, hideSelected: true, closeAfterSelect: true,
+                dropdownParent: 'body', sortField: 'text', searchField: ['text'],
+                labelField: 'text', valueField: 'value', highlight: true,
+                onChange: function(value) {
+                    const form = this.$input.closest('form');
+                    const selectedOption = this.options[value];
+                    if (form && selectedOption) {
+                        const membershipField = form.querySelector('input[name="has_membership_link"]');
+                        const loginBtn = form.querySelector('.login-btn');
+                        const hasMembership = selectedOption.data?.('membership') === '1';
+                        if (membershipField) membershipField.value = hasMembership ? '1' : '0';
+                        if (loginBtn) loginBtn.style.display = hasMembership ? 'inline-flex' : 'none';
+                    }
+                },
+                render: {
+                    option: function(item, escape) {
+                        const hasMembership = item.data?.('membership') === '1';
+                        const lockIcon = hasMembership ? ' <span style="color:#015296;margin-left:5px;">🔐</span>' : '';
+                        return '<div class="dropdownoption">' + escape(item.text) + lockIcon + '</div>';
+                    },
+                    item: function(item, escape) {
+                        const hasMembership = item.data?.('membership') === '1';
+                        return '<div>' + escape(item.text) + (hasMembership ? ' 🔐' : '') + '</div>';
+                    }
+                }
+            };
+
+            if ($('#search-select-english').length) $('#search-select-english').selectize(selectizeConfig);
+            if ($('#search-select-marathi').length) $('#search-select-marathi').selectize(selectizeConfig);
+
+            $('form[id^="search-form"]').on('submit', function(e) {
+                const select = this.querySelector('.library-select');
+                if (select?.selectize && !select.selectize.getValue()) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'error', title: 'Library Required', text: 'Please select a library', confirmButtonText: 'OK' });
+                }
+            });
+
+            $('.search-btn-secondary').on('click', function(e) {
+                const form = this.closest('form');
+                const select = form.querySelector('.library-select');
+                if (select?.selectize) {
+                    if (!select.selectize.getValue()) {
+                        e.preventDefault();
+                        Swal.fire({ icon: 'error', title: 'Library Required', text: 'Please select a library first', confirmButtonText: 'OK' });
+                        return false;
+                    }
+                    if (form.querySelector('input[name="has_membership_link"]').value !== '1') {
+                        e.preventDefault();
+                        Swal.fire({ icon: 'warning', title: 'Login Not Available', text: 'This library does not have a membership/login system', confirmButtonText: 'OK' });
+                        return false;
+                    }
+                }
+            });
+
+            // ========== LOAD LIBRARIES VIA AJAX WITH PAGINATION ==========
+            function loadLibraries(page) {
+                const container = document.getElementById('libraries-container');
+                const pageInfo = document.getElementById('page-info');
+                
+                // Show loading spinner
+                container.style.position = 'relative';
+                const existingOverlay = container.querySelector('.loading-spinner-overlay');
+                if (existingOverlay) existingOverlay.remove();
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'loading-spinner-overlay';
+                overlay.innerHTML = `
+                    <div class="loading-spinner">
+                        <div class="spinner-circle"></div>
+                        <span class="loading-text">Loading libraries...</span>
                     </div>
                 `;
-                return;
+                container.appendChild(overlay);
+                
+                // Build URL with page parameter
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', page);
+                
+                fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove loading overlay
+                    const ov = container.querySelector('.loading-spinner-overlay');
+                    if (ov) ov.remove();
+                    
+                    if (data.error) {
+                        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#ef4444;">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    totalPages = data.total_pages || 1;
+                    currentPage = data.current_page || 1;
+                    
+                    // Render libraries
+                    renderLibraries(data.libraries);
+                    
+                    // Update pagination
+                    renderPagination();
+                    
+                    // Update page info
+                    if (pageInfo) {
+                        const total = data.total_libraries || 0;
+                        pageInfo.textContent = `Showing page ${currentPage} of ${totalPages} (${total} libraries total)`;
+                    }
+                    
+                })
+                .catch(error => {
+                    console.error('Error loading libraries:', error);
+                    const ov = container.querySelector('.loading-spinner-overlay');
+                    if (ov) ov.remove();
+                    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#ef4444;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:2.5rem;margin-bottom:1rem;opacity:0.5;"></i>
+                        <h4>Failed to load libraries</h4>
+                        <p>Please try refreshing the page.</p>
+                    </div>`;
+                });
             }
             
-            librariesContainer.style.opacity = '0.7';
-            librariesContainer.style.transition = 'opacity 0.2s ease';
-            
-            setTimeout(() => {
+            function renderLibraries(libraries) {
+                const container = document.getElementById('libraries-container');
+                
+                if (!libraries || libraries.length === 0) {
+                    container.innerHTML = `...`;
+                    return;
+                }
+                
                 let html = '';
-                libraries.forEach(library => {
+                /*libraries.forEach((library, index) => {
+                    const delayClass = 'anim-delay-' + ((index % 6) + 1);
                     html += `
-                        <div class="library-card">
-                            <img src="${library.image_url}" alt="${library.library_name}" class="library-img">
+                        <div class="library-card anim-fade-up ${delayClass}">
+                            <img src="{% static 'images/administrative/Vishnudas-Bhave-Outdoor.jpg' %}" 
+                                alt="${library.library_name}" 
+                                class="library-img">
                             <div class="library-content">
-                                <h3>${library.library_name_mar}${library.location_name ? ' - ' + library.location_name : ''}</h3>
+                                <h3>${library.library_name_mar || library.library_name}${library.location_name ? ' - ' + library.location_name : ''}</h3>
                                 <h4>Established: ${library.est_year || 'N/A'}</h4>
-                                <p>${library.about_library ? library.about_library.substring(0, 200) + '...' : ''}</p>
-                                
+                                <p>${library.about_library ? library.about_library.substring(0, 150) + '...' : 'No description available.'}</p>
+                                <form method="POST" action="{% url 'service_redirect' %}">
+                                    <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                    <input type="hidden" name="library_code" value="${library.libraries}">
+                                    <button type="submit" class="card-btn">View More</button>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                });*/
+                libraries.forEach((library, index) => {
+                    const delayClass = 'anim-delay-' + ((index % 6) + 1);
+                    html += `
+                        <div class="library-card anim-fade-up ${delayClass}">
+                            <img src="${library.image_url}" 
+                                alt="${library.library_name}" 
+                                class="library-img">
+                            <div class="library-content">
+                                <h3>${library.library_name_mar || library.library_name}${library.location_name ? ' - ' + library.location_name : ''}</h3>
+                                <h4>Established: ${library.est_year || 'N/A'}</h4>
+                                <p>${library.about_library ? library.about_library.substring(0, 150) + '...' : 'No description available.'}</p>
                                 <form method="POST" action="{% url 'service_redirect' %}">
                                     <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
                                     <input type="hidden" name="library_code" value="${library.libraries}">
@@ -1369,129 +1522,218 @@
                     `;
                 });
                 
-                librariesContainer.innerHTML = html;
-                librariesContainer.style.opacity = '1';
+                container.innerHTML = html;
                 
-                // Re-initialize view toggle
-                initializeViewToggle();
-                
-            }, 200);
-        }
-        
-        function showErrorMessage(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-toast';
-            errorDiv.innerHTML = `
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-            
-            const container = document.querySelector('.container');
-            if (container) {
-                container.insertBefore(errorDiv, container.firstChild);
-            }
-            
-            setTimeout(() => {
-                if (errorDiv.parentNode) {
-                    errorDiv.remove();
-                }
-            }, 5000);
-        }
-        
-        function initializeViewToggle() {
-            const gridBtn = document.getElementById('grid-view-btn');
-            const listBtn = document.getElementById('list-view-btn');
-            const librariesContainer = document.getElementById('libraries-container');
-            
-            if (!gridBtn || !listBtn || !librariesContainer) return;
-            
-            // Remove existing listeners
-            const newGridBtn = gridBtn.cloneNode(true);
-            const newListBtn = listBtn.cloneNode(true);
-            gridBtn.parentNode.replaceChild(newGridBtn, gridBtn);
-            listBtn.parentNode.replaceChild(newListBtn, listBtn);
-            
-            // Check saved preference or default to grid
-            const isGridView = !librariesContainer.classList.contains('list-view');
-            
-            if (isGridView) {
-                librariesContainer.classList.add('grid-view');
-                librariesContainer.classList.remove('list-view');
-                newGridBtn.classList.add('active');
-                newListBtn.classList.remove('active');
-            } else {
-                librariesContainer.classList.add('list-view');
-                librariesContainer.classList.remove('grid-view');
-                newListBtn.classList.add('active');
-                newGridBtn.classList.remove('active');
-            }
-            
-            // Add new event listeners
-            newGridBtn.addEventListener("click", function() {
-                librariesContainer.classList.add("grid-view");
-                librariesContainer.classList.remove("list-view");
-                this.classList.add("active");
-                newListBtn.classList.remove("active");
-            });
-
-            newListBtn.addEventListener("click", function() {
-                librariesContainer.classList.add("list-view");
-                librariesContainer.classList.remove("grid-view");
-                this.classList.add("active");
-                newGridBtn.classList.remove("active");
-            });
-        }
-        
-        // Initial view toggle setup
-        initializeViewToggle();
-    });
-</script>
-
-<!-- Language Sync Script -->
-<script>
-    function syncHeroWithLayout() {
-        const headEnglish = document.getElementById('head-english');
-        const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
-        
-        const englishHero = document.getElementById('hero-english');
-        const marathiHero = document.getElementById('hero-marathi');
-        
-        if (isEnglish) {
-            if (englishHero) englishHero.style.display = 'block';
-            if (marathiHero) marathiHero.style.display = 'none';
-        } else {
-            if (englishHero) englishHero.style.display = 'none';
-            if (marathiHero) marathiHero.style.display = 'block';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        syncHeroWithLayout();
-        
-        // Store original function
-        const originalToggle = window.toggleLanguage;
-        
-        // Create enhanced version
-        window.toggleLanguage = function() {
-            if (originalToggle) originalToggle();
-            setTimeout(syncHeroWithLayout, 100);
-        };
-        
-        // Observe changes to layout
-        const headEnglish = document.getElementById('head-english');
-        if (headEnglish) {
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.attributeName === 'style') {
-                        syncHeroWithLayout();
-                    }
+                // Re-observe newly added animated elements
+                document.querySelectorAll('.anim-fade-up, .anim-fade-in, .anim-fade-left, .anim-fade-right, .anim-scale-in').forEach(el => {
+                    animationObserver.observe(el);
                 });
+            }
+            
+            function renderPagination() {
+                const paginationLinks = document.getElementById('pagination-links');
+                if (!paginationLinks) return;
+                
+                let html = '';
+                
+                // Previous button
+                html += `<div class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" onclick="goToPage(${currentPage - 1})" title="Previous">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </div>`;
+                
+                // Page numbers
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+                
+                // First page
+                if (startPage > 1) {
+                    html += `<div class="page-item"><a class="page-link" onclick="goToPage(1)">1</a></div>`;
+                    if (startPage > 2) {
+                        html += `<span class="page-ellipsis">...</span>`;
+                    }
+                }
+                
+                // Page numbers
+                for (let i = startPage; i <= endPage; i++) {
+                    html += `<div class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="goToPage(${i})">${i}</a>
+                    </div>`;
+                }
+                
+                // Last page
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        html += `<span class="page-ellipsis">...</span>`;
+                    }
+                    html += `<div class="page-item"><a class="page-link" onclick="goToPage(${totalPages})">${totalPages}</a></div>`;
+                }
+                
+                // Next button
+                html += `<div class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" onclick="goToPage(${currentPage + 1})" title="Next">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>`;
+                
+                paginationLinks.innerHTML = html;
+            }
+            
+            window.goToPage = function(page) {
+                if (page < 1 || page > totalPages || page === currentPage) return;
+                loadLibraries(page);
+            };
+            
+            // ========== GRID/LIST TOGGLE ==========
+            const gridBtn = document.getElementById("grid-view-btn");
+            const listBtn = document.getElementById("list-view-btn");
+            const cardGrid = document.getElementById("libraries-container");
+            
+            if (gridBtn && listBtn && cardGrid) {
+                gridBtn.addEventListener("click", function() {
+                    cardGrid.classList.add("grid-view");
+                    cardGrid.classList.remove("list-view");
+                    this.classList.add("active");
+                    listBtn.classList.remove("active");
+                    currentView = 'grid';
+                });
+                listBtn.addEventListener("click", function() {
+                    cardGrid.classList.add("list-view");
+                    cardGrid.classList.remove("grid-view");
+                    this.classList.add("active");
+                    gridBtn.classList.remove("active");
+                    currentView = 'list';
+                });
+            }
+
+            // ========== LANGUAGE SYNC ==========
+            function syncAllWithLayout() {
+                const headEnglish = document.getElementById('head-english');
+                const isEnglish = headEnglish && window.getComputedStyle(headEnglish).display !== 'none';
+                
+                [
+                    'hero-english','hero-marathi',
+                    'library-search-english','library-search-marathi',
+                    'dignitaries-english','dignitaries-marathi',
+                    'combined-about-services-english','combined-about-services-marathi',
+                    'our-network-english','our-network-marathi'
+                ].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (id.includes('english')) el.style.display = isEnglish ? 'block' : 'none';
+                    if (id.includes('marathi')) el.style.display = isEnglish ? 'none' : 'block';
+                });
+                
+                stopAutoPlay(isEnglish ? 'hero-carousel-marathi' : 'hero-carousel-english');
+                startAutoPlay(isEnglish ? 'hero-carousel-english' : 'hero-carousel-marathi');
+            }
+
+            syncAllWithLayout();
+
+            const originalToggle = window.toggleLanguage;
+            window.toggleLanguage = function() {
+                if (originalToggle) originalToggle();
+                setTimeout(syncAllWithLayout, 150);
+            };
+
+            const headEnglish = document.getElementById('head-english');
+            if (headEnglish) {
+                new MutationObserver(mutations => {
+                    if (mutations.some(m => m.attributeName === 'style')) syncAllWithLayout();
+                }).observe(headEnglish, { attributes: true });
+            }
+            
+            // ========== INITIAL LOAD ==========
+            loadLibraries(1);
+
+            // ========== SCROLL PROGRESS BAR ==========
+            const progressBar = document.createElement('div');
+            progressBar.className = 'scroll-progress';
+            document.body.prepend(progressBar);
+
+            window.addEventListener('scroll', () => {
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const progress = (scrollTop / scrollHeight) * 100;
+                progressBar.style.width = progress + '%';
             });
-            observer.observe(headEnglish, { attributes: true });
+
+        });
+    </script>
+
+    <script>
+        // ========== SCROLL COUNTER ANIMATION ==========
+        function animateCounters() {
+            document.querySelectorAll('.network-stat-number').forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                const formatNumber = (num) => {
+                    if (num >= 1000) {
+                        return num.toLocaleString('en-IN') + '+';
+                    }
+                    return num + '+';
+                };
+                
+                const duration = 2000; // 2 seconds
+                const steps = 60;
+                const increment = target / steps;
+                let current = 0;
+                const stepTime = duration / steps;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.textContent = formatNumber(target);
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = formatNumber(Math.floor(current));
+                    }
+                }, stepTime);
+            });
         }
-    });
-</script>
+
+        // Intersection Observer for scroll trigger
+        const networkObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    networkObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        // Observe both English and Marathi network sections
+        const networkSections = document.querySelectorAll('.our-network-section');
+        networkSections.forEach(section => {
+            if (section.style.display !== 'none') {
+                networkObserver.observe(section);
+            }
+        });
+    </script>
+
+    <script>
+        // ========== SCROLL ANIMATION OBSERVER ==========
+        const animationObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('anim-visible');
+                    // Don't unobserve so it re-triggers if needed
+                }
+            });
+        }, {
+            threshold: 0.15,      // Trigger when 15% visible
+            rootMargin: '0px 0px -50px 0px'  // Slightly before element enters
+        });
+
+        // Observe all animated elements
+        document.querySelectorAll('.anim-fade-up, .anim-fade-in, .anim-fade-left, .anim-fade-right, .anim-scale-in').forEach(el => {
+            animationObserver.observe(el);
+        });
+    </script>
 
 {% endblock %}
