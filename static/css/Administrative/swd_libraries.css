@@ -1,8 +1,8 @@
 /* SWD Libraries Page - Sidebar Layout */
-/* Updated to match main library theme colors: #384988 (primary blue) and #D0AD37 (gold) */
+/* Updated to match main library theme colors: #015296 (primary blue) and #D0AD37 (gold) */
 
 :root {
-    --primary-color: #384988;        /* Main brand blue from library.css */
+    --primary-color: #015296;        /* Main brand blue from library.css */
     --primary-light: #eef0f7;         /* Lighter version of brand blue */
     --primary-dark: #1E2A4F;          /* Darker navy from library.css */
     --accent-color: #D0AD37;          /* Gold accent from library.css */

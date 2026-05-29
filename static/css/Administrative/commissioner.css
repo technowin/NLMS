@@ -2,7 +2,7 @@
 :root {
     --primary-color: #015296;
     --primary-light: #e6f0fa;
-    --primary-dark: #013a6b;
+    --primary-dark: #015296;
     --accent-color: #f39c12;
     --text-dark: #2c3e50;
     --text-light: #555;
@@ -421,7 +421,7 @@
 }
 
 .breadcrumb-item a:hover {
-    color: #013a6b;
+    color: #015296;
     text-decoration: underline;
 }
 

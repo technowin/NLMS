@@ -1,7 +1,7 @@
 
 /* ========================= Global Variables ========================= */
 :root {
-    --primary-color:  #384988;        /* Deep Periwinkle Blue */
+    --primary-color:  #015296;        /* Deep Periwinkle Blue */
     --secondary-color: #1E2A4F;       /* Deeper Navy */
     --font-family: "Merriweather", serif;
     --text-color: #ffffff;
@@ -428,7 +428,7 @@ body {
 /* Utility link items */
 .utility-link-item {
     /* color: #444; */
-    color: #384988;
+    color: #015296;
     text-decoration: none;
     font-size: 13px;
     font-weight: 700;
@@ -3058,10 +3058,10 @@ footer .footer-container {
         width: 100%;
         height: 100%;
         background: linear-gradient(
-            135deg, 
-            rgba(56, 73, 136, 0.88) 0%,    /* ✅ NEW #384988 */
-            rgba(30, 42, 79, 0.78) 50%,     /* ✅ NEW #1E2A4F */
-            rgba(0, 0, 0, 0.65) 100%
+            135deg,
+            rgba(1, 82, 150, 0.92) 0%,   /* #015296 */
+            rgba(1, 82, 150, 0.75) 50%,  /* same shade lighter */
+            rgba(1, 82, 150, 0.55) 100%  /* faded ending */
         );
     }
 
@@ -3706,10 +3706,10 @@ footer .footer-container {
             width: 100%;
             height: 100%;
             background: linear-gradient(
-                135deg, 
-                rgba(56, 73, 136, 0.88) 0%,    /* ✅ NEW #384988 */
-                rgba(30, 42, 79, 0.78) 50%,     /* ✅ NEW #1E2A4F */
-                rgba(0, 0, 0, 0.65) 100%
+                135deg,
+                rgba(1, 82, 150, 0.92) 0%,   /* #015296 */
+                rgba(1, 82, 150, 0.75) 50%,  /* same shade lighter */
+                rgba(1, 82, 150, 0.55) 100%  /* faded ending */
             );
         }
 
@@ -4514,7 +4514,7 @@ footer .footer-container {
     }
 
     .search-btn-primary:hover {
-        background: #013a6b;
+        background: #015296;
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(1, 82, 150, 0.35);
     }
@@ -4587,7 +4587,7 @@ footer .footer-container {
     }
 
     .view-toggle button.active {
-        background: var(--primary-color);    /* ✅ #384988 */
+        background: var(--primary-color);    /* ✅ #015296 */
         color: white;
         border-color: var(--primary-color);
     }
