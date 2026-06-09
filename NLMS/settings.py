@@ -48,7 +48,7 @@ def detect_environment():
         # Test Server: 172.26.12.47
         # Production Server: 172.31.44.248
         
-        if private_ip == '172.26.12.47':
+        if private_ip == '172.26.13.164':
             return 'test'
         elif private_ip == '172.31.44.248':
             return 'production'
@@ -73,13 +73,13 @@ if ENVIRONMENT == 'local':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ['3.111.76.175', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
+ALLOWED_HOSTS = ['3.111.76.175', '13.203.186.80', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
 
 # SITE_URL configuration
 if ENVIRONMENT == 'local':
     SITE_URL = "http://localhost:8000"
 elif ENVIRONMENT == 'test':
-    SITE_URL = "http://3.111.76.175"
+    SITE_URL = "http://13.203.186.80"
 else:  # production
     SITE_URL = "http://www.nmmclibrary.in"
 
