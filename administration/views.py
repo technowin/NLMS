@@ -197,7 +197,7 @@ def service_redirect(request):
             if settings.ENVIRONMENT == 'local':
                 return redirect("http://127.0.0.1:8000/L01/index")
             elif settings.ENVIRONMENT == 'test':
-                return redirect("http://3.111.76.175/L01/index")
+                return redirect("http://13.203.186.80/L01/index")
             else:  # production
                 return redirect("http://vdb.nmmclibrary.in/L01/index")
 
@@ -233,7 +233,7 @@ def set_library_session_and_login(request):
                     if settings.ENVIRONMENT == 'local':
                         return redirect("http://127.0.0.1:8000/Login")
                     elif settings.ENVIRONMENT == 'test':
-                        return redirect("http://3.111.76.175/Login")
+                        return redirect("http://13.203.186.80/Login")
                     else:  # production
                         return redirect("http://vdb.nmmclibrary.in/Login")  
 
