@@ -3133,6 +3133,246 @@ def membership_form_cancellation(request):
         return redirect("L01:membership_payment_index")
 
 # circulation
+# @no_direct_access 
+# @login_required 
+# def bar_code_index(request):
+#     Db.closeConnection()
+#     m = Db.get_connection()
+#     cursor = m.cursor()
+#     try:
+#         if not request.user.is_authenticated:
+#             # Clear any session flags
+#             if '_session_expired' in request.session:
+#                 request.session.pop('_session_expired')
+#             messages.warning(request, "Your session has expired. Please log in again.")
+#             return redirect('library_list')
+        
+#         library_code = request.session.get('library_db', None)
+#         username = request.session.get('username', None)
+#         user_id = request.session["user_id"]
+#         role_id = request.session["role_id"]
+
+#         if request.method == "GET":
+            
+#             accessions = BookAccession.objects.select_related(
+#                 'catalogue',  # 👈 pulls in BookCatalog
+#                 'supplier', 'currency', 'funding_source',
+#                 'condition_at_entry', 'location', 'status'
+#             ).filter(status__status_id=4).order_by("-accession_id")
+            
+#             for a in accessions:
+#                 a.encrypted_id = enc(str(a.accession_id))
+            
+#             # barcode for bulk download
+            
+#             # circulation_accessions = list(
+#             #     CirculationCopyStatus.objects
+#             #     .filter(accession_no__isnull=False)
+#             #     .values('id', 'accession_no', 'accession_id')
+#             # )
+            
+#             circulation_accessions = list(
+#                 CirculationCopyStatus.objects
+#                 .filter(accession_no__isnull=False)
+#                 .annotate(
+#                     accession_no_int=Cast('accession_no', IntegerField())
+#                 )
+#                 .order_by('accession_no_int')
+#                 .values('id', 'accession_no', 'accession_id')
+#             )
+
+#             for circ in circulation_accessions:
+#                 circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
+
+#             for circ in circulation_accessions:
+#                 circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
+                
+#             subjectNames = SubjectTypeMaster.objects.filter(is_active=1)
+#             for sub in subjectNames:
+#                 sub.subjectIdEnc = enc(str(sub.id))
+                
+#             location_list = ResourceLocationMaster.objects.filter(is_active=1)
+
+#             for loc in location_list:
+#                 loc.locationEnc = enc(str(loc.location_id))
+#                 loc.full_name = f"{loc.location_code} - {loc.location_name}"
+        
+#             return render(
+#                 request,
+#                 "L01/Circulation/barcodeindex.html",
+#                 {
+#                     "MEDIA_URL": settings.MEDIA_URL,
+#                     "library_code": library_code,
+#                     "accessions": accessions,
+#                     "circulation_accessions": circulation_accessions,
+#                     "subjectNames": subjectNames,
+#                     "location_list": location_list,
+                    
+#                 }
+#             )
+        
+#         # In your barcode generation code, replace Marathi text with English:
+#         if request.method == "POST":
+#             if library_code:
+#                 library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
+#                 if not library_details:
+#                     return HttpResponseBadRequest("Invalid library code")
+#                 library_location = library_details.location
+#             else:
+#                 return HttpResponseBadRequest("Missing library code")
+
+#             # Decode accession numbers
+#             from_acc = dec(str(request.POST.get("from_accession")))
+#             to_acc = dec(str(request.POST.get("to_accession")))
+#             subject_id = request.POST.get("subject_id")
+#             location_id = request.POST.get("location_id")
+
+#             if subject_id:
+#                 subject_id = dec(str(subject_id))
+#             if location_id:
+#                 location_id = dec(str(location_id))
+
+#             if not from_acc or not to_acc:
+#                 return JsonResponse({"error": "Missing fields"}, status=400)
+
+#             # Get circulation records
+#             circulation_qs = (
+#                 CirculationCopyStatus.objects
+#                 .select_related("bookcatalog", "bookcatalog__subject", "shelf_location")
+#                 .annotate(barcode_int=Cast("barcode", IntegerField()))
+#                 .filter(barcode_int__range=(int(from_acc), int(to_acc)))
+#                 .order_by("barcode_int")
+#             )
+#             if subject_id:
+#                 circulation_qs = circulation_qs.filter(bookcatalog__subject_id=subject_id)
+#             if location_id:
+#                 circulation_qs = circulation_qs.filter(shelf_location=location_id)
+#             if not circulation_qs.exists():
+#                 return JsonResponse({"error": "No matching records found"}, status=404)
+
+#             # PDF setup
+#             pdf_buffer = BytesIO()
+#             # TSC TE244: 50mm × 25mm, 203 DPI → 141.73 x 70.87 points
+#             label_width_pt = 50 * 2.83465
+#             label_height_pt = 25 * 2.83465
+
+#             p = canvas.Canvas(pdf_buffer, pagesize=(label_width_pt, label_height_pt))
+
+#             # Font path for Marathi
+#             font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSerifDevanagari-Bold.ttf")
+
+#             for idx, record in enumerate(circulation_qs):
+#                 accession_no = record.accession_no or "UNKNOWN"
+                
+#                 # Get subject name and location
+#                 subject_name = ""
+#                 if record.bookcatalog and record.bookcatalog.subject:
+#                     subject_name = record.bookcatalog.subject.subjectNameMarathi or ""
+                
+#                 location_name = ""
+#                 if record.shelf_location:
+#                     location_name = record.shelf_location.location_name or ""
+
+#                 # Create label image (50x25 mm → 400x200 px at 203 DPI)
+#                 img_width = 400
+#                 img_height = 200
+#                 label_img = Image.new("RGB", (img_width, img_height), "white")
+#                 draw = ImageDraw.Draw(label_img)
+
+#                 # Load fonts with larger sizes
+#                 try:
+#                     font_large = ImageFont.truetype(font_path, 28)
+#                     font_medium = ImageFont.truetype(font_path, 28)
+#                     font_small = ImageFont.truetype(font_path, 22)
+#                 except:
+#                     font_large = ImageFont.load_default()
+#                     font_medium = ImageFont.load_default()
+#                     font_small = ImageFont.load_default()
+
+#                 # Draw text content
+#                 line1 = "नवी मुंबई महानगरपालिका"  # NMMC in Marathi
+#                 line2 = f"{library_location} - {library_code}"
+                
+#                 # Generate barcode with larger size
+#                 barcode_buffer = BytesIO()
+#                 barcode_obj = Code128(accession_no, writer=ImageWriter())
+#                 barcode_obj.write(barcode_buffer, {
+#                     "module_width": 0.32,
+#                     "module_height": 35,
+#                     "quiet_zone": 1.5,
+#                     "write_text": False,
+#                     "dpi": 203,
+#                 })
+#                 barcode_buffer.seek(0)
+#                 barcode_img = Image.open(barcode_buffer)
+#                 if barcode_img.mode != "RGB":
+#                     barcode_img = barcode_img.convert("RGB")
+#                 barcode_img = barcode_img.resize((350, 50), Image.Resampling.LANCZOS)
+
+#                 # Line 4: Accession no - Subject - Location
+#                 line4 = f"{accession_no} - {subject_name} - {location_name}"
+
+#                 # Calculate text dimensions
+#                 bbox1 = draw.textbbox((0, 0), line1, font=font_large)
+#                 text_height1 = bbox1[3] - bbox1[1]
+                
+#                 bbox2 = draw.textbbox((0, 0), line2, font=font_medium)
+#                 text_height2 = bbox2[3] - bbox2[1]
+                
+#                 bbox4 = draw.textbbox((0, 0), line4, font=font_small)
+#                 text_height4 = bbox4[3] - bbox4[1]
+
+#                 # Calculate total content height and starting position for perfect centering
+#                 total_content_height = text_height1 + 8 + text_height2 + 10 + 50 + 8 + text_height4
+#                 start_y = (img_height - total_content_height) // 2
+
+#                 # Line 1: Center aligned horizontally
+#                 text_width1 = bbox1[2] - bbox1[0]
+#                 line1_x = (img_width - text_width1) // 2
+#                 line1_y = start_y
+#                 draw.text((line1_x, line1_y), line1, font=font_large, fill="black")
+
+#                 # Line 2: Center aligned horizontally
+#                 text_width2 = bbox2[2] - bbox2[0]
+#                 line2_x = (img_width - text_width2) // 2
+#                 line2_y = line1_y + text_height1 + 8
+#                 draw.text((line2_x, line2_y), line2, font=font_medium, fill="black")
+
+#                 # Line 3: Barcode - perfectly centered horizontally
+#                 barcode_x = (img_width - 350) // 2
+#                 barcode_y = line2_y + text_height2 + 10
+#                 label_img.paste(barcode_img, (barcode_x, barcode_y))
+
+#                 # Line 4: Center aligned horizontally
+#                 text_width4 = bbox4[2] - bbox4[0]
+#                 line4_x = (img_width - text_width4) // 2
+#                 line4_y = barcode_y + 50 + 8
+#                 draw.text((line4_x, line4_y), line4, font=font_small, fill="black")
+
+#                 # Convert label image to PDF page
+#                 temp_buffer = BytesIO()
+#                 label_img.save(temp_buffer, format="PNG", dpi=(203, 203))
+#                 temp_buffer.seek(0)
+#                 p.drawImage(ImageReader(temp_buffer), 0, 0, width=label_width_pt, height=label_height_pt)
+
+#                 if idx < len(circulation_qs) - 1:
+#                     p.showPage()
+
+#             p.save()
+#             pdf_buffer.seek(0)
+#             filename = f"{from_acc}_to_{to_acc}_barcodes.pdf"
+#             response = HttpResponse(pdf_buffer, content_type="application/pdf")
+#             response['Content-Disposition'] = f'inline; filename="{filename}"'
+#             return response
+        
+#     except Exception as e:
+#         tb = traceback.extract_tb(e.__traceback__)
+#         fun = tb[0].name if tb else "library_list"
+#         cursor.callproc("stp_error_log", [fun, str(e), library_code])
+#         print(f"error: {e}")
+#         messages.error(request, "Oops...! Something went wrong!")
+#         return render(request, "L01/Circulation/barcodeindex.html", {})
+
 @no_direct_access 
 @login_required 
 def bar_code_index(request):
@@ -3141,7 +3381,6 @@ def bar_code_index(request):
     cursor = m.cursor()
     try:
         if not request.user.is_authenticated:
-            # Clear any session flags
             if '_session_expired' in request.session:
                 request.session.pop('_session_expired')
             messages.warning(request, "Your session has expired. Please log in again.")
@@ -3155,21 +3394,13 @@ def bar_code_index(request):
         if request.method == "GET":
             
             accessions = BookAccession.objects.select_related(
-                'catalogue',  # 👈 pulls in BookCatalog
+                'catalogue',
                 'supplier', 'currency', 'funding_source',
                 'condition_at_entry', 'location', 'status'
             ).filter(status__status_id=4).order_by("-accession_id")
             
             for a in accessions:
                 a.encrypted_id = enc(str(a.accession_id))
-            
-            # barcode for bulk download
-            
-            # circulation_accessions = list(
-            #     CirculationCopyStatus.objects
-            #     .filter(accession_no__isnull=False)
-            #     .values('id', 'accession_no', 'accession_id')
-            # )
             
             circulation_accessions = list(
                 CirculationCopyStatus.objects
@@ -3180,9 +3411,6 @@ def bar_code_index(request):
                 .order_by('accession_no_int')
                 .values('id', 'accession_no', 'accession_id')
             )
-
-            for circ in circulation_accessions:
-                circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
 
             for circ in circulation_accessions:
                 circ['accession_encrypted_no'] = enc(str(circ['accession_no']))
@@ -3207,11 +3435,9 @@ def bar_code_index(request):
                     "circulation_accessions": circulation_accessions,
                     "subjectNames": subjectNames,
                     "location_list": location_list,
-                    
                 }
             )
         
-        # In your barcode generation code, replace Marathi text with English:
         if request.method == "POST":
             if library_code:
                 library_details = tbl_librarymasterL01.objects.filter(library_code=library_code).first()
@@ -3221,7 +3447,6 @@ def bar_code_index(request):
             else:
                 return HttpResponseBadRequest("Missing library code")
 
-            # Decode accession numbers
             from_acc = dec(str(request.POST.get("from_accession")))
             to_acc = dec(str(request.POST.get("to_accession")))
             subject_id = request.POST.get("subject_id")
@@ -3235,7 +3460,6 @@ def bar_code_index(request):
             if not from_acc or not to_acc:
                 return JsonResponse({"error": "Missing fields"}, status=400)
 
-            # Get circulation records
             circulation_qs = (
                 CirculationCopyStatus.objects
                 .select_related("bookcatalog", "bookcatalog__subject", "shelf_location")
@@ -3252,19 +3476,17 @@ def bar_code_index(request):
 
             # PDF setup
             pdf_buffer = BytesIO()
-            # TSC TE244: 50mm × 25mm, 203 DPI → 141.73 x 70.87 points
             label_width_pt = 50 * 2.83465
             label_height_pt = 25 * 2.83465
 
             p = canvas.Canvas(pdf_buffer, pagesize=(label_width_pt, label_height_pt))
 
-            # Font path for Marathi
             font_path = os.path.join(settings.BASE_DIR, "static", "fonts", "NotoSerifDevanagari-Bold.ttf")
 
             for idx, record in enumerate(circulation_qs):
-                accession_no = record.accession_no or "UNKNOWN"
+                # Clean accession number
+                accession_no = str(record.accession_no).strip() if record.accession_no else "UNKNOWN"
                 
-                # Get subject name and location
                 subject_name = ""
                 if record.bookcatalog and record.bookcatalog.subject:
                     subject_name = record.bookcatalog.subject.subjectNameMarathi or ""
@@ -3273,13 +3495,12 @@ def bar_code_index(request):
                 if record.shelf_location:
                     location_name = record.shelf_location.location_name or ""
 
-                # Create label image (50x25 mm → 400x200 px at 203 DPI)
+                # Create label image
                 img_width = 400
                 img_height = 200
                 label_img = Image.new("RGB", (img_width, img_height), "white")
                 draw = ImageDraw.Draw(label_img)
 
-                # Load fonts with larger sizes
                 try:
                     font_large = ImageFont.truetype(font_path, 28)
                     font_medium = ImageFont.truetype(font_path, 28)
@@ -3289,30 +3510,58 @@ def bar_code_index(request):
                     font_medium = ImageFont.load_default()
                     font_small = ImageFont.load_default()
 
-                # Draw text content
-                line1 = "नवी मुंबई महानगरपालिका"  # NMMC in Marathi
+                line1 = "नवी मुंबई महानगरपालिका"
                 line2 = f"{library_location} - {library_code}"
                 
-                # Generate barcode with larger size
+                # ============ DEFINITIVE FIX FOR 990-1000 ISSUE ============
                 barcode_buffer = BytesIO()
-                barcode_obj = Code128(accession_no, writer=ImageWriter())
-                barcode_obj.write(barcode_buffer, {
-                    "module_width": 0.32,
-                    "module_height": 35,
-                    "quiet_zone": 1.5,
+                
+                # FIX: Force Code128B encoding by adding a space prefix
+                # Code128C is optimized for numeric-only strings of even length
+                # Numbers 990-1000 trigger a bug in Code128C subset switching
+                # Adding a space forces Code128B (alphanumeric) which works correctly
+                barcode_data = f" {accession_no}"  # Space prefix forces Code128B
+                
+                barcode_obj = Code128(barcode_data, writer=ImageWriter())
+                
+                # Generate the barcode image
+                temp_barcode_buffer = BytesIO()
+                barcode_obj.write(temp_barcode_buffer, {
+                    "module_width": 0.45,
+                    "module_height": 15.0,
+                    "quiet_zone": 6.5,
                     "write_text": False,
-                    "dpi": 203,
+                    "dpi": 300,
                 })
+                temp_barcode_buffer.seek(0)
+                
+                # Open the generated barcode image
+                temp_barcode_img = Image.open(temp_barcode_buffer)
+                if temp_barcode_img.mode != "RGB":
+                    temp_barcode_img = temp_barcode_img.convert("RGB")
+                
+                # Crop out the space prefix (approximately first 5-8% of the barcode)
+                # The space prefix adds a small amount of width at the start
+                original_width = temp_barcode_img.width
+                crop_left = int(original_width * 0.08)  # Crop 8% from left to remove space prefix
+                
+                cropped_barcode = temp_barcode_img.crop((crop_left, 0, original_width, temp_barcode_img.height))
+                
+                # Resize to fit our label
+                cropped_barcode = cropped_barcode.resize((350, 50), Image.Resampling.LANCZOS)
+                
+                # Save the final barcode
+                cropped_barcode.save(barcode_buffer, format="PNG")
                 barcode_buffer.seek(0)
+                
+                # Open final barcode image
                 barcode_img = Image.open(barcode_buffer)
                 if barcode_img.mode != "RGB":
                     barcode_img = barcode_img.convert("RGB")
-                barcode_img = barcode_img.resize((350, 50), Image.Resampling.LANCZOS)
+                # ============ END FIX ============
 
-                # Line 4: Accession no - Subject - Location
                 line4 = f"{accession_no} - {subject_name} - {location_name}"
 
-                # Calculate text dimensions
                 bbox1 = draw.textbbox((0, 0), line1, font=font_large)
                 text_height1 = bbox1[3] - bbox1[1]
                 
@@ -3322,34 +3571,28 @@ def bar_code_index(request):
                 bbox4 = draw.textbbox((0, 0), line4, font=font_small)
                 text_height4 = bbox4[3] - bbox4[1]
 
-                # Calculate total content height and starting position for perfect centering
                 total_content_height = text_height1 + 8 + text_height2 + 10 + 50 + 8 + text_height4
                 start_y = (img_height - total_content_height) // 2
 
-                # Line 1: Center aligned horizontally
                 text_width1 = bbox1[2] - bbox1[0]
                 line1_x = (img_width - text_width1) // 2
                 line1_y = start_y
                 draw.text((line1_x, line1_y), line1, font=font_large, fill="black")
 
-                # Line 2: Center aligned horizontally
                 text_width2 = bbox2[2] - bbox2[0]
                 line2_x = (img_width - text_width2) // 2
                 line2_y = line1_y + text_height1 + 8
                 draw.text((line2_x, line2_y), line2, font=font_medium, fill="black")
 
-                # Line 3: Barcode - perfectly centered horizontally
                 barcode_x = (img_width - 350) // 2
                 barcode_y = line2_y + text_height2 + 10
                 label_img.paste(barcode_img, (barcode_x, barcode_y))
 
-                # Line 4: Center aligned horizontally
                 text_width4 = bbox4[2] - bbox4[0]
                 line4_x = (img_width - text_width4) // 2
                 line4_y = barcode_y + 50 + 8
                 draw.text((line4_x, line4_y), line4, font=font_small, fill="black")
 
-                # Convert label image to PDF page
                 temp_buffer = BytesIO()
                 label_img.save(temp_buffer, format="PNG", dpi=(203, 203))
                 temp_buffer.seek(0)
