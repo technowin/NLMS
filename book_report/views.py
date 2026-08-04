@@ -3644,14 +3644,21 @@ class ExportReportView(ReportBaseView):
             return response
 
         except Exception as e:
-            tb = traceback.extract_tb(e.__traceback__)
-            fun = tb[-1].name if tb else "Unknown"
-
-            error_log.objects.create(
-                method=fun,
-                error=traceback.format_exc(),   # Full traceback
-                user_id=str(request.user.id) if request.user.is_authenticated else None
-            )
+           
+            fun = "ExportReportView"
+            try:
+                error_log.objects.create(
+                    method=fun,
+                    error=e,   # Full traceback
+                    user_id=request.user
+                )
+            except Exception as e:
+                import traceback
+                traceback.print_exc() 
+                return JsonResponse(
+                    {'error': 'Export failed', 'details': str(e)},
+                    status=500
+                )
             messages.error(request, "Oops...! Something went wrong!")
 
         finally:
