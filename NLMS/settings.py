@@ -94,7 +94,8 @@ DATABASES = {
         'NAME': 'nlms_db',      # Replace with your database name
         'USER': 'root',      # Replace with your database user
         'PASSWORD': 'Mysql_MH-047319',  # Replace with your database password
-        'HOST': '43.205.183.251',       # IP FOR LOCAL VM
+        # 'HOST': '43.205.183.251',       # IP FOR LOCAL VM
+        'HOST': '127.0.0.1', 
         'PORT': '3306',            
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -105,7 +106,7 @@ DATABASES = {
         'NAME': 'L01_db',
         'USER': 'root',
         'PASSWORD': 'Mysql_MH-047319',
-        'HOST': '43.205.183.251',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
     },
     'L02': {
@@ -113,7 +114,7 @@ DATABASES = {
         'NAME': 'L02_db',
         'USER': 'root',
         'PASSWORD': 'Mysql_MH-047319',
-        'HOST': '43.205.183.251',
+        'HOST': '127.0.0.1',
         'PORT': '3306', 
     },
 }
