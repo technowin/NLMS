@@ -1378,7 +1378,7 @@
     });
 
     // Export functions
-    function exportCurrentTab() {
+    {% comment %} function exportCurrentTab() {
         debugger;
         if (selectedBooks.size === 0) {
             showToast('Please select at least one book to export', 'warning');
@@ -1420,25 +1420,18 @@
             if (progress > 90) progress = 90;
             $('#exportProgress').css('width', progress + '%').text(progress + '%');
         }, 200);
-        console.log("success")
+        
         // Make export request
-        const url = `/books/export-report/?${params.toString()}`;
-        console.log(url);
-
-        fetch(url)
+        fetch(`/books/export-report/?${params.toString()}`)
             .then(response => {
-                debugger;
                 clearInterval(progressInterval);
                 $('#exportProgress').css('width', '100%').text('100%');
                 
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        console.log("Server Error:", text);
-                        throw new Error(text);
-                    });
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error('Export failed');
                 }
-
-                return response.blob();
             })
             .then(blob => {
                 // Create download link
@@ -1465,6 +1458,115 @@
                 $('#exportProgress').css('width', '0%').text('0%');
                 showToast('Export failed: ' + error.message, 'error');
             });
+    } {% endcomment %}
+
+    function exportCurrentTab() {
+
+        if (selectedBooks.size === 0) {
+            showToast('Please select at least one book to export', 'warning');
+            return;
+        }
+        const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+        const activeTab = $('#reportTabs .nav-link.active').attr('id');
+        const tabName = activeTab.replace('-tab', '');
+
+        const tabNames = {
+            'catalogue': 'Catalogue',
+            'accession': 'Accession',
+            'circulation': 'Circulation',
+            'loan': 'Loan',
+            'circulation-transaction': 'Circulation Transaction',
+            'supplier': 'Supplier',
+            'review': 'Review',
+            'return-log': 'Return Log',
+            'google-metadata': 'Google Metadata',
+            'loc-metadata': 'LOC Metadata'
+        };
+
+        const filters = tabFilters[tabName] || {};
+        const fileName = `${tabNames[tabName]}_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+        $('#exportLoading').show();
+
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 10;
+            if (progress > 90) progress = 90;
+            $('#exportProgress').css('width', progress + '%').text(progress + '%');
+        }, 200);
+
+        $.ajax({
+            url: '{% url "export_report" %}',
+            type: 'POST',
+            data: JSON.stringify({
+                type: tabName,
+                book_ids: Array.from(selectedBooks),
+                list_type: currentListType,
+                tab_filters: filters,
+                filename: fileName
+            }),
+            contentType: 'application/json',
+            processData: false,
+            xhrFields: {
+                responseType: 'blob'
+            },
+            headers: {
+                "X-CSRFToken": csrfToken 
+            },
+            success: function(blob) {
+
+                clearInterval(progressInterval);
+                $('#exportProgress').css('width', '100%').text('100%');
+
+                const url = window.URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                window.URL.revokeObjectURL(url);
+
+                setTimeout(() => {
+                    $('#exportLoading').hide();
+                    $('#exportProgress').css('width', '0%').text('0%');
+                }, 500);
+
+                showToast('Export completed successfully', 'success');
+            },
+            error: function(xhr) {
+
+                clearInterval(progressInterval);
+                $('#exportLoading').hide();
+                $('#exportProgress').css('width', '0%').text('0%');
+
+                console.error(xhr.responseText);
+
+                showToast('Export failed', 'error');
+            }
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+
+        if (document.cookie) {
+            document.cookie.split(';').forEach(function(cookie) {
+                cookie = cookie.trim();
+
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(
+                        cookie.substring(name.length + 1)
+                    );
+                }
+            });
+        }
+
+        return cookieValue;
     }
 
     function exportAllTabs() {

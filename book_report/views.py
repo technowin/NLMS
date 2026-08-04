@@ -3556,110 +3556,220 @@ def export_loc_metadata_to_excel(writer, db, book_ids, list_type, filters):
             no_data_format
         )
 
+# class ExportReportView(ReportBaseView):
+#     """Export book report (single tab or all tabs) to Excel"""
+
+#     def get(self, request):
+#         export_type = request.GET.get('type', 'all-tabs')
+#         book_ids = request.GET.getlist('book_ids')
+#         list_type = request.GET.get('list_type', 'title')
+
+#         filters_json = request.GET.get('filters', '{}')
+#         tab_filters_json = request.GET.get('tab_filters', '{}')
+
+#         # ----------------------------------
+#         # Normalize book_ids
+#         # ----------------------------------
+#         if len(book_ids) == 1 and ',' in book_ids[0]:
+#             book_ids = [
+#                 int(i) for i in book_ids[0].split(',')
+#                 if i.strip().isdigit()
+#             ]
+#         else:
+#             book_ids = [int(i) for i in book_ids if str(i).isdigit()]
+
+#         # ----------------------------------
+#         # Parse filters safely
+#         # ----------------------------------
+#         try:
+#             filters = json.loads(filters_json)
+#         except (TypeError, ValueError):
+#             filters = {}
+
+#         try:
+#             tab_filters = json.loads(tab_filters_json)
+#         except (TypeError, ValueError):
+#             tab_filters = {}
+
+#         db = self.get_library_db()
+
+#         # ----------------------------------
+#         # Create temp Excel file
+#         # ----------------------------------
+#         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+#             output_path = tmp.name
+
+#         try:
+#             with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+
+#                 if export_type == 'all-tabs':
+#                     self.export_all_tabs(
+#                         writer=writer,
+#                         db=db,
+#                         book_ids=book_ids,
+#                         list_type=list_type,
+#                         tab_filters=tab_filters
+#                     )
+#                 else:
+#                     self.export_single_tab(
+#                         writer=writer,
+#                         export_type=export_type,
+#                         db=db,
+#                         book_ids=book_ids,
+#                         list_type=list_type,
+#                         filters=tab_filters
+#                     )
+
+#             # ----------------------------------
+#             # Response
+#             # ----------------------------------
+#             with open(output_path, 'rb') as f:
+#                 response = HttpResponse(
+#                     f.read(),
+#                     content_type=(
+#                         'application/vnd.openxmlformats-officedocument.'
+#                         'spreadsheetml.sheet'
+#                     )
+#                 )
+
+#             if export_type == 'all-tabs':
+#                 filename = 'book_report_all_tabs.xlsx'
+#             else:
+#                 filename = f'book_report_{export_type.replace("-", "_")}.xlsx'
+
+#             response['Content-Disposition'] = (
+#                 f'attachment; filename="{filename}"'
+#             )
+
+#             return response
+
+#         except Exception as e:
+           
+#             fun = "ExportReportView"
+#             try:
+#                 error_log.objects.create(
+#                     method=fun,
+#                     error=e,   # Full traceback
+#                     user_id=request.user
+#                 )
+#             except Exception as e:
+#                 import traceback
+#                 traceback.print_exc() 
+#                 return JsonResponse(
+#                     {'error': 'Export failed', 'details': str(e)},
+#                     status=500
+#                 )
+#             messages.error(request, "Oops...! Something went wrong!")
+
+#         finally:
+#             if os.path.exists(output_path):
+#                 os.unlink(output_path)
+
 class ExportReportView(ReportBaseView):
-    """Export book report (single tab or all tabs) to Excel"""
+
+    def post(self, request):
+        return self._export(request)
 
     def get(self, request):
-        export_type = request.GET.get('type', 'all-tabs')
-        book_ids = request.GET.getlist('book_ids')
-        list_type = request.GET.get('list_type', 'title')
+        return self._export(request)
 
-        filters_json = request.GET.get('filters', '{}')
-        tab_filters_json = request.GET.get('tab_filters', '{}')
+    def _export(self, request):
 
-        # ----------------------------------
-        # Normalize book_ids
-        # ----------------------------------
-        if len(book_ids) == 1 and ',' in book_ids[0]:
-            book_ids = [
-                int(i) for i in book_ids[0].split(',')
-                if i.strip().isdigit()
-            ]
+        if request.method == "POST":
+            data = json.loads(request.body)
+
+            export_type = data.get("type", "all-tabs")
+            book_ids = data.get("book_ids", [])
+            list_type = data.get("list_type", "title")
+            tab_filters = data.get("tab_filters", {})
+            filters = data.get("filters", {})
+
         else:
-            book_ids = [int(i) for i in book_ids if str(i).isdigit()]
+            export_type = request.GET.get("type", "all-tabs")
+            book_ids = request.GET.getlist("book_ids")
+            list_type = request.GET.get("list_type", "title")
 
-        # ----------------------------------
-        # Parse filters safely
-        # ----------------------------------
-        try:
-            filters = json.loads(filters_json)
-        except (TypeError, ValueError):
-            filters = {}
+            filters_json = request.GET.get("filters", "{}")
+            tab_filters_json = request.GET.get("tab_filters", "{}")
 
-        try:
-            tab_filters = json.loads(tab_filters_json)
-        except (TypeError, ValueError):
-            tab_filters = {}
+            try:
+                filters = json.loads(filters_json)
+            except:
+                filters = {}
+
+            try:
+                tab_filters = json.loads(tab_filters_json)
+            except:
+                tab_filters = {}
+
+            if len(book_ids) == 1 and "," in book_ids[0]:
+                book_ids = [
+                    int(i)
+                    for i in book_ids[0].split(",")
+                    if i.strip().isdigit()
+                ]
+            else:
+                book_ids = [
+                    int(i)
+                    for i in book_ids
+                    if str(i).isdigit()
+                ]
 
         db = self.get_library_db()
 
-        # ----------------------------------
-        # Create temp Excel file
-        # ----------------------------------
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
             output_path = tmp.name
 
         try:
+
             with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
 
-                if export_type == 'all-tabs':
+                if export_type == "all-tabs":
                     self.export_all_tabs(
-                        writer=writer,
-                        db=db,
-                        book_ids=book_ids,
-                        list_type=list_type,
-                        tab_filters=tab_filters
+                        writer,
+                        db,
+                        book_ids,
+                        list_type,
+                        tab_filters
                     )
                 else:
                     self.export_single_tab(
-                        writer=writer,
-                        export_type=export_type,
-                        db=db,
-                        book_ids=book_ids,
-                        list_type=list_type,
-                        filters=tab_filters
+                        writer,
+                        export_type,
+                        db,
+                        book_ids,
+                        list_type,
+                        tab_filters
                     )
 
-            # ----------------------------------
-            # Response
-            # ----------------------------------
-            with open(output_path, 'rb') as f:
+            with open(output_path, "rb") as f:
                 response = HttpResponse(
                     f.read(),
-                    content_type=(
-                        'application/vnd.openxmlformats-officedocument.'
-                        'spreadsheetml.sheet'
-                    )
+                    content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-            if export_type == 'all-tabs':
-                filename = 'book_report_all_tabs.xlsx'
-            else:
-                filename = f'book_report_{export_type.replace("-", "_")}.xlsx'
-
-            response['Content-Disposition'] = (
-                f'attachment; filename="{filename}"'
+            filename = (
+                "book_report_all_tabs.xlsx"
+                if export_type == "all-tabs"
+                else f"book_report_{export_type.replace('-', '_')}.xlsx"
             )
+
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
             return response
 
-        except Exception as e:
-           
-            fun = "ExportReportView"
-            try:
-                error_log.objects.create(
-                    method=fun,
-                    error=e,   # Full traceback
-                    user_id=request.user
-                )
-            except Exception as e:
-                import traceback
-                traceback.print_exc() 
-                return JsonResponse(
-                    {'error': 'Export failed', 'details': str(e)},
-                    status=500
-                )
-            messages.error(request, "Oops...! Something went wrong!")
+        except Exception:
+
+            error_log.objects.create(
+                method="ExportReportView",
+                error=traceback.format_exc(),
+                user_id=str(request.user.id) if request.user.is_authenticated else None
+            )
+
+            return JsonResponse({
+                "error": "Export failed",
+                "details": traceback.format_exc()
+            }, status=500)
 
         finally:
             if os.path.exists(output_path):
