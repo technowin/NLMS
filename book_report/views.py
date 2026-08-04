@@ -6,6 +6,7 @@ import calendar
 import tempfile
 from io import BytesIO
 from datetime import date, datetime, time, timedelta
+import traceback
 
 import pandas as pd
 import xlsxwriter
@@ -3643,10 +3644,15 @@ class ExportReportView(ReportBaseView):
             return response
 
         except Exception as e:
-            return JsonResponse(
-                {'error': 'Export failed', 'details': str(e)},
-                status=500
+            tb = traceback.extract_tb(e.__traceback__)
+            fun = tb[-1].name if tb else "Unknown"
+
+            error_log.objects.create(
+                method=fun,
+                error=traceback.format_exc(),   # Full traceback
+                user_id=str(request.user.id) if request.user.is_authenticated else None
             )
+            messages.error(request, "Oops...! Something went wrong!")
 
         finally:
             if os.path.exists(output_path):
