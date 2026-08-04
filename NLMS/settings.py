@@ -73,7 +73,7 @@ if ENVIRONMENT == 'local':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = ['3.111.76.175', '13.203.186.80', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
+# # ALLOWED_HOSTS = ['3.111.76.175', '13.203.186.80', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
 
 # SITE_URL configuration
 if ENVIRONMENT == 'local':
@@ -94,7 +94,7 @@ DATABASES = {
         'NAME': 'nlms_db',      # Replace with your database name
         'USER': 'root',      # Replace with your database user
         'PASSWORD': 'Mysql_MH-047319',  # Replace with your database password
-        'HOST': '127.0.0.1',       # IP FOR LOCAL VM
+        'HOST': '43.205.183.251',       # IP FOR LOCAL VM
         'PORT': '3306',            
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -105,7 +105,7 @@ DATABASES = {
         'NAME': 'L01_db',
         'USER': 'root',
         'PASSWORD': 'Mysql_MH-047319',
-        'HOST': '127.0.0.1',
+        'HOST': '43.205.183.251',
         'PORT': '3306',
     },
     'L02': {
@@ -113,8 +113,8 @@ DATABASES = {
         'NAME': 'L02_db',
         'USER': 'root',
         'PASSWORD': 'Mysql_MH-047319',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'HOST': '43.205.183.251',
+        'PORT': '3306', 
     },
 }
 
@@ -329,24 +329,24 @@ STATICFILES_DIRS = [
    
 ]
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),  # Changed to relative path
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'WARNING',
-            'propagate': True,
-        },
-    },
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'file': {
+#             'level': 'WARNING',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),  # Changed to relative path
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'WARNING',
+#             'propagate': True,
+#         },
+#     },
+# }
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     # Add any additional authentication backends if needed
