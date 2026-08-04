@@ -1420,18 +1420,22 @@
             if (progress > 90) progress = 90;
             $('#exportProgress').css('width', progress + '%').text(progress + '%');
         }, 200);
-        
+        console.log("success")
         // Make export request
         fetch(`/books/export-report/?${params.toString()}`)
             .then(response => {
+                debugger;
                 clearInterval(progressInterval);
                 $('#exportProgress').css('width', '100%').text('100%');
                 
-                if (response.ok) {
-                    return response.blob();
-                } else {
-                    throw new Error('Export failed');
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.log("Server Error:", text);
+                        throw new Error(text);
+                    });
                 }
+
+                return response.blob();
             })
             .then(blob => {
                 // Create download link
