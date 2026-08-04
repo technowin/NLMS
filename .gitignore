@@ -1,0 +1,11 @@
+
+# Environment
+# Logs
+# Python compiled files
+*.log
+*.pyc
+*.pyo
+.env
+.env.local
+__pycache__/
+logs/
