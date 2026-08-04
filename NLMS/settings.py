@@ -73,7 +73,7 @@ if ENVIRONMENT == 'local':
 else:
     DEBUG = False
 
-# # ALLOWED_HOSTS = ['3.111.76.175', '13.203.186.80', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
+ALLOWED_HOSTS = ['3.111.76.175', '13.203.186.80', '43.205.183.251', 'localhost', '127.0.0.1', 'nmmclibrary.in', '.nmmclibrary.in', 'www.nmmclibrary.in']
 
 # SITE_URL configuration
 if ENVIRONMENT == 'local':
