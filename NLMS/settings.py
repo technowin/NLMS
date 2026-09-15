@@ -291,7 +291,7 @@ MIDDLEWARE = [
     # ✅ NOW your custom session logic
     'middleware.auth_flow.AuthFlowGuardMiddleware',
     'middleware.session_security.SessionExpiryRedirectMiddleware',
-    'middleware.session_binding.SessionBindingMiddleware',
+    # 'middleware.session_binding.SessionBindingMiddleware',
 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
