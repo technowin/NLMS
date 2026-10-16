@@ -13863,26 +13863,31 @@ def change_password(request):
         if not user.check_password(old_password):
             messages.error(request, "Old password is incorrect")
             return redirect(request.META.get("HTTP_REFERER"))
-        
+
+        # Update password_storage (using L01 database)
         try:
-
             password = password_storage.objects.using('L01').get(user_id=user.id)
-            password.passwordText = new_password # Hash the new password
+            password.passwordText = new_password
             password.save()
-        
+        except password_storage.DoesNotExist:
+            logger.error(f"password_storage row missing for user_id={user.id}")
         except Exception as e:
-            logger.error(f"Error processing Excel file: {str(e)}")
+            logger.error(f"Error updating password_storage: {e}")
 
-        # Hash the new password using make_password()
+        # Update Django auth password
         user.password = make_password(new_password)
+
+        # 🆕 Mark user as logged out
         user.is_logged_in = 0
         user.save()
 
-        # Important: keep the user logged in after password change
-        # update_session_auth_hash(request, user)
+        messages.success(request, "Password updated successfully. Please log in again.")
 
-        messages.success(request, "Password updated successfully")
-        return redirect("library_list")
+        # 🆕 Let your custom logout view handle session cleanup
+        return redirect("logout")
+
+    # Safety: handle GET requests
+    return redirect("library_list")
     
 # kiosk competitve Logic    
 @login_required
