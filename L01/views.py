@@ -13875,6 +13875,7 @@ def change_password(request):
 
         # Hash the new password using make_password()
         user.password = make_password(new_password)
+        user.is_logged_in = 0
         user.save()
 
         # Important: keep the user logged in after password change
