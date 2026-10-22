@@ -71,7 +71,7 @@ class="authentication-bg position-relative"
                                 <button class="btn btn-primary" style="background-color:#015296;color:white;" type="submit"> Log In </button>
                             </div>
 
-                             {% comment %} <p class="text-center">
+                            {% comment %} <p class="text-center">
                                <a href="{% url 'forgot_password' 1 %}" class="btn btn-link">Forgot your password?</a>
                             </p> {% endcomment %}
                         </form>
@@ -86,6 +86,14 @@ class="authentication-bg position-relative"
                                         Register now
                                     </a>
                                     and start your journey through our library’s treasures.
+                                </p>
+
+                                <p style="font-size: 0.95rem; color: #015296; margin-top: 8px;">
+                                    Forgot your password?
+                                    <a href="{% url 'forgot_password_library' %}"
+                                    style="font-weight: bold; text-decoration: underline; color: #015296;">
+                                        Reset it here
+                                    </a>
                                 </p>
                             </div>
                         {% endif %}

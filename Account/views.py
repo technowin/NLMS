@@ -1,6 +1,7 @@
 # Standard library
 import json
 import random
+import re
 import string
 import traceback
 import logging
@@ -1190,3 +1191,434 @@ def verify_otp(request):
             "status": "otp_verified",
             "message": "OTP verified successfully"
         })
+    
+# send sms for forgot password and update password
+import logging
+import random
+import re
+import requests
+from datetime import timedelta
+from urllib.parse import quote
+
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.utils import timezone
+
+from Account.models import (
+    CustomUser,
+    OtpVerification,
+    SmsTemplate,
+    SMSLog,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ============ CONFIG ============
+OTP_LENGTH = 6
+OTP_VALIDITY_MINUTES = 10
+OTP_RESEND_COOLDOWN_SECONDS = 60
+OTP_MAX_PER_HOUR = 5
+OTP_MAX_PER_IP_PER_HOUR = 10
+OTP_MAX_VERIFY_ATTEMPTS = 5
+
+SMS_API_URL = "https://api.pinnacle.in/index.php/sms/send/NMMCSV/{mobile}/{message}/TXT?apikey=6ac137-a52260-71ad83-05eea9-422b6e"
+SMS_TEMPLATE_NAME = "Send OTP"
+
+
+# ============ HELPERS ============
+def _digits_only(s):
+    return "".join(c for c in (s or "") if c.isdigit())
+
+
+def _mask_mobile(mobile):
+    if len(mobile) != 10:
+        return mobile
+    return mobile[:2] + "*" * 6 + mobile[-2:]
+
+
+def _is_rate_limited(request, mobile):
+    now = timezone.now().timestamp()
+    ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+
+    last = request.session.get(f"otp_sent_{mobile}")
+    if last and (now - last) < OTP_RESEND_COOLDOWN_SECONDS:
+        wait = int(OTP_RESEND_COOLDOWN_SECONDS - (now - last))
+        return True, f"Please wait {wait} seconds before requesting another OTP.", wait
+
+    mh = [t for t in request.session.get(f"otp_sent_{mobile}_hour", []) if now - t < 3600]
+    if len(mh) >= OTP_MAX_PER_HOUR:
+        return True, "Too many OTP requests for this number. Try again later.", 3600
+
+    ih = [t for t in request.session.get(f"otp_sent_ip_{ip}_hour", []) if now - t < 3600]
+    if len(ih) >= OTP_MAX_PER_IP_PER_HOUR:
+        return True, "Too many OTP requests from your network. Try again later.", 3600
+
+    return False, "", 0
+
+
+def _record_otp_attempt(request, mobile):
+    now = timezone.now().timestamp()
+    ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+
+    request.session[f"otp_sent_{mobile}"] = now
+
+    mh = request.session.get(f"otp_sent_{mobile}_hour", [])
+    mh.append(now)
+    request.session[f"otp_sent_{mobile}_hour"] = mh
+
+    ih = request.session.get(f"otp_sent_ip_{ip}_hour", [])
+    ih.append(now)
+    request.session[f"otp_sent_ip_{ip}_hour"] = ih
+
+    request.session.modified = True
+
+
+def get_sms_template(template_name, db_alias):
+    """Fetch the SMS template from the library's DB."""
+    try:
+        return SmsTemplate.objects.using(db_alias).filter(
+            template_name=template_name
+        ).first()
+    except Exception as e:
+        logger.error(f"Error fetching SmsTemplate '{template_name}' from {db_alias}: {e}")
+        return None
+
+
+def render_sms_message(template_message, variables):
+    """Replace each {#var#} occurrence with the next variable value."""
+    message = template_message
+    for value in variables:
+        message = message.replace("{#var#}", str(value), 1)
+    return message
+
+
+def send_sms(mobile, message, user=None, library_code=None, content_type="TEXT",
+             template_name=None, db_alias="default"):
+    """
+    Send SMS via Pinnacle API and log the result in SMSLog.
+    ✅ Log is saved in the library's db_alias (NOT 'default').
+    Returns dict: {"success": bool, "unique_id": str, "response": str}
+    """
+    log_entry = SMSLog(
+        user=user or "",
+        mobile=mobile,
+        message=message,
+        content=message,
+        content_type=content_type,
+        library_code=library_code or "",
+    )
+
+    try:
+        safe_message = quote(message, safe="")   # URL-encode
+        api_url = SMS_API_URL.format(mobile=mobile, message=safe_message)
+
+        response = requests.get(api_url, timeout=15)
+
+        log_entry.response_status = str(response.status_code)
+        log_entry.response_uri = response.url
+
+        if response.status_code == 200:
+            log_entry.status = "success"
+            response_text = (response.text or "").strip()
+
+            try:
+                parsed = response.json()
+            except ValueError:
+                parsed = None
+
+            if isinstance(parsed, dict):
+                log_entry.unique_id = str(parsed.get("unique_id") or parsed.get("msgid") or "")
+                log_entry.status_description = str(parsed.get("status") or "SMS sent")
+            else:
+                log_entry.unique_id = response_text
+                log_entry.status_description = "SMS sent (non-JSON response)"
+
+            log_entry.save(using=db_alias)   # ✅ library DB
+            return {"success": True, "unique_id": log_entry.unique_id, "response": response_text}
+
+        else:
+            log_entry.status = "failed"
+            log_entry.status_description = f"HTTP {response.status_code}"
+            log_entry.error_message = (response.text or "")[:1000]
+            log_entry.save(using=db_alias)   # ✅ library DB
+            logger.error(f"SMS send failed ({response.status_code}) to {mobile}: {response.text}")
+            return {"success": False, "unique_id": "", "response": response.text or ""}
+
+    except Exception as e:
+        log_entry.status = "error"
+        log_entry.error_exception = type(e).__name__
+        log_entry.error_message = str(e)[:1000]
+        try:
+            log_entry.save(using=db_alias)   # ✅ library DB
+        except Exception:
+            logger.exception("Failed to save SMSLog entry")
+        logger.exception(f"SMS exception while sending to {mobile}: {e}")
+        return {"success": False, "unique_id": "", "response": str(e)}
+
+
+# ============ STEP 1 — SEND OTP ============
+def forgot_password_library(request):
+    try:
+        library_code = request.session.get('library_db')
+
+        if request.method == "GET":
+            return render(request, "bootstrap/account/forgot_password.html", {
+                "library_code": library_code,
+            })
+
+        if not library_code or library_code == 'default':
+            return JsonResponse({"status": "invalid_role",
+                                 "message": "Please login from your library portal first."})
+
+        db_alias = library_code
+
+        mobile = _digits_only(request.POST.get("mobile_number"))[-10:]
+        if len(mobile) != 10:
+            return JsonResponse({"status": "user_not_found",
+                                 "message": "Please enter a valid 10-digit mobile number."})
+
+        limited, msg, retry = _is_rate_limited(request, mobile)
+        if limited:
+            return JsonResponse({"status": "rate_limited", "message": msg, "retry_after": retry})
+
+        # Find user in the library DB
+        user = CustomUser.objects.using(db_alias).filter(
+            Q(phone=mobile) | Q(phone=f"+91{mobile}") | Q(phone=f"91{mobile}")
+        ).first()
+
+        if not user:
+            return JsonResponse({"status": "user_not_found",
+                                 "message": "This mobile number is not registered with us."})
+
+        if not user.is_active:
+            return JsonResponse({"status": "user_not_found",
+                                 "message": "Your account is inactive. Please contact the library."})
+
+        if str(user.role_id) != "3":
+            return JsonResponse({"status": "invalid_role",
+                                 "message": "This portal is for registered members only."})
+
+        # Generate OTP
+        otp = f"{random.randint(0, 999999):06d}"
+        expires_at = timezone.now() + timedelta(minutes=OTP_VALIDITY_MINUTES)
+
+        # Invalidate previous pending OTPs in the SAME library DB
+        OtpVerification.objects.using(db_alias).filter(
+            mobile=mobile, purpose="forgot_password", is_verified=False
+        ).delete()
+
+        otp_row = OtpVerification.objects.using(db_alias).create(
+            mobile=mobile,
+            otp=otp,
+            user_id=user.id,
+            db_alias=db_alias,
+            purpose="forgot_password",
+            expires_at=expires_at,
+        )
+
+        # Fetch template from the SAME library DB
+        template = get_sms_template(SMS_TEMPLATE_NAME, db_alias)
+        if not template:
+            otp_row.delete(using=db_alias)   # cleanup orphan
+            return JsonResponse({"status": "template_not_found",
+                                 "message": "SMS template missing. Please contact administrator."})
+
+        sms_message = render_sms_message(template.template_message, [otp])
+
+        # ✅ pass db_alias so SMSLog is saved in the library DB
+        sms_result = send_sms(
+            mobile=mobile,
+            message=sms_message,
+            user=user.username,
+            library_code=db_alias,
+            template_name=template.template_name,
+            db_alias=db_alias,
+        )
+
+        if not sms_result["success"]:
+            otp_row.delete(using=db_alias)   # cleanup orphan on SMS failure
+            return JsonResponse({"status": "sms_failed",
+                                 "message": "Could not send OTP right now. Please try again in a minute."})
+
+        _record_otp_attempt(request, mobile)
+
+        request.session["reset_db_alias"] = db_alias
+        request.session["reset_user_id"] = user.id
+        request.session["reset_mobile"] = mobile
+        request.session["otp_verified"] = False
+        request.session["otp_row_id"] = otp_row.id
+        request.session.modified = True
+
+        return JsonResponse({
+            "status": "otp_sent",
+            "otp_id": str(otp_row.id),
+            "username": user.username,
+            "masked_mobile": _mask_mobile(mobile),
+            "message": f"OTP sent to your mobile number {_mask_mobile(mobile)}",
+            "resend_after": OTP_RESEND_COOLDOWN_SECONDS,
+        })
+
+    except Exception as e:
+        logger.exception(f"Error in forgot_password_library: {e}")
+        return JsonResponse({"status": "error",
+                             "message": "An unexpected error occurred. Please try again later."})
+
+
+# ============ STEP 2 — VERIFY OTP ============
+def verify_otp_library(request):
+    try:
+        if request.method != "POST":
+            return JsonResponse({"status": "error", "message": "POST required"})
+
+        otp_entered = _digits_only(request.POST.get("otp"))[:6]
+        otp_row_id = request.POST.get("otp_id")
+        db_alias = request.session.get("reset_db_alias")
+
+        if not db_alias:
+            return JsonResponse({"status": "error", "message": "Session expired. Please start again."})
+
+        if not otp_entered or len(otp_entered) != 6:
+            return JsonResponse({"status": "error", "message": "Please enter a valid 6-digit OTP."})
+
+        if not otp_row_id:
+            return JsonResponse({"status": "error", "message": "Missing OTP reference."})
+
+        otp_row = OtpVerification.objects.using(db_alias).filter(
+            id=otp_row_id, purpose="forgot_password", is_verified=False
+        ).first()
+
+        if not otp_row:
+            return JsonResponse({"status": "error",
+                                 "message": "OTP not found. Please request a new one."})
+
+        if otp_row.is_expired():
+            otp_row.delete(using=db_alias)
+            return JsonResponse({"status": "error",
+                                 "message": "OTP expired. Please request a new one."})
+
+        if otp_row.attempts >= OTP_MAX_VERIFY_ATTEMPTS:
+            otp_row.delete(using=db_alias)
+            return JsonResponse({"status": "error",
+                                 "message": "Too many incorrect attempts. Please request a new OTP."})
+
+        if otp_entered != otp_row.otp:
+            otp_row.attempts += 1
+            otp_row.save(using=db_alias, update_fields=["attempts"])
+            remaining = OTP_MAX_VERIFY_ATTEMPTS - otp_row.attempts
+            return JsonResponse({
+                "status": "error",
+                "message": f"Invalid OTP. {remaining} attempt(s) left."
+            })
+
+        # SUCCESS
+        otp_row.is_verified = True
+        otp_row.save(using=db_alias, update_fields=["is_verified"])
+
+        request.session["otp_verified"] = True
+        request.session["reset_user_id"] = otp_row.user_id
+        request.session["reset_db_alias"] = otp_row.db_alias or db_alias
+        request.session["reset_mobile"] = otp_row.mobile
+        request.session.modified = True
+
+        otp_row.delete(using=db_alias)
+
+        return JsonResponse({"status": "otp_verified"})
+
+    except Exception as e:
+        logger.exception(f"Error in verify_otp_library: {e}")
+        return JsonResponse({"status": "error",
+                             "message": "An unexpected error occurred. Please try again later."})
+
+
+# ============ STEP 3 — RESET PASSWORD ============
+from django.db import transaction
+
+def reset_password_library(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST required"})
+
+    if not request.session.get("otp_verified"):
+        return JsonResponse({"status": "error", "message": "Please verify your OTP first."})
+
+    db_alias = request.session.get("reset_db_alias")
+    user_id = request.session.get("reset_user_id")
+    mobile = request.session.get("reset_mobile")
+
+    if not db_alias or not user_id:
+        return JsonResponse({"status": "error", "message": "Session expired. Please start again."})
+
+    new_password = request.POST.get("new_password") or ""
+    repeat_password = request.POST.get("repeat_password") or ""
+
+    if not new_password or not repeat_password:
+        return JsonResponse({"status": "error", "message": "Please fill both password fields."})
+
+    if new_password != repeat_password:
+        return JsonResponse({"status": "error", "message": "Passwords do not match."})
+
+    if len(new_password) < 8 or len(new_password) > 16:
+        return JsonResponse({"status": "error", "message": "Password must be 8–16 characters."})
+
+    if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$", new_password):
+        return JsonResponse({"status": "error",
+                             "message": "Password must contain uppercase, lowercase, number & special character."})
+
+    user = CustomUser.objects.using(db_alias).filter(id=user_id).first()
+    if not user:
+        return JsonResponse({"status": "error", "message": "User not found."})
+
+    # ========== Step A: Save password (atomic) ==========
+    try:
+        with transaction.atomic(using=db_alias):
+            # 1) Update hashed password
+            user.set_password(new_password)
+            user.save(using=db_alias)
+
+            # 2) Update/insert plain-text in password_storage
+            storage, created = password_storage.objects.using(db_alias).get_or_create(
+                user_id=user.id,
+                defaults={"passwordText": new_password}
+            )
+            if not created:
+                storage.passwordText = new_password
+                storage.save(using=db_alias, update_fields=["passwordText"])
+                
+            user.is_logged_in = False
+            user.session_key = None
+            user.save(using=db_alias, update_fields=["is_logged_in", "session_key"])
+    except Exception as e:
+        logger.exception(f"Error resetting password for user_id={user_id} in {db_alias}: {e}")
+        return JsonResponse({"status": "error",
+                             "message": "Could not update password. Please try again."})
+
+    # ========== Step B: Send confirmation SMS ==========
+    try:
+        template = get_sms_template("Forgate Password Latest", db_alias)
+        if template:
+            creds = f"{user.username}: {new_password}"
+            sms_message = render_sms_message(template.template_message, [creds])
+
+            send_sms(
+                mobile=mobile or user.phone,
+                message=sms_message,
+                user=user.username,
+                library_code=db_alias,
+                template_name=template.template_name,
+                db_alias=db_alias,
+            )
+        else:
+            logger.warning(f"'Forgate Password Latest' template not found in {db_alias}")
+    except Exception as e:
+        # Don't fail the whole reset just because SMS failed —
+        # password is already saved. Just log.
+        logger.exception(f"Error sending credential SMS to {mobile or user.phone}: {e}")
+
+    # ========== Step C: Cleanup session ==========
+    for key in ["reset_db_alias", "reset_user_id", "reset_mobile",
+                "otp_verified", "otp_row_id"]:
+        request.session.pop(key, None)
+    request.session.modified = True
+
+    return JsonResponse({"status": "success"})

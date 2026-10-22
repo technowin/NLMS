@@ -237,6 +237,11 @@ urlpatterns = [
     path('events/<int:pk>/edit/', edit_event, name='edit_event'),
     path('event_list/', event_list, name='event_list'),
     path('library-events/', library_event_list, name='library_event_list'),
+    
+    # forgot password
+    path('forgot_password_library/', forgot_password_library, name='forgot_password_library'),
+    path('verify_otp_library/', verify_otp_library, name='verify_otp_library'),
+    path('reset_password_library/', reset_password_library, name='reset_password_library'),
 
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

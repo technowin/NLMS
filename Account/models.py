@@ -227,3 +227,29 @@ class SessionActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.user_type} | {self.user_id} | {self.action}"
+
+class OtpVerification(models.Model):
+    """Stores OTPs for mobile verification."""
+
+    mobile = models.CharField(max_length=15, db_index=True)
+    otp = models.CharField(max_length=6)
+    user_id = models.BigIntegerField(null=True, blank=True)      # CustomUser.id
+    db_alias = models.CharField(max_length=50, blank=True)       # which library DB the user lives in
+    is_verified = models.BooleanField(default=False)
+    attempts = models.IntegerField(default=0)
+    purpose = models.CharField(max_length=30, default="forgot_password")  # future reuse: registration, login, etc.
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "otp_verifications"
+        indexes = [
+            models.Index(fields=["mobile", "purpose", "is_verified"]),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.mobile} - {self.otp} ({'✓' if self.is_verified else 'pending'})"
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
