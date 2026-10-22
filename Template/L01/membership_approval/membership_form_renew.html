@@ -10,6 +10,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/Master/index.css' %}">
+
 {% endblock %}
 
 {% block page_title %}
@@ -93,7 +94,7 @@
                             <label class="form-label">
                                 Membership Duration From Date / सदस्यत्व कालावधी पासून तारीख <span class="text-danger">*</span>
                             </label>
-                            <input type="date" id="fromDate" name="fromDate" class="form-control" value="{{ membership.from_date|date:'Y-m-d' }}" required>
+                            <input type="date" id="fromDate" name="fromDate" class="form-control" required>
                         </div>
 
                         <!-- To Date -->
@@ -648,7 +649,7 @@
                                 baseto_date = response.data1.to_date;
 
                                 if (basefrom_date) {
-                                    $("#fromDate").val(basefrom_date);
+                                    //$("#fromDate").val(basefrom_date);
                                     $("#months").val(basemembership_duration);
 
                                     // NEW: only use backend to_date if available
@@ -1325,6 +1326,33 @@
                                 <i class="fas fa-calculator me-2"></i>
                                 Total Late Charges: <span id="totalLateCharges">₹0</span>
                             </div>
+
+                            <!-- NEW: Payable Subscription Breakdown -->
+                            <div class="payable-subscription-block" style="margin-top: 15px; padding: 15px; 
+                                background: #e8f5e9; border: 2px solid #28a745; border-radius: 10px;">
+                                
+                                <div class="fine-item">
+                                    <span class="fine-label">
+                                        <i class="fas fa-file-invoice me-2"></i>
+                                        Subscription / सभासद फी (Current Renewal):
+                                    </span>
+                                    <span id="currentSubscriptionDisplay" class="fine-value" style="color: #28a745;">₹0</span>
+                                </div>
+
+                                <div class="fine-item">
+                                    <span class="fine-label">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Late Renewal Subscription / विलंबित नूतनीकरण सभासद फी:
+                                    </span>
+                                    <span id="lateRenewalSubscriptionDisplay" class="fine-value">₹0</span>
+                                </div>
+
+                                <div class="fine-total" style="background: #28a745; margin-top: 10px;">
+                                    <i class="fas fa-wallet me-2"></i>
+                                    Total Payable Subscription / एकूण देय सभासद फी:
+                                    <span id="totalPayableSubscription">₹0</span>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="fine-note">
@@ -1469,6 +1497,46 @@
                 }
                 
                 $("#totalLateCharges").text(formatFineCurrency(totalLateCharges));
+
+                // ========== NEW: Calculate Payable Subscription Summary ==========
+
+                // Current renewal's subscription (from the amount field)
+                let currentSubscription = parseFloat($("#subscriptionInput").val()) || 0;
+
+                // Late renewal subscription = Total Late Charges (gap sub + gap fine + late fee)
+                let lateRenewalSubscription = totalLateCharges;
+
+                // Total payable = current subscription + late renewal charges
+                let totalPayable = currentSubscription + lateRenewalSubscription;
+
+                // Update the display
+                $("#currentSubscriptionDisplay").text(formatFineCurrency(currentSubscription));
+                $("#lateRenewalSubscriptionDisplay").text(formatFineCurrency(lateRenewalSubscription));
+                $("#totalPayableSubscription").text(formatFineCurrency(totalPayable));
+
+                // ========== Hidden fields for backend submission ==========
+                $("#currentSubscriptionHidden, #lateRenewalSubscriptionHidden, #totalPayableSubscriptionHidden").remove();
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'currentSubscriptionHidden',
+                    name: 'current_subscription',
+                    value: currentSubscription
+                }).appendTo('#membershipForm');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'lateRenewalSubscriptionHidden',
+                    name: 'late_renewal_subscription',
+                    value: lateRenewalSubscription
+                }).appendTo('#membershipForm');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'totalPayableSubscriptionHidden',
+                    name: 'total_payable_subscription',
+                    value: totalPayable
+                }).appendTo('#membershipForm');
                 
                 // Show the section
                 $("#renewalFineSection").show();

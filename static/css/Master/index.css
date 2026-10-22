@@ -711,3 +711,16 @@ body[data-bs-theme="dark"] .card.no-shadow-dark {
         border-bottom-color: #4299e1;
         color: #90cdf4;
     }
+
+[data-bs-theme="dark"] .payable-subscription-block {
+    background: #1a3a1a !important;
+    border-color: #4caf50 !important;
+}
+
+[data-bs-theme="dark"] #currentSubscriptionDisplay {
+    color: #81c784 !important;
+}
+
+[data-bs-theme="dark"] .payable-subscription-block .fine-total {
+    background: #2e7d32 !important;
+}
